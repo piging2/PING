@@ -1,0 +1,60 @@
+# BACKLOG — PING Social outreach machine
+
+Authoritative backlog. One list, every item has a status. Built 2026-09-19 by the backlog lane from a full survey of learnings.md, the operations manual, pipeline.md, content-queue.md, goal workspaces, and the alignment frictions. Updated as items move.
+
+Rule: evidence over activity. An item is DONE only when a tool result verifies it.
+
+## NOLAN DECISIONS LOCKED (2026-09-19, one-grill architecture)
+
+The seven grill questions are resolved. Full detail in ~/workspace/GRILLING-BRIEF.md (the ONE active operator decision surface). Condensed:
+
+1. **300-row JSONL cap: DROP THE ARBITRARY FREEZE.** Quality belongs at admission/dedup/exclusion/validation, not at a row-count cap. Before changing anything: snapshot and verify current stores, then remove/adjust only the policy enforcing the freeze. No record deletion.
+2. **Projection owner: the operation that creates the state change owns same-run projection.** Reconciler is the backstop, not the normal writer. Audit the last three send rounds for the round-87 lapse.
+3. **Status store wins: canonical prospect JSONL is the status authority** for records that exist there. CSV/pipeline.md/leads.md/queue files are projections/views and must not overrule it. Inventory fields and current writers/readers before converging; no blind overwrites. The queue stays authoritative for execution intent only.
+4. **Fenix and Cooley's: parked OUTCOME_UNKNOWN / MANUAL_VERIFICATION_REQUIRED.** No re-submit, no inferred outcomes.
+5. **Threads worker: re-dispatched idempotently** (observe-before-act; already-followed gets observed completion recorded, never repeated).
+6. **Observe -> review: the continuous engine owns the loop** after Sunday's post.
+7. **Worker-deliverable validator: build the smallest scripted gate** around actual failure classes, invoked by a real acceptance path in the same unit. A validator with no caller is NOT completion.
+
+## DONE (2026-09-19, backlog lane)
+
+1. **Stale pipeline.md header** — was "Research-only database. No one in this file has been contacted." Now states it is a lifecycle database with reconciled statuses. Verified: header text replaced.
+2. **18 legacy CONTACTED statuses** — each reconciled against round-5/6 records and draft files: 4 SUBMITTED 2026-09-08 (forms with confirmations), 3 SKIPPED 2026-09-08 (no honest route), 11 DRAFTED (orphaned pre-queue email drafts, never sent, draft files verified to exist). Zero CONTACTED remain in pipeline.md or leads.md. Backup: /tmp/pipeline.md.pre-backlog-bak.
+3. **Manual CSV path drift** — section 5, section-11 file map, and section 16a pointed at `~/workspace/your_files/western-co-business-owner-list.csv`, which no longer exists. Fixed to the living 30-column CSV in the goal files dir; row count corrected to 211; all 30 columns written out verbatim; the "21 intelligence columns + conversion trio" claim corrected to 18 (the conversion trio lives on the JSONL rows). Backup: /tmp/manual.pre-backlog-bak.
+4. **content-queue.md ranking hygiene** — 40 rows renumbered 1-40 in document order. Was: duplicate rank 21 (three of them), duplicate 11/12, out-of-order 38/39, one stray bullet. The J&S Seamless bullet folded into the table as row 38 with its source preserved. Round sections untouched, no facts changed. Backup: /tmp/content-queue.md.pre-backlog-bak.
+5. **JSONL/CSV status projection lapse** — round 87 fired 8 Gmail-verified sends (2026-09-19 UTC) but never projected them into suppression_state / next_eligible_action / last_signal, violating manual section 8/16c and blinding pre-send-check.py's JSONL leg. Backfilled via `outreach/scripts/backfill-jsonl-projection.py` (dry-run first, all guards passed, snapshots in goal hidden_files/backfill-snapshots/): 4 cold sends to `ladder F1 2026-09-23`; 4 F2 sends appended with F2 SENT and ladder-complete state. 8 JSONL rows + 4 CSV rows, every field verified after write.
+6. **pre-send-check.py QUEUED false positive** — verified already fixed in code (QUEUED lines downgraded to WARN; acceptance regex excludes them). No patch needed.
+7. **Wrong Facebook group ID** — verified corrected in facebook-dms.md, facebook-scan-round92.md, learnings.md, and the round-92 sweep. Correct: 2803047646497352. Historical logs keep the wrong value as observed; no edits.
+8. **Round-14 form outcomes** — Element Plumbing and Western Refrigeration already resolved SKIPPED 2026-09-11 by later research. Fenix Home Services and Cooleys remain "outcome unknown," parked per the no-repeat rule. Gmail searched 2026-09-09 through 2026-09-20 plus all-time from both domains: zero confirmations, zero replies. Parked state stands (see BLOCKED). Nolan confirmed 2026-09-19: stays parked OUTCOME_UNKNOWN / MANUAL_VERIFICATION_REQUIRED, no re-submit, no inferred outcomes.
+9. **Learnings reconciliation** — every standing lesson in learnings.md now has a disposition (applied / process / open), appended as a dated entry 2026-09-19.
+
+Side finding: `your_files/western-co-prospects.jsonl` is a symlink to the goal-dir file, not a second copy. One canonical JSONL. pre-send-check.py reads it through the symlink; no path change needed.
+
+## OPEN
+
+1. **Self-assessed content scores await real metrics.** Humor/content scores are self-assessed until actual posts provide real metrics. After the Sunday 2026-09-20 15:00 post, the CONTINUOUS ENGINE owns the OBSERVE -> REVIEW loop (Nolan's call 2026-09-19): observe real platform metrics, record evidence, review prior assumptions/scores, update the rules, propose the next action.
+2. **Content queue is structurally clean but not signal-ranked.** The renumber preserved document order. The ranking rule says signal frequency outranks everything (e.g., the mobile-welder item has 14 observed shops but sits at 21, below one-signal items). First establish whether the ranking rule is current and canonical; if it is, fix the ranking implementation. Continuous-engine empirical investigation; grill only if competing current policies are found.
+3. **Worker-deliverable validator.** Multiple rounds show worker claims exceeding delivered files (counts, dedup, draft eligibility). Build the SMALLEST validator around actual failure classes (duplicate, exclusion violation, required deliverable missing, claimed completion without evidence, schema violation). It must be invoked by a real acceptance path in the same unit; a validator with no caller is not completion (Nolan's call 2026-09-19).
+4. **300-row JSONL freeze removal.** Snapshot and verify current stores first, then remove/adjust only the policy enforcing the arbitrary freeze. No record deletion. Owner: outreach engine.
+5. **Projection-owner enforcement.** Audit the last three send rounds (85-87) for the same same-run projection lapse found in round 87 before assuming it was isolated. Owner: outreach engine.
+6. **Status-store convergence.** Inventory status fields and current writers/readers across JSONL, CSV, pipeline.md, leads.md, and queue files before converging on the canonical-authority rule. No blind overwrites of conflicting records. Owner: outreach engine.
+7. **Stale "in-follow-up-ladder" vocabulary.** Find the current canonical suppression vocabulary, update the queue producer/template generating the stale prose, verify canonical records are not being newly contaminated. Owner: outreach engine.
+8. **Orphaned-draft disposition for the 11 newly-DRAFTED rows.** The round-5/6 drafts exist but were never queued or sent. The engine should run a round-89-style orphan audit: revive (re-verify and queue) or retire each. Owner: outreach engine.
+5. **Bounce detection is a manual sweep step, not a script.** Every send round runs it (verified round 87), but nothing enforces it. Low priority while the manual step holds.
+6. **Scope-honesty check is engine practice, not a gate.** Since round 86 the engine checks covered/exhausted lists before committing segment scope. A scripted pre-research gate would make it stick. Low priority.
+
+## BLOCKED
+
+1. **Instagram CDP wedge** — discovery subprocess never returns; pass 74 classified TEMPORARY_FAILURE; no guard filtering or actions. Owner: Pig-side fix (Nolan). Do not touch the live account from here.
+2. **Threads engagement** — direct post permalinks redirect to the home feed (12/12 reproduced); pass 45 found candidates but did not execute Phase B. A worker was assigned to follow six seed accounts and redesign feed-container targeting; no verified completion. Owner: whoever owns the Threads lane; needs independent verification before credit.
+3. **Fenix + Cooleys form outcomes** — "outcome unknown," parked per the no-repeat rule. Remote verification exhausted (no confirmations, no replies in Gmail). Owner: Nolan, manual verification only.
+4. **ENVIRONMENT_READY=NO** — three Nolan-only items: restart Docker Desktop on the Pig, launch one fresh minimal Codex task against the WSL repo, provision the OCI Object Storage bucket. Held, no nudges while he is away. Owner: Nolan.
+5. **GitHub push/repo creation** — blocked by the documented egress-proxy fault, not credentials. Owner: Nolan/platform.
+6. **Commits frozen** — under the convergence program until the ordered proof sequence completes and Nolan authorizes. Owner: Nolan.
+7. **Sunday 2026-09-20 15:00 post** — Nolan chose POST on the unproven business-agent path. Execution and the prove-before-then work are his call. Backlog lane does not touch the queue, schedule, or captions.
+
+## How to work this file
+
+- Pick the top OPEN item you can verify with a tool result. Do the work, verify, log it in learnings.md, move it to DONE with the evidence.
+- Never mark DONE on a worker's word alone. Delivered artifacts and live verification outrank narration.
+- BLOCKED items move only when the owner acts. Do not nudge Nolan on held items.
