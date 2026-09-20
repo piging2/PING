@@ -284,3 +284,15 @@ Source: convergence/discovery/2026-09-20-laneB.md. Core finding: the worker's ac
 
 ### LANEB-007 / LATER / Promoter _stats in-memory only, no endpoint
 - Approval monitoring invisible. Restart loses stats.
+
+## Certification ladder hardening (from FL-20260920-009, 2026-09-20)
+### CERT-HARD-001 / NOW / ARM64 certification gate must perform an actual linux/arm64 build
+- EVIDENCE: Lane F's arm64Compat gate checked only the Dockerfile FROM line ("declared target linux/arm64"); no arm64 build was ever run during certification. Lane F's snapshot `npm ci` ran on x86_64 (Pig WSL), where tree-sitter-javascript's linux-x64 prebuild masked the defect. The first real arm64 build (deploy lane) failed deterministically at `npm ci`.
+- IMPACT: a candidate was certified and cleared for deploy with an unbuildable image recipe.
+- SMALLEST NEXT ACTION: promote the ARM64 gate from FROM-line inspection to a real `docker build --platform linux/arm64` of the exact distribution (or a documented equivalent proof), run before CERTIFICATION_PASS.
+- FALSIFICATION: the FL-20260920-009 replay command.
+- DONE WHEN: certification ladder includes a green arm64 build artifact for the candidate SHA. OWNER: certification lane. PROOF: Pig.
+
+### CERT-HARD-002 / LATER (observation, no action) / Rollback image provenance gap
+- EVIDENCE: oracle-gateway:certified-20260919 (8400deecf2a9) contains compiled tree-sitter-javascript (has build/ dir) although the certified Dockerfile.gateway declares no build toolchain. The baseline image was built with a toolchain its recipe does not declare.
+- IMPACT: none on the frozen rollback image (never rebuilt/mutated). Recorded so future image builds are judged against the recipe, not the artifact.

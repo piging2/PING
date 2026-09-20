@@ -586,3 +586,10 @@ Running: Lane F (certification ladder + release manifest on a9cad2663). Deploy l
 - Release record committed ddba42557 (5 files under releases/candidate-a9cad2663/; branch note: record sits on convergence-discovery-2026-09-20, candidate branch tip untouched at a9cad2663). IMAGE_DIGEST PENDING_DEPLOY_LANE. Distribution digest e21a0d4f...be6c7ced (2160 files).
 - Ledgered FL-20260920-LANEF-001/002 (healed environmental) and FL-20260920-LANEF-003 (discovery commit mid-cert, handled).
 - Deploy lane dispatched. Oracle deploy authorized ONLY on this PASS.
+
+## GO CYCLE UPDATE 2026-09-20 ~09:22 MDT - DEPLOY ATTEMPT 1 FAILED AT BUILD (FL-20260920-009)
+- arm64 image build failed deterministically at npm ci: tree-sitter-javascript@0.21.0 has no linux/arm64 prebuild, node-gyp falls back to source compile, node:20-alpine has no Python/toolchain. Candidate defect (build recipe), not transient. No retry of the identical invocation.
+- Oracle NEVER mutated (independently verified): rc-4d522a6b / PG17 / Qdrant running, rollback 8400deecf2a9 intact on all three tags, no rc-a9cad2663 image on Oracle. Verdict: ORACLE_DEPLOY_ROLLBACK (no-op).
+- Root certification gap: Lane Fs arm64Compat gate checked only the FROM line; no real arm64 build ever ran. Backlog CERT-HARD-001/002 added.
+- Release manifest updated (3dd32b237 on discovery branch): IMAGE_DIGEST NONE, attempt recorded.
+- Repair lane dispatched: smallest deterministic Dockerfile fix, real arm64 build proof, commit; then re-certification, then redeploy.
