@@ -1082,3 +1082,17 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - **Fix:** On conflict (rowCount=0), fetch existing payload and compare canonical JSON (sorted keys). If semantically different, return error "Event ID collision: same event_id with different payload semantics". True duplicates (same semantics) still deduplicate correctly.
 - **Verification:** Syntax check passed. Code inspection confirms collision detection present.
 - **Replay:** `cd /home/nolan/ping && git show ccfef91f3 --stat`
+
+## FL-20260920-014: Oracle gateway Dockerfile missing runtime dependencies
+- **Date:** 2026-09-20
+- **Severity:** P1 (Oracle promotion blocker, Gate B)
+- **Status:** FIXED (commit 8b42c1b01)
+- **Repository:** /home/nolan/ping
+- **Branch:** refactor/runtime-authority-convergence
+- **File:** infrastructure/oracle/Dockerfile.gateway
+- **Problem:** Dockerfile only did `COPY gateway/ ./`, but gateway requires `../../ping-runtime/` and `../../runtime/` via relative imports. The image would be missing the event runtime entirely. Additionally, the flat COPY structure broke relative path resolution (../../ from /app/bootstrap/ resolves to /, not /app/).
+- **Discovery:** Distribution closure analysis, 2026-09-20
+- **Fix:** Preserve directory structure: COPY gateway/ ./gateway/, COPY ping-runtime/ ./ping-runtime/, COPY runtime/ ./runtime/, CMD ["node", "gateway/server.js"]. Reuses existing tree, no duplication, no import rewrites.
+- **Verification:** Directory structure analysis confirms ../../ping-runtime resolves correctly from /app/gateway/. P0 fix markers present in copied source.
+- **Note:** Docker build not executed due to Pig credential manager issue (Windows logon session). Distribution closure proven via structure analysis, not via image build.
+- **Replay:** `cd /home/nolan/ping && git show 8b42c1b01 --stat`
