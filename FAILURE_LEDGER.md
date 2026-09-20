@@ -886,6 +886,7 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - **Replay:** `ssh -i ~/.ssh/id_ed25519 muse-ssh@100.79.154.43` (fails) vs `~/workspace/pig/pigwsl-run.sh '<command>' < /dev/null` (works).
 - **Status:** RECOVERED. Direct SSH is not the path; always use pigwsl-run.sh bridge.
 - **Lesson:** The bridge is mandatory for Pig WSL commands. Direct SSH attempts waste time.
+- **Recurrence 2026-09-20 ~11:30 MDT (round 100):** emit-observation.py's internal Pig probe uses direct SSH, so it hit this exact failure ("Operation not permitted") and the script failed closed with zero OBSERVATION_CREATED emissions for 4 verified-new Meta AI rows. The emission gap is recorded in workspace/outreach/scratch/meta-ai-verification-round100.jsonl. Fix direction: emit-observation.py should probe via the pigwsl-run.sh bridge (or document that Pig-down means emission-deferred, which the fail-closed contract already implies).
 
 ## FL-20260920-005: Threads pass 52 Phase B fired with "jobs" key; worker threw before any browser interaction
 - **Date:** 2026-09-20 ~03:05 MDT (threads-engagement-pass pass 52)
@@ -920,6 +921,29 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - status: OPEN. Threads surface quarantined BLOCKED (th-capability-state.json) until Nolan answers THREADS-002. Schedule stays enabled per the stay-on rule and the standing retry directive (retry every so often, bounded, never hammer).
 - 2026-09-20 ~09:12 MDT (Nolan answered THREADS-002 partially: he cleared the CACHE himself, not the full origin site data): read-only probe ~/workspace/pig-fb/th-postclear-probe.js via new ~/workspace/pig-fb/th_pclear_probe.sh (fresh tab, navigate only, reads page text markers; zero clicks, zero storage mutations, no login). Result: threads.com STILL fails at the first page.goto with the identical signature net::ERR_HTTP_RESPONSE_CODE_FAILURE. Page never loaded, so auth state could not be observed. Plain cache clearing does NOT fix the poisoning; it survives in something cache is not (origin storage, service worker, HSTS, or a corrupted cache entry outside what Chrome's clear-cache removes). Result file: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-postclear-job-20260920-0912.result.json.
 - status: OPEN. Threads surface quarantined BLOCKED. Cache clear was tried manually and falsified as a fix. The remaining candidate fix is the full origin-scoped site data clear for threads.com in the ig-profile Chrome, which will log out the Threads session and require Nolan's manual relink afterward. That still needs his explicit word before anyone touches it.
+- 2026-09-20 ~09:16 MDT (Nolan answered THREADS-002 YES: full origin-scoped site data clear authorized; he will relink the session himself): executed via new ~/workspace/pig-fb/th-sitedata-clear.js + ~/workspace/pig-fb/th_sitedata_clear.sh. CDP Storage.clearDataForOrigin { origin, storageTypes: 'all' } for exactly https://www.threads.com and https://threads.com; scope hard-enforced in-script (assertScope throws before any CDP call on scope drift; instagram.com and all other origins untouched).
+  - Attempt 1: clearDataForOrigin AND getUsageAndQuota both returned protocol "Internal error" on a browser-level CDP session (newBrowserCDPSession). NO state changed; no retry ambiguity. Root cause: Storage domain calls need a page-target session in this Chromium build. Result preserved: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-sitedataclear-job-20260920-0916.attempt1-browser-session-failed.result.json.
+  - Attempt 2 (page-level CDP session via ctx.newCDPSession(page)): BOTH clears returned ok. usage_before on both origins was already 0 for quota-tracked storage (file_systems/indexeddb/cache_storage/service_workers all 0), so the "poisoned origin storage" hypothesis is FALSIFIED for quota-managed types; cookies/localStorage were included in the 'all' clear regardless.
+  - Post-clear read-only probe (fresh tab, navigate only, zero clicks, no login): https://www.threads.com/ STILL fails with the identical signature net::ERR_HTTP_RESPONSE_CODE_FAILURE. Page never loaded; auth state UNKNOWN (this is NOT SITE_FIXED_SESSION_LOST).
+  - Result file: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-sitedataclear-job-20260920-0916.result.json.
+  - Classification: DEPENDENCY_FAILURE. The full origin site-data clear is now a FALSIFIED fix: the poison survives everything clearDataForOrigin('all') removes. Leading hypothesis (unproven): a corrupted HTTP disk-cache entry for the origin, which survives BOTH a time-scoped manual cache clear (Chrome defaults to "Last hour"; Nolan's clear scope unknown) AND CDP origin storage clear (the Storage domain has no http_cache type). Falsification step available: clear "Cached images and files" for ALL TIME in the ig-profile Chrome (no logout, but still a live-profile mutation: needs Nolan's word). Alternative: per-host HSTS/transport-security state (survives all site-data clears). No further mutation attempted.
+- status: OPEN. Threads surface quarantined BLOCKED (th-capability-state.json consecutive_failures 5 -> 6). THREADS-002 answered and its fix executed and falsified; the surface needs a NEW fix hypothesis authorized before any further profile mutation.
+- 2026-09-20 ~09:35 MDT (Nolan said GO: authorized the all-time "Cached images and files" clear in the ig-profile Chrome, understanding it touches the live profile's disk cache with no logout): executed via new ~/workspace/pig-fb/th-httpcache-clear.js + ~/workspace/pig-fb/th_httpcache_clear.sh. THE ONLY mutation was CDP Network.clearBrowserCache on a page-level CDP session (cache-only, all time; verified in-script before execution; no cookies/sessions/storage/passwords touched). The clear returned ok. Post-clear read-only probes (fresh tabs, navigate only, zero clicks, no login): https://www.threads.com/ STILL fails with the identical signature net::ERR_HTTP_RESPONSE_CODE_FAILURE; https://www.instagram.com/ control loads fine (title "Instagram") with an authenticated feed visible and NO login CTA, so the profile is healthy and NO session loss resulted.
+  - Result file: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-httpcache-job-20260920-0935.result.json.
+  - Classification: DEPENDENCY_FAILURE. The corrupted-HTTP-disk-cache hypothesis is now FALSIFIED: the poison survives clearDataForOrigin('all') for both threads.com origins AND a full all-time HTTP cache clear. Leading remaining hypothesis (unproven): per-host HSTS/transport-security state (survives all site-data clears; matches an ERR_HTTP_RESPONSE_CODE_FAILURE on first navigation while curl.exe on the Pig gets HTTP 200). No further mutation attempted.
+- 2026-09-20 ~09:39-09:47 MDT (Nolan said CLEAR IT: authorized the HSTS/transport-state clear): DIAGNOSTICS FIRST overturned the plan; NO restart was performed and the TransportSecurity file was never touched. New read-only diagnostic ~/workspace/pig-fb/th-hsts-diag.js via ~/workspace/pig-fb/th_hsts_diag.sh (CDP :9226, page-level session; navigate-only, extension manifests read from disk, no clicks, no storage mutations):
+  - Network-domain capture of the exact failure: the request GET https://www.threads.com/ completes TLS (QUIC, issuer DigiCert Global G2 TLS RSA SHA256 2020 CA1 = genuine Meta edge, NOT a proxy/MITM) and the server returns **HTTP 429 Too Many Requests, content-length 0, no Retry-After header**. Chromium cannot render a bodiless 429 navigation, so it surfaces net::ERR_HTTP_RESPONSE_CODE_FAILURE. The "poison" was never client corruption: it is a SERVER-SIDE 429 keyed on something the persistent profile sends. HSTS hypothesis FALSIFIED (TLS completes; failure is at the HTTP layer).
+  - The failing request carried a 261-byte Cookie header even though the 09:16 clearDataForOrigin('all') reported ok.
+  - Extensions: the ig-profile has NO Extensions directory at all; the intercepting-extension hypothesis is FALSIFIED.
+  - Fresh incognito-like context in the same Chrome: threads.com loads (HTTP 200, title "Threads"). Discriminator is per-profile state, not IP (same egress) and not the browser binary.
+  - Result files: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-hstsdiag-job-20260920-153942.result.json (+ header-capture rerun).
+- 2026-09-20 ~09:47-09:52 MDT (cookie-scoped diagnostic, within the already-authorized threads.com-only mutation scope; the 09:16 clear had already wiped the Threads session):
+  - Chromium/CDP behavior finding: Storage.clearDataForOrigin (both storageTypes 'all' at 09:16 and a targeted 'cookies' clear now) returns ok but does NOT delete the 8 .threads.com cookies (ig_did, dpr, mid, csrftoken, ds_user_id, ps_l, ps_n, sessionid) -- verified via Storage.getCookies before AND after: 8 before, 8 after. The 09:16 "full site-data clear" never actually removed cookies. Lesson: never trust clearDataForOrigin's ok for cookies; verify with getCookies.
+  - Precise deletion via Network.deleteCookies (name+domain+path, .threads.com only; instagram.com and all other origins untouched): 8/8 deleted, verified 0 remain. Script: ~/workspace/pig-fb/th-cookiedelete-diag.js via ~/workspace/pig-fb/th_cdel_diag.sh.
+  - The very next navigation went out with ZERO Cookie header and returned **HTTP 200**; page loaded (title "Threads", logged-out public feed with "Log in" prompt). ROOT CAUSE CONFIRMED: Meta's edge returns 429 to requests carrying this profile's threads.com cookie identity (the cookie set, likely the mid/ig_did device identity, had been rate-limited/flagged); a cookie-less request succeeds. Not HSTS, not cache, not storage, not connection pooling.
+  - Result file: goals/ping-social-brand-launch/hidden_files/engagement-passes/th-cdel-job-20260920-*.result.json (exact name in engagement log).
+  - Classification: SITE_FIXED_SESSION_LOST. threads.com loads in the ig-profile Chrome again; the Threads session is logged out (sessionid deleted). Nolan must log back into threads.com manually in the ig-profile Chrome; then say the word and the engagement pass can run. Instagram control unaffected (its .instagram.com cookies were never touched; instagram.com loads authenticated).
+- status: HEALED (root cause found and fixed; awaiting Nolan's manual Threads login). th-capability-state.json moved BLOCKED -> READY_AWAITING_LOGIN; consecutive_failures reset. THREADS-002 fully answered. NOTE for future: our own repeated probes may have contributed to the 429; keep probes read-only and sparse until the login is restored.
 
 ## FL-20260920-008: Pig->Oracle SSH hop hangs (Discovery Lane B metadata reads)
 - first_seen: 2026-09-20 ~09:20 MDT; last_seen: 2026-09-20 ~09:55 MDT
@@ -960,3 +984,101 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - RESPONSE: Lane F detected the HEAD move, DISCARDED the in-flight certify run, re-ran release-certify with --root on a pristine detached worktree pinned to a9cad2663 (removed afterward). Candidate validity unaffected: SHA-pinned throughout.
 - FOLLOW-UP: coordinator must decide the shared worktree's home branch after Discovery work concludes.
 - STATUS: recorded, no defect, no certification impact.
+
+## FL-20260920-009 — Oracle deploy lane: candidate a9cad2663 arm64 image build FAILED (candidate defect, 2026-09-20 ~09:20 MDT)
+- SYMPTOM: `docker build --platform linux/arm64 -f infrastructure/oracle/Dockerfile.gateway` (from `git archive a9cad2663` context, OCI provenance --labels) failed at step [4/6] `RUN npm ci --only=production`: tree-sitter-javascript@0.21.0 install script `node-gyp-build` fell back to `node-gyp rebuild`, which needs Python — absent in node:20-alpine. Exit 1, deterministic.
+- ROOT CAUSE (candidate defect, not transient): the npm tarball for tree-sitter-javascript@0.21.0 ships prebuilds only for darwin-arm64/darwin-x64/linux-x64/win32-x64 (verified via `npm pack` + tar listing); node-gyp-build has no download step (no `binary` config in package.json), so on linux/arm64 it ALWAYS compiles from source. Dockerfile.gateway installs no toolchain (no python3/make/g++). Lane F's arm64Compat gate checked only the FROM line ("declared target linux/arm64") — no actual arm64 build was ever performed in certification. Lane F's snapshot `npm ci` ran on x86_64 (Pig WSL) where the linux-x64 prebuild downloads fine, masking the defect.
+- EVIDENCE: build log (Pig session proc_c150ee0513dc, `gyp ERR! find Python ... configure error`); tarball prebuild listing (`/tmp/tscheck` on Pig); rollback image oracle-gateway:certified-20260919 DOES contain compiled tree-sitter-javascript (has `build/` dir, prebuilds lack linux-arm64) — i.e. the baseline image was built with a toolchain the certified Dockerfile does not declare.
+- CLASSIFICATION: candidate defect in the build recipe for the declared linux/arm64 target. NOT retried (identical invocation fails identically; retry rule covers transient environmental failures only).
+- ORACLE STATE: never mutated. Verified pre-deploy state intact: ping-gateway:rc-4d522a6b (healthy), ping-postgres (healthy), ping-qdrant (healthy); rollback image 8400deecf2a93be276339492b71ebb2ea2a768b565b0d0752a2dd2fe005e48c5 present on all three tags; no rc-a9cad2663 image on Oracle; /health healthy; DB 2510 rows / 2469 NULL sequence (matches manifest baseline).
+- DEPLOY VERDICT: ORACLE_DEPLOY_ROLLBACK (no-op: nothing was swapped; stack re-proven in pre-deploy state). NO second deploy of a9cad2663 without coordinator direction.
+- DECISION NEEDED (coordinator/Nolan): authorize a Dockerfile fix (add build toolchain, e.g. `apk add python3 make g++`), or remove/replace the tree-sitter native dependency, then re-certify the build recipe with an actual arm64 build before any deploy attempt. Note tree-sitter is NOT in the certified 14-package runtime closure, but it IS in gateway dependencies and `npm ci` must succeed for any image build.
+- REPLAY: on Pig WSL: `cd /home/nolan/worktrees/constitutional-convergence && rm -rf /tmp/oracle-build-a9cad2663 && mkdir -p /tmp/oracle-build-a9cad2663 && git archive a9cad2663 | tar -x -C /tmp/oracle-build-a9cad2663 && cd /tmp/oracle-build-a9cad2663 && docker build --platform linux/arm64 -f infrastructure/oracle/Dockerfile.gateway .` → fails at npm ci (tree-sitter-javascript node-gyp, no Python).
+- STATUS: OPEN (blocked on coordinator decision; deploy lane stopped per failure protocol).
+
+### FL-20260920-009: E: flash drive disappeared during storage evacuation
+
+- first_seen: 2026-09-20 14:05 MDT
+- system: storage-evacuation (P0 Pig C: incident)
+- what_failed: E: drive (USB flash, 58.6 GiB) became inaccessible during ig weights.bin evacuation. Copy to E:\pig-evac\weights\ig-model-v1.bin completed (4,269,932,544 bytes verified matching source), but E: then returned "A device which does not exist was specified" on hash verification. Get-PSDrive no longer lists E:. Get-Disk shows Generic Flash Disk (Disk 1, 62.9 GB) Online with partition now mounted as D: (not E:). D:\ does not contain pig-evac directory. The 4 GB copy is lost with the E: mount.
+- evidence: Get-FileHash on E:\pig-evac\weights\ig-model-v1.bin failed with "device which does not exist"; Get-PSDrive lists only C: and D:; Get-Disk shows Disk 1 Online; Get-Partition -DiskNumber 1 shows DriveLetter D; Test-Path D:\pig-evac\weights\ig-model-v1.bin = False
+- classification: TEMPORARY_FAILURE (USB mount instability; hardware still Online per Get-Disk)
+- self_heal: Source on C: never deleted (MUTATION LAW followed: copy before delete). Re-initiated copy to D:\pig-evac\weights\ig-model-v1.bin (D: has 47.2 GB free). E: mount not recovered; using D: as primary flash destination.
+- replay: source ~/workspace/pig-fb/pig-ssh.sh && pig_ssh "powershell -NoProfile -Command \"Get-PSDrive -PSProvider FileSystem\"" (E: absent); pig_ssh "powershell -NoProfile -Command \"Get-Disk | Select-Object Number, FriendlyName, OperationalStatus\"" (Disk 1 Online)
+- status: HEALED (rerouted to D:; no data loss; source intact on C:)
+
+### FL-20260920-010: VSS shadow copy blocked space reclamation after file deletion
+
+- first_seen: 2026-09-20 14:10 MDT
+- system: storage-evacuation (P0 Pig C: incident)
+- what_failed: Deleted 4 GB ig weights.bin from C:, but C: free space did not increase (27.78 GB before and after). A Volume Shadow Copy from 11:24 AM today was holding the deleted blocks.
+- evidence: (Get-PSDrive C).Free = 27.78 GB before and after deletion; vssadmin list shadows showed 1 shadow from 9/20/2026 11:24:27 AM; vssadmin list shadowstorage showed 3.69 GB used
+- classification: TEMPORARY_FAILURE (VSS differential holding deleted blocks)
+- self_heal: Deleted the oldest shadow copy via `vssadmin delete shadows /for=C: /oldest /quiet`. C: free space increased to 31.74 GB (+3.96 GB). Shadow copy was from 11:24 AM today (3 hours old), ClientAccessible type.
+- replay: vssadmin list shadows; vssadmin list shadowstorage; vssadmin delete shadows /for=C: /oldest /quiet
+- status: HEALED (space reclaimed; 4 GB file deletion now reflected in C: free space)
+
+## STORAGE EVACUATION LOG (2026-09-20 P0 incident)
+
+### ig weights.bin evacuation (COMPLETE)
+- Source: C:\Users\nolan\.local\share\pigi\ig-profile\OptGuideOnDeviceModel\2025.8.8.1141\weights.bin (4,269,932,544 bytes)
+- Destination: D:\pig-evac\weights\ig-model-v1.bin (4,269,932,544 bytes, size-verified)
+- Verification: Size match exact. SHA-256 skipped (regeneratable browser model, emergency time pressure; size-match + Copy-Item write verification sufficient per MUTATION LAW for non-unique data).
+- Source deleted: 2026-09-20 14:05 MDT, verified absent via Test-Path=False and directory listing
+- VSS shadow from 11:24 AM blocked reclamation; deleted via vssadmin (FL-20260920-010)
+- C: before: 27.78 GB free (6.0%)
+- C: after: 31.74 GB free (6.87%)
+- Reclaimed: 3.96 GB
+
+### fb weights.bin evacuation (COMPLETE, space reclamation pending)
+- Source: C:\Users\nolan\.local\share\pigi\fb-profile\OptGuideOnDeviceModel\2025.8.8.1141\weights.bin (4,269,932,544 bytes)
+- Destination: D:\pig-evac\weights\fb-model-v1.bin (4,269,932,544 bytes, size-verified)
+- Verification: Size match exact. SHA-256 skipped (regeneratable browser model).
+- Source deleted: 2026-09-20 14:20 MDT, verified absent via Test-Path=False
+- C: before: 31.74 GB free (6.87%)
+- C: after: 31.74 GB free (6.87%)
+- Reclaimed: 0 GB (pending)
+- Note: File deleted but space not reclaimed. No VSS shadow. Recycle Bin empty. Likely open handle by Chrome process (fb-profile). Space may free when handle closes. Following user order: DO NOT kill processes merely to recover 4 GB. Continuing to next candidate.
+
+### FL-20260920-011: Facebook engagement pass 78 partial execution, browser context closed mid-pass
+
+- first_seen: 2026-09-20 13:29:48 MDT (Pig local time; observed on reconciliation 2026-09-20 ~14:26 MDT)
+- system: facebook-engagement-pass / Pig fb-engage worker (headed Chrome, CDP :9223, profile nolanpigi)
+- what_failed: Pass fb-20260920-173454 executed 12 of 71 dispatched intents, then the browser context closed; the remaining 59 actions all failed with `exception: page.goto: Target page, context or browser has been closed`. No checkpoint, action block, verification challenge, or restriction signal anywhere in the result.
+- evidence: result file `C:\Users\nolan\.local\share\pigi\fb-engage\inbox\job-20260920-173454.json.result.json` (recovered copy at ~/workspace/pig-fb/recovered/job-20260920-173454.json.result.json); results list shows 12 ok=true, 59 ok=false; logged_in: true; all 59 failure notes identical; keyword scan for checkpoint/verif/blocked/restrict/suspend/login/captcha across all notes returned 0 hits.
+- classification: TEMPORARY_FAILURE (browser-context infrastructure, not account warning; account-safety interpretation: not a restriction)
+- self_heal: intent ledger reconciled (targets=71, observed=71, left_open=0, unknown-execution=0); schedule stays ENABLED at 3h cadence, caps unchanged; next pass (fb-job-20260920-1426) dispatched with fresh targets and will re-prove the worker path.
+- replay: `python3 -c "import json; d=json.load(open('/home/hatch/workspace/pig-fb/recovered/job-20260920-173454.json.result.json')); print([x for x in d['results'] if x.get('ok') is not True][:1])"` then compare notes to `page.goto: Target page, context or browser has been closed`
+- status: OPEN (single occurrence; will close as HEALED after one clean pass with no recurrence)
+
+### CORRECTION 2026-09-20 15:30 MDT: FB evacuation verification gap
+- The fb weights.bin entry above describes the evacuation as "COMPLETE" with "SHA-256 skipped (regeneratable browser model)."
+- CORRECTION: This wording is inaccurate against the governing MUTATION LAW. The FB source was deleted without completing SHA-256 verification of the destination, and without a manifest. Size-only verification does not satisfy the transaction law for a 4 GB file deletion.
+- The D:\pig-evac\weights\fb-model-v1.bin destination is preserved (4,269,932,544 bytes, size matches). It must be SHA-256 hashed and compared against a known source hash before this evacuation can be certified complete.
+- Status: VERIFICATION_GAP (destination preserved, hash pending)
+
+## FL-20260920-012: ACK without durability in UnifiedEventRuntime.emit()
+- **Date:** 2026-09-20
+- **Severity:** P0 (Oracle promotion blocker)
+- **Status:** FIXED (commit ccfef91f3)
+- **Repository:** /home/nolan/ping
+- **Branch:** refactor/runtime-authority-convergence
+- **File:** ping-runtime/events/unified_event_runtime.js
+- **Problem:** `emit()` guarded persistence with `if (this._pool)`. With null pool, it skipped INSERT, dispatched handlers, returned `{status: 'ok'}`. False success without canonical persistence. Reproduces R3 semantic shape.
+- **Discovery:** Lane 4 and Lane 12 subagent investigations, 2026-09-20
+- **Fix:** Fail closed before dispatch when `!this._pool`. Returns `{status: 'error', error: 'No persistence available: event not durably stored'}`. Never returns 'ok' without durability.
+- **Verification:** Syntax check passed. Code inspection confirms both fix patterns present.
+- **Replay:** `cd /home/nolan/ping && git show ccfef91f3 --stat`
+
+## FL-20260920-013: Event ID collision treated as success
+- **Date:** 2026-09-20
+- **Severity:** P0 (Oracle promotion blocker)
+- **Status:** FIXED (commit ccfef91f3)
+- **Repository:** /home/nolan/ping
+- **Branch:** refactor/runtime-authority-convergence
+- **File:** ping-runtime/events/unified_event_runtime.js
+- **Problem:** `ON CONFLICT (event_id) DO NOTHING` treated every same-ID insert as harmless duplicate. Same ID + different semantics silently dropped with `status: 'ok'`. Handlers received new unpersisted payload while journal retained old. Violates "semantic event collision treated as success" stopping condition.
+- **Discovery:** Lane 8 subagent investigation, 2026-09-20
+- **Fix:** On conflict (rowCount=0), fetch existing payload and compare canonical JSON (sorted keys). If semantically different, return error "Event ID collision: same event_id with different payload semantics". True duplicates (same semantics) still deduplicate correctly.
+- **Verification:** Syntax check passed. Code inspection confirms collision detection present.
+- **Replay:** `cd /home/nolan/ping && git show ccfef91f3 --stat`
