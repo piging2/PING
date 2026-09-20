@@ -1,0 +1,3 @@
+
+## Oracle SSH invocation (2026-09-20, learned from FL-20260920-008)
+- `oracle-ssh.sh` (Pig: ~/workspace/pig-fb/oracle-ssh.sh) runs ONLY locally, never via pigwsl-run.sh. Chain: local ssh -F /home/hatch/.ssh/pig-config -> pigwsl -> wsl -> ssh ubuntu@Oracle. The -F config path exists only on the WSL side; running the script on the Pig hangs or errors. To use from a sandbox: base64-copy it locally, then pipe the script on stdin (`echo '<script>' | ./oracle-ssh.sh -s`); the `-s` form reads the script from stdin, so `< /dev/null` yields empty success. Never pass secrets as arguments (they land in process lists on two machines).

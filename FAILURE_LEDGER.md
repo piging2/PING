@@ -937,3 +937,8 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - REPRO: oracle-ssh.sh -s '<read-only docker command>' hanging with no output.
 - STATUS: OPEN. NEXT: single bounded-timeout probe; if still hung, wait out transient, retry on cadence. Do not hammer. Oracle-side restart is Nolan-only.
 - CAUTION: Lane A separately reported oracle-ssh.sh -s exits empty in its environment while succeeding elsewhere; invocation-plane quirk suspected. The deploy lane must verify the exact working invocation before mutating Oracle.
+
+### FL-20260920-008 — RESOLVED (2026-09-20 ~09:16 MDT)
+- ROOT CAUSE: invocation-plane error, not an Oracle outage. oracle-ssh.sh is designed to run LOCALLY (chain: local ssh -> pigwsl -> wsl -> Oracle) and hardcodes `-F /home/hatch/.ssh/pig-config`, which exists only on the WSL side. Running it ON the Pig via pigwsl-run.sh fails (hangs or config-file error).
+- FIX: run the Pig's copy locally. Verified: copied /home/nolan/workspace/pig-fb/oracle-ssh.sh to /tmp, ran `echo 'echo ORACLE_OK; docker ps ...' | /tmp/oracle-ssh.sh -s` -> ORACLE_OK, ping-gateway:ping-gateway:rc-4d522a6b, ping-postgres:postgres:17-alpine, ping-qdrant:qdrant/qdrant:v1.7.0 all running.
+- STATUS: HEALED. Deploy lane must run oracle-ssh.sh LOCALLY, never through pigwsl-run.sh.
