@@ -255,3 +255,32 @@ CAVEAT: the schema-drift observations below were inventoried via docker exec int
 
 ### Dismissed with evidence (no backlog entry)
 event_processing "write-never" (false alarm, live LEFT JOIN reader); ping_bridge_cursors source/updated_at (WHERE-clause reads); deployment_registry + runtime_registry columns (dynamic UPDATE allowlists); exterior_agent_credentials (all live); created_at/updated_at (DB defaults); test_adapter_boot_smoke, certify-sequence-migration, validate-artifact (honestly scoped names).
+
+## Discovery 2026-09-20 — Lane B (dead product loops; parallel to certification)
+Source: convergence/discovery/2026-09-20-laneB.md. Core finding: the worker's actual product (`dispatchResult`) is discarded at `mission_scheduler.js:371`; `ping_missions.result` holds only bookkeeping metadata. 144 completed missions' products are unrecoverable from the durable record. Zero non-test consumers of MISSION_COMPLETED. KnowledgePromoter was registered but reachable by nothing (triple break: zero emitters, no bridge entries, no worker-map routing).
+
+### LANEB-001 / DONE (discovery branch ed0de7edd; needs gate review) / Wire KNOWLEDGE_PROMOTE mission type to the knowledge-promotion worker
+- EVIDENCE: MISSION_WORKER_MAP["KNOWLEDGE_PROMOTE"] was undefined (fail-before). IMPACT: zero approvals could ever flow. PATH: mission_scheduler.js, canonical_workers.js, knowledge_promoter.js.
+- COUNTEREVIDENCE: consume side already 10/10; registration live. NEXT: gate review of ed0de7edd, then one real operator approval on live.
+- FALSIFICATION: tests/discovery/test_knowledge_promote_wiring.js RED->GREEN. DONE WHEN: a live KNOWLEDGE_PROMOTE mission flips a candidate node to approved/confidence 1.0.
+- OWNER: certification gate (review) -> convergence lane (merge). BLOCKED BY: Oracle deploy lane (live proof). PROOF: worktree harness done; live pending.
+
+### LANEB-002 / NEXT / Persist the worker's actual output in ping_missions.result
+- EVIDENCE: mission_scheduler.js:371-379 drops dispatchResult; result column holds metadata only. IMPACT: 144 completed missions' products unrecoverable from the durable record.
+- COUNTEREVIDENCE: additive-safe vs CE-001/CE-002 and the reconciler. NEXT: spread a size-capped worker-output projection into complete() payload + content test.
+- FALSIFICATION: test asserting result JSONB contains worker product fields. DONE WHEN: completed row contains product summary; scheduler tests green. OWNER: convergence lane (certified-path file). PROOF: worktree harness.
+
+### LANEB-003 / NEXT / No operator read surface for completed mission results
+- EVIDENCE: routes/missions.js, mission_control.js have active/pending/stats/trace only. NEXT: authenticated GET /missions/completed. BLOCKED BY: LANEB-002 for results worth reading.
+
+### LANEB-004 / SOON / Dedicated POST /knowledge/approve endpoint
+- Anti-aspiration: bridge entries for approval events only when a live emitter appears (not added speculatively).
+
+### LANEB-005 / NOW / Pig->Oracle SSH hop hung (transient suspected)
+- Two bounded attempts + one probe by Lane B, never hammered. Pig hop healthy. Oracle-side state unknown. Retry on cadence; blocks live evidence until resolved.
+
+### LANEB-006 / LATER / Nothing consumes approved knowledge
+- HybridSearch returns approved+candidate mixed; only live caller is POST /knowledge/search. DEFER until real approvals exist.
+
+### LANEB-007 / LATER / Promoter _stats in-memory only, no endpoint
+- Approval monitoring invisible. Restart loses stats.
