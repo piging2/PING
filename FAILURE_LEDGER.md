@@ -942,3 +942,21 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - ROOT CAUSE: invocation-plane error, not an Oracle outage. oracle-ssh.sh is designed to run LOCALLY (chain: local ssh -> pigwsl -> wsl -> Oracle) and hardcodes `-F /home/hatch/.ssh/pig-config`, which exists only on the WSL side. Running it ON the Pig via pigwsl-run.sh fails (hangs or config-file error).
 - FIX: run the Pig's copy locally. Verified: copied /home/nolan/workspace/pig-fb/oracle-ssh.sh to /tmp, ran `echo 'echo ORACLE_OK; docker ps ...' | /tmp/oracle-ssh.sh -s` -> ORACLE_OK, ping-gateway:ping-gateway:rc-4d522a6b, ping-postgres:postgres:17-alpine, ping-qdrant:qdrant/qdrant:v1.7.0 all running.
 - STATUS: HEALED. Deploy lane must run oracle-ssh.sh LOCALLY, never through pigwsl-run.sh.
+
+## FL-20260920-LANEF-001 — Lane F snapshot construction failure (HEALED, environmental, 2026-09-20)
+- SYMPTOM: first full release-certify run failed 2/8 gates. (a) runtimeDepsClosure: 6 EXTERNAL_UNRESOLVABLE (dockerode, express, googleapis, pg, simple-git, yaml) — node_modules sat at snapshot/gateway/node_modules while the gate resolves from snapshot root. (b) securityNegatives: 3 findings = credential-bearing .env files the repo .dockerignore excludes from the docker build.
+- ROOT CAUSE: snapshot layout did not mirror Dockerfile.gateway /app layout. Candidate defect: none.
+- RECOVERY: rebuilt snapshot = `git archive a9cad2663` + full .dockerignore applied + root `npm ci --only=production` (360 pkgs). Re-run: 8/8 PASS, verdict CERTIFIED, exit 0.
+- REPLAY: python3 /tmp/lanef/rebuild-snapshot.py then bash /tmp/lanef/stage3b-certify.sh (scripts at ~/workspace/lanef/).
+- STATUS: HEALED. Certification proceeded from the corrected snapshot.
+
+## FL-20260920-LANEF-002 — Lane F migration cert env failure (HEALED, environmental, 2026-09-20)
+- SYMPTOM: migration cert first attempt failed MODULE_NOT_FOUND 'pg' (bare require, no NODE_PATH). Scratch PG port 15433 conflict (held by prior candidate's staging sandbox).
+- RECOVERY: NODE_PATH=<candidate>/gateway/node_modules -> 50/50 PASS. Used ports 15434/15435; prior sandbox untouched.
+- STATUS: HEALED.
+
+## FL-20260920-LANEF-003 — Discovery commit mid-certification (precondition incident, 2026-09-20)
+- SYMPTOM: Discovery Lane B committed ed0de7edd to the shared worktree (branch now convergence-discovery-2026-09-20) during Lane F's run.
+- RESPONSE: Lane F detected the HEAD move, DISCARDED the in-flight certify run, re-ran release-certify with --root on a pristine detached worktree pinned to a9cad2663 (removed afterward). Candidate validity unaffected: SHA-pinned throughout.
+- FOLLOW-UP: coordinator must decide the shared worktree's home branch after Discovery work concludes.
+- STATUS: recorded, no defect, no certification impact.
