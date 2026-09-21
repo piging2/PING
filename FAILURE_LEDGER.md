@@ -1191,7 +1191,7 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 ## FL-20260920-022: PostgreSQL password printed in tool output during Oracle inspection (2026-09-20)
 - **Date:** 2026-09-20
 - **Severity:** P2 (credential hygiene, no evidence of external exfiltration)
-- **Status:** OPEN (needs Nolan decision on rotation)
+- **Status:** ROTATED 2026-09-21 (rotation record appended 2026-09-21 ~11:30 UTC; old credential proven dead and rejected, exposure artifacts purged from live config)
 - **Problem:** During read-only Oracle inspection, a command listing container environment values printed the PostgreSQL password into tool output. The value was not stored in files, memory, or chat, and was not repeated after discovery.
 - **Discovery:** Operator noticed the password in the tool result while reviewing container env output.
 - **Exposure scope:** Limited to the agent runtime context for that turn. No evidence it left the runtime. No file write, no chat message, no log export containing the value was created by the operator.
@@ -1747,3 +1747,128 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - next: extend the gate to the Messenger DM path (Messenger sends currently
   bypass send-batch.py) and to the meta-ai-intel ingest, which adds NEW rows
   without an eligibility pass.
+
+## FL-20260920-022 ROTATION RECORD: PostgreSQL credential rotated on Oracle (2026-09-21)
+- **Date:** 2026-09-21 ~11:24-11:28 UTC (05:24-05:28 MDT)
+- **Status:** ROTATED. Old credential dead and proven rejected. Exposure artifacts purged from live config.
+- **Ground truth found during rotation (corrects the incident's assumption):** the live database
+  password was NOT the value in /opt/ping/.env. SCRAM verifier comparison (pg_authid.rolpassword
+  recomputed in-memory, never in argv) proved DB == ping-gateway container env. The Sep-21 00:20 UTC
+  deploy of candidate 84486f056 reused the Sep-20 32-char credential without rotating it, and never
+  updated /opt/ping/.env, which held a different stale value. Four distinct historical passwords
+  existed: live-then (32-char, exposed Sep-20), /opt/ping/.env pre-rotation value, .env.bak-20260917
+  value, .pgpass value. All are dead after rotation.
+- **What was done:**
+  1. Generated 48-char secrets.token_urlsafe replacement; wrote it to /opt/ping/.env (mode 600),
+     keeping a 600 backup at /opt/ping/.env.bak-20260921-p0rotate.
+  2. First attempt crashed on a Python NameError AFTER the .env rewrite but BEFORE ALTER ROLE;
+     state was safe (gateway still healthy on old credential). Completed via corrected roll-forward.
+  3. Updated /home/ubuntu/p18-oracle-staging/.pgpass (mode 600, existing format preserved).
+  4. ALTER ROLE ping WITH PASSWORD via local socket (peer trust), SQL on stdin, in-memory only.
+  5. Recreated ping-gateway with the exact image ping-gateway:candidate-84486f056 and exact
+     configuration, new env only; renamed old container removed after health proof.
+  6. Recreated ping-postgres with exact image postgres:17-alpine, same named volume oracle_pgdata,
+     same ports (127.0.0.1:5432), network oracle_ping_internal with aliases ping-postgres and
+     postgres, same healthcheck and restart policy, new env only. This purged the dead exposed
+     credential from `docker inspect` output. Data volume untouched; entrypoint ignored the env
+     password on existing data as designed.
+- **Proofs (no secret values recorded anywhere):**
+  - SCRAM verifier matches NEW credential only; does not match the old (in-memory comparison).
+  - Old credential rejected over the real network path: transient peer container on
+    oracle_ping_internal got `FATAL: password authentication failed for user "ping"` (rc=2).
+    NOTE: an earlier rejection attempt from inside the postgres container was INVALID because
+    pg_hba.conf has `trust` for local and 127.0.0.1/32; any password works on loopback.
+    This is a new standing risk (see Next).
+  - GET /health 200 before, during recovery, and after (gateway pool replays SELECT 1 with new cred).
+  - Canonical journal read (sanitized columns only): 2550 events, ordered, no alteration.
+  - Both preserved AI_RESPONSE_ACCEPTED event_ids still present (count=2):
+    5adbe403784568f35e021e7880b661de96697fbf87bdb620ea2e7c093ddbf99a and
+    bfb38b283ed13a5531cae5c42ed7ba34daf130b33ec651f763ea20d16c9b3ede.
+    (They are ping_events.event_id values; ping_events has no hash column.)
+  - One governed signed POST /events through ExteriorAuthMiddleware + UnifiedEventRuntime
+    returned 200 status ok (synthetic event type rejected with 500 by EventValidator; fell back to
+    MISSION_CREATED with event_data marking it as credential_rotation_verification).
+  - GET /events/replay 200 with the expected envelope. /mcp/replay is 404 on this candidate
+    image (that route exists only in the phase-18 releases snapshot, not in candidate 84486f056).
+  - Table row counts enumerated for all 37 public tables; no anomalies.
+- **Exposure sweep (byte comparison in-memory, paths only):** all four historical values swept
+  across /home/ubuntu/.bash_history (absent), /opt/ping/.env and both backups, .pgpass,
+  p18-oracle-staging build logs and p18-probe.js, live container logs, and exited container envs.
+  Live files are clean. The dead credential remains visible ONLY in the env of two EXITED
+  containers (ping-gateway-old-512776de5, ping-gateway-rollback-rc4d522a6b), which are deploy-lane
+  history; it is dead and cannot authenticate. Local sweep: 12,935 files under ~/workspace and
+  ~/workspace/transfer, no match. Git history -S check could not run in this sandbox
+  (/home/nolan/projects/ping absent); parent should run it read-only.
+- **Preserved:** rollback image oracle-gateway:certified-20260919 untouched; no image-level 8080
+  swap; no direct ping_events inserts; the 17 uncommitted files in /home/nolan/projects/ping
+  untouched (not visible from this sandbox); no secrets in any file, log, or report.
+- **Replay:** scripts used: /tmp/p0-rotate.sh (crashed, superseded), /tmp/p0-rollforward.sh,
+  /tmp/p0-pgrecreate.sh, /tmp/p0-reject2.sh (valid rejection proof), /tmp/p0-hba.sh,
+  /tmp/p0-localsweep.py. Re-running rotation now would generate a NEW password; do not re-run
+  without cause. Re-verify any time with: SCRAM comparison via pg_authid (read-only) and
+  `GET /health`.
+- **New risks / next valuable improvement:**
+  1. pg_hba.conf trusts local + 127.0.0.1/32 + ::1/128, so the DB password is not checked on
+     loopback; anyone with `docker exec` on ping-postgres gets passwordless access. Tighten to
+     scram-sha-256 (requires a postgres reload; low risk, but a config change needing a decision).
+  2. /opt/ping/.env was stale relative to the live credential before this rotation; the Sep-21
+     deploy bypassed it. Post-rotation all five consumers (DB, gateway env, postgres env, .env,
+     .pgpass) agree again. The deploy lane should route future credential changes through .env.
+  3. The two exited gateway containers still show the dead credential in `docker inspect`;
+     remove them when the deploy lane no longer needs them.
+
+## FL-20260921-P1: Oracle candidate 9bcccaa23 boot failure on 8081 (P1 NO-GO)
+- Date: 2026-09-21 ~11:35 UTC
+- Failure: P1 side-port proof built candidate `ping-gateway:candidate-9bcccaa23` from committed source closure `9bcccaa23fe91aad8db425f65552f2fb2cdbb7a1` via `git archive HEAD` (11 untracked paths excluded). ARM64 build green (12/12 steps). On Oracle at 127.0.0.1:8081 the container exited(1): `Error: Cannot find module '../constitutional-dist/identity-authority.js'` required eagerly by `gateway/routes/identities.js:29`. /health and all HTTP checks not exercised; logs contain only the crash trace, no secrets.
+- Root cause: commit `d3ad88c39` added requires for `gateway/constitutional-dist/{identity-authority,hash-authority}.js` but that directory is absent from committed sources and `infrastructure/oracle/Dockerfile.gateway` has no `tsc` compile step and no COPY for it. The TS sources ARE committed; dev `gateway/Dockerfile` compiles them. The release-procedure distribution-closure checklist is stale: it does not cover `constitutional-dist`.
+- Blast radius: none. Live 8080 gateway untouched (`/health` 200 after the run). Protected images (`oracle-gateway:certified-20260919`, `:latest`, `:rollback-20260919`, `8400deecf2a9`) untouched. `pg_hba.conf` untouched. No secrets passed as CLI args or printed. Failed candidate image retained on Oracle as evidence; dead side container removed.
+- Replay: rebuild via `git archive` of the closure commit, transfer tar to Oracle, `docker load`, run on 127.0.0.1:8081 with live-matched env, read logs.
+- Status: OPEN. Next: surgical fix lane adds the additive `tsc` step to `infrastructure/oracle/Dockerfile.gateway`, commits, rebuilds, re-runs the P1 battery.
+
+## FL-20260921-ASK1: Stale-shape anchor edits against live FYD lane files (2026-09-21, pre-compaction)
+- Date: 2026-09-21 ~evening MDT
+- Failure: three surgical edit scripts asserted anchors and failed before writing (no files changed): types.ts "anchor ActionKind head", ask-composer.ts "anchor verify", action-planner.ts "anchor header rules". Anchors were written from a compacted summary of the files, not from live source.
+- Root cause: trusted the compaction summary's file shapes instead of re-reading the live files. Live shapes differ: ActionKind spans 3 lines, PlannerInput has `targetIdentityId: string | null` with a doc comment, ask-composer's verifyProposalDigest reconstructs the body explicitly.
+- Blast radius: none. All three scripts asserted before writing, so no tracked file was modified.
+- Replay: re-run any of the three scripts; they fail the same way. Correct approach: read the live file first (as done post-compaction; all edits then applied).
+- Status: CLOSED (lesson encoded: never write an edit anchor from a summary; grep the live file first).
+
+## FL-20260921-ASK2: edit-types.py ActionKind anchor mismatch (2026-09-21, post-compaction)
+- Date: 2026-09-21 evening MDT
+- Failure: `AssertionError: anchor ActionKind count=0` on first run of the corrected edit-types.py.
+- Root cause: anchor assumed one-kind-per-line formatting; the live file packs kinds (`| "follow" | "unfollow" | ...` across 3 lines). Same stale-shape class as ASK1.
+- Blast radius: none (assert-before-write; file unchanged).
+- Replay: `~/workspace/pig/pigwsl-run.sh 'cd /home/nolan/projects/ping && grep -n -A3 "export type ActionKind" src/lib/ping/types.ts'` shows the live 3-line shape.
+- Status: CLOSED. Fixed by anchoring on the exact live text; edit applied on retry.
+
+## FL-20260921-ASK3: edit-action-planner.py PlannerInput anchor mismatch
+- Date: 2026-09-21 evening MDT
+- Failure: `AssertionError: anchor input count=0`.
+- Root cause: anchor used `targetIdentityId: string;` but the live type is `targetIdentityId: string | null;` with a doc comment line above it.
+- Blast radius: none (assert-before-write).
+- Replay: `grep -n -A8 "interface PlannerInput" src/lib/ping/action-planner.ts`.
+- Status: CLOSED. Fixed by anchoring on the live text; 6 edits applied on retry.
+
+## FL-20260921-ASK4: Pig-side chunk accumulator corrupted by local rm (2026-09-21)
+- Date: 2026-09-21 evening MDT
+- Failure: edit-action-planner.py arrived on the Pig with 372 lines vs 129 local; SyntaxError on run.
+- Root cause: `rm -f /tmp/xfer-eap.b64` ran on the local sandbox, not on the Pig, so re-sent chunks appended to the Pig's stale accumulator (5 chunks worth of base64).
+- Blast radius: none. The corrupted script failed to parse; no edit ran.
+- Replay: compare `md5sum /tmp/edit-action-planner.py` on the Pig vs local before running. Standing fix: always clear the Pig-side accumulator with an explicit bridge call (`pigwsl-run.sh "rm -f /tmp/xfer-*.b64"`), then re-send all chunks, then md5-compare before executing.
+- Status: CLOSED. Cleared Pig-side, re-sent 3 chunks, md5 matched, 6 edits applied.
+
+## FL-20260921-ASK5: ask-ping.tsx anchors from a stale read (icons import, kindLabel)
+- Date: 2026-09-21 evening MDT
+- Failure: two consecutive anchor failures: icons import uses `CheckCircle2` not `Check`; `kindLabel`/`ProposalStatus` do not exist in the live file (the live ProposalCard uses inline `proposal.kind === "object_update" ? "update object" : "create object"` and a `state` union with "approving").
+- Root cause: the summary's "live-read today" description of ask-ping.tsx did not match the actual file; anchors were written from that description.
+- Blast radius: none (assert-before-write).
+- Replay: `sed -n "50,160p" src/components/ping/ask-ping.tsx` shows the real ProposalCard.
+- Status: CLOSED. Script rewritten against the real structure; 8 edits applied.
+
+## FL-20260921-ASK6: ask-fyd test fixture had svc-electrical already first
+- Date: 2026-09-21 evening MDT
+- Failure: 6 of 36 ask-lane tests failed with `"Electrical" is already first, so there is nothing to change` on "Put my electrical services first".
+- Root cause: the test fixture's `sectionObjects["home:Services:1"]` listed `["svc-electrical", "svc-plumbing"]`; the drafter correctly refused a no-op reorder. Test data bug, not a code bug (the refusal path is the honest behavior).
+- Blast radius: none. Tests caught it before anything shipped.
+- Replay: `npx jest --config src/fyd/ask/jest.config.cjs` after restoring the bad fixture order.
+- Status: CLOSED. Fixture now `["svc-plumbing", "svc-electrical"]`; 36/36 pass.
