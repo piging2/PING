@@ -266,16 +266,15 @@ Renderer/browser boundary is closed (195/195, min-w-0 fix at 320px). Frontier is
 - DEPENDENCIES: none.
 - RISK: medium.
 - STATUS: OPEN
-**FYD-035 — Demo server on Pig :3100 is unverified.** Reported live (PID 88840) but HEAD SHA, build artifact, dirty state, and start command were never confirmed against the proven FYD build.
-- EVIDENCE: 2026-09-21 summary reports the process; directive demands verification before use.
-- VALUE: Nolan clicking a stale build destroys trust in every PASS above.
-- FAILURE MODE: Nolan reviews a build without the min-w-0 fix or with older extraction; feedback is noise.
-- MINIMUM CHANGE: Verify process, PID, worktree, branch, HEAD SHA, dirty state, build; restart via existing command if stale.
-- PROOF: Reported fields match the proven commit.
+**FYD-035 — Demo server on Pig :3100 is user-reachable only after Nolan picks an access path.** Server itself is healthy: PID 88840, HEAD 8a99742 (the proven min-w-0 commit), worktree /home/nolan/projects/ping, branch fyd/sitespec-generator, routes / /sites/happy-place /sites/coppersmith-plumbing all 200 from WSL-local and from the Pig's Windows side via http://[::1]:3100/sites/happy-place. But there is NO proven reachable URL from Nolan's device: the Tailscale IP 100.79.154.43:3100 fails even from the Pig's own Windows side (WSL localhost relay only listens on ::1), so his iPhone on the tailnet cannot reach it either; the earlier "NOLAN CAN ACCESS: YES" claim is disproven.
+- EVIDENCE: ~/workspace/fyd-lane/reachability-report.md (reachability lane 2026-09-21, HTTP-verified).
+- VALUE: Nolan clicking a dead URL destroys trust in every PASS above.
+- FAILURE MODE: Assuming reachable, or opening public firewall unauthenticated.
+- MINIMUM CHANGE: Nolan's call between (a) Tailscale path: Windows port forward 3100 into WSL + Windows Firewall allow TCP 3100 on the Tailscale interface, then http://100.79.154.43:3100/sites/happy-place works from his tailnet devices; or (b) SSH tunnel: ssh -L 3100:localhost:3100 from his device, then http://localhost:3100/sites/happy-place. Both private, no public exposure.
+- PROOF: Nolan loads a URL from his own device and gets 200.
 - DEPENDENCIES: FYD-033 (fix must be in the served build).
 - RISK: medium-high.
-- STATUS: OPEN
-- NOTE 2026-09-21: reachability lane dispatched to prove one working Nolan URL via a supported access path; no public exposure.
+- STATUS: OPEN, awaiting Nolan's access-path call.
 *FYD-033 moved to DONE (committed 2026-09-21).*
 ## OPEN (PING engineering)
 9. **Projection digest algorithm must be preserved alongside any reported digest.** (from FL-20260920-031b, 2026-09-21 perfecting-pass triage): Lane B's commit reported an Oracle projection digest that no one can reproduce because the digest algorithm/script was never committed or recorded; 11 candidate formulations all failed, so the reported string is unverifiable forever. Independent determinism was still proven (two rebuilds with the compiled projector produced identical digests and counts), but a bare digest string with no algorithm is not evidence. Rule: any lane that reports a digest must commit the exact digest algorithm/script with it, or point at the shared digest implementation. Applies to PING Social sprint lanes and convergence lanes alike. Owner: the lane that reports the digest.
