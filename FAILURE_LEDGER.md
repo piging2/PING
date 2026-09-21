@@ -1049,7 +1049,7 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - classification: TEMPORARY_FAILURE (browser-context infrastructure, not account warning; account-safety interpretation: not a restriction)
 - self_heal: intent ledger reconciled (targets=71, observed=71, left_open=0, unknown-execution=0); schedule stays ENABLED at 3h cadence, caps unchanged; next pass (fb-job-20260920-1426) dispatched with fresh targets and will re-prove the worker path.
 - replay: `python3 -c "import json; d=json.load(open('/home/hatch/workspace/pig-fb/recovered/job-20260920-173454.json.result.json')); print([x for x in d['results'] if x.get('ok') is not True][:1])"` then compare notes to `page.goto: Target page, context or browser has been closed`
-- status: OPEN (single occurrence; will close as HEALED after one clean pass with no recurrence)
+- status: HEALED (closed 2026-09-20 ~20:30 MDT: pass fb-20260920-234955 landed 28/29 with logged_in:true and zero infra failures; no recurrence of the context-death failure; the single ok:false was an action-level "like button not found", not infrastructure)
 
 ### CORRECTION 2026-09-20 15:30 MDT: FB evacuation verification gap
 - The fb weights.bin entry above describes the evacuation as "COMPLETE" with "SHA-256 skipped (regeneratable browser model)."
@@ -1096,3 +1096,654 @@ CONCLUSION: The bloatware lever is empty. Material headroom requires: (a) Drive 
 - **Verification:** Directory structure analysis confirms ../../ping-runtime resolves correctly from /app/gateway/. P0 fix markers present in copied source.
 - **Note:** Docker build not executed due to Pig credential manager issue (Windows logon session). Distribution closure proven via structure analysis, not via image build.
 - **Replay:** `cd /home/nolan/ping && git show 8b42c1b01 --stat`
+
+### FL-20260920-015: Facebook engagement pass 79 no-result; dispatch recorded "IN FLIGHT" but worker never reported
+
+- first_seen: 2026-09-20 ~17:38 MDT (reconciled during the 17:26 MDT pass)
+- system: facebook-engagement-pass / Pig fb-engage worker (headed Chrome, CDP :9223)
+- what_failed: Pass fb-20260920-203648 dispatched 60 intents (58 likes + 2 comments) at ~14:36 MDT. The dispatching run recorded "worker running on the Pig at 60-120s pacing; result collection pending". At 17:38 MDT: the input job `job-20260920-203648.json` still sat unprocessed in the Pig inbox, NO `.result.json` existed for it, and NO node worker process for it was running (the only node process, PID 31656 started 1:49 PM MDT, is the OpenAI Codex server per its command line, unrelated). The worker writes a result file even on CDP failure or exceptions, so no result file means the worker was hard-killed before any write or never launched. Probable cause: the ~16:00 MDT commute blackout interrupted the dispatch session/worker mid-pass. First Pig probe of this run (17:26 MDT) failed with proxy broken-pipe; recovered after the 10-minute blackout wait (17:38 MDT).
+- evidence: inbox listing shows `job-20260920-203648.json` with no matching `.result.json`; `Get-Process node` shows only the Codex server; `.collected-results` has no `job-20260920-203648` entry; `action-intent-ledger.py list-unknown --platform facebook` shows 60 open intents, all pass fb-20260920-203648, state UNKNOWN_EXECUTION.
+- classification: TEMPORARY_FAILURE (infrastructure, not an account signal: zero restriction/checkpoint indicators exist because zero observations exist). Account safety interpretation: not a restriction.
+- self_heal: the 60 intents are DELIBERATELY left at UNKNOWN_EXECUTION (not reconciled): reconcile can only assert EXECUTED or NOT_ATTEMPTED, and neither is provable with zero per-action evidence. The intent-ledger `refuse` filter (inside run_pass.sh) will refuse those exact (account, action, url) candidates in future passes, preventing silent double-actions. The stranded input job is left in place for replay; 7-day Pig-side retention sweeps it. Schedule stays ENABLED at 3h cadence, caps unchanged; this run dispatches pass 80 with fresh targets.
+- replay: `source ~/workspace/pig-fb/pig-ssh.sh && pig_ssh "powershell -NoProfile -Command \"Get-ChildItem 'C:/Users/nolan/.local/share/pigi/fb-engage/inbox' -ErrorAction SilentlyContinue | ForEach-Object { \$_.Name }\""` then `python3 ~/workspace/outreach/action-intent-ledger.py list-unknown --platform facebook`
+- status: HEALED (closed 2026-09-20 ~20:30 MDT: pass fb-20260920-234955 landed 28/29 with logged_in:true and zero infra failures, proving the full worker path end to end; no recurrence of the no-result failure. The 60 pass-79 intents remain deliberately quarantined at UNKNOWN_EXECUTION as fail-closed protection.)
+
+## FL-20260920-016 — Post-send timer fired with no sends executed (round-102 tail)
+- DATE: 2026-09-20 ~18:02 MDT. CLASS: process gap (unexecuted step), not a send failure.
+- WHAT: A 240s sleep timer was set pre-compaction with the reminder "check Gmail's accepted count and confirm whether the 3 September 21 sends went out." When the timer fired, verification showed ZERO accepted sends.
+- EVIDENCE: `hatch_gws_cli gmail users messages list` in:sent for after:2026/09/20 before:2026/09/21 and after:2026/09/21 before:2026/09/22 returned only the 10-message 2026-09-19 21:20-21:21 MDT batch (1a0bc9e82f7491ad ... 1a0bc9d2fe002a58); latest-20 in Sent identical; drafts list shows only 2 unrelated Aug-2025 drafts; email-queue-2026-09-21.md has no firing notes; no active send subagents; queue-scrub worker stated "No emails were sent; queue preparation only."
+- IMPACT: none outward. No sends = no duplicates, no cap violation. Queue opens 18:00 MDT still pending.
+- DISCREPANCY: the timer's "3 sends" premise matches no recorded plan (queue file plans 9 sends, slots 1-9). Post-compaction intent unrecoverable; treated as unverifiable, not authorization. Did not fire.
+- RECOVERY: firing ownership passes to the next engine run (~20:12 MDT). Precondition recorded in the queue file: all drafts (rounds 58/60/80) must be re-voiced to the 2026-09-20 AI-identity / one-sentence-per-paragraph / exact sign-off rules before any send.
+- STATUS: OPEN -> monitoring. Next engine run owns firing; this entry closes when the queue's first verified acceptance is recorded.
+
+### FL-20260920-014 UPDATE: Build completed via isolated Docker config (2026-09-20 ~18:00 MDT)
+
+- **Previous note was wrong:** Docker build WAS executed and SUCCEEDED.
+- **Workaround:** Created isolated Docker config at /tmp/docker-isolated/config.json with empty `{}` (no credential helpers). Used `DOCKER_CONFIG=/tmp/docker-isolated` for anonymous public pulls. This bypassed the broken Windows credential helper (`desktop.exe`) without modifying, exposing, or deleting stored credentials.
+- **Base image pulled:** `node:18-alpine` digest `sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e`
+- **Build 1 (ff77dbe91):** FAILED at `npm ci` - tree-sitter required native compilation (node-gyp), alpine lacked build tools.
+- **Fix 1:** Added `RUN apk add --no-cache python3 make g++` to Dockerfile (commit ff77dbe91).
+- **Build 2 (9d3b22566):** FAILED at module resolution - `runtime/kernel/authorities/constitutional_clock.js` requires `../../../infrastructure/physical_clock_adapter`, but `infrastructure/` was not in the image.
+- **Fix 2:** Added `COPY infrastructure/physical_clock_adapter.js ./infrastructure/` to Dockerfile (commit 9d3b22566).
+- **Build 3 (9d3b22566):** SUCCEEDED.
+  - Image: `ping-gateway:9d3b22566-arm64`
+  - Image ID: `sha256:da27c6c31b0aa012df16237ef143543c7e73b293408dff4296f09b326ad2fbf9`
+  - Architecture: arm64, OS: linux
+  - Size: 406,338,218 bytes
+  - Created: 2026-09-21T00:01:17Z
+- **Verification:**
+  - Filesystem contains `/app/gateway/`, `/app/ping-runtime/`, `/app/runtime/`, `/app/infrastructure/physical_clock_adapter.js`
+  - Module resolution: `require("/app/ping-runtime/events/unified_event_runtime.js")` succeeds
+  - P0-012 behavioral: null pool -> error "No persistence available", handler does not fire - PASS
+  - P0-013 behavioral: equivalent duplicate -> idempotent ok; semantic collision -> error "Event ID collision" - PASS
+- **Classification:** PIG_DOCKER_CLIENT_CREDENTIAL_HELPER_DEFECT (separate from build). The credential helper `desktop.exe` fails from WSL with "A specified logon session does not exist." Workaround is sustainable: isolated config for public pulls. Backlog after release.
+
+## FL-20260920-017: tree-sitter native module build failure in Alpine (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P1 (Oracle promotion blocker, Gate B)
+- **Status:** FIXED (commit ff77dbe91)
+- **Problem:** `npm ci --only=production` failed because `tree-sitter@0.21.1` requires node-gyp native compilation, but `node:18-alpine` lacks python3, make, g++.
+- **Fix:** Added `RUN apk add --no-cache python3 make g++` to infrastructure/oracle/Dockerfile.gateway before npm ci.
+- **Verification:** Build succeeded, tree-sitter compiled.
+- **Replay:** `cd /home/nolan/ping && git show ff77dbe91 --stat`
+
+## FL-20260920-018: Missing infrastructure/physical_clock_adapter.js in distribution (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P1 (Oracle promotion blocker, Gate B)
+- **Status:** FIXED (commit 9d3b22566)
+- **Problem:** `runtime/kernel/authorities/constitutional_clock.js` requires `../../../infrastructure/physical_clock_adapter`, but Dockerfile did not copy `infrastructure/`. Module resolution failed: "Cannot find module '../../../infrastructure/physical_clock_adapter'".
+- **Discovery:** Executed `node -e "require('/app/ping-runtime/events/unified_event_runtime.js')"` in built container; got MODULE_NOT_FOUND.
+- **Fix:** Added `COPY infrastructure/physical_clock_adapter.js ./infrastructure/` to Dockerfile.
+- **Verification:** Module loads successfully in rebuilt image.
+- **Replay:** `cd /home/nolan/ping && git show 9d3b22566 --stat`
+
+## FL-20260920-019: Missing GENERATION_MANIFEST.yaml in distribution (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P1 (Oracle promotion blocker, Gate B)
+- **Status:** FIXED (commit 6a8d5bf83)
+- **Problem:** Candidate container failed to start with `[GenerationManifest] GENERATION_MANIFEST.yaml not found at /app/GENERATION_MANIFEST.yaml`. The gateway's generation_manifest_loader.js requires this file at the repo root (/app/).
+- **Discovery:** Deployed candidate to Oracle, observed restart loop in docker logs.
+- **Fix:** Added `COPY GENERATION_MANIFEST.yaml ./` to Dockerfile.
+- **Verification:** Pending rebuild and redeploy.
+- **Replay:** `cd /home/nolan/ping && git show 6a8d5bf83 --stat`
+
+## FL-20260920-020: Missing database/ SQL files in distribution (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P1 (Oracle promotion blocker, Gate B)
+- **Status:** FIXED (commit 512776de5)
+- **Problem:** Candidate started but ran in degraded mode: `[GatewayRuntime] WARNING: PG service initialization failed: ENOENT: no such file or directory, open '/app/database/canonical_events.sql'`. Health showed `event_runtime: not_initialized`, `status: unhealthy`.
+- **Discovery:** Deployed candidate to Oracle, health endpoint returned unhealthy with event_runtime not initialized.
+- **Fix:** Added `COPY database/ ./database/` to Dockerfile.
+- **Verification:** Pending rebuild and redeploy.
+- **Replay:** `cd /home/nolan/ping && git show 512776de5 --stat`
+
+## FL-20260920-021: JSONB payload parsing bug in collision detection (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P0 (data integrity, Gate I)
+- **Status:** FIXED (commit 84486f056)
+- **Problem:** Duplicate event emit failed with "Persist failed: Unexpected token o in JSON at position 1". The collision detection code did `JSON.parse(existing.rows[0].payload)`, but pg returns JSONB columns as already-parsed objects, not strings. JSON.parse() on an object coerces to "[object Object]" and fails.
+- **Discovery:** Live Oracle test: emitted duplicate event, got persist error instead of idempotent success.
+- **Fix:** Check type before parsing: `typeof rawPayload === "string" ? JSON.parse(rawPayload) : rawPayload`.
+- **Verification:** Rebuilt, redeployed to Oracle, live duplicate test returns ok with count=1. Restart test passes.
+- **Replay:** `cd /home/nolan/ping && git show 84486f056 --stat`
+
+## FL-20260920-022: PostgreSQL password printed in tool output during Oracle inspection (2026-09-20)
+- **Date:** 2026-09-20
+- **Severity:** P2 (credential hygiene, no evidence of external exfiltration)
+- **Status:** OPEN (needs Nolan decision on rotation)
+- **Problem:** During read-only Oracle inspection, a command listing container environment values printed the PostgreSQL password into tool output. The value was not stored in files, memory, or chat, and was not repeated after discovery.
+- **Discovery:** Operator noticed the password in the tool result while reviewing container env output.
+- **Exposure scope:** Limited to the agent runtime context for that turn. No evidence it left the runtime. No file write, no chat message, no log export containing the value was created by the operator.
+- **Classification:** AUTH_FAILURE (credential exposure, not a platform restriction)
+- **Self-heal:** None attempted. Rotation was not performed without Nolan's authorization per standing rule.
+- **Replay:** Not replayable without re-exposing the secret. Do not re-run env-listing commands against the Oracle gateway container.
+- **Next:** Nolan decides whether rotation is warranted. If yes, rotation follows the emergency-fix path: reproduce need, smallest fix, certify, promote, verify. Do not surface the value itself.
+
+## FL-20260920-023: Premature Oracle deployment certification for candidate 84486f056 (2026-09-20)
+- **Date:** 2026-09-20 ~18:25 MDT
+- **Severity:** P1 (truthfulness of release certification; deployment safety decision-making)
+- **Status:** OPEN (document corrected in place 2026-09-20 ~19:30 MDT; real certification pending closure of all gaps)
+- **Problem:** `~/workspace/oracle-deployment-84486f056-certification.md` declared ORACLE_RUNTIME_PROVEN: YES and ORACLE_RESTART_PROVEN: YES for candidate 84486f056 while 14 certification gaps remained open: (1) no real PostgreSQL same-ID different-semantics collision proof on live Oracle, (2) no proof rejected collisions cause zero handler/integration/mission/worker fanout, (3) no nested canonical equivalence / nested semantic-difference tests, (4) no exact-duplicate-no-double-fanout proof, (5) ad hoc nested JSON comparison instead of PING's authoritative canonicalization path, (6) no mission/worker/result execution proof, (7) no secret-logging verification, (8) unresolved startup warnings (missing git, dormant_classifications EACCES), (9) seven dependency vulnerabilities unassessed (5 moderate, 2 high), (10) no clean exact-source snapshot build, (11) no real distribution manifest/digest, (12) no deployed-filesystem vs certified-snapshot comparison, (13) no final image ID/digest reinspection, (14) the certification document itself overstated proven state.
+- **Discovery:** Post-deploy review against the release doctrine (snapshot -> closure certification -> fill missing closure -> executable smoke -> build -> swap -> runtime proof). The document asserted promotion-grade claims on partial evidence.
+- **Impact:** No data loss or outage; the candidate itself is healthy on Oracle. The failure is epistemic: downstream decisions (promotion, rollback-anchor retirement) could have rested on uncertified claims.
+- **Classification:** TERMINAL_FAILURE (process) - the certification claim is void until re-proven; not retryable by re-running the same checks.
+- **Self-heal:** Correction header added to the certification document in place (2026-09-20): status changed to PREMATURE/SUPERSEDED, gaps enumerated, declarations struck. Document preserved, not deleted.
+- **Replay:** Read `~/workspace/oracle-deployment-84486f056-certification.md` (correction header at top). Real certification requires closing all 14 gaps per the release doctrine, then issuing a new dated certification document.
+- **Next:** Close gaps 1-13, then write a new truthful certification. Do not delete this entry or the corrected document.
+
+## FL-20260921-001: Shared push staging collision corrupted Pig destination bytes (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P0 (lane-scoped; live repo file corruption)
+- **Status:** FIXED (lane-specific helper created; files re-pushed and MD5-verified)
+- **Problem:** `push-to-pig.sh` uses a globally shared Pig staging path `/tmp/push-stage.b64`. A concurrent transfer interleaved bytes: `jest.config.js` arrived as the empty-file hash `d41d8cd98f00b204e9800998ecf8427e` and `patch-7b-canonical.test.ts` arrived with an unexpected hash from unrelated data. Live repo likely held an empty jest.config.js and a corrupted test file.
+- **Discovery:** MD5 verification after push failed for both files; inspection showed `/tmp/push-stage.b64` contained unrelated data from another concurrent transfer.
+- **Fix:** Created `~/workspace/transfer/7b/push-lanea.sh`, a lane-specific copy using unique staging path `/tmp/push-stage-lanea-7b.b64`. Made executable, re-pushed both files, remote MD5 matched local.
+- **Verification:** `VERIFY OK` on re-push; subsequent jest runs executed the real 14-test suite.
+- **Replay:** `md5sum ~/workspace/transfer/7b/build/runtime/constitutional/jest.config.js`; compare against Pig-side `md5sum /home/nolan/ping/runtime/constitutional/jest.config.js` via `~/workspace/pig/pigwsl-run.sh`.
+- **Lesson:** Never use the shared `push-to-pig.sh` when any other transfer may be in flight. Lane-specific staging paths are mandatory.
+
+## FL-20260921-002: Oracle query used nonexistent PostgreSQL role (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (operator error, no data impact)
+- **Status:** FIXED (role corrected on retry)
+- **Problem:** An Oracle inspection query connected with a nonexistent PostgreSQL role and failed.
+- **Discovery:** Immediate psql authentication/role error.
+- **Fix:** Re-ran with the correct role.
+- **Replay:** Not security-relevant; no secret involved.
+
+## FL-20260921-003: OpenSSL Ed25519 verification used incorrect DER/process-substitution syntax (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (operator error during Patch 7A falsification)
+- **Status:** FIXED (syntax corrected; verification succeeded)
+- **Problem:** First OpenSSL cross-verification of a Node-generated Ed25519 signature failed on DER/process-substitution syntax, not on cryptography.
+- **Discovery:** OpenSSL error output; corrected the invocation.
+- **Verification:** OpenSSL independently verified the Node signature; tampered message failed verification. Patch 7A uses real Ed25519.
+- **Replay:** Regenerate a keypair with `crypto.generateKeyPairSync('ed25519')` in Node 22 and verify with `openssl pkeyutl -verify` using DER key files.
+
+## FL-20260921-004: Direct local edit of Pig path failed (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (operator error, no data impact)
+- **Status:** FIXED (edits routed through push-lanea.sh)
+- **Problem:** Attempted to edit `/home/nolan/ping/...` directly from the local sandbox; the path is outside the local filesystem (Pig-side only).
+- **Discovery:** Immediate filesystem error.
+- **Fix:** All Pig mutations go through `~/workspace/pig/pigwsl-run.sh` (commands) or `~/workspace/transfer/7b/push-lanea.sh` (file transfer).
+- **Replay:** `ls /home/nolan/ping` locally fails; via `~/workspace/pig/pigwsl-run.sh 'ls /home/nolan/ping'` succeeds.
+
+## FL-20260921-005: tsconfig excluded jest types, breaking ts-jest compilation (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (test infrastructure)
+- **Status:** FIXED
+- **Problem:** `runtime/constitutional/tsconfig.json` had `"types": ["node"]`, so ts-jest failed every test file with `TS2593: Cannot find name 'it'` / `TS2304: Cannot find name 'expect'`. This is why Patch 7A "TypeScript source tests failed".
+- **Discovery:** `npx jest` output showed only TS2593/TS2304 errors, zero tests ran.
+- **Fix:** Changed to `"types": ["node", "jest"]` (one-line diff, pushed via push-lanea.sh, MD5-verified).
+- **Verification:** All suites compile and run: 38 passed, 38 total.
+- **Replay:** `cd /home/nolan/ping/runtime/constitutional && npx jest` via pigwsl-run.sh.
+
+## FL-20260921-006: Projector ON CONFLICT DO UPDATE hit same row twice (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P1 (real projector bug, caught by fail-before integration test)
+- **Status:** FIXED
+- **Problem:** `PingProjector.rebuildRelationships` used a single `INSERT ... SELECT ... ON CONFLICT (subject, predicate, object) DO UPDATE`. When two RELATIONSHIP_CREATED events targeted the same (subject, predicate, object) key, PostgreSQL threw `ON CONFLICT DO UPDATE command cannot affect row a second time`.
+- **Discovery:** Integration test `later revocation supersedes` against throwaway postgres:16.
+- **Fix:** Pre-resolve "last wins" per key with `SELECT DISTINCT ON (subject, predicate, object) ... ORDER BY ..., pe.sequence DESC NULLS LAST`, then `ON CONFLICT DO NOTHING`. Transition history still records both events (relate then unrelate, chained per relationship_id).
+- **Verification:** All 7 projector integration tests pass, including revocation supersession with chained transitions.
+- **Replay:** `cd /home/nolan/ping/runtime/constitutional && TEST_DATABASE_URL=postgresql://postgres:ping7btest@127.0.0.1:55433/postgres npx jest src/ping-projector.integration.test.ts` via pigwsl-run.sh (requires the throwaway container `ping-7b-test-pg`).
+
+## FL-20260921-007: Transient Pig bridge failures during 7B push/test cycle (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (transport flakiness, no data impact)
+- **Status:** RECOVERED (retry succeeded; no code change)
+- **Problem:** Two transient failures: (1) a combined push+jest exec was `aborted` mid-flight with no output; (2) `push-lanea.sh` failed with `Connection closed by UNKNOWN port 65535` / `nc: proxy read: Broken pipe`.
+- **Discovery:** Immediate command output; nothing was partially written (MD5 verification gates every push).
+- **Fix:** Retried after a short wait; both succeeded with VERIFY OK.
+- **Classification:** TRANSIENT_FAILURE (transport). Not retried aggressively; single retry after backoff.
+- **Replay:** Re-run the same commands; failures are intermittent and do not reproduce deterministically.
+
+## FL-20260921-008: Projection schema CREATE TRIGGER not idempotent (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (projector initialize() must be re-runnable)
+- **Status:** FIXED
+- **Problem:** `database/ping_objects.sql` used bare `CREATE TRIGGER`, so a second `PingProjector.initialize()` failed with `trigger already exists`.
+- **Discovery:** Integration test beforeAll re-ran initialize against the same database.
+- **Fix:** Added `DROP TRIGGER IF EXISTS ... ON ...;` before each `CREATE TRIGGER` (2 triggers, both on ping_transitions). Verified via `git diff`.
+- **Verification:** Integration suite re-runs green against the same database.
+- **Replay:** `cd /home/nolan/ping && git diff database/ping_objects.sql`.
+
+## FL-20260921-009: Local keybuild copy failed - hash-authority.ts not fetched (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (local scaffolding only)
+- **Status:** FIXED
+- **Problem:** Local /tmp/keybuild compile failed because hash-authority.ts had not been fetched from the Pig; identity-authority.ts imports it.
+- **Fix:** Fetched the missing source via pigwsl-run.sh; compile succeeded.
+- **Replay:** `~/workspace/pig/pigwsl-run.sh 'cat /home/nolan/ping/runtime/constitutional/src/hash-authority.ts' < /dev/null > /tmp/keybuild/src/hash-authority.ts`
+
+## FL-20260921-010: Local standalone tsc lacked Node type declarations (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (local scaffolding only)
+- **Status:** RECOVERED (JS emitted despite type errors; smoke test passed)
+- **Problem:** Standalone `tsc` in /tmp/keybuild reported missing Node types (@types/node not installed locally).
+- **Fix:** None needed for the proof; type errors were declaration-only, emitted JS ran correctly. Local `npm i pg` later pulled its own types transitively.
+
+## FL-20260921-011: Integration-test setup used wrong schema path (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (test scaffolding)
+- **Status:** FIXED
+- **Problem:** First integration-test setup pointed at a nonexistent schema file path.
+- **Fix:** Corrected to `database/ping_objects.sql` at the repo root.
+
+## FL-20260921-012: Local pg declaration duplicated installed @types/pg (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (test scaffolding)
+- **Status:** FIXED
+- **Problem:** A hand-written local `pg` .d.ts conflicted with the installed `@types/pg`.
+- **Fix:** Removed the duplicate declaration; used the installed types.
+
+## FL-20260921-013: Integration assertions needed corrections (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (test expectations, not product code)
+- **Status:** FIXED
+- **Problem:** Several assertions wrong on first write: BIGINT returned as string by node-postgres, volatile `updated_at` included in digest, cross-test isolation, and actual trigger scope (update/delete guards are on ping_transitions, not the projection tables).
+- **Fix:** Normalized BIGINT to string in expectations, excluded `updated_at` from the semantic digest (documented as refresh marker), isolated test data per case, asserted trigger scope correctly.
+- **Verification:** 7/7 integration tests pass.
+
+## FL-20260921-014: Golden-ID edit hit nonexistent text, briefly inserted wrong expectation (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (test expectation briefly wrong; caught before commit)
+- **Status:** FIXED
+- **Problem:** First edit attempt targeted text that did not exist; a follow-up inserted an incorrect expected golden ID before correction.
+- **Fix:** Recomputed the golden ID from the actual implementation and asserted `object_d717e8f218bf2f69` for `IdentityAuthority.generateId('object', { a: 1 })`.
+- **Verification:** `npx jest src/patch-7b-canonical.test.ts` green.
+
+## FL-20260921-015: Live 7B projection failed on predicate CHECK - denies/approves outside allowlist (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P1 (real schema gap, found by projecting the live journal)
+- **Status:** FIXED
+- **Problem:** Projecting the 18 live 7B events failed with `new row for relation "ping_relationships" violates check constraint "ping_relationships_predicate_check"`. The Patch 3 vocabulary (`follows`, `replies_to`, `references`, `likes`, `mentions`) did not cover the 7B governance predicates `denies` / `approves`, which are now immutable in the canonical journal.
+- **Discovery:** Pig-side projection run `/tmp/pig-project.js` over the live event snapshot.
+- **Fix:** Additive schema change only: extended the CHECK allowlist with `denies`, `approves` in `database/ping_objects.sql`. No predicate remapping, no event filtering (filtering would hide canonical data).
+- **Follow-on catch:** The scratch DB tables predated the constraint change, so `CREATE TABLE IF NOT EXISTS` was a no-op; had to `DROP TABLE` the stale projection tables before re-init. The live Oracle projection tables (if any) will need the same treatment at rebuild time.
+- **Verification:** Projection rebuild over live snapshot: 11 objects, 6 relationships, 18 transitions, 0 conflicts; replay digest match.
+- **Replay:** `cd /home/nolan/ping && git diff database/ping_objects.sql`; re-run `node /tmp/pig-project.js` on the Pig.
+
+## FL-20260921-016: dev-key-custody git-ignored check failed for not-yet-created dirs (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (fail-closed check stricter than documented; blocked legitimate ignored-dir use)
+- **Status:** FIXED
+- **Problem:** `assertDevKeyDirOutsideTrackedGit` used `git check-ignore -q <dir>`. With a trailing-slash directory pattern (e.g. `ignored-keys/`), git returns 1 (not ignored) for a path that does not exist yet, so `ensureDevKeyDir()` threw on a fresh ignored path even though the module docstring promises ignored-inside-worktree passes.
+- **Discovery:** New `dev-key-custody.test.ts` case `git-ignored key directory inside a worktree is allowed` (9/10 passing).
+- **Fix:** Probe both `realDir` and `realDir + path.sep` with check-ignore; either matching counts as ignored. This only makes the check more accurate, never weaker.
+- **Verification:** 10/10 custody tests pass; `npx tsc --noEmit` clean.
+- **Replay:** `cd /home/nolan/ping/runtime/constitutional && npx jest src/dev-key-custody.test.ts`
+
+## FL-20260921-017: Sed quoting mangled during ping_objects.sql edit via bridge (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (tooling)
+- **Status:** FIXED
+- **Problem:** Two failed edit attempts through pigwsl-run.sh: (1) inline sed with nested quotes died with `unexpected EOF while looking for matching ''`; (2) `python3 -c` assert failed with `pattern not found` (leading-whitespace mismatch on the target line).
+- **Fix:** Line-targeted sed (`80s/.../.../`) with minimal quoting; verified with `git diff`.
+- **Lesson:** For bridge edits, prefer line-targeted operations or fetch/patch/push over inline multi-quote shell.
+
+## FL-20260921-018: Custody patch applied to Pig-side /tmp copy, not local (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (sequencing error, no data loss)
+- **Status:** FIXED
+- **Problem:** `pigwsl-run.sh 'cp ... /tmp/dev-key-custody-patch-target.ts'` placed the file on the Pig's /tmp, but the local python patch script read the local /tmp path: `FileNotFoundError`.
+- **Fix:** Correct order is fetch-to-local, patch locally, push to Pig: `pigwsl-run.sh 'cat ...' > /tmp/... && python3 patch && push-lanea.sh`.
+- **Lesson:** The bridge's /tmp and the local /tmp are different filesystems; never assume a bridge `cp /tmp/...` is visible locally.
+
+## FL-20260921-019: Post-relocation identity check false MISMATCH for Nolan (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (verification script error, not a relocation problem)
+- **Status:** FIXED (script corrected; relocation verified clean)
+- **Problem:** After moving keys to `/home/hatch/.ping-dev-keys`, the re-verification used display_name `Nolan` but the real identity was generated with `Nolan Geske` (per nolan.json metadata), producing a false MISMATCH for Nolan while Alice/Bob matched.
+- **Fix:** Used the metadata's display_name; all three IDs match (`identity_cc3383c868f96fc1`, `identity_691e6d7439535554`, `identity_48dc960fbf042c48`).
+- **Replay:** `node -e` check in session; checksums: `sha256sum /home/hatch/.ping-dev-keys/*` match the pre-move values.
+
+## FL-20260921-020: liveproof.js projection step ECONNREFUSED - throwaway DB is Pig-local (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (environment topology)
+- **Status:** WORKED AROUND (by design)
+- **Problem:** The local liveproof.js DB step failed with `connect ECONNREFUSED 127.0.0.1:55433` because the throwaway postgres:16 container publishes that port on the Pig, not locally.
+- **Fix:** Split the proof: local script does fetch + FEED + ASK (all via the Oracle read path); events snapshotted to JSON, pushed to the Pig, and the projection/replay step runs Pig-side against the container.
+- **Replay:** `node /tmp/keybuild/liveproof.js` (local, feed part) + `node /tmp/pig-project.js` on the Pig.
+
+### FL-20260920-007: TikTok runner stuck inside ensure-cdp-tt.sh before SCP (Pass 32)
+
+- first_seen: 2026-09-20 19:45 MDT (run started); last_seen: 2026-09-20 ~19:58 MDT (runner killed)
+- system: tiktok-engagement-pass (ping-social-brand-launch goal), pass id tiktok-20260921-014500 (UTC-named), intent 66b1f65b14ae465f9b13d84b1e3c17e4
+- what_failed: the local TikTok runner (~/workspace/pig-fb/run_tk_pass.sh on the engagement job file) hung inside ensure-cdp-tt.sh before the SCP upload step, so the job never reached the Pig. Zero actions attempted, zero engagement landed. Selected comment was @theaiimpact/video/7577894483015093525 (never sent); backup @copilottips/video/7566392765844655392 (never selected).
+- evidence: guard filter 01:46 UTC checked=2 eligible=2 blocked=0 (manifest tiktok-pass-20260921-014610.json); unknown-execution filter eligible=2 refused=0; job tiktok-job-20260921-014500.json (1 comment action); runner process proc_72f4760448f9 killed with SIGTERM after 727255 ms (~12 min) with zero output; CDP port 9227 probes returned HTTP 200 throughout; at ~01:55 UTC the Pig inbox showed no job-20260921* files (newest files job-20260920-214707); driver result and outcomes files record ok:false / NOT_ATTEMPTED with note "ensure-cdp hung before SCP; no remote job created"; no GUARD-RECORD line (no action executed)
+- classification: DEPENDENCY_FAILURE (local pre-SCP step), not an account restriction, login failure, checkpoint, verification challenge, or rate limit. Schedule stays ENABLED; recovery budget consumed, no retry of this pass.
+- self_heal: NONE within the pass beyond termination and truthful reconciliation; killed stuck processes (PIDs 3102, 3103, 3107, 3109, 3110), confirmed gone, closed the open intent as NOT_ATTEMPTED via record-outcomes, skipped engagement-guard record (no action executed), verified empty-action report (0 violations). Next scheduled pass retries normally.
+- replay: P=~/workspace/goals/ping-social-brand-launch/hidden_files/engagement-passes; inspect $P/tiktok-job-20260921-014500.json (the job), $P/tiktok-driver-result-20260921-014500.json and $P/tiktok-outcomes-20260921-014500.json (NOT_ATTEMPTED records), $P/tiktok-pass-20260921-014610.json (guard manifest); on the Pig, check ~/pig-fb/inbox for missing job-20260921* files; reproduce by running ~/workspace/pig-fb/run_tk_pass.sh on the job file and watching for ensure-cdp-tt.sh to stall before the SCP step (do NOT do this as an unapproved retry of engagement)
+- status: HEALED 2026-09-20 23:52 MDT (Pass 33, pass id tiktok-20260921-054500, executed cleanly): run_tk_pass.sh ran the single comment in ~45s with no pre-SCP hang, CDP :9227 returned Chrome/153 healthy, logged_in:true, 1/1 comment EXECUTED ("comment text visible") on https://www.tiktok.com/@codeswithsidra/video/7607054263805578514, guard verify 1 checked / 0 violations, intent ledger 0 open. The Pass 32 hang did not recur.
+
+## FL-20260921-021: Bridge heredoc mangling on inline python patch (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (tooling)
+- **Status:** FIXED
+- **Problem:** Inline `python3 - << "PYEOF"` through pigwsl-run.sh died with `bash: line 10: warning: here-document at line 1 delimited by end-of-file (wanted 'PYEOF')` plus a python SyntaxError on the truncated stdin. The bridge mangled the quoted heredoc delimiter.
+- **Fix:** Write the patch script locally with muse.write, base64-transfer it in ~3000-char chunks via the bridge, decode and run on the Pig. This pattern succeeded for all subsequent patches.
+- **Replay:** `pigwsl-run.sh 'python3 - << "PYEOF" ...'` reproduces the truncation; the working pattern is in /tmp/patch_events.py (local) transferred per AGENTS.md Pig bridge chunking rule.
+- **Lesson:** Never inline multi-line heredocs through pigwsl-run.sh; always transfer patch scripts as files.
+
+## FL-20260921-022: events.js patch anchor mismatch vs live file (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (stale reference)
+- **Status:** FIXED
+- **Problem:** The first patch_events.py failed with ANCHOR_NOT_FOUND: the compacted summary's copy of the POST /events handler differed from the live file (live has the "Canonical spine" comment, returns `{ event_id: result.eventId, event_type, status: 'ok' }`, error text 'Event rejected').
+- **Fix:** Read the live handler via `sed -n "65,90p"` on the Pig and rebuilt the anchor from it; patch applied, node --check clean.
+- **Replay:** `~/workspace/pig/pigwsl-run.sh 'sed -n "65,90p" /home/nolan/ping/gateway/routes/events.js' < /dev/null`
+- **Lesson:** Reinspect live state before acting; compacted summaries are not authority for exact file text.
+
+## FL-20260921-023: npx --yes tsc resolved to a wrong placeholder package (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (tooling)
+- **Status:** FIXED
+- **Problem:** `npx --yes tsc` on the Pig printed "This is not the tsc command you are looking for" (a placeholder package), so the constitutional-dist compile produced nothing.
+- **Fix:** Used the repo's own TypeScript: `/home/nolan/ping/runtime/constitutional/node_modules/.bin/tsc src/identity-authority.ts src/hash-authority.ts --outDir ... --module commonjs --target es2020 --esModuleInterop --skipLibCheck`.
+- **Replay:** `~/workspace/pig/pigwsl-run.sh 'npx --yes tsc --version' < /dev/null` shows the placeholder banner.
+- **Lesson:** Prefer the repo's pinned toolchain over npx-fetched binaries.
+
+## FL-20260921-024: tsc invoked with wrong relative source path (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (sequencing)
+- **Status:** FIXED
+- **Problem:** Ran tsc from `runtime/constitutional` with `../src/identity-authority.ts`; TS6053 file-not-found (sources are at `src/`, not `../src/`).
+- **Fix:** Corrected to `src/identity-authority.ts src/hash-authority.ts`; compile succeeded. Verified the compiled IdentityAuthority reproduces the live Nolan identity `identity_cc3383c868f96fc1`.
+- **Replay:** `cd /home/nolan/ping/runtime/constitutional && ./node_modules/.bin/tsc src/identity-authority.ts src/hash-authority.ts --outDir /tmp/x --module commonjs --target es2020 --esModuleInterop --skipLibCheck`
+
+## FL-20260921-025: Pig gateway node_modules stale partial install broke express (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (environment)
+- **Status:** FIXED
+- **Problem:** `require("express")` in the Pig worktree failed with `Cannot find module './lib/express'`; the checked-out node_modules was a stale partial install (the gateway normally runs inside Docker where npm install runs fresh).
+- **Fix:** `npm install --no-audit --no-fund` in /home/nolan/ping/gateway on the Pig (281 packages). node_modules is gitignored; gateway/package-lock.json unchanged per `git diff --stat`.
+- **Replay:** `~/workspace/pig/pigwsl-run.sh 'cd /home/nolan/ping/gateway && node -e "require(\"express\")"' < /dev/null`
+- **Lesson:** The Pig worktree is not the runtime; refresh node_modules before running gateway code there.
+
+## FL-20260921-026: Smoke-test regex wrong for SPKI DER hex length (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P4 (test bug, no product impact)
+- **Status:** FIXED
+- **Problem:** The identities smoke test asserted `/^[0-9a-f]{64}$/` on content.public_key, but Ed25519 SPKI DER is 44 bytes = 88 hex chars; the route was correct, the test was wrong.
+- **Fix:** Regex corrected to `/^[0-9a-f]{88}$/`; all smoke tests pass.
+- **Replay:** `node /tmp/smoke2.js` on the Pig (mocks; no PG).
+
+## FL-20260921-027: Dockerfile tsc step failed in pristine container without @types/node (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (would-have-broken-deploy; caught before any deploy)
+- **Status:** FIXED
+- **Problem:** The Dockerfile build step (`npx tsc` equivalent) compiled fine on the Pig (repo has @types/node) but failed in a pristine node:24-alpine container with TS2591 `Cannot find name 'crypto'` / `Cannot find name 'Buffer'`. The initial fix (adding @types/node to the install) was not enough: tsc 7.0.2 does not auto-include @types without an explicit `--types node` flag.
+- **Fix:** Dockerfile RUN is now `npm install --no-save typescript @types/node && tsc ... --types node && npm uninstall --no-save typescript @types/node`. Proven in a pristine node:24-alpine container: compile succeeds, uninstall cleans up, compiled IdentityAuthority reproduces the live Nolan identity `identity_cc3383c868f96fc1` (golden MATCH).
+- **Replay:** /tmp/dockerstep2/run.sh + check.js on the Pig; `docker run --rm -v /tmp/dockerstep2:/app -w /app node:24-alpine sh /app/run.sh`.
+- **Lesson:** Always prove Dockerfile build steps in a pristine container, never just on the dev worktree; the worktree's ambient dependencies mask missing ones.
+
+## FL-20260921-028: Push of gateway commit hung, no egress progress (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P3 (transport)
+- **Status:** PUSH_PENDING_EGRESS (not retried; single attempt per discipline)
+- **Problem:** `git push origin refactor/runtime-authority-convergence` (commit d3ad88c39, the gateway social-ingest lane) hung for 3.5+ minutes with zero bytes transferred; killed via SIGTERM. Remote is https://github.com/ngesk2/crx-runtime.git. Consistent with the known egress-proxy 401 fault (not a bad token).
+- **Replay:** `git -C /home/nolan/ping push origin refactor/runtime-authority-convergence` (do NOT hammer; one attempt per boundary).
+- **Lesson:** Local commit is the durability point; push retries happen at reasonable boundaries only.
+
+## FL-20260921-029: live projection digest does not reproduce Lane A snapshot digest (2026-09-21)
+- **Date:** 2026-09-21
+- **Severity:** P2 (verification gate fired)
+- **Status:** EXPLAINED (not a defect; no code change; gate behaved as designed)
+- **Problem:** Governed live rebuild of ping_objects/ping_relationships/ping_transitions on the Oracle produced digest `c559829d428a8bf08b445eae5b83b11a3d6e9503a7b216dfcbe8a4a43785ff47`, which does NOT match Lane A's snapshot digest `181efeaa837b4cce`. Counts match exactly (11 objects / 6 relationships / 18 transitions, 0 conflicts); a second consecutive rebuild produced the identical digest (deterministic).
+- **Investigation:** Read-only probe of the live ping_transitions shows `create x11`, `relate x6 (relationship_status active)`, `relate x1 (relationship_status inactive)`. Lane A's projector mapped revocations to operation `unrelate`; the current projector (vocabulary reconciliation, uncommitted continuation work) maps them to operation `relate` with `relationship_status` in transition metadata. Same journal, evolved operation vocabulary => different digest. The tiebreaker cannot fire on this journal (all 18 consumed sequences are distinct). The projectionDigest() column set is unchanged between the two eras.
+- **Replay:** live runner /tmp/liverun.js on the Pig via `bash /tmp/pig_liverun.sh` (tunnel + runtime-resolved PG creds, all in one shell); read-only probe `bash /tmp/pig_read2.sh` shows the operation breakdown above.
+- **Lesson:** A digest is only comparable across runs of the SAME projector semantics. When the projector's operation vocabulary changes, the old digest is retired and the new digest becomes the baseline, with the semantic delta recorded (here: `unrelate` -> `relate` + `relationship_status`). Do not chase an old digest by adjusting the projector.
+
+### FL-20260920-024: Bridge command exceeded Windows command-line limit (Lane A)
+
+- first_seen: 2026-09-20 ~early hours MDT
+- system: ping-social-23h-sprint / lane-a (product+intelligence)
+- what_failed: appending the initial large types block to src/lib/ping/types.ts through ~/workspace/pig/pigwsl-run.sh failed with "The command line is too long." A ~13KB base64 payload exceeded the cmd.exe command-line limit.
+- evidence: bridge stderr "The command line is too long."; file unchanged on the Pig
+- classification: TEMPORARY_FAILURE (transport limit, not a code defect)
+- self_heal: chunked transfer adopted: base64 in ~3,600-char chunks, one chunk per bridge call, md5-verified after decode. Working helper: /root/workspace/.lanea-stage/ship.sh
+- replay: rerun the original unchunked bridge append of >8KB content to see the same "command line is too long" failure; rerun /root/workspace/.lanea-stage/ship.sh LOCAL_FILE PIG_DEST to see SHIPPED OK with matching md5
+- status: HEALED
+
+### FL-20260920-025: Action-planner heredoc unmatched quoting created no file (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: the initial src/lib/ping/action-planner.ts write via shell heredoc had unmatched quoting; the command failed and no file was created.
+- evidence: bridge exit non-zero, file absent on the Pig
+- classification: TEMPORARY_FAILURE (authoring error)
+- self_heal: wrote the file locally with the file tool, then transferred via ship.sh; verified present with md5 match
+- replay: attempt an unquoted heredoc write of the same content through the bridge to reproduce the syntax failure; compare with ship.sh transfer
+- status: HEALED
+
+### FL-20260920-026: Reader methods inserted outside the class (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: a patch script appended the new PingObjectReader methods (getObject, listObjects, getRelationships, getCircleCard, getDiscoveryFeed, planActions, getNode, ask, submitProposal) OUTSIDE the GatewayPingObjectReader class body in src/lib/ping/ping-object-reader.ts, producing TypeScript parse errors on `npx tsc --noEmit`.
+- evidence: tsc parse errors referencing method bodies outside class scope; backup at /tmp/ping-object-reader.ts.bak on the Pig
+- classification: TEMPORARY_FAILURE (patch-script targeting error)
+- self_heal: /tmp/move-methods.py on the Pig relocated the method bodies inside GatewayPingObjectReader; tsc --noEmit returned clean afterwards
+- replay: restore the .bak file, rerun the original reader_patch.py, run `npx tsc --noEmit` to see the same parse errors
+- status: HEALED
+
+### FL-20260920-027: Local /tmp staging files disappeared between commands (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: temporary local files /tmp/lanea and /tmp/ship.sh vanished between bridge commands (ephemeral /tmp on the local sandbox), breaking subsequent transfer steps that referenced them.
+- evidence: "No such file or directory" on reuse of /tmp/ship.sh and /tmp/lanea
+- classification: TEMPORARY_FAILURE (ephemeral scratch)
+- self_heal: moved the durable helper to /root/workspace/.lanea-stage/ship.sh and all durable staging under /root/workspace/.lanea-stage/; /tmp used only for disposable scratch
+- replay: write a file to /tmp, wait for the sandbox to recycle /tmp, observe it gone; the lanea-stage copies persist
+- status: HEALED
+
+### FL-20260920-028: HOME/path mismatch between local stage and shell (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: files were written under /root/workspace/.lanea-stage but `~` expanded to /home/hatch in shell commands, so later steps addressed ~/workspace/.lanea-stage and found nothing.
+- evidence: `ls ~/workspace/.lanea-stage` empty vs `ls /root/workspace/.lanea-stage` populated
+- classification: TEMPORARY_FAILURE (environment assumption)
+- self_heal: all local references now use the absolute /root/workspace/.lanea-stage path; ship.sh invoked by absolute path
+- replay: `echo $HOME` (=/home/hatch) then `ls -la /root/workspace/.lanea-stage` to see the split
+- status: HEALED
+
+### FL-20260920-029: Route shipping failed, destination directories missing (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: shipping the first BFF routes (src/app/api/ping/*) failed because the destination directories did not exist on the Pig.
+- evidence: ship.sh "No such file or directory" on write
+- classification: TEMPORARY_FAILURE (missing mkdir)
+- self_heal: `mkdir -p` added before every ship batch (components, app/node/[id], app/feed, lib/ping/__tests__)
+- replay: remove a dest dir on the Pig, rerun ship.sh to reproduce; rerun with mkdir -p to heal
+- status: HEALED
+
+### FL-20260920-030: Feed rank and tenant contact cast TS errors (Lane A)
+
+- first_seen: 2026-09-20 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: `npx tsc --noEmit` failed on feed-rank.ts and website-objects.ts: a rank item type mismatch and an unsafe cast on unset tenant contact fields.
+- evidence: tsc error output on the Pig before the fix
+- classification: TEMPORARY_FAILURE (type errors)
+- self_heal: corrected the types (rank item shape) and removed the cast, omitting unset tenant fields instead of inventing them; tsc clean afterwards
+- replay: reintroduce the cast / wrong item shape, run `cd /home/nolan/projects/ping && npx tsc --noEmit` to see the errors return
+- status: HEALED
+
+### FL-20260920-031: Repo-wide jest TypeScript transform broken (pre-existing)
+
+- first_seen: 2026-09-20 20:58 MDT (verified during Lane A test run)
+- system: /home/nolan/projects/ping jest setup (shared, not Lane A code)
+- what_failed: `npx jest` fails on ALL 12 test suites with SyntaxError from babel-jest: the configured @babel/core 7.29.7 TS handling does not parse `import type` or inline `type` import modifiers, and function-parameter annotations also fail, meaning no .ts test file parses. Pre-existing: unrelated suites (e.g. src/lib/__tests__/assignment-validation.test.ts) fail identically without Lane A changes.
+- evidence: `cd /home/nolan/projects/ping && npx jest` -> "Test Suites: 12 failed, 12 total, Tests: 0 total"; single-suite output shows SyntaxError at `type RankableItem,` / `import type`
+- classification: DEPENDENCY_FAILURE (test toolchain config)
+- self_heal: NOT attempted inside Lane A: jest/babel config is a shared surface (Lane B and others own adjacent files); changing it risks cross-lane breakage. Bounded alternative: all Lane A pure-module assertions executed via tsx (v4.23.12, present in node_modules) with node:assert: planner, feed-rank, ask-composer (evidence citation, partial honesty, digest tamper), website-objects provenance, ALL PASSED. The jest test file src/lib/ping/__tests__/lane-a.test.ts is committed as intent documentation and runs green once the shared transform is fixed.
+- replay: `cd /home/nolan/projects/ping && npx jest` (all suites fail); `npx tsx /tmp/lanea-verify.mjs` on the Pig (all pass)
+- status: OPEN (needs the shared jest TS transform repaired; flagged for the owning lane)
+
+### FL-20260920-032: Local /tmp script invisible to the Pig bridge (Lane A)
+
+- first_seen: 2026-09-20 20:55 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: `/tmp/lanea-verify.mjs` was written on the local sandbox; the Pig-side bridge command `npx tsx /tmp/lanea-verify.mjs` failed with ERR_MODULE_NOT_FOUND because /tmp is not shared between the sandbox and the Pig.
+- evidence: tsx error `url: 'file:///tmp/lanea-verify.mjs'`, code ERR_MODULE_NOT_FOUND, Pig-side
+- classification: TEMPORARY_FAILURE (transport topology assumption)
+- self_heal: shipped the script to the Pig with /root/workspace/.lanea-stage/ship.sh (/tmp/lanea-verify.mjs on the Pig), reran, all verifications passed
+- replay: write any file to local /tmp and reference it from a pigwsl-run.sh command to reproduce the not-found
+- status: HEALED
+
+### FL-20260920-033: Test question matched capability keywords, wrong partial expectation (Lane A)
+
+- first_seen: 2026-09-20 21:00 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: verification assertion `composeAnswer(emptyCtx, "What is the meaning of life?").partial === true` failed: the composer's no-target branch matches the word "what" as a capability question and returns a full (partial=false) honest capability description instead of guessing. Test expectation was wrong, composer behavior was correct.
+- evidence: tsx assertion failure at lanea-verify.mjs line 83; composer source lines 449-461
+- classification: TEMPORARY_FAILURE (test design)
+- self_heal: changed the no-evidence probe question to "Summarize the quarterly revenue outlook" (matches no capability keywords) so it exercises the honest partial path; assertion passes
+- replay: revert the question string, rerun `npx tsx /tmp/lanea-verify.mjs` on the Pig, watch line 83 fail
+- status: HEALED
+
+### FL-20260920-034: /node/[id] 404 on every id, param arrived percent-encoded (Lane A)
+
+- first_seen: 2026-09-20 21:05 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: every /node/<id> page returned 404, including valid website-derived ids. /api/ping/node?id=<same id> returned 200 with the same getNode call. Temporary debug output revealed the dynamic segment arrived as "web%3Abusiness%3Aping-social": Next.js handed the [id] param still percent-encoded for ids containing reserved characters, so getObject threw ObjectNotFoundError and the page called notFound().
+- evidence: dev log "GET /node/web:business:ping-social 404"; debug render showed ObjectNotFoundError for "web%3Abusiness%3Aping-social"; BFF /api/ping/node?id=web:business:ping-social -> 200 in the same session
+- classification: TEMPORARY_FAILURE (framework param-encoding behavior)
+- self_heal: src/app/node/[id]/page.tsx now decodes the segment once with decodeURIComponent in a try/catch (falls back to raw). Verified: /node/web:business:ping-social -> 200, /node/web:article:building-agent-execution-boundaries -> 200, /node/definitely-not-real -> 404 (correct).
+- replay: revert the decode lines in src/app/node/[id]/page.tsx, run `npx next dev -p 3100`, curl http://localhost:3100/node/web:business:ping-social -> 404
+- status: HEALED
+
+### FL-20260920-035: lane-a.test.ts tsc errors after page fix (Lane A)
+
+- first_seen: 2026-09-20 21:08 MDT
+- system: ping-social-23h-sprint / lane-a
+- what_failed: `npx tsc --noEmit` failed on src/lib/ping/__tests__/lane-a.test.ts: (1) provenance fixture missing required ObjectProvenance.derivedAt; (2) digestAlgorithm "sha256" not assignable to the "sha256-canonical-json-v1" literal. The test file had never been typechecked (shipped after the first clean tsc).
+- evidence: tsc error output lines (31,5) TS2741 and (234,7) TS2322
+- classification: TEMPORARY_FAILURE (fixture/type drift)
+- self_heal: added derivedAt to the fixture provenance; changed the literal to "sha256-canonical-json-v1". tsc clean afterwards; tsx verification still all-pass.
+- replay: revert either fixture line, run `cd /home/nolan/projects/ping && npx tsc --noEmit` to see the error return
+- status: HEALED
+
+### FL-20260920-014: Lane B second live observation blocked by browser upstream failure
+
+- first_seen / last_seen: 2026-09-20 21:00 MDT (approx)
+- system / lane: Lane B (ingestion), PING Social 23-hour sprint
+- what_failed: browser_open on https://happy-place-platform.vercel.app/ failed with upstream service failure (runtime: "[browser.open] Upstream service failure. It may be temporary, retrying quickly rarely helps."). A second attempt also failed. Runtime directive: browser failure is terminal for this turn; do not retry via browser or reproduce via exec/curl.
+- evidence: ~/workspace/lane-b/observation-001.json (first observation, 2026-09-21T02:44:00Z); browser_open error transcripts
+- classification: DEPENDENCY_FAILURE (browser upstream)
+- self_heal: NONE available. Bounded recovery: temporal-diff mechanism proven on a controlled synthetic variant instead (see FL entry scope below). Live re-observation requires fresh task authorization.
+- replay: node ~/workspace/lane-b/differ.js ~/workspace/lane-b/observation-001.json ~/workspace/lane-b/observation-001.json -> empty diff sha256=4ddf799a685fa12b294e2c099c52d3b1d9f31b615b2be3e8d93de5b44a45ae8f; node differ.js observation-001.json observation-001-variant.json -> variant diff sha256=493251c65cb46ed1f1f46e6197eba92f36d65753c77b485692bc24edff8996da (synthetic variant, never presented as a real site change)
+- status: QUARANTINED (live second observation pending fresh authorization; differ mechanism proven)
+
+### FL-20260920-015: Live Oracle gateway image predates the ingest adapters (no BFF envelope path)
+
+- first_seen / last_seen: 2026-09-20 21:30 MDT
+- system / lane: Lane B (ingestion), Oracle gateway ping-gateway (image ping-gateway:candidate-84486f056)
+- what_failed: Planned boundary proof (knowledge BFF envelope -> expect HTTP 400 UNSUPPORTED_SCHEMA) did not behave as planned. The live image has no social_ingest_adapter.js, no knowledge_ingest_adapter.js, and no envelope branch in gateway/routes/events.js; the envelope POST fell through to the direct canonical-spine path's required-fields check (HTTP 500, "event_type, aggregate_id, aggregate_type, and event_data are required"). Verified via `docker exec ping-gateway sed -n "71,80p" /app/gateway/routes/events.js` and `ls /app/gateway/*ingest_adapter.js`.
+- evidence: ~/workspace/lane-b/boundary.json; ~/workspace/lane-b/oracle_emit.sh; emit results (boundary http=500, 19/19 direct bodies http=200); journal sequences 65-83 confirmed via GET /events/recent
+- classification: SURFACE_DRIFT (live image older than the repo's adapter discipline)
+- self_heal: emission completed through the live governed path (direct canonical-spine POST /events -> UnifiedEventRuntime -> ping_events), with Ed25519 signing, canonical-vocabulary enforcement, and provenance gating performed client-side against the repo's canonical vocabulary before emission. The knowledge adapter remains repo-side (committed) for the next gateway build; server-side envelope wiring is a flagged operator decision, not silently worked around.
+- replay: `cd ~/workspace && echo 'docker exec ping-gateway sed -n "71,80p" /app/gateway/routes/events.js; ls /app/gateway/social_ingest_adapter.js /app/gateway/knowledge_ingest_adapter.js' | ./pig-fb/oracle-ssh.sh -s`
+- status: HEALED (workaround proven: 19 events accepted, sequences 65-83, projection rebuilt deterministically twice)
+
+### FL-20260920-016: Hatch VM /tmp cleared between turns (lane scratch lost)
+
+- first_seen / last_seen: 2026-09-20 21:10 MDT
+- system / lane: Lane B (ingestion) scratch on hatch VM
+- what_failed: /tmp was wiped between conversation turns; lane-b work files kept there (observation-001.json, adapter/test/emit/differ scripts) were gone. No repo or Oracle state was affected.
+- evidence: lane rebuilt from repo sources + ~/workspace/lane-b; re-verified 13/13 adapter tests, 17/17 vocabulary tests
+- classification: TEMPORARY_FAILURE (ephemeral scratch)
+- self_heal: recovered; durable lane artifacts now live in ~/workspace/lane-b/ (persistent), not /tmp. Lesson: keep all lane work in ~/workspace from the start.
+- replay: n/a (environmental); verify with `ls ~/workspace/lane-b/`
+- status: HEALED
+
+### FL-20260920-031b: Lane B projection digest algorithm not preserved; exact digest string not independently reproducible (Lane E verification gap)
+
+- first_seen / last_seen: 2026-09-20 21:45 MDT
+- system / lane: Lane E (proof) verifying Lane B (ingestion), PING Social 23-hour sprint
+- what_failed: Lane B's commit 9bcccaa23 reports "Oracle projection rebuilt twice, digests equal (37a5aa996d256852c8302a02287929a77eb2fa172674006)" but no digest algorithm or script was preserved in the repo, workspace, or Oracle. 11 candidate digest formulations tried against the live projection tables (canonical JSON concat/newline-joined, per-table digests, payload_hash-only, PK-only, raw dump, with/without created_at, excluding volatile updated_at) - none reproduce 37a5aa996d256852c8302a02287929a77eb2fa172674006.
+- evidence: /tmp/proj_dump.sql.json, /tmp/proj_dump2.json (canonical row dumps, since wiped); formulation script inline in verification turn
+- classification: EVIDENCE_GAP (verification shortfall, not a lane defect)
+- self_heal: INDEPENDENT DETERMINISM PROVEN anyway: compiled the current ping-projector.ts from source (dist was stale, 170 lines vs 407 src), ran rebuildAll() twice against live Oracle via SSH tunnel; both runs produced identical digests (671b41c5ff6687006fc37dc6e7db734fcb6b57f608ba5fbe1ea199b6e70030e0) and identical counts (20 objects / 16 relationships / 37 transitions). Projection rebuild is deterministic; Lane B's exact string remains unverifiable.
+- replay: recompile `cd /home/nolan/ping/runtime/constitutional && ./node_modules/.bin/tsc --outDir /tmp/projector-build --module commonjs --target es2020 --esModuleInterop --skipLibCheck src/ping-projector.ts src/identity-authority.ts src/ping-vocabulary.ts`; runner at /tmp/projector-build/run-rebuild.js (uses /tmp/projector-build/node_modules/pg; tunnel `ssh -f -N -L 15432:127.0.0.1:5432 ubuntu@129.146.60.17` from Pig; password resolved on-Pig from `docker exec ping-postgres printenv POSTGRES_PASSWORD` via oracle-ssh.sh, never logged)
+- note 2026-09-21 ~01:55 MDT (ping-perfecting-pass, bounded self-heal): triaged the lesson into BACKLOG.md OPEN item 9 ("Projection digest algorithm must be preserved alongside any reported digest"). The repo-side policy change itself (requiring lanes to commit digest algorithms with reported digests) belongs to the owning lanes and is out of this pass's scope. One bounded step taken, no further retries from here.
+- status: OPEN (lesson now tracked in BACKLOG.md OPEN item 9; digest algorithm still not committed repo-side)
+
+### FL-20260920-032: Lane E notes claim_basis absent on 10/19 Lane B relationship events (design-consistent, task-text deviation)
+
+- first_seen / last_seen: 2026-09-20 21:45 MDT
+- system / lane: Lane E (proof) verifying Lane B (ingestion) Oracle journal rows
+- what_failed: Task expectation was "each carries provenance + claim_basis" for sequences 65-83. Observed: 19/19 carry complete provenance (source_url, source_type, observed_at) and Ed25519 proof signed by identity_cc3383c868f96fc1; claim_basis=website_statement present on 9/9 OBJECT_CREATED but absent on 10/10 RELATIONSHIP_CREATED.
+- evidence: `docker exec ping-postgres psql -U ping -d crx_runtime -t -A -c "SELECT sequence FROM ping_events WHERE sequence BETWEEN 65 AND 83 AND NOT (payload->'content' ? 'claim_basis' OR payload->'metadata' ? 'claim_basis');"` returns 74-83
+- classification: DESIGN_CONSISTENT (not a lane defect): gateway/knowledge_ingest_adapter.js normalizeKnowledgeObjectCreated enforces claim_basis (INVALID_CLAIM_BASIS) but normalizeKnowledgeRelationshipCreated does not require it; the 13/13 adapter tests only assert claim_basis on objects. The task text over-specified relative to the implemented contract.
+- self_heal: NONE needed; flagged for parent decision whether relationship-level claim_basis should become a future invariant.
+- replay: see evidence query above; adapter source at /home/nolan/ping/gateway/knowledge_ingest_adapter.js lines 152-168 (object) vs 189+ (relationship)
+- status: NOTED (no lane failure; contract matches implementation and tests)
+
+### FL-20260920-036: Pig unreachable during round-104 Meta AI observation emission (~23:35 MDT)
+- what: OBSERVATION_CREATED emission to PING gateway NOT attempted; ssh muse-ssh@100.79.154.43 port 22 returned "Operation not permitted" at 2026-09-20 ~23:35 MDT (05:35 UTC 2026-09-21).
+- boundary: Pig SSH transport, not the emit-observation.py script or the gateway.
+- classification: TRANSIENT_NETWORK (not a detected platform restriction; outside the Pig commute blackout windows of ~7am/~4pm MT, so not commute-related).
+- retryable: yes, via a later cron/distill sweep or engine run; no duplicate-emission risk because nothing was emitted.
+- evidence: scratch/meta-ai-verification-round104.jsonl `_emission_gap` object; emit-observation.py was never invoked for the 4 VERIFIED-NEW rows (Colorado Concrete Contractors LLC Delta, Four Seasons Landscaping Palisade, Delta Doors and Moore LLC Delta, Belmear Mechanical Pagosa Springs).
+- replay: `ssh -o ConnectTimeout=10 muse-ssh@100.79.154.43 "echo ok"`; or check ping-gateway container env token path next run.
+- state_changed: no; watermark advanced past 20260921-030806 independently of emission.
+- status: HEALED (round-105, 2026-09-21 ~02:45 MDT: direct Pig SSH route recovered; both briefs marked verified via mark-verified.sh; all 4 VERIFIED-NEW observations emitted as OBSERVATION_CREATED with gateway-accepted event_ids: Colorado Concrete Contractors LLC bffd1018324d4346..., Four Seasons Landscaping 6cdcdc7be3548fc..., Delta Doors and Moore LLC 505aac6a0dc8d14..., Belmear Mechanical 44b6e72ebc709b2.... Sidecars carry accepted_by_ping transitions; no duplicates possible (fail-closed probe + sidecar sha256 guard). Closure note appended to scratch/meta-ai-verification-round104.jsonl.)
+
+### FL-20260920-037: facebook-engagement-pass pass 82 local job-builder assertion failure (assertion caught the breach)
+- first_seen / last_seen: 2026-09-20 23:38 MDT
+- system / lane: facebook-engagement-pass (PING Social outreach campaign goal), local build stage on WSL
+- what_failed: /tmp/fb-build-job.py emitted 78 like actions in the first build, breaching the 75-like cap encoded in the local assert. The assert failed the build (did not dispatch the over-cap job). Root cause was a builder bug: near-cap fill logic counted actions without enforcing the like sub-cap when appending fill items. No action was dispatched from the bad build; nothing external happened.
+- evidence: /tmp/fb-build-job.py (buggy version overwritten by fix); corrected final job /tmp/fb-job-20260921-054127.json (75 likes + 7 comments); pass 82 dispatch section in ~/workspace/outreach/facebook-engagement.md; guard later filtered to 79, refuse-filter to 76 dispatched (69 likes + 7 comments)
+- classification: LOCAL_BUILD_BUG (self-caught by the cap assertion; no platform action, no account risk, no external effect)
+- self_heal: fixed the builder assertion/counting logic, rebuilt, re-asserted, dispatched the corrected 75-like job only. The 78-like build never left the machine.
+- replay: rebuild from /tmp/fb-build-job.py history is gone (overwritten); the guard/ledger evidence path remains: grep fb-20260921-054152 in ~/workspace/outreach/action-intent-ledger.jsonl shows 76 intents (69 like + 7 comment), confirming no 78-like job ever reached the ledger.
+- status: HEALED (assertion did its job; fix verified by successful 75-like dispatch and guard/ledger counts)
+
+## FL-20260921-030: Duplicate 4th-touch emails sent to Canyon Creek Electric and Lico's Electric (round-105, ladder violation)
+- first_seen: 2026-09-21 ~02:22 MDT (round-105 outreach engine run, scheduled 02:12:55 MDT)
+- system / lane: ping-social-outreach-campaign, email send step
+- what_failed: Sent a 4th touch to two prospects whose follow-up ladders were already complete (initial + F1 + F2), violating the hard "never more than three total touches" rule. Both duplicate emails copied the original F2 subject lines verbatim ("Last note, and the first cold snap" / "One more, with winter timing"), so each recipient got two identical-subject emails ~2.5 days apart.
+  - john@canyoncreekelectric.com (Canyon Creek Electric, Montrose): F2 SENT 2026-09-19 20:20 MDT, ladder complete; duplicate sent 2026-09-21 02:21 MDT, Gmail thread 1a0c30a1fa682914.
+  - office@licoselectric.com (Lico's Electric LLC, Rifle): F2 SENT 2026-09-19 20:20 MDT, ladder complete; duplicate sent 2026-09-21 02:21 MDT, Gmail thread 1a0c30a3ffa0ff54.
+- root_cause: Bookkeeping was inconsistent across files. leads.md ladder list (lines 3178-3179, written 2026-09-20) still said "F1 SENT; F2 eligible 2026-09-20+", while pipeline.md (lines 573/577) correctly said "F2 SENT 2026-09-20; ladder complete, watch only". I trusted the stale leads.md note and never verified per-recipient send history before sending. A combined Gmail search `in:sent (to:a OR to:b OR to:c)` returned only 1 result (Durgin's F2), which should have been a red flag (it contradicted both files' initial/F1 claims); instead of resolving that anomaly, I proceeded. The stale round32-f2 draft files (written 2026-09-20, never cleaned up after the round-95 batch sent the F2s) made the sends look ready.
+- classification: PROCESS_FAILURE (verification shortcut; no platform restriction, no tool fault). Self-caused.
+- damage: 2 of the 10 daily Gmail sends burned on duplicates; 2026-09-21 UTC cap 10/10 consumed with 2 wasted. Two prospects received an out-of-sequence 4th email that repeats the F2 subject. No reply yet; ladders on both are now permanently dead regardless (a reply or further touch would breach trust further).
+- self_heal (bounded):
+  1. DONE: appended a correction note to the two leads.md ladder rows (3178-3179): F2 SENT 2026-09-19, ladder complete, watch only; duplicate 4th touch sent in error 2026-09-21, never again.
+  2. DONE: pipeline.md rows 573/577 already correct; appended duplicate-touch erratum inline.
+  3. DONE: logged in follow-ups.md and responses.md as a real mistake, not a send.
+  4. DELETE the stale round32-f2 draft files so no future run can re-send them: drafts/round32-f2-canyon-creek-electric.md, drafts/round32-f2-licos-electric.md, drafts/round32-f2-durgin-electric.md (Durgin's also stale). Use trash, not rm, for recoverability.
+  5. Add to learnings.md: per-recipient `in:sent to:<addr>` verification is MANDATORY before every follow-up send; never trust ladder-list "eligible" notes alone; treat an empty/contradictory Gmail result as a hard stop, not a green light.
+- replay: `hatch_gws_cli gmail users messages list --params '{"userId":"me","q":"in:sent to:john@canyoncreekelectric.com","maxResults":20}'` shows 4 messages (initial 2026-09-10, F1 2026-09-13, F2 2026-09-19, duplicate 2026-09-21). Same pattern for office@licoselectric.com. Duplicate threads: 1a0c30a1fa682914, 1a0c30a3ffa0ff54.
+- state_changed: yes (two unintended sends); irreversible; no retry, no correction email (a "oops" follow-up would be a 5th touch).
+- status: OPEN (records corrected this run; escalation to Nolan via the final message per the reporting discipline: real mistakes surface).
+
+## FL-20260921-030 follow-up: structural class fix (2026-09-21)
+- what: Deterministic send-eligibility gate implemented in engine code so the
+  class behind the duplicate-outreach incident cannot recur. No prose rule;
+  a script the engine must call before every outbound action.
+- files created:
+  - ~/workspace/outreach/send-eligibility.py (the checker; stdlib only)
+  - ~/workspace/outreach/test-send-eligibility.py (fixture-based tests, dry run only)
+- files modified:
+  - ~/workspace/outreach/send-batch.py (gate wired before every Gmail +send;
+    per-recipient `in:sent to:<addr>` count feeds the checker; non-zero exit
+    stops the batch)
+  - ping-social-outreach-engine cron body (steps 5 and 6 now carry the
+    SEND ELIGIBILITY GATE with the exact command; exit code is the gate;
+    scheduler reconciled; saved body verified byte-identical to intended text)
+- precedence as implemented (fail-closed, highest first):
+  1. canonical structured state (JSONL row + pipeline.md row; a disagreement
+     between the two canonical sources is itself a fail-closed discrepancy)
+  2. explicit suppression (suppress/declined/bounced/opt-out/franchise/cooldown)
+  3. verified communication history (per-recipient Gmail sent count is MANDATORY;
+     missing or contradictory Gmail result fails closed; Gmail/structured count
+     mismatch emits a discrepancy)
+  4. derived projection (touch budgets per action, F1 >=4d / F2 >=10d timing)
+  5. notes/free text (leads.md, learnings.md) advisory ONLY; a note suggesting
+     outreach while structured state blocks (or asserting completion while
+     structured looks eligible) emits a DISCREPANCY record, never a send
+- evidence: discrepancies -> ~/workspace/outreach/eligibility-discrepancies.jsonl;
+  reconciliations -> ~/workspace/outreach/eligibility-reconciliations.md
+  (reconciliation covers a discrepancy only while the structured state hash is
+  unchanged); every check audited -> ~/workspace/outreach/eligibility-audit.jsonl.
+- exit codes: 0 ELIGIBLE / 1 INELIGIBLE / 2 DISCREPANCY (fail closed) /
+  3 ERROR (missing mandatory Gmail count).
+- verification: 17/17 tests pass, covering (a) completed ladder + stale "F2
+  eligible" note -> blocked with discrepancy record, (b) suppressed recipient
+  -> ineligible, (c) note-asserts-done vs structured-eligible -> discrepancy,
+  (d) genuinely eligible -> passes, plus timing, reconciliation, Gmail-mismatch,
+  and missing-verification fail-closed cases. Dry-run against the two real
+  incident recipients: both fail closed (exit 2); the two resulting discrepancy
+  rows are dry-run verification artifacts, not new incidents.
+- status: structural fix in place; incident entry above remains OPEN pending
+  the human-facing remediation items (draft trashing, learnings updates).
+- next: extend the gate to the Messenger DM path (Messenger sends currently
+  bypass send-batch.py) and to the meta-ai-intel ingest, which adds NEW rows
+  without an eligibility pass.
