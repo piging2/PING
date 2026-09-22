@@ -35,7 +35,7 @@ THIS BACKLOG IS NO LONGER OUR PRODUCT PLAN. IT IS OUR FAILURE INVENTORY. We buil
 
 ## NOW - VERIFIED FRONTIER (max 10; this is the entire execution authorization)
 
-Renderer/browser boundary is GREEN (2026-09-21/22): URL safety PASS, hostile probe PASS, desktop PASS, mobile PASS, binding verifier WIRED, unbound factual claim test PASS, owner address override PASS, semantic determinism PASS, canonical test 195/195.
+Renderer/browser boundary is GREEN (2026-09-21/22): URL safety PASS, hostile probe PARTIAL (text escaping PASS; javascript: href sink still OPEN per FL-20260921-032, see renderer-javascript-url-sink), desktop PASS, mobile PASS, binding verifier WIRED, unbound factual claim test PASS, owner address override PASS, semantic determinism PASS, canonical test 195/195.
 
 Current product frontier: RENDERED EXPERIENCE -> ASK FYD -> EVIDENCE.
 
@@ -103,7 +103,7 @@ Standing engineering rules (non-negotiable; taught by failures):
 
 ## CURRENT VERIFIED FRONTIER (short; operators read this first; evidence, not aspirations)
 
-- Canonical suite: 195/195 PASS (includes Ask 36/36), 2026-09-21. Renderer/browser boundary closed: URL safety PASS, hostile probe PASS, desktop PASS, mobile PASS (min-w-0 fix committed 2026-09-21 as 8a997421ef5f121f114d948c693391f1a9c7c66e, exactly one file staged).
+- Canonical suite: 195/195 PASS (includes Ask 36/36), 2026-09-21. Renderer/browser boundary: URL safety PASS, hostile probe PARTIAL (javascript: href sink OPEN per FL-20260921-032), desktop PASS, mobile PASS (min-w-0 fix committed 2026-09-21 as 8a997421ef5f121f114d948c693391f1a9c7c66e, exactly one file staged).
 - Binding verifier WIRED; unbound factual claim test PASS; owner address override PASS (render); semantic determinism PASS (same graph + SiteSpec + viewer context + renderer version -> same semantic render model).
 - Ask FYD: input interface exists (AskFydContextInput, single builder); output contract implemented per claim (AskAnswer: answer + evidence_refs + source_urls + claim classifications + unknowns + suggested actions, all non-optional); negative test proven (services-evidence.test.ts 2/2 PASS 2026-09-21: honest refusal with zero invented services; positive test with cited classified sourced answer).
 - Claim classification vocabulary: DIRECT / DERIVED / INFERRED / GENERATED_PRESENTATION / OWNER_AUTHORED. Ask FYD question classes: SUPPORTED / DERIVED (labeled) / UNKNOWN; never inference as fact.
@@ -246,7 +246,7 @@ Merged from: fyd-acquisition-sitespec-renderer-registry.md, fyd-ask-owner-media-
 - **FYD-034** (P3, OPEN): inspect once, record, stop discussing. Directive 11. (Also NEXT.)
 - **FYD-035** (P2, OPEN): Nolan's real device proof only; no more networking machinery. Directive 12. (Also NOW-10.)
 - **FYD-027** (P2, IN_PROGRESS): canonical Ask FYD tests extended. Negative (honest refusal) DONE_VERIFIED 2026-09-21; positive evidence-grounded test gated on NOW-2. (Also NEXT.)
-- **renderer-javascript-url-sink** (P1, DONE_VERIFIED): javascript: URL sinks sanitized in the renderer.
+- **renderer-javascript-url-sink** (P1, OPEN): CONTRADICTION recorded 2026-09-22: the renderer-registry archaeology report claims safe-link.ts fixed the javascript: href sink on 2026-09-21, but the failure ledger FL-20260921-032 still reads OPEN ("No fix applied") and the ledger contains zero mentions of safe-link. By this file's own rule (DONE_VERIFIED only with tool evidence; narrated completions are not proof), the earlier DONE_VERIFIED marking was premature and is revoked. Falsification: rerun the step5 hostile probe (step5-hostile.ts) against regenerated fixtures; any javascript: reaching an href keeps it OPEN.
 - **renderer-mobile-minw0** (P1, DONE_VERIFIED): mobile min-w-0 fix committed 2026-09-21 (8a997421ef5f121f114d948c693391f1a9c7c66e, exactly one file staged).
 - **renderer-overflow-instrumentation** (P3, DONE_VERIFIED): overflow instrumentation in the renderer.
 - **renderer-hostile-text-escaping** (P2, DONE_VERIFIED): hostile text escaping in renderer output.
@@ -588,7 +588,7 @@ Report-era note: most findings below are ERA-R (Pig-era gateway audit, 2026-09-1
 - **dogfood-second-observation** (OPEN): second observation + diff proof for a real tenant (the loop's learning evidence).
 - **dogfood-plain-english-change** (OPEN): plain-English site change -> approval -> regeneration proof.
 - **dogfood-customization-survives** (OPEN): customization survives second observation (the regeneration moat in the dogfood loop).
-- **extval-prospect-loop** (DEFERRED): external validation with real prospects deferred until the two-tenant loop is proven.
+- **extval-prospect-loop** (DEFERRED): external validation with real prospects deferred until the two-tenant loop is proven (directive 13). When it opens, the acceptance chain is: first external owner named -> first owner-submitted URL ingested with provenance -> first owner correction applied across page, Circle, Ask FYD, and search with no divergent truth -> time-to-usable-presence measured per stage -> 20 real visitor questions answered with zero plausible-filler answers. Dogfood numbers are never cited as market proof.
 - **extval-evidence-grading** (DECISION): every external finding graded CONFIRMED / STRONG INDICATION / WEAK INDICATION / UNKNOWN; never assumed.
 - **fail-fl-20260922-002** (OPEN): see FL-20260922-002-invariant (P6): mechanical failure-evidence coupling as small PING hardening.
 - **fail-ledger-hygiene** (OPEN): failure ledger entries carry classification, evidence, and the invariant learned; narrated completions are not proof.
@@ -607,6 +607,14 @@ Report-era note: most findings below are ERA-R (Pig-era gateway audit, 2026-09-1
 - **desktop-windows-product** (DEFERRED): local-first/desktop Windows product (Identity Vault, Object Store, Capability Runtime, Agent Runtime) deferred until the core loop is proven.
 - **search-meaning** (OPEN): search by meaning (capability families, not filenames) as the standing discovery discipline.
 - **search-projection-policy** (OPEN): search uses the shared projection policy (no separate search authority).
+- **one-canonical-read-model** (P1, OPEN): FL-20260921-233: Circle/ObjectView still build from hardcoded fixture graphs (proceduralize/__fixtures__/) while Ask FYD and rendered pages read the PING-backed projection; the surfaces disagree on the service list (Decks/Fences/Pergolas vs "Pergola Design Consultations"). First broken boundary for the one-read-model invariant. Fix: unify on the PING-backed projection; fixtures become an explicit FIXTURE class, never a live read path.
+- **row-count-attestation-gap** (P2, OPEN): FL-20260922-001: the outreach engine rewrote the canonical JSONL twice on 2026-09-22 with a 16-row delta (318 -> 302), cause UNKNOWN, no row-level backup. The reconciliation machinery's own writer is unattested. Fix: every rewrite emits before/after counts plus a per-row diff against a pre-write snapshot; any unexplained delta fails closed.
+- **recon-disposition-vocabulary** (DECISION): the outreach reconciliation machinery has dispositions (ELIGIBLE / INELIGIBLE / SUPPRESSED), not lifecycle states. Any OPEN / KNOWN_PERMANENT / RESOLVED / REOPENED lifecycle is new design, not existing machinery; do not cite it as already built.
+- **search-qdrant-truthfulness** (P1, OPEN): semantic search is down (Qdrant unreachable/unhealthy; embedding init degrades to null) while surfaces still wear the "hybrid search" label: Postgres keyword search in a hybrid costume. Rule: no "hybrid"/"semantic" label unless hybrid actually executes. Fix: restore Qdrant from the deployed gateway's network namespace, or remove the label everywhere.
+- **cost-verification-cache** (P2, OPEN): Meta AI duplicate verification load measured 63-72% in audited rounds: intelligence spend re-verifying the already-known. Fix: content-addressed verification cache on the tandem verification path; duplicate rate measured per round and trending down.
+- **perf-no-latency-slos** (P1, OPEN): no measured numbers for URL->presence latency, crawl, proceduralization, SiteSpec generation, render, Ask FYD, or mobile performance. The five must-win metrics name performance but it is uninstrumented. Fix: per-stage latency table for both demo tenants as a dated artifact; budgets set from measurement, not aspiration.
+- **durable-cursor-bounded-batch** (P2, PROVE): architectural lesson from the outreach runtime: 2,000 actions cannot be one opaque pass. Required future shape: ACTION PLAN -> bounded batches -> durable cursor -> idempotency -> per-action receipt -> UNKNOWN handling -> reconciliation. A sleeping host must cost at most the current bounded action. No campaign engine implementation until a worker loop survives sleep and resumes from the cursor with per-action receipts.
+- **local-key-custody-hygiene** (P2, OPEN): key custody is proven in procedure (bearer tokens resolved at runtime, never stored; rotation compared in-memory) but not in infrastructure: ping-vault unhealthy with undiagnosed root cause; the Oracle deploy reused a stale credential without updating /opt/ping/.env. Fix: vault healthy or formally decommissioned; no live credential reachable via a second stale copy.
 
 ---
 
@@ -741,6 +749,7 @@ Sources reviewed for this reconstruction:
 4. The domain cheat sheets under `~/workspace/backlog-recon/cheats/` (read in detail for all eight domains).
 5. Nolan's 2026-09-22 FYD product directives (build primitives not whack-a-mole; primitive build order; FYD-002 root; FYD-001+003 one proof; FYD-008 rejection; No-ClaimAuthority; three-state owner intent; FYD-020 deferral; regeneration rule; FYD-037 urgency; FYD-034 inspect-once; FYD-035 device proof; two-backend policy; shared projection policy; DATA NOT PRESENT).
 6. Dated proof artifacts cited in the reports: 2026-09-21 Ask FYD service-evidence tests (2/2 PASS); canonical suite 195/195 PASS 2026-09-21; renderer/browser boundary proofs 2026-09-21/22; commit 8a997421ef5f121f114d948c693391f1a9c7c66e (FYD-033); Happy Place replay proof; 2026-09-22 Oracle status (disk 80% -> 56%, both gateways on 3c5d280dd); 2026-09-21 secret rotation proofs; FL-20260920-022; FL-20260921-P1; FL-20260922-002.
+7. Post-reconstruction fidelity pass 2026-09-22 ~08:35 MDT: worker 8/8's ledger-grounded report arrived after the merge; the cross-check found renderer-javascript-url-sink prematurely marked DONE_VERIFIED (revoked to OPEN per FL-20260921-032, which reads OPEN with "No fix applied" and zero safe-link mentions) and eight items missing from PING.F, now folded in under their original report IDs (one-canonical-read-model, row-count-attestation-gap, recon-disposition-vocabulary, search-qdrant-truthfulness, cost-verification-cache, perf-no-latency-slos, durable-cursor-bounded-batch, local-key-custody-hygiene).
 
 Sources deliberately unavailable or prohibited:
 
