@@ -1,6 +1,6 @@
-# GRILLING BRIEF — the ONE active operator decision surface
+# GRILLING BRIEF - the ONE active operator decision surface
 
-For Nolan. Last updated: 2026-09-21 (sprint items: pg_hba trust, 8080 swap decision).
+For Nolan. Last updated: 2026-09-22 (2026-09-22 changes: PG-001 parked as answered-HOLD; stale ACTIVE GATEWAY-001 removed; G1 and G3 recorded operationally resolved; DEPLOY-PROV-001, G2-IDENTITY, G4-AGENT-TENANT, MEDIA-RIGHTS-001, AUTOCRDT-001 added).
 
 This file is the ONE canonical GRILL deliverable. ALL lanes, agents, workers, audits, backlog processors, convergence work, marketing work, runtime work, and self-improvement work route consequential operator questions through this file.
 
@@ -72,35 +72,85 @@ Do not manufacture decisions just to populate the Grill.
 
 ## ACTIVE QUESTIONS
 
-### PG-001: pg_hba trusts loopback — tighten to scram-sha-256?
+### DEPLOY-PROV-001: accept candidate-3c5d280dd as the honest live baseline, then stop :8081 to restore single-writer?
 
-QUESTION: Tighten pg_hba.conf on the Oracle postgres from `trust` (local + 127.0.0.1/32 + ::1/128) to scram-sha-256, or leave loopback trust in place?
+QUESTION: Accept ping-gateway:candidate-3c5d280dd as the honest live baseline (recording the undocumented promotion), and stop :8081 to restore single-writer operation?
 
-WHY IT MATTERS: Discovered during the P0 credential rotation (FL-20260920-022): the DB password is not checked on loopback, so anyone with `docker exec` on ping-postgres gets passwordless DB access. The rotation's rejection proof had to run from a peer container on the network path because loopback accepts any password. This is a security boundary, not hygiene.
+WHY IT MATTERS: Since ~2026-09-21 12:03-12:05 UTC both Oracle gateway containers (:8080 and :8081) run candidate-3c5d280dd, healthy, zero restarts, both attached to the same database. The certified image was candidate-84486f056 (ORACLE_RUNTIME_PROVEN, ORACLE_RESTART_PROVEN, rollback anchor 8400deecf2a9). No record in the current context explains the promotion of 3c5d280dd to :8080, and the deployment registry has zero rows. Two gateways against one database violates the desired single-writer posture (latent dual-writer risk).
 
-WHAT EVIDENCE SAYS: The rotation completed cleanly with trust in place; all five consumers (DB, gateway env, postgres env, .env, .pgpass) agree on the new 48-char credential. Tightening requires a postgres reload (low risk) and would make the password meaningful on every path. Nothing is currently broken.
+WHAT EVIDENCE SAYS: FL-20260921-P1 documents the candidate's build provenance (commit `3c5d280dd3735ceb2deb4433384902d07552d372`, P1 battery green on :8081). GATEWAY-001 authorized the 8080 swap to this exact candidate on 2026-09-21 (Nolan: GO), so the build itself was authorized; what is undocumented is the observed outcome (both ports now on the candidate, promotion unrecorded). Disk reclamation 80% -> 56% (~11 GB) happened in the same window. No container was stopped; certified and rollback images remain preserved.
 
-CONTRADICTION / TRADEOFF: (a) Tighten: the password is enforced everywhere; tiny reload risk; any consumer with a stale password breaks loudly. (b) Leave: zero change risk, but the DB password remains theater on loopback and every future rotation proof stays awkward.
+CONTRADICTION / TRADEOFF: (a) Accept: record the baseline honestly, keep the running candidate, stop :8081 to restore single-writer. (b) Roll back :8080 to the certified image: returns to the documented baseline, but re-runs a migration on the live DB during active use. (c) Do nothing: both containers keep running the candidate with the provenance gap open and the dual-writer risk latent.
 
-DEFAULT IF NOLAN DOES NOTHING: (b) — trust stays; the password protects only the network path.
+DEFAULT IF NOLAN DOES NOTHING: (c) - nothing stops without his word; the gap stays open.
 
-RECOMMENDED NEXT EXPERIMENT: None empirical; this is a judgment call on how much the password should mean.
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is a judgment call. If he accepts: stop :8081, record the provenance honestly, populate the deployment registry.
 
-STATUS (Nolan's call 2026-09-21): HOLD for the gateway cutover. Make it the NEXT SECURITY PATCH immediately after the gateway stabilizes. Do not leave loopback trust indefinitely merely because password rotation succeeded.
+### G2-IDENTITY: cross-era identity/dedup posture - unify or keep eras separate?
 
-### GATEWAY-001: authorize the 8080 swap to candidate-3c5d280dd?
+QUESTION: Adopt a cross-era identity/dedup policy (identity formats differ across eras; define the canonical mapping and dedup rules), or keep eras strictly separate?
 
-QUESTION: Authorize swapping the live ping-gateway container (8080) onto candidate image ping-gateway:candidate-3c5d280dd (source 3c5d280dd, constitutional-dist compile fix), or hold?
+WHY IT MATTERS: Identity formats conflict across eras (Pig-era vs Oracle-era vs convergence worktree). Casual reminting of historical IDs would silently rewrite history and break provenance. G2 cross-era dedup is a consequential operator decision per the 2026-09-22 archaeology.
 
-WHY IT MATTERS: The candidate passed the full P1 battery on side port 8081: /health 200, identity reads 200, valid signed event 200, invalid signature 400 INVALID_SIGNATURE, BFF knowledge envelope 200, projection digest deterministic across two governed rebuilds. The live 8080 container still runs the pre-adapter image (source 84486f056); the candidate adds the governed social-ingest surface (POST /identities, GET /identities, BFF envelopes on POST /events with SECRET_REJECTED and vocabulary enforcement), the projector ordering tiebreaker, the knowledge ingest adapter, and the constitutional-dist compile fix. The full runbook (~/workspace/oracle-gateway-swap-RUNBOOK.md v2) has the gates and rollback.
+WHAT EVIDENCE SAYS: ID formats are documented per era; no dedup has been executed. The identity law was installed 2026-09-22 as NORTH STAR rule 14 (ID formats change only via a versioned identity domain with a migration plan; historical rows are never reminted).
 
-WHAT EVIDENCE SAYS: P1 battery green on 8081 (FL-20260921-P1 resolved). Live 8080 untouched, rollback image intact, journal at 2550 events healthy. Caveats: three clearly-labeled synthetic P1-proof journal events now exist on the live DB (accepted as labeled evidence; not removable under the no-deletion law); the release-procedure distribution-closure checklist is still stale on constitutional-dist.
+CONTRADICTION / TRADEOFF: (a) Define mapping + dedup rules: one identity space, but dedup execution is consequential and irreversible. (b) Keep eras separate: safe, but identity stays fragmented and every cross-era join needs manual qualification.
 
-CONTRADICTION / TRADEOFF: (a) Swap: live gateway gains the adapter surface the FYD lanes need; seconds of 8080 downtime; rollback ready. (b) Hold: 8080 stays on the proven image; FYD social-ingest work keeps proving on 8081; no downtime.
+DEFAULT IF NOLAN DOES NOTHING: (b) - eras stay separate, no reminting, no dedup.
 
-DEFAULT IF NOLAN DOES NOTHING: (b) — hold; the swap is operator-gated and nothing moves without his word.
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is genuine operator judgment.
 
-RECOMMENDED NEXT EXPERIMENT: Re-run the 8081 battery once more immediately before any authorized swap (fresh GO evidence block), per runbook step 3.
+### G4-AGENT-TENANT: define the agent-to-tenant authority boundary?
+
+QUESTION: Define the agent-to-tenant authority boundary (which agents may act for which tenant, under what capability grants), or leave it on the current implicit grant?
+
+WHY IT MATTERS: Agents (Hermes, workers, discovery lanes) act across tenant boundaries; without an explicit binding, an agent could exercise authority it was never granted. CG-001 names the tenant owner as the human decider; the agent side of that boundary is undefined, and the 2026-09-22 archaeology flags it as consequential.
+
+WHAT EVIDENCE SAYS: Nolan granted agents surgical write authority 2026-09-16 with hard boundaries (no pushes, no main commits, no credential exposure, no destructive actions, no restriction bypass); capability machinery converges on one authority (cap-one-authority DONE_VERIFIED). The binding shape itself is unwritten.
+
+CONTRADICTION / TRADEOFF: (a) Explicit binding: auditable, but adds a grant ceremony to every agent path. (b) Leave implicit: fast, but agent authority stays un-auditable.
+
+DEFAULT IF NOLAN DOES NOTHING: (b) - implicit; agents act under the 2026-09-16 grant and the standing hard boundaries.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is constitutional judgment.
+
+### MEDIA-RIGHTS-001: production media rights/retention policy for FYD?
+
+QUESTION: Define the production media rights/retention policy for real owner media in FYD (who may upload, how long media is retained, takedown path, provenance records), or defer until the first real owner media arrives?
+
+WHY IT MATTERS: The media pipeline exists (managed derivatives, SSRF boundary proven in the escalation-3 test). The moment real owner media enters, rights and retention become legal/reputation risk. The policy is currently unwritten (media-rights-policy, DECISION-pending in BACKLOG_PING.md).
+
+WHAT EVIDENCE SAYS: Media fetch SSRF boundary proven; owner removal path unwritten; alt-text/depiction accuracy untested; media refresh/staleness partially implemented.
+
+CONTRADICTION / TRADEOFF: (a) Write the policy now: front-loads the decision before real media exists. (b) Defer: faster now, but the first real media lands with no policy in place.
+
+DEFAULT IF NOLAN DOES NOTHING: (b) - unwritten until the first real owner media.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is policy judgment.
+
+### AUTOCRDT-001: is the no-CRDT rule absolute or draft-layer-scoped?
+
+QUESTION: Is the no-CRDT rule absolute (the Automerge harvest verdict flips to REJECT), or draft-layer-scoped (USE-LIBRARY at the draft layer for converging concurrent edits, never as the canonical event log)?
+
+WHY IT MATTERS: Two harvest docs disagree and must be reconciled before anything is decided. The ecosystem harvest says @automerge/automerge 3.5.0 (MIT) is USE-LIBRARY "at the draft layer for converging concurrent edits; never as the canonical event log." The 2026-09-22 lane states "FYD has a no-CRDT rule" (Puck collaboration context), with the SitePatch seam as the only channel and structured patches only.
+
+WHAT EVIDENCE SAYS: Automerge 3.5.0 MIT; the SitePatch seam is the only structured-patch channel; draft-layer concurrent edits are the unmet need the library would serve.
+
+CONTRADICTION / TRADEOFF: (a) Absolute: simpler and consistent, but concurrent draft edits need another mechanism. (b) Draft-layer-scoped: converges concurrent edits with a proven library, but introduces a CRDT at one layer.
+
+DEFAULT IF NOLAN DOES NOTHING: No adoption; the harvest stays undecided.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is architectural judgment.
+
+## PARKED - ANSWERED, AWAITING TRIGGER
+
+Not active. Answered; the trigger for execution is named. Do not present as unanswered.
+
+### PG-001: pg_hba trusts loopback - tighten to scram-sha-256? (Nolan's call 2026-09-21: HOLD)
+
+Content as previously briefed: tighten pg_hba.conf on the Oracle postgres from `trust` (local + 127.0.0.1/32 + ::1/128) to scram-sha-256, or leave loopback trust in place? The DB password is not checked on loopback, so anyone with `docker exec` on ping-postgres gets passwordless DB access. The rotation completed cleanly with trust in place; all five consumers agree on the new 48-char credential. Tightening requires a postgres reload (low risk).
+
+Trigger: make it the NEXT SECURITY PATCH immediately after the gateway stabilizes. Do not leave loopback trust indefinitely merely because password rotation succeeded.
 
 ### G-LANEB-1: Should completed mission results auto-project into the knowledge graph as candidate nodes?
 
@@ -112,7 +162,7 @@ WHAT EVIDENCE SAYS: `HybridSearch` already returns approved+candidate mixed, so 
 
 CONTRADICTION / TRADEOFF: (a) Add `MISSION_COMPLETED` to projection: machine output becomes approvable knowledge, closing the loop, but risks graph noise. (b) Keep business-events-only: 144 missions' products never enter knowledge; the promoter stays idle for machine work. (c) Allowlist selected mission types: targeted, but a new policy surface.
 
-DEFAULT IF NOLAN DOES NOTHING: (b) — business-events-only; machine products stay outside the graph.
+DEFAULT IF NOLAN DOES NOTHING: (b) - business-events-only; machine products stay outside the graph.
 
 RECOMMENDED NEXT EXPERIMENT: After LANEB-002 (persist worker output in the result column), project one mission type as candidates for 7 days, measure the approval/rejection rate, and decide on evidence.
 
@@ -168,7 +218,7 @@ WHAT EVIDENCE SAYS: The gate is working as designed (fail-before test proved the
 
 CONTRADICTION / TRADEOFF: (a) Own contract block: h produces real marketing intelligence with honest typing, but it adds a second contract surface to maintain and verify. (b) Re-scope as prospect-list: keeps one contract, but h's marketing-intelligence output is lost and the brief just becomes another b-variant. (c) Leave blocked: zero output, zero risk, and the gate's loud skip keeps it visible.
 
-DEFAULT IF NOLAN DOES NOTHING: (c) — stays blocked, rotation advances past it, zero output, machinery honest about it.
+DEFAULT IF NOLAN DOES NOTHING: (c) - stays blocked, rotation advances past it, zero output, machinery honest about it.
 
 RECOMMENDED NEXT EXPERIMENT: Approve the per-brief contract prompt_block for h (marketing-intelligence objective paired with a marketing-intelligence OUTPUT CONTRACT with the same verification gate), run one pass, and check whether any marketing claim survives verification before deciding on e/f/g/i/j/k.
 
@@ -204,7 +254,21 @@ Retained because the queue can be authoritative for execution intent while NOT b
 
 Recorded, propagated, off the active surface.
 
+### G1: append-only trigger ownership (OPERATIONALLY RESOLVED 2026-09-22)
+
+Nolan's law holds (design B: the append-only trigger is preserved). Recorded as resolved by the 2026-09-22 archaeology. Do not re-ask; before any future trigger change, re-verify against current fixture and deployment evidence instead.
+
+### G3: replay-verification vocabulary (OPERATIONALLY RESOLVED 2026-09-22)
+
+verified:true means provider-ok + zero violations + COMPLETE; test-mode seams are labeled, never green. Recorded as resolved by the 2026-09-22 archaeology.
+
 ### GATEWAY-001: authorize the 8080 swap to candidate-3c5d280dd (DECIDED 2026-09-21, Nolan: GO)
+
+Controlled promotion of the proven candidate via runbook v2. Execute with step -1 mandatory, all pre-swap gates, fail closed, roll back fast.
+
+Basis: P0 rotation proven (old credential dead, five consumers agree, journal intact at 2550 events, gateway healthy); candidate passed the full P1 battery on 8081; no unexplained recreation (the 11:25Z recreation was the rotation itself, verified in FL-20260920-022).
+
+Update 2026-09-22: both Oracle containers (:8080, :8081) observed running candidate-3c5d280dd since ~2026-09-21 12:03-12:05 UTC, healthy, zero restarts, both attached to the same database; the deployment registry has zero rows and the promotion is undocumented. The provenance/single-writer decision is now active as DEPLOY-PROV-001 (see ACTIVE QUESTIONS); do not stop either container before Nolan decides.
 
 Controlled promotion of the proven candidate via runbook v2. Execute with step -1 mandatory, all pre-swap gates, fail closed, roll back fast.
 
@@ -274,7 +338,7 @@ Continuous-engine queue. Resolve from evidence. Grill Nolan only if evidence for
 
 1. **Stale "in-follow-up-ladder" suppression vocabulary.** The queue instruction using that value is stale (deprecated by the 2026-09-13 vocabulary migration). Find the current canonical vocabulary, update the producer/template generating the stale queue prose, and verify existing canonical records are not being newly contaminated. Do not revive deprecated state vocabulary.
 2. **Content ranking contradiction.** Rule says signal frequency outranks everything; the queue artifact is ordered by discovery date. Do not ask Nolan which wins until the ranking rule's currency is established. If canonical, fix the projection/ranking implementation. If competing current policies exist, put the conflict in this Grill.
-3. **Chat Math.random() status pills — HIGH PRIORITY.** If the UI fabricates green health while backends fail, that is a truthfulness/integrity defect. Prove the exact code path and user-visible behavior. If confirmed: remove the fabricated status behavior and bind the UI to real states. Valid states include HEALTHY, DEGRADED, UNAVAILABLE, UNKNOWN. Do not turn missing telemetry into green.
+3. **Chat Math.random() status pills - HIGH PRIORITY.** If the UI fabricates green health while backends fail, that is a truthfulness/integrity defect. Prove the exact code path and user-visible behavior. If confirmed: remove the fabricated status behavior and bind the UI to real states. Valid states include HEALTHY, DEGRADED, UNAVAILABLE, UNKNOWN. Do not turn missing telemetry into green.
 4. **Recommendation dead-end.** PING dead-ending at RECOMMENDATION_CREATED is a major product/runtime boundary. Do not immediately invent autonomous action. Investigate the smallest representation for DECISION_ACCEPTED, DECISION_REJECTED, DECISION_DEFERRED, or existing canonical equivalents, now that CG-001 names the tenant owner as the human authority. Do not invent event names if the existing ontology already covers them. Critical invariant: AI recommendation != human decision, and the human decision must become canonical history before consequential execution.
 
 ## EVIDENCE PRESERVED
