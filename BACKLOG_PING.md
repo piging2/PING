@@ -46,24 +46,24 @@ Renderer/browser boundary is closed (195/195, min-w-0 fix at 320px). Frontier is
 - RISK: medium.
 - STATUS: OPEN
 ### ASK FYD EVIDENCE GROUNDING
-**FYD-005 — Ask FYD input contract is not fixed.** Named inputs exist (viewer, target object, question, public/allowed fields, related objects, relationships, evidence references, allowed capabilities) but there is no schema and no test.
-- EVIDENCE: 2026-09-21 CEO directive names the inputs; no schema found.
+**FYD-005 — Ask FYD input contract is not fixed.** A named TS interface exists (AskFydContextInput in src/fyd/ask/types.ts: viewer, target, relatedObjects, relationships, plan, grants, siteSpec, question) with a single builder in context-builder.ts, verified 2026-09-21 ~19:30 MDT. What is missing is an executable test that the builder emits only the declared fields.
+- EVIDENCE: 2026-09-21 CEO directive names the inputs; the interface exists in the FYD lane; no test pins it down.
 - VALUE: A fixed input contract is what keeps the LLM from reading arbitrary prose behind the graph.
 - FAILURE MODE: Prompt assembly drifts; one day the LLM gets raw website text and nobody notices.
-- MINIMUM CHANGE: One TS schema for AskFydInput, one for AskFydOutput, in the FYD lane.
-- PROOF: Schema file committed; a builder that violates it fails type-check.
+- MINIMUM CHANGE: One test asserting buildAskFydContext emits exactly the AskFydContextInput fields and rejects extras.
+- PROOF: Test passes; a builder that adds a field fails the test.
 - DEPENDENCIES: FYD-001.
 - RISK: high — unbounded input is how invention starts.
-- STATUS: OPEN
-**FYD-006 — Ask FYD output contract is not defined.** Required: answer + evidence_refs + source_urls + claim classifications + unknowns + suggested actions. No contract enforces this.
-- EVIDENCE: gap found by grill.
+- STATUS: OPEN (narrowed 2026-09-21: interface exists, executable pin-down missing)
+**FYD-006 — Ask FYD output contract is defined and enforced per claim.** Required: answer + evidence_refs + source_urls + claim classifications + unknowns + suggested actions. All exist on AskAnswer (src/lib/ping/types.ts, all non-optional) and the composer populates them: baseAnswer carries evidenceRefs/claimClassifications/unknowns/sourceUrls, the services path pushes one classification per named service with evidenceRefIds, and the no-evidence path returns unknowns + partial=true.
+- EVIDENCE: gap found by grill; contract implemented by a later Ask lane; verified in source 2026-09-21 ~19:35 MDT.
 - VALUE: Structured output is the only thing that makes "how do you know" verifiable instead of rhetorical.
 - FAILURE MODE: Answer is a confident paragraph with no refs; WHY THIS? has nothing to point at.
 - MINIMUM CHANGE: AskFydOutput schema requiring evidence_refs and classifications on every factual sentence.
 - PROOF: One answer to the fixed question with every factual claim carrying a classification and a ref.
 - DEPENDENCIES: FYD-005, FYD-001.
 - RISK: high.
-- STATUS: OPEN
+- STATUS: DONE (2026-09-21: positive test in src/fyd/ask/__tests__/services-evidence.test.ts asserts every claim classification carries evidenceRefIds and sourceUrls resolve to real source URLs)
 **FYD-007 — No negative test: Ask FYD must say "I don't know" when the graph lacks facts.** Today neither graph has Service objects, so the honest answer to the fixed question is admission, not confidence. No test requires that.
 - EVIDENCE: FYD-001 state; Nolan's 2026-09-21 note explicitly names this as the adversarial test.
 - VALUE: This is the single test that proves the graph is the factual input space, not the website.
@@ -72,7 +72,7 @@ Renderer/browser boundary is closed (195/195, min-w-0 fix at 320px). Frontier is
 - PROOF: Test passes with the "I don't know" shape; a variant with services present answers with refs.
 - DEPENDENCIES: FYD-005, FYD-006.
 - RISK: high.
-- STATUS: OPEN
+- STATUS: DONE (2026-09-21: src/fyd/ask/__tests__/services-evidence.test.ts committed as f35e670c; negative test asserts the honest refusal plus zero invented services from website prose, positive test asserts cited classified sourced answer; npx jest services-evidence 2/2 PASS)
 **FYD-008 — Generated prose verifier does not exist.** Generated presentation may summarize supported facts but may not silently introduce new factual claims. No verifier checks generated prose against evidence bindings.
 - EVIDENCE: gap found by grill; verifyPresentationBinding covers render bindings, not prose.
 - VALUE: This is where invention actually happens in practice: fluent summaries that add one unbound adjective per sentence.
@@ -255,7 +255,7 @@ Renderer/browser boundary is closed (195/195, min-w-0 fix at 320px). Frontier is
 - PROOF: Suite runs them.
 - DEPENDENCIES: FYD-007.
 - RISK: medium.
-- STATUS: OPEN
+- STATUS: DONE (2026-09-21: services-evidence.test.ts runs under the Ask jest config src/fyd/ask/jest.config.cjs; 2/2 PASS)
 ### WORKTREE AND GIT
 **FYD-034 — 260-commit push status unknown.** No further Git network work until it is determined whether the earlier push landed.
 - EVIDENCE: standing constraint.
@@ -266,16 +266,44 @@ Renderer/browser boundary is closed (195/195, min-w-0 fix at 320px). Frontier is
 - DEPENDENCIES: none.
 - RISK: medium.
 - STATUS: OPEN
-**FYD-035 — Demo server on Pig :3100 is user-reachable only after Nolan picks an access path.** Server itself is healthy: PID 88840, HEAD 8a99742 (the proven min-w-0 commit), worktree /home/nolan/projects/ping, branch fyd/sitespec-generator, routes / /sites/happy-place /sites/coppersmith-plumbing all 200 from WSL-local and from the Pig's Windows side via http://[::1]:3100/sites/happy-place. But there is NO proven reachable URL from Nolan's device: the Tailscale IP 100.79.154.43:3100 fails even from the Pig's own Windows side (WSL localhost relay only listens on ::1), so his iPhone on the tailnet cannot reach it either; the earlier "NOLAN CAN ACCESS: YES" claim is disproven.
-- EVIDENCE: ~/workspace/fyd-lane/reachability-report.md (reachability lane 2026-09-21, HTTP-verified).
+**FYD-035 — Demo server reachability: Pig-side forward is in place and live, Nolan device-side proof still open.** UPDATE 2026-09-21 ~19:24 MDT: the morning reachability report is stale. Standing memory records the Pig Tailscale forward was installed (Scheduled Task FYD-Tailscale-3100; 100.79.154.43:3100 -> WSL :3100). Live HTTP verification from this environment on 2026-09-21 ~19:24 MDT: http://100.79.154.43:3100/sites/happy-place -> 200, http://100.79.154.43:3100/sites/coppersmith-plumbing -> 200. So the forward is listening and serving both routes today. What is NOT proven: Nolan loading a URL from his own device.
+- EVIDENCE: 2026-09-21 ~19:24 MDT live HTTP 200s on both routes via the Tailscale address.
 - VALUE: Nolan clicking a dead URL destroys trust in every PASS above.
-- FAILURE MODE: Assuming reachable, or opening public firewall unauthenticated.
-- MINIMUM CHANGE: Nolan's call between (a) Tailscale path: Windows port forward 3100 into WSL + Windows Firewall allow TCP 3100 on the Tailscale interface, then http://100.79.154.43:3100/sites/happy-place works from his tailnet devices; or (b) SSH tunnel: ssh -L 3100:localhost:3100 from his device, then http://localhost:3100/sites/happy-place. Both private, no public exposure.
-- PROOF: Nolan loads a URL from his own device and gets 200.
+- FAILURE MODE: Assuming reachable from Nolan's device, or opening public firewall unauthenticated.
+- MINIMUM CHANGE: Nolan loads http://100.79.154.43:3100/sites/happy-place from his own device and gets 200. If his device cannot reach it, diagnose the tailnet path (his device tailnet membership, Pig forward target WSL IP volatility across restarts).
+- PROOF: Nolan's device-side 200.
 - DEPENDENCIES: FYD-033 (fix must be in the served build).
 - RISK: medium-high.
-- STATUS: OPEN, awaiting Nolan's access-path call.
+- STATUS: OPEN, awaiting Nolan's device-side check. Nolan's call only; do not ask him to paste anything.
 *FYD-033 moved to DONE (committed 2026-09-21).*
+### REPLAY PARITY AND JOURNAL INTEGRITY
+**FYD-036 — Replay proof exists for Happy Place only; Coppersmith has no replay evidence.** Scoped replay from persisted history through the reducer into an empty disposable projection was byte-identical across two runs (REPLAY DIGEST MATCH, REPLAYED UI MATCH) for happy-place only. Coppersmith was never replayed. The base layer is still mechanically derived from committed fixture TS, which is a derivation input, not event-sourced acquisition history.
+- EVIDENCE: 2026-09-21 replay proof notes (happy-place only); standing memory replay caveats.
+- VALUE: The product promise is per-business replay, not per-demo replay; a second business with different shape is where replay breaks.
+- FAILURE MODE: Coppersmith replay diverges or fails; or the base-layer fixture derivation is mistaken for event-sourced history.
+- MINIMUM CHANGE: Same scoped-replay protocol run against the Coppersmith graph: persisted history -> reducer -> empty disposable projection, two runs, digest match, replayed UI match.
+- PROOF: REPLAY DIGEST MATCH + REPLAYED UI MATCH for coppersmith-plumbing, with the same evidence shape as Happy Place.
+- DEPENDENCIES: none.
+- RISK: medium-high.
+- STATUS: OPEN
+**FYD-037 — FYD overlays are stuck on the demo journal with no wrong-journal safeguard.** The deployed 8080 gateway rejected FYD_SITE_OVERLAY; emit and dump must both use the demo journal today. A bare dump command previously clobbered the live overlay projection. The documented warning is not a safeguard.
+- EVIDENCE: 2026-09-21 review; overlay/journal failure logs in fyd-lane.
+- VALUE: One wrong-journal dump silently replaces the live overlay projection; the blast radius is the whole demo.
+- FAILURE MODE: An operator (or a lane) runs dump against the wrong journal and clobbers live overlays with no recovery path.
+- MINIMUM CHANGE: A fail-closed guard: emit/dump refuse to run against a journal that does not carry the expected overlay marker, or require an explicit journal-name flag that mismatches loudly. One test: dump against the wrong journal exits non-zero and changes nothing.
+- PROOF: Wrong-journal dump test fails closed; demo journal still emits cleanly.
+- DEPENDENCIES: none.
+- RISK: high.
+- STATUS: OPEN
+**FYD-038 — Synthetic Happy Place service evidence is labeled as canonical-journal but is not source evidence.** The Happy Place overlay service ("Pergola Design Consultations") is a synthetic journal overlay, currently labeled as a canonical-journal record, not as the business website's own statement. It must never be presented as proof the business actually offers that service.
+- EVIDENCE: 2026-09-21 review; Ask FYD evidence labels.
+- VALUE: Epistemic labeling is the trust model; synthetic evidence wearing a canonical label is exactly the failure FYD exists to prevent.
+- FAILURE MODE: Ask FYD or WHY THIS? presents the synthetic service as a business fact; an owner or customer acts on it.
+- MINIMUM CHANGE: The overlay's provenance kind/label marks it synthetic (e.g. provenance kind distinct from website-ingestion and canonical-journal, user-facing label "demonstration overlay, not a business statement"); Ask FYD classifications surface that label for any claim sourced from it. One test: the synthetic service renders with the demo label, never as DIRECT source evidence.
+- PROOF: Test passes; rendered Ask answer for the synthetic service shows the demo label.
+- DEPENDENCIES: FYD-001 (real service extraction replaces the synthetic demo, but the label must hold until then).
+- RISK: high.
+- STATUS: OPEN
 ## OPEN (PING engineering)
 9. **Projection digest algorithm must be preserved alongside any reported digest.** (from FL-20260920-031b, 2026-09-21 perfecting-pass triage): Lane B's commit reported an Oracle projection digest that no one can reproduce because the digest algorithm/script was never committed or recorded; 11 candidate formulations all failed, so the reported string is unverifiable forever. Independent determinism was still proven (two rebuilds with the compiled projector produced identical digests and counts), but a bare digest string with no algorithm is not evidence. Rule: any lane that reports a digest must commit the exact digest algorithm/script with it, or point at the shared digest implementation. Applies to PING Social sprint lanes and convergence lanes alike. Owner: the lane that reports the digest.
 ## BLOCKED (PING)
