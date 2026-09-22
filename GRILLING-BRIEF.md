@@ -172,62 +172,6 @@ DEFAULT IF NOLAN DOES NOTHING: (c) — stays blocked, rotation advances past it,
 
 RECOMMENDED NEXT EXPERIMENT: Approve the per-brief contract prompt_block for h (marketing-intelligence objective paired with a marketing-intelligence OUTPUT CONTRACT with the same verification gate), run one pass, and check whether any marketing claim survives verification before deciding on e/f/g/i/j/k.
 
-### FYD-S1: Which real business does the Hour 8-11 bootstrap demo ingest?
-
-QUESTION: Which real business website plus public sources does the bootstrapper ingest for the "one real business" demo?
-
-WHY IT MATTERS: The demo ingests a real website and legitimate public sources, then generates a complete website, concierge, and content system for that business. Choosing whose business gets the full FYD treatment is a relationship and consent decision only Nolan can make. I will not pick a business on my own.
-
-WHAT EVIDENCE SAYS: No authorized (OAuth) business sources exist anywhere for any demo candidate, so the Hour 8-11 demo is public-discovery only regardless of choice (website, public listings, JSON-LD, sitemaps). Candidate tradeoffs: Monument View Coffee Shop has the richest narrative (Nolan is preparing an owner conversation) but generating their full site unannounced could complicate that pitch if discovered; PING Social itself has zero consent issues but is our own site, so the "arbitrary business" discovery story is weaker; a third public local business proves the arbitrary-input story but needs owner consent before any "give it to them" step later.
-
-CONTRADICTION / TRADEOFF: (a) Monument View: highest demo value, highest sensitivity. (b) PING Social: safest, weakest proof of arbitrary-business bootstrap. (c) Third local business: good proof, consent gate before handoff.
-
-DEFAULT IF NOLAN DOES NOTHING: The sprint does not start. This is a launch precondition with no safe default.
-
-RECOMMENDED NEXT EXPERIMENT: Nolan names one business and confirms private-prototype use of its public website and public listings. Nothing is published; the prototype stays private until he says otherwise.
-
-### FYD-S2: Does the 24-hour sprint run overnight on the Pig, or in bounded checkpointed shifts?
-
-QUESTION: 24 wall-clock hours straight through starting ~19:45 MDT, or bounded shifts with durable checkpoints?
-
-WHY IT MATTERS: 24 wall-clock hours crosses the ~7am and ~4pm Pig commute blackouts and the normal machine sleep policy. The standing wake-lock rule is acquire for a bounded run, then release — never permanently disable sleep. Keeping Nolan's machine awake and working all night is his call, not mine.
-
-WHAT EVIDENCE SAYS: The temporal/checkpoint machinery already exists (STATE.json, resumable lanes, checkpoint-then-continue doctrine). Commute blackouts are standing known behavior. Nothing in the sprint's hour plan requires unbroken wall-clock time; every lane is checkpointable.
-
-CONTRADICTION / TRADEOFF: (a) Straight through with scoped wake locks: fastest elapsed time, but needs explicit OK for all-night Pig operation. (b) Bounded shifts across the blackouts: nearly free via checkpoints, survives the commute drops, slightly longer elapsed.
-
-DEFAULT IF NOLAN DOES NOTHING: (b) — bounded shifts. The sprint will not keep his machine awake all night without his word.
-
-RECOMMENDED NEXT EXPERIMENT: None; this is a judgment call about his hardware.
-
-### FYD-S3: Object-in-margins restore — golden template (Lane B) or immediate fix on /sites/* first?
-
-QUESTION: Build the object modules in the page margins as part of Lane B golden-template work, or restore them on the current /sites/* demo routes first?
-
-WHY IT MATTERS: Nolan's word: the legacy object implementation was taken away; where we left off, the plan was to place it off to the side in the margins; "do that." Scope determines whether Lane B owns it or it becomes immediate fixture work.
-
-WHAT EVIDENCE SAYS: The implementation was not deleted. It exists and is tested: `src/fyd/ui/object-circle.tsx` (10.8KB), `src/fyd/object/` (view, projections, types, tests), `/o/[objectId]` routes, `/api/fyd/objects/*` routes, `/dev/objects` lab. What happened: the `/sites/*` pages render ONLY `<SiteClient>` — grep of `site-client.tsx` shows zero references to Circle, ObjectView, AskFyd, portal, or margin. The object modules are unreachable from the site experience. The center/context plane law's margins placement never landed.
-
-CONTRADICTION / TRADEOFF: (a) Lane B golden template: aligns with "fixtures are regression fixtures, stop polishing them"; the margin system (Circle, ObjectView, Ask FYD in margins, collapsing on narrow viewports) becomes core template work. (b) Immediate /sites/* fix: visible fastest, but it is polishing fixtures Nolan declared done.
-
-DEFAULT IF NOLAN DOES NOTHING: (a) — margins system built in Lane B; `/o/[objectId]` stays the canonical object pages.
-
-RECOMMENDED NEXT EXPERIMENT: None; scope decision.
-
-### FYD-S4: Variations — one design system with three archetype SiteProfiles, or three separate templates?
-
-QUESTION: Is the "2-3 variations" ask one design system with three archetype profiles (knowledge business, tradespeople, very technical enterprises), or three genuinely separate templates?
-
-WHY IT MATTERS: The directive says build ONE excellent generalized experience; the closing add says create two or three variations. The reconciliation changes Lane B staffing, the component registry shape, and the "no 1,000 dead forks" upgrade-path story.
-
-WHAT EVIDENCE SAYS: The directive already specifies the reconciling architecture: design tokens (brand, typography, palette, spacing, radius, density, imagery, section rhythm, content width, motion) with "same components, different tokens + graph + composition." That is the one-system/three-profiles shape, stated in Nolan's own words.
-
-CONTRADICTION / TRADEOFF: (a) One system plus three archetype SiteProfiles: proves the system generalizes, preserves the versioned-package upgrade path, matches the token architecture already specified. (b) Three separate templates: faster to eyeball-differentiate, but three forks to maintain against the no-dead-forks rule.
-
-DEFAULT IF NOLAN DOES NOTHING: (a).
-
-RECOMMENDED NEXT EXPERIMENT: None; architecture decision.
-
 Every question on the previous brief has been answered by Nolan (see RESOLVED below) or assigned as an empirical investigation (see below). New entries must earn their place with the shape above. An empty Grill is a healthy Grill.
 
 ## DECISIONS WORTH RE-GRILLING
@@ -307,6 +251,22 @@ After Sunday's post: PUBLISH -> wait for a meaningful observation window -> OBSE
 The "no consumer = shelfware" objection has now been falsified by repeated operational failures. The consumer is real: worker completion -> validator -> acceptance/merge/use. Round 91's 14/17 duplicate/exclusion failure is enough evidence that manual vigilance is not the permanent control.
 
 Build the SMALLEST validator around actual recurring acceptance invariants. Do not build a generalized QA framework. Start with proven failure classes: duplicate, exclusion violation, required deliverable missing, claimed completion without evidence, schema/shape violation where applicable. The validator must be invoked by a real acceptance path in the same unit. A validator script with no caller is NOT completion.
+
+### FYD-S1: bootstrap demo business (DECIDED 2026-09-21, Nolan)
+
+The bootstrap proof does NOT depend on third-party consent or handoff. Proof order: (1) PING/FYD as the control/dogfood site, (2) ONE already-authorized real business fixture as the arbitrary-business proof. The proof is: SAME BUILDER yields materially different entity graphs yielding materially different sites. Monument View is NOT on the critical path; it is a post-proof candidate (easy site to beat, rich known context) for the "get one real owner in front of it" step, which stays Nolan-gated like the external owner test. The compiler/builder gets proven before customer coordination enters.
+
+### FYD-S2: sprint execution mode (DECIDED 2026-09-21, Nolan)
+
+Checkpointed shifts, not wall-clock 24h. Do not get stuck on the hours; stay productive as long as possible. For long-running authorized jobs on AC: bounded wake lock for the job duration, checkpoint progress, resumable work, release afterward. Never globally disable sleep. Design for interruption; the Pig has already proven sleep/wake can destroy browser targets.
+
+### FYD-S3: object-in-margins restore scope (DECIDED 2026-09-21, Nolan)
+
+Harvest the existing object machinery (Circle, ObjectView, /o/, object API) into the NEW composition system. Object presence is a generic layout capability: main content plus contextual object rail/margin plus mobile object drawer/sheet. No bespoke PING placement, no bespoke plumber placement. No resurrection work on obsolete demo routes.
+
+### FYD-S4: template variations shape (DECIDED 2026-09-21, Nolan)
+
+ONE DESIGN SYSTEM, THREE ARCHETYPE PROFILES: KNOWLEDGE, TRADES, TECHNICAL/ENTERPRISE. Same objects, components, layout primitives, tokens, SiteSpec, renderer. Different composition rules, density, hierarchy, typography scale, media treatment, CTA emphasis, object prominence. Archetypes are parameterized starting points built as DATA/TOKENS/RULES, not three template codebases, not cages.
 
 ## EMPIRICAL INVESTIGATIONS
 
