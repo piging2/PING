@@ -1,0 +1,23 @@
+{
+  "deploy_name": "FYD UI deployment (Preview)",
+  "source_repo_branch": "fyd/builder-composition",
+  "base_head": "0dec40f5c5823a8040bcd1f710e25c3103d499c3",
+  "deploy_delta": [
+    "base HEAD 0dec40f5 (proven: two generated sites, deterministic SiteSpecs, generic renderer, URL safety fix, mobile fixes, binding verifier, owner visibility override, semantic determinism)",
+    "narrow /build/* restriction in src/middleware.ts (404 for /build and /build/* only; all other routes unchanged)"
+  ],
+  "data_mode": "PROJECTION",
+  "build_command": "npm run build",
+  "test_command": "npx jest --config <each committed src/**/jest.config.cjs> (21 configs)",
+  "config_source": "repo HEAD + fyd-deploy-manifest.json; no external config",
+  "tenant_mapping": {
+    "tenant_uri_pattern": "tenant://{id}",
+    "deployment_uri_pattern": "deployment://{tenant}/{version}",
+    "note": "website is the product surface; PING core stays underneath and is not deployed"
+  },
+  "not_included": [
+    "uncommitted visual/interaction grill lane work",
+    "Circle-Only Product Reset middleware (broad version)",
+    "PING core, gateway, Postgres, Qdrant, Vault"
+  ]
+}
