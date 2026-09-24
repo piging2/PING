@@ -14,13 +14,30 @@ const class05c = require('../class_05c_threads.js');
 const class05d = require('../class_05d_instagram.js');
 const class09 = require('../class_09_campaign_publication.js');
 
-const core = createCore(); // no foundation injected -> shim source
+const core = createCore(); // foundation: injected -> sibling -> shim
 const D = core.DECISIONS;
+const HAS_FOUNDATION = core.foundation !== null;
 
 // ---------------------------------------------------------------- core
-test('foundation seam: resolves to shim when the A6 module is absent', () => {
-  assert.equal(core.foundationSource, 'shim');
-  assert.equal(core.foundation, null);
+test('foundation seam: resolution order is injected -> sibling -> shim', () => {
+  assert.ok(['injected', 'sibling', 'shim'].includes(core.foundationSource));
+  if (core.foundationSource === 'shim') {
+    assert.equal(core.foundation, null);
+  } else {
+    const f = core.foundation;
+    for (const k of ['EffectLedger', 'EffectReconciler', 'EffectExecutor', 'UnknownOutcomeError', 'deriveOpKey', 'canonicalJson', 'describeState']) {
+      assert.ok(f[k] !== undefined, `foundation exposes ${k}`);
+    }
+    for (const t of ['EFFECT_DISPATCHED', 'EFFECT_SUCCEEDED', 'EFFECT_FAILED', 'EFFECT_UNKNOWN', 'EFFECT_RECONCILED', 'EFFECT_HELD']) {
+      assert.ok(f.EFFECT_TYPES && typeof f.EFFECT_TYPES.has === 'function' && f.EFFECT_TYPES.has(t), `EFFECT_TYPES has ${t}`);
+    }
+  }
+});
+
+test('foundation seam: adapter op keys are byte-identical to the real deriveOpKey', { skip: !HAS_FOUNDATION }, () => {
+  const viaAdapter = core.deriveOpKey({ missionId: 'm1', effectName: 'e1', input: { b: 2, a: 1 } });
+  const viaReal = core.foundation.deriveOpKey({ missionId: 'm1', effect: 'e1', input: { b: 2, a: 1 } });
+  assert.equal(viaAdapter, viaReal);
 });
 
 test('op key determinism: same logical op, same attempt -> same key', () => {
@@ -87,17 +104,84 @@ test('evaluatePredicate: invalid decision fails closed to HOLD_UNKNOWN', () => {
   assert.equal(r.decision, D.HOLD_UNKNOWN);
 });
 
-test('escalateHold: writes HELD record and emits UNKNOWN + HELD on the shim', () => {
+test('escalateHold: writes HELD record and emits UNKNOWN + HELD', () => {
   core._shim.ledgerClear();
-  const rec = core.escalateHold({
+  if (!HAS_FOUNDATION) {
+    // Shim path (test-only): process-local ledger + marked stdout events.
+    const rec = core.escalateHold({
+      opKey: 'deadbeef', effectName: 'e', effectClass: '08',
+      holdReason: 'test hold', evidence: { x: 1 }, missionId: 'm',
+    });
+    assert.equal(rec.state, 'HELD');
+    assert.equal(rec.holdReason, 'test hold');
+    assert.equal(rec.durable, false);
+    const rows = core._shim.ledgerRead();
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].shim, true);
+    return;
+  }
+  // Real path: snake_case A6 payloads with consequence, through the injected
+  // emit; the shim ledger stays untouched.
+  const seen = [];
+  const core2 = createCore({ emit: (type, payload) => seen.push({ type, payload }) });
+  assert.ok(core2.foundation !== null);
+  const rec = core2.escalateHold({
     opKey: 'deadbeef', effectName: 'e', effectClass: '08',
-    holdReason: 'test hold', evidence: { x: 1 }, missionId: 'm',
+    consequence: 'low', holdReason: 'test hold', evidence: { x: 1 }, missionId: 'm',
   });
   assert.equal(rec.state, 'HELD');
   assert.equal(rec.holdReason, 'test hold');
-  const rows = core._shim.ledgerRead();
-  assert.equal(rows.length, 1);
-  assert.equal(rows[0].shim, true);
+  assert.equal(rec.durable, true);
+  assert.deepEqual(seen.map((s) => s.type), ['EFFECT_UNKNOWN', 'EFFECT_HELD']);
+  assert.equal(seen[0].payload.op_key, 'deadbeef');
+  assert.equal(seen[0].payload.consequence, 'low');
+  assert.equal(seen[1].payload.op_key, 'deadbeef');
+  assert.equal(seen[1].payload.escalated_to, 'operator');
+  assert.equal(core2._shim.ledgerRead().length, 0);
+});
+
+test('escalateHold: real foundation without an emit sink fails LOUD (never silently shims)', { skip: !HAS_FOUNDATION }, () => {
+  assert.throws(
+    () => core.escalateHold({ opKey: 'k', effectName: 'e', effectClass: '08', holdReason: 'x' }),
+    /canonical event sink unreachable/
+  );
+});
+
+test('recordOutcome: RECOVER_SUCCEEDED emits EFFECT_SUCCEEDED carrying result', { skip: !HAS_FOUNDATION }, () => {
+  const seen = [];
+  const core2 = createCore({ emit: (type, payload) => seen.push({ type, payload }) });
+  const rec = core2.recordOutcome({
+    opKey: 'k', effectName: 'e', effectClass: '08',
+    decision: D.RECOVER_SUCCEEDED, evidence: { result: { ok: true } }, missionId: 'm',
+  });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].type, 'EFFECT_SUCCEEDED');
+  assert.equal(seen[0].payload.op_key, 'k');
+  assert.deepEqual(seen[0].payload.result, { ok: true });
+  assert.equal(rec.emitted, 'EFFECT_SUCCEEDED');
+});
+
+test('recordOutcome: RECOVER_FAILED emits EFFECT_FAILED, never unknown', { skip: !HAS_FOUNDATION }, () => {
+  const seen = [];
+  const core2 = createCore({ emit: (type, payload) => seen.push({ type, payload }) });
+  core2.recordOutcome({
+    opKey: 'k', effectName: 'e', effectClass: '08',
+    decision: D.RECOVER_FAILED, evidence: {}, error: 'definitive failure', missionId: 'm',
+  });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].type, 'EFFECT_FAILED');
+  assert.equal(seen[0].payload.retryable, false);
+});
+
+test('recordOutcome: SAFE_TO_RETRY emits no terminal event (the next dispatch emits DISPATCHED)', { skip: !HAS_FOUNDATION }, () => {
+  const seen = [];
+  const core2 = createCore({ emit: (type, payload) => seen.push({ type, payload }) });
+  const rec = core2.recordOutcome({
+    opKey: 'k', effectName: 'e', effectClass: '08',
+    decision: D.SAFE_TO_RETRY, evidence: {}, missionId: 'm',
+  });
+  assert.equal(seen.length, 0);
+  assert.equal(rec.emitted, null);
 });
 
 // ---------------------------------------------------------------- class 08
@@ -349,7 +433,7 @@ test('class09: op key binds pass and intent ids', () => {
 });
 
 // ---------------------------------------------------------------- full loop via core
-test('full loop: probe -> predicate -> hold escalation on the shim ledger', async () => {
+test('full loop: probe -> predicate -> hold escalation', async () => {
   core._shim.ledgerClear();
   const opKey = class08.deriveOpKey(msgInput);
   const probe = await class08.probe(opKey, {}, {
@@ -359,10 +443,24 @@ test('full loop: probe -> predicate -> hold escalation on the shim ledger', asyn
   assert.equal(probe.outcome, 'inconclusive');
   const evaled = core.evaluatePredicate({ classModule: class08, classId: '08', probeResult: probe, context: { eligibilityExitCode: 0 } });
   assert.equal(evaled.decision, D.HOLD_UNKNOWN);
-  const hold = core.escalateHold({
+  if (!HAS_FOUNDATION) {
+    const hold = core.escalateHold({
+      opKey, effectName: class08.effectNameOf(msgInput), effectClass: '08',
+      holdReason: evaled.holdReason, evidence: evaled.evidence, missionId: 'campaign-1',
+    });
+    assert.equal(hold.state, 'HELD');
+    assert.equal(core._shim.ledgerRead().length, 1);
+    return;
+  }
+  const seen = [];
+  const core2 = createCore({ emit: (type, payload) => seen.push({ type, payload }) });
+  const hold = core2.escalateHold({
     opKey, effectName: class08.effectNameOf(msgInput), effectClass: '08',
-    holdReason: evaled.holdReason, evidence: evaled.evidence, missionId: 'campaign-1',
+    consequence: 'high', holdReason: evaled.holdReason, evidence: evaled.evidence, missionId: 'campaign-1',
   });
   assert.equal(hold.state, 'HELD');
-  assert.equal(core._shim.ledgerRead().length, 1);
+  assert.equal(hold.durable, true);
+  assert.deepEqual(seen.map((s) => s.type), ['EFFECT_UNKNOWN', 'EFFECT_HELD']);
+  assert.ok(seen.every((s) => s.payload.op_key === opKey), 'sweep groups by op_key');
+  assert.equal(core2._shim.ledgerRead().length, 0);
 });

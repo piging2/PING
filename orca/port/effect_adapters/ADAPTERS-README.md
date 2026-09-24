@@ -22,22 +22,51 @@ wired to the A6 unknown-outcome foundation.
 
 ## Foundation seam (read this before integrating)
 
-- `adapter_core.js` is a factory: `require('./adapter_core.js')({ foundation })`.
-  `foundation` is `{ EffectLedger, EffectReconciler, UnknownOutcomeError,
-  EFFECT_DISPATCHED, EFFECT_SUCCEEDED, EFFECT_FAILED, EFFECT_UNKNOWN,
-  EFFECT_RECONCILED, EFFECT_HELD }` from the sibling worker's
-  `ping-runtime/orchestration/effect_reconciler.js`.
-- When copied to the target layout, the core also tries
-  `require('../effect_reconciler.js')` (the sibling module) automatically.
-- If neither is present, a clearly-marked local SHIM backs the ledger and
-  emits `[ADAPTER-SHIM-EVENT]` JSON lines. The shim is NOT canonical; it
-  exists so adapters stay testable. `core.foundationSource` reports
+CONFORMANCE VERIFIED 2026-09-24 against the real A6 foundation at
+`ping-runtime/orchestration/effect_reconciler.js` (commit 36d401538,
+branch `feat/orca-unknown-outcome-port`). Deltas found in the pinned
+contract and fixed:
+
+- `EffectReconciler` has NO static `emit`. Event emission on the real path
+  requires a caller-injected `emit(type, payload)` bound to the
+  UnifiedEventRuntime: `require('./adapter_core.js')({ emit })`. With the
+  real foundation loaded and no emit injected, escalateHold/recordOutcome
+  FAIL LOUD instead of silently writing shim events (a hold that never
+  reaches the event store can never be swept or recovered).
+- Real `deriveOpKey` takes `{ missionId, effect, input }` (not
+  `effectName`). The core now delegates to `foundation.deriveOpKey` with
+  `effect: effectName`, so adapter op keys are byte-identical to the
+  EffectExecutor / EffectReconciler key space (asserted by test).
+- The foundation exports no individual `EFFECT_*` constants; it exports
+  `EFFECT_TYPES` (a Set). The seam asserts the full pinned export contract
+  at load and refuses to silently shim a corrupt foundation.
+- Event payloads use the A6 snake_case schema (`op_key`, `mission_id`,
+  `effect`, `attempt`, `reason`, `consequence`, `result`, `error`,
+  `retryable`, `evidence`); the reconciler sweep groups by
+  `payload.op_key`, and `consequence` drives its hold/retry decision.
+- `recordOutcome` mapping on the real path: RECOVER_SUCCEEDED ->
+  EFFECT_SUCCEEDED (carries `result`); RECOVER_FAILED -> EFFECT_FAILED
+  (definitive failure, retryable:false); SAFE_TO_RETRY -> NO terminal
+  event (the op stays open; the next dispatch emits EFFECT_DISPATCHED).
+  Held ops stay sweepable and can still RECOVER on new evidence via the
+  reconciler, not via the adapter.
+- Deliberate policy delta (not a bug): the class predicates HOLD on any
+  inconclusive probe regardless of consequence, which is stricter than the
+  reconciler's unknown + low-consequence + attempts-left bounded retry.
+  These effects are irreversible (duplicate cold email = reputational
+  harm), so the adapter layer stays conservative; the reconciler's
+  bounded-retry rule still governs ops the adapter never sees.
+
+- `adapter_core.js` is a factory: `require('./adapter_core.js')({ foundation, emit })`.
+  `foundation` is normally resolved automatically: explicit injection,
+  then `require('../effect_reconciler.js')` (the sibling module, the layout
+  this directory ships in), then the shim.
+- If no foundation is reachable, a clearly-marked local SHIM backs the
+  ledger and emits `[ADAPTER-SHIM-EVENT]` JSON lines tagged `shim:true`.
+  The shim is NOT canonical and is TEST-ONLY; it exists so adapters stay
+  testable off the Pig. `core.foundationSource` reports
   `injected` | `sibling` | `shim` so callers can assert which backing is
-  live. API conformance: built against the PINNED contract (op key =
-  sha256("op:v1:"+mission_id+":"+effect_name+":"+canonical(input)), the six
-  EFFECT_* event types, HOLD/RESUME on MissionRuntime, the scheduler
-  unknown-outcome sweep). The actual foundation API was NOT available at
-  build time; conformance must be re-verified when the sibling module lands.
+  live.
 
 ## Per-class Q1-Q8 summary
 

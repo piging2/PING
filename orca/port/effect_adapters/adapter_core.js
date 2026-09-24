@@ -4,18 +4,51 @@
  * PORT SEAM: this module wires the A6 unknown-outcome foundation to the real
  * external-effect boundaries (skill CLIs / Pig browser automation). The A6
  * foundation module (ping-runtime/orchestration/effect_reconciler.js) is owned
- * by the sibling worker. This file loads it via dependency injection:
+ * by the sibling worker. This file resolves it in order:
  *
- *   const core = require('./adapter_core.js')({ foundation });
+ *   1. explicit injection: require('./adapter_core.js')({ foundation, emit })
+ *   2. sibling module: require('../effect_reconciler.js') — the layout this
+ *      directory ships in (ping-runtime/orchestration/effect_adapters/)
+ *   3. local SHIM — test-only fallback when no foundation is reachable.
  *
- * where `foundation` is { EffectLedger, EffectReconciler, UnknownOutcomeError,
- * EFFECT_DISPATCHED, EFFECT_SUCCEEDED, EFFECT_FAILED, EFFECT_UNKNOWN,
- * EFFECT_RECONCILED, EFFECT_HELD }. When placed at
- * ping-runtime/orchestration/effect_adapters/adapter_core.js it will also try
- * require('../effect_reconciler.js') as a fallback. If neither is available, a
- * clearly-marked local SHIM ledger/emit path is used. The shim is NOT the
- * canonical authority; it exists only so adapters stay testable and the seam
- * stays explicit until the foundation lands.
+ * `core.foundationSource` reports 'injected' | 'sibling' | 'shim' so callers
+ * and tests can assert which backing is live.
+ *
+ * CONFORMANCE (verified 2026-09-24 against the real foundation at
+ * ping-runtime/orchestration/effect_reconciler.js, commit 36d401538):
+ *
+ * - deriveOpKey delegates to foundation.deriveOpKey({ missionId, effect,
+ *   input }) whenever the foundation is present, so adapter op keys are
+ *   byte-identical to the keys the EffectExecutor and EffectReconciler use.
+ *   The adapter's `effectName` IS the foundation's `effect` identifier; the
+ *   hash material is op:v1:<mission>:<effect>:<canonical(input)> in both.
+ *   The local canonicalize()/sha256 implementation below is the pinned
+ *   contract fallback for the shim path only.
+ * - Event payloads use the A6 snake_case schema (op_key, mission_id, effect,
+ *   attempt, reason, consequence, result, error, retryable, evidence). The
+ *   reconciler sweep groups EFFECT_UNKNOWN events by payload.op_key; a
+ *   camelCase payload would make held ops invisible to the sweep.
+ * - escalateHold emits EFFECT_UNKNOWN + EFFECT_HELD with `consequence`
+ *   propagated (the sweep's decide() needs it: unknown + low-consequence +
+ *   attempts-left -> bounded retry, high-consequence -> held). Held ops stay
+ *   sweepable: the reconciler re-probes HELD ops and can still RECOVER them
+ *   on new evidence (EFFECT_RECONCILED carrying `result`).
+ * - recordOutcome maps RECOVER_SUCCEEDED -> EFFECT_SUCCEEDED (carries
+ *   `result`), RECOVER_FAILED -> EFFECT_FAILED (never unknown; a definitive
+ *   failure is definitive), and SAFE_TO_RETRY -> NO terminal event. The real
+ *   reconcile() emits nothing for retry_authorized: the op stays open and
+ *   the caller's next dispatch emits EFFECT_DISPATCHED with the next
+ *   attempt number. Emitting a terminal EFFECT_* for a retry authorization
+ *   would wrongly close the op for the sweep.
+ * - EffectReconciler has NO static emit. Event emission on the real path
+ *   requires a caller-injected `emit(type, payload)` bound to the
+ *   UnifiedEventRuntime. With the real foundation loaded and no emit
+ *   injected, the emitter FAILS LOUD instead of silently writing shim
+ *   events: a hold that never reaches the event store can never be swept
+ *   or recovered, so silence would be a lost hold.
+ * - The shim (source 'shim') is TEST-ONLY: process-local ledger, stdout
+ *   [ADAPTER-SHIM-EVENT] lines tagged shim:true. Nothing on this path is
+ *   canonical and nothing on it may be mistaken for a durable write.
  *
  * PORT LAWS ENCODED HERE:
  *  1. Timeout is an observation, never an effect outcome. probeWithTimeout()
@@ -65,6 +98,11 @@ const DECISIONS = Object.freeze({
  * Two inputs that are semantically equal produce byte-identical output,
  * so equal logical operations hash to the same op key regardless of key
  * insertion order.
+ *
+ * PINNED-CONTRACT fallback: used for op-key hashing only when the real
+ * foundation is unreachable (shim path). When the foundation is present,
+ * deriveOpKey delegates to foundation.deriveOpKey so keys are byte-identical
+ * with the rest of the A6 system.
  */
 function canonicalize(input) {
   const walk = (v) => {
@@ -84,20 +122,7 @@ function sha256hex(s) {
   return crypto.createHash('sha256').update(s, 'utf8').digest('hex');
 }
 
-/**
- * deriveOpKey({ missionId, effectName, input }) -> hex op key.
- * Pinned contract: sha256("op:v1:" + mission_id + ":" + effect_name + ":"
- * + canonical(input)).
- *
- * missionId and effectName are CALLER-SUPPLIED logical identifiers.
- * input is the frozen approved content/parameters snapshot. NOTHING here
- * may come from Date.now(), Math.random(), crypto.randomUUID(), or any
- * other wall-clock/random source. The timestamp-in-identity anti-pattern
- * (commit_authority commit_id hashing wall-clock, canonical UUID v5
- * embedding a timestamp, FYD journal random event_id) is exactly what this
- * replaces. See REPAIR-NOTES.md for the three known repair sites.
- */
-function deriveOpKey({ missionId, effectName, input }) {
+function validateDeriveArgs(missionId, effectName, input) {
   if (!missionId || typeof missionId !== 'string') {
     throw new Error('deriveOpKey requires caller-supplied missionId (string)');
   }
@@ -107,7 +132,28 @@ function deriveOpKey({ missionId, effectName, input }) {
   if (input === undefined || input === null || typeof input !== 'object') {
     throw new Error('deriveOpKey requires input (frozen snapshot object)');
   }
+}
+
+/** Local pinned-contract op-key implementation (shim path only). */
+function localDeriveOpKey({ missionId, effectName, input }) {
+  validateDeriveArgs(missionId, effectName, input);
   return sha256hex(`${OP_KEY_PREFIX}:${missionId}:${effectName}:${canonicalize(input)}`);
+}
+
+/**
+ * Build the instance's deriveOpKey. With the real foundation present this
+ * delegates to foundation.deriveOpKey({ missionId, effect, input }) — the
+ * adapter's effectName IS the foundation's effect identifier, so the keys
+ * are byte-identical with the EffectExecutor / EffectReconciler key space.
+ */
+function makeDeriveOpKey(foundation) {
+  if (foundation && typeof foundation.deriveOpKey === 'function') {
+    return ({ missionId, effectName, input }) => {
+      validateDeriveArgs(missionId, effectName, input);
+      return foundation.deriveOpKey({ missionId, effect: effectName, input });
+    };
+  }
+  return localDeriveOpKey;
 }
 
 /**
@@ -276,77 +322,162 @@ function evaluatePredicate({ classModule, classId, probeResult, context }) {
 }
 
 /**
- * HOLD escalation. Writes the op into the ledger as UNKNOWN/HELD and emits
- * EFFECT_UNKNOWN + EFFECT_HELD events. Delegates to the foundation when
- * present; otherwise uses the local shim (marked, non-canonical).
+ * A6 event payload schema. The reconciler sweep groups EFFECT_UNKNOWN events
+ * by payload.op_key and reads payload.consequence for the hold/retry
+ * decision, so payloads MUST use these snake_case keys. A camelCase payload
+ * would make the op invisible to the sweep.
  */
-function escalateHold({ foundation, opKey, effectName, effectClass, attemptKey, holdReason, evidence, missionId }) {
+function basePayload({ opKey, effectName, effectClass, attemptKey, attempt, consequence, missionId }) {
+  return {
+    op_key: opKey,
+    mission_id: missionId || null,
+    effect: effectName,
+    effect_class: effectClass,
+    attempt: Number.isInteger(attempt) ? attempt : null,
+    attempt_key: attemptKey || null,
+    consequence: consequence || 'high',
+  };
+}
+
+/**
+ * HOLD escalation. On the real path this emits EFFECT_UNKNOWN + EFFECT_HELD
+ * through the injected emitter (bound to the UnifiedEventRuntime) so the
+ * reconciler sweep can find the op by op_key, honor `consequence`, and
+ * still RECOVER the op later on new evidence. On the shim path it appends
+ * to the process-local shim ledger and emits marked stdout events.
+ */
+function escalateHold({ foundation, emit, opKey, effectName, effectClass, attemptKey, attempt, consequence, holdReason, evidence, missionId }) {
+  const payload = {
+    ...basePayload({ opKey, effectName, effectClass, attemptKey, attempt, consequence, missionId }),
+    reason: holdReason || 'unspecified',
+    evidence: evidence || {},
+  };
   const holdRecord = {
     opKey,
     effectName,
     effectClass,
     attemptKey: attemptKey || null,
+    attempt: payload.attempt,
     missionId: missionId || null,
+    consequence: payload.consequence,
     state: 'HELD',
     holdReason: holdReason || 'unspecified',
     evidence: evidence || {},
     heldAt: new Date().toISOString(),
+    durable: !!foundation,
+    sink: foundation ? 'event-store' : 'shim-test-only',
   };
-  const emit = makeEmitter(foundation);
-  if (foundation && foundation.EffectReconciler) {
-    emit('EFFECT_UNKNOWN', { opKey, effectName, effectClass, attemptKey, reason: holdReason, evidence });
-    emit('EFFECT_HELD', { opKey, effectName, effectClass, attemptKey, reason: holdReason, evidence });
+  const emitter = makeEmitter(foundation, emit);
+  if (foundation) {
+    emitter('EFFECT_UNKNOWN', payload);
+    emitter('EFFECT_HELD', { ...payload, escalated_to: 'operator' });
   } else {
     shimLedgerAppend(holdRecord);
-    emit('EFFECT_UNKNOWN', { opKey, reason: holdReason });
-    emit('EFFECT_HELD', { opKey, reason: holdReason });
+    emitter('EFFECT_UNKNOWN', { opKey, reason: holdReason });
+    emitter('EFFECT_HELD', { opKey, reason: holdReason });
   }
   return holdRecord;
 }
 
 /**
- * Record a reconciled outcome (RECOVER_SUCCEEDED / RECOVER_FAILED /
- * SAFE_TO_RETRY path) against the ledger and emit the matching event.
+ * Record a reconciled outcome against the event store (real path) or the
+ * shim ledger (test-only path).
+ *
+ * Real-path mapping (matches EffectReconciler.reconcile() semantics):
+ *   RECOVER_SUCCEEDED -> EFFECT_SUCCEEDED, carries `result`
+ *   RECOVER_FAILED    -> EFFECT_FAILED (definitive failure; never unknown),
+ *                        retryable:false
+ *   SAFE_TO_RETRY     -> NO terminal event. The op stays open; the caller's
+ *                        next dispatch emits EFFECT_DISPATCHED with the next
+ *                        attempt number. Emitting a terminal EFFECT_* here
+ *                        would wrongly close the op for the reconciler sweep.
+ *   HOLD_UNKNOWN      -> no event here; the caller must escalateHold().
  */
-function recordOutcome({ foundation, opKey, effectName, effectClass, attemptKey, decision, evidence, missionId }) {
-  const eventByDecision = {
-    [DECISIONS.RECOVER_SUCCEEDED]: 'EFFECT_SUCCEEDED',
-    [DECISIONS.RECOVER_FAILED]: 'EFFECT_FAILED',
-    [DECISIONS.SAFE_TO_RETRY]: 'EFFECT_RECONCILED',
+function recordOutcome({ foundation, emit, opKey, effectName, effectClass, attemptKey, attempt, consequence, decision, evidence, error, missionId }) {
+  const payload = {
+    ...basePayload({ opKey, effectName, effectClass, attemptKey, attempt, consequence, missionId }),
+    evidence: evidence || {},
   };
   const record = {
     opKey,
     effectName,
     effectClass,
     attemptKey: attemptKey || null,
+    attempt: payload.attempt,
     missionId: missionId || null,
+    consequence: payload.consequence,
     decision,
     evidence: evidence || {},
     recordedAt: new Date().toISOString(),
+    durable: !!foundation,
+    sink: foundation ? 'event-store' : 'shim-test-only',
   };
-  const emit = makeEmitter(foundation);
-  const evt = eventByDecision[decision];
-  if (evt) emit(evt, { opKey, effectName, effectClass, decision, evidence });
-  if (!foundation || !foundation.EffectReconciler) shimLedgerAppend(record);
+  const emitter = makeEmitter(foundation, emit);
+  if (foundation) {
+    if (decision === DECISIONS.RECOVER_SUCCEEDED) {
+      // Real semantics: recovered outcomes carry `result`.
+      const result = evidence && evidence.result !== undefined ? evidence.result : null;
+      emitter('EFFECT_SUCCEEDED', { ...payload, result });
+      record.emitted = 'EFFECT_SUCCEEDED';
+    } else if (decision === DECISIONS.RECOVER_FAILED) {
+      emitter('EFFECT_FAILED', { ...payload, error: error || 'effect definitively failed', retryable: false });
+      record.emitted = 'EFFECT_FAILED';
+    } else {
+      // SAFE_TO_RETRY / HOLD_UNKNOWN: no terminal event on the real path.
+      record.emitted = null;
+    }
+  } else {
+    const eventByDecision = {
+      [DECISIONS.RECOVER_SUCCEEDED]: 'EFFECT_SUCCEEDED',
+      [DECISIONS.RECOVER_FAILED]: 'EFFECT_FAILED',
+      [DECISIONS.SAFE_TO_RETRY]: 'EFFECT_RECONCILED',
+    };
+    const evt = eventByDecision[decision];
+    if (evt) emitter(evt, { opKey, effectName, effectClass, decision, evidence: evidence || {} });
+    shimLedgerAppend(record);
+    record.emitted = evt || null;
+  }
   return record;
 }
 
-function makeEmitter(foundation) {
-  if (foundation && foundation.EffectReconciler && typeof foundation.EffectReconciler.emit === 'function') {
-    return (type, payload) => foundation.EffectReconciler.emit(type, payload);
+/**
+ * Build the event emitter for escalateHold/recordOutcome.
+ *
+ * 1. A caller-injected `emit(type, payload)` always wins. In production it
+ *    is bound to the UnifiedEventRuntime:
+ *      (type, payload) => eventRuntime.emit(type, 'effect-adapters', payload, { correlation_id: payload.op_key })
+ * 2. Real foundation loaded but no emit injected: FAIL LOUD. The
+ *    EffectReconciler class has no static emit; without a bound runtime the
+ *    canonical store is unreachable, and a hold that never reaches the
+ *    event store can never be swept or recovered. Silence would be a lost
+ *    hold, so this throws instead of degrading to the shim.
+ * 3. No foundation: the TEST-ONLY shim emitter (stdout JSON line, tagged
+ *    shim:true). Never canonical.
+ */
+function makeEmitter(foundation, injectedEmit) {
+  if (typeof injectedEmit === 'function') return injectedEmit;
+  if (foundation) {
+    return () => {
+      throw new Error(
+        'adapter_core: canonical event sink unreachable. The real A6 foundation is loaded ' +
+        'but no `emit` was injected into createCore({ emit }). EFFECT_* events must reach the ' +
+        'UnifiedEventRuntime; a hold that never reaches the event store can never be swept or ' +
+        'recovered. Pass { emit: (type, payload) => eventRuntime.emit(type, source, payload, opts) }.'
+      );
+    };
   }
   return (type, payload) => {
-    // Shim emitter: stdout JSON line, clearly marked non-canonical.
+    // Shim emitter: stdout JSON line, clearly marked non-canonical, test-only.
     process.stdout.write(
-      `[ADAPTER-SHIM-EVENT] ${type} ${JSON.stringify({ ...(payload || {}), shim: true })}\n`
+      `[ADAPTER-SHIM-EVENT] ${type} ${JSON.stringify({ ...(payload || {}), shim: true, testOnly: true })}\n`
     );
   };
 }
 
 // Local shim ledger. NOT the canonical authority. Exists only so the
-// adapter layer remains testable before the A6 foundation lands. Every
-// entry is tagged shim:true. The sibling worker's EffectLedger replaces
-// this entirely; do not build features on it.
+// adapter layer remains testable when the A6 foundation is unreachable.
+// Every entry is tagged shim:true. The sibling worker's EffectLedger
+// replaces this entirely; do not build features on it.
 const SHIM_LEDGER = [];
 function shimLedgerAppend(record) {
   SHIM_LEDGER.push({ ...record, shim: true });
@@ -360,36 +491,85 @@ function shimLedgerClear() {
 }
 
 /**
+ * The pinned A6 export contract the adapters depend on. If a foundation
+ * module loads but is missing any of these, the seam REFUSES to silently
+ * fall back to the shim: a corrupt foundation must fail loud, never
+ * degrade to a non-canonical authority.
+ */
+const FOUNDATION_CONTRACT = [
+  'EffectLedger',
+  'EffectReconciler',
+  'EffectExecutor',
+  'UnknownOutcomeError',
+  'deriveOpKey',
+  'canonicalJson',
+  'describeState',
+];
+
+function assertFoundationContract(mod, where) {
+  const missing = FOUNDATION_CONTRACT.filter((k) => mod[k] === undefined);
+  if (missing.length > 0) {
+    throw new Error(
+      `adapter_core: foundation at ${where} is missing exports: ${missing.join(', ')}. ` +
+      'Refusing to fall back to the shim on a corrupt foundation.'
+    );
+  }
+  for (const t of EFFECT_EVENT_TYPES) {
+    if (!mod.EFFECT_TYPES || typeof mod.EFFECT_TYPES.has !== 'function' || !mod.EFFECT_TYPES.has(t)) {
+      throw new Error(
+        `adapter_core: foundation at ${where} does not carry EFFECT_TYPES '${t}'. ` +
+        'Refusing to fall back to the shim on a corrupt foundation.'
+      );
+    }
+  }
+}
+
+/**
  * Resolve the foundation: explicit injection first, then the sibling
  * module at ../effect_reconciler.js (the placement this directory ships
- * for), then the shim. Returns { foundation, source } where source is
- * 'injected' | 'sibling' | 'shim'.
+ * for), then the test-only shim. Returns { foundation, source } where
+ * source is 'injected' | 'sibling' | 'shim'.
  */
 function resolveFoundation(injected) {
-  if (injected && injected.EffectReconciler) return { foundation: injected, source: 'injected' };
+  if (injected) {
+    assertFoundationContract(injected, 'injected');
+    return { foundation: injected, source: 'injected' };
+  }
+  let sibling = null;
   try {
     // eslint-disable-next-line global-require, import/no-dynamic-require
-    const sibling = require('../effect_reconciler.js');
-    if (sibling && sibling.EffectReconciler) return { foundation: sibling, source: 'sibling' };
+    sibling = require('../effect_reconciler.js');
   } catch (err) {
-    // sibling not present yet; fall through to shim
+    sibling = null; // not placed next to the foundation yet; shim below
+  }
+  if (sibling) {
+    assertFoundationContract(sibling, 'sibling ../effect_reconciler.js');
+    return { foundation: sibling, source: 'sibling' };
   }
   return { foundation: null, source: 'shim' };
 }
 
 /**
  * Factory. Usage:
- *   const core = require('./adapter_core.js')({ foundation });
+ *   const core = require('./adapter_core.js')({ foundation, emit });
+ *
+ * `foundation` is normally resolved automatically from the sibling module.
+ * `emit(type, payload)` is the caller's binding to the UnifiedEventRuntime;
+ * required for durable EFFECT_* writes whenever the real foundation is
+ * loaded. Without it, escalateHold/recordOutcome fail loud rather than
+ * silently losing events.
+ *
  * Exposes the shared primitives plus the resolved foundation source so
  * callers and tests can assert which backing is in use.
  */
 function createCore(opts) {
   const { foundation, source } = resolveFoundation(opts && opts.foundation);
+  const emit = opts && opts.emit;
   return {
     DECISIONS,
     EFFECT_EVENT_TYPES,
     canonicalize,
-    deriveOpKey,
+    deriveOpKey: makeDeriveOpKey(foundation),
     deriveAttemptKey,
     makeProbeResult,
     assertProbeEvidence,
@@ -398,8 +578,8 @@ function createCore(opts) {
     evaluatePredicate,
     foundation,
     foundationSource: source,
-    escalateHold: (args) => escalateHold({ foundation, ...args }),
-    recordOutcome: (args) => recordOutcome({ foundation, ...args }),
+    escalateHold: (args) => escalateHold({ foundation, emit, ...args }),
+    recordOutcome: (args) => recordOutcome({ foundation, emit, ...args }),
     _shim: { ledgerRead: shimLedgerRead, ledgerClear: shimLedgerClear },
   };
 }
