@@ -20,25 +20,72 @@ import subprocess, sys, json, time, re, os
 ELIGIBILITY = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "send-eligibility.py")
 
+def _is_meta_line(line):
+    # Any leading "- " bullet in a draft header block is metadata (these
+    # drafts never use bulleted body prose; the voice rule is one sentence
+    # per paragraph).
+    s = line.strip()
+    if s.startswith("- "):
+        return True
+    if not s or s == "---" or s.startswith("#"):
+        return True
+    # Bare (non-bullet) metadata prefixes used in draft header blocks above
+    # the To:/Subject: lines, e.g.:
+    #   Prospect: X | Trade: y | Town: Z
+    #   Contact route: site-published email a@b.c | Drafted: 2026-09-10 | Round: 17
+    #   Re-voiced 2026-09-21 round 108: ...
+    #   Message:
+    #   Copy-test: VARIANT B / From: PING Social <nolangesk@gmail.com> /
+    #   Phone on file: ... / SKIPPED 2026-09-10 (header-block annotations)
+    #   Business: ... (round-119 corpus scan: these shapes appear only in
+    #   header blocks, never as body prose; body sentences like "Question: ..."
+    #   are why this stays an explicit allowlist, not a generic "Key:" match)
+    return s.startswith(("To:", "Subject:", "Status", "Prospect:",
+                         "Contact route:", "Contact:", "Drafted:", "Round:",
+                         "Re-voiced", "Message:", "Route:", "Angle:",
+                         "Source:", "Town:", "Trade:", "Copy-test:",
+                         "Phone on file", "From:", "SKIPPED", "Business:"))
+
+
 def parse_draft(path):
-    to, subject, body_lines = None, None, []
-    in_header = True
+    """Extract (to, subject, body) from a draft file.
+
+    Drafts vary in header style: plain "To:"/"Subject:" lines, "- To:" bullets,
+    "To: a | Subject: b" one-liners, trailing parenthetical annotations on the
+    address, and a bullet metadata block plus "---" before the message. The
+    body starts at the first non-metadata line; everything from there is the
+    message verbatim. Bare address only is returned for To:.
+    """
+    to, subject = None, None
     with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            s = line.rstrip("\n")
-            if in_header:
-                if s.strip() == "":
-                    in_header = False
-                    continue
-                for seg in s.split("|"):
-                    seg = seg.strip()
-                    if seg.startswith("To:") and to is None:
-                        to = seg[3:].strip()
-                    elif seg.startswith("Subject:") and subject is None:
-                        subject = seg[8:].strip()
-                continue
-            body_lines.append(s)
-    body = "\n".join(body_lines).strip("\n")
+        lines = fh.read().split("\n")
+    body_start = None
+    for i, raw in enumerate(lines):
+        if _is_meta_line(raw):
+            s = raw.strip()
+            if s.startswith("- "):
+                s = s[2:].strip()
+            for seg in s.split("|"):
+                seg = seg.strip()
+                if seg.startswith("To:") and to is None:
+                    addr = re.sub(r"\s*\(.*\)\s*$", "", seg[3:].strip())
+                    if "@" in addr:
+                        to = addr
+                elif seg.startswith("Subject:") and subject is None:
+                    subject = seg[8:].strip()
+            continue
+        if body_start is None and i < 60:
+            body_start = i
+            break
+    body = "\n".join(lines[body_start:]).strip("\n") if body_start is not None else ""
+    # The message ends at the sign-off line; anything after it is an
+    # editorial note (e.g. "Re-voiced ...") that must never be sent.
+    kept = []
+    for ln in body.split("\n"):
+        kept.append(ln)
+        if ln.strip() == "PING Social, (970) 589-3309":
+            break
+    body = "\n".join(kept).strip("\n")
     return to, subject, body
 
 def cli(*args, timeout=120):
@@ -50,6 +97,9 @@ def gmail_sent_count(to_addr):
     """Count messages in sent mail to this exact recipient (level-3 history)."""
     r = cli("gmail", "+triage", "--query", f"in:sent to:{to_addr}",
             "--max", "50", "--format", "json")
+    combined = (r.stdout or "") + (r.stderr or "")
+    if "No messages found matching query" in combined:
+        return 0  # unambiguous zero-hit result from the CLI (verified 2026-09-22)
     try:
         data = json.loads(r.stdout)
     except Exception:

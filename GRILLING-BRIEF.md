@@ -1,6 +1,6 @@
 # GRILLING BRIEF - the ONE active operator decision surface
 
-For Nolan. Last updated: 2026-09-22 (2026-09-22 changes: PG-001 parked as answered-HOLD; stale ACTIVE GATEWAY-001 removed; G1 and G3 recorded operationally resolved; DEPLOY-PROV-001, G2-IDENTITY, G4-AGENT-TENANT, MEDIA-RIGHTS-001, AUTOCRDT-001 added).
+For Nolan. Last updated: 2026-09-23 (2026-09-23 changes: nine new active questions on the Jev promotion / production gate closure / Orca A6 / dependency program, per Nolan's "grill me as much as possible"; each carries a recorded default the agent proceeds on unless overridden).
 
 This file is the ONE canonical GRILL deliverable. ALL lanes, agents, workers, audits, backlog processors, convergence work, marketing work, runtime work, and self-improvement work route consequential operator questions through this file.
 
@@ -142,6 +142,34 @@ DEFAULT IF NOLAN DOES NOTHING: No adoption; the harvest stays undecided.
 
 RECOMMENDED NEXT EXPERIMENT: None empirical; this is architectural judgment.
 
+### INGEST-001: authorize the first live canonical-journal write (2,487 git observation envelopes)?
+
+QUESTION: Lane A built a git→PING observation adapter, proven in dry-run (2,487 envelopes: 2,380 OBJECT_CREATED + 107 RELATIONSHIP_CREATED, all logicalIds unique, all in the registered /ingest vocabulary, evidence = packet SHA-256). The only unproven step is POSTing them to the Pig gateway's /ingest and reading back ping_events. Authorize the live write?
+
+WHY IT MATTERS: This is the first real canonical-journal write of the build program and the gate for the first major milestone (PING MULTI-SOURCE ACQUISITION: git repo → observation, GitHub → observation, one business connector → observation, all through UnifiedEventRuntime.emit). Without it, canonical persistence/replay/idempotency/restart-recovery proof stays theoretical.
+
+WHAT EVIDENCE SAYS: Phase 0 proved the seam (POST /ingest → CanonicalizationService → UnifiedEventRuntime.emit, idempotent INSERT ... ON CONFLICT DO NOTHING, content-deterministic SHA-256 event IDs). Envelopes carry lifecycleStage "observation" + confidence 0.5 ("observations are not knowledge"), source-attributed git-ingestor:lane-a. Re-POST is safe by design (deduplicated:true, no handler re-trigger). The adapter's live mode is built but gated on this decision. Nothing else in the program can answer it empirically.
+
+CONTRADICTION / TRADEOFF: (a) GO: 2,487 labeled observation rows land in the journal; the milestone proof becomes real; duplicates are harmless by idempotency. (b) HOLD: the journal stays pristine; the milestone stays dry-run-proven; the wiring wave proves everything short of the live write.
+
+DEFAULT IF NOLAN DOES NOTHING: (b) HOLD. The adapter stays dry-run-proven; the wiring wave proceeds without live journal writes.
+
+RECOMMENDED NEXT EXPERIMENT: If GO, the wiring wave POSTs, reads back ping_events, diffs journal rows against envelope logicalIds, verifies idempotent re-POST, and reports the row count.
+
+### ELV2-001: Nango commercial license decision for connector auth/proxy?
+
+QUESTION: Lane BCQ's verdict is ADOPT, bounded: self-hosted Nango for AUTH + PROXY / CONNECTION MANAGEMENT ONLY (never syncs, never authority), behind the AuthBroker SPI with the secret key in lane L's broker. Nango is Elastic License 2.0: permits internal self-hosting, restricts offering it as a hosted/managed service. Is commercial ELv2 use acceptable, or do we build the hand-rolled fallback?
+
+WHY IT MATTERS: This is the connector program's auth story. ELv2 is not open source; using it in a commercial product without a decision is exactly the kind of licensing debt that becomes expensive later. No live OAuth round trip is proven yet either (builds were OOM-killed), so this decision gates production, not the spike.
+
+WHAT EVIDENCE SAYS: Nango harvested from source (7bf896bb): refreshOrTestCredentials before proxy injection, single-flight refresh + Redis TTL lock. Wrapper red-team 7/7 (no credential-returning API, cross-tenant substitution rejected, caller Authorization stripped). The AuthBroker SPI means a hand-rolled fallback stays swappable.
+
+CONTRADICTION / TRADEOFF: (a) Accept ELv2 for self-hosted auth/proxy: fastest path to live connector credentials, known license terms. (b) Reject: hand-rolled OAuth broker via the AuthBroker SPI; more code we own, zero license surface.
+
+DEFAULT IF NOLAN DOES NOTHING: No Nango in production; the spike stays experimental; connector auth waits for the hand-rolled broker.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; this is a licensing/business judgment. Live OAuth proof only matters after the decision.
+
 ## PARKED - ANSWERED, AWAITING TRIGGER
 
 Not active. Answered; the trigger for execution is named. Do not present as unanswered.
@@ -252,6 +280,33 @@ Retained because the queue can be authoritative for execution intent while NOT b
 
 ## RESOLVED / EXECUTE NOW
 
+### Resolved by the Decisions-Locked directive (2026-09-22 20:08 MDT) — the five FYD questions are answered and none blocks the product loop. Clock started.
+
+- FYD-BAR-001: RESOLVED. Freeze 12 cold URLs now (4 trades/home services, 4 retail/food/local commerce, 4 professional/creator/service), no cherry-picking after. Measure per URL: time to first useful preview, identity/contact/location accuracy, service/product discovery, unsupported factual claims, mobile usability, contact/action discoverability, performance, owner corrections required. Initial operational bar: median useful preview under 10 minutes; architectural target is roughly a minute; first break time down by stage (fetch/extract/resolve/graph/plan/render). QUALITY GATE: zero unsupported published factual claims. Structured per-site observations (what FYD got right/missed/wrong/invented/made easier, what original did better, generic failure class); cluster failures generically (acquisition/extraction/entity resolution/graph/planner/media/renderer/performance/owner policy) and fix the highest-frequency/highest-impact generic cause. Nolan judges the first run; then the real bar is set from the measured baseline.
+- FYD-OWNER-001: RESOLVED. Attempt legitimate owner participation; Monument View is NOT a blocker. Gate is ONE REAL OWNER uses their own FYD presence (see/correct/regenerate/correction survives/plain-English change/approve/see change/return/intent survives), not one specific owner. DemoOwnerContext behind an OwnerContext interface until real auth is wired; no scattered demo-owner conditionals; never pretend demo auth is production auth.
+- FYD-CONFLICT-001: RESOLVED. Owner assertion governs the owner's FYD projection on explicitly corrected fields; untouched fields update per evidence policy. If the source later changes a corrected field, do NOT overwrite: raise SOURCE_CHANGED_AGAINST_OWNER_ASSERTION and surface "Website now says midnight. You previously set 10 PM. KEEP MINE / ACCEPT SOURCE / INSPECT."
+- FYD-KNOW-001: RESOLVED. Tenant-local by default. No promotion of one customer's correction into shared PING knowledge; future promotion needs explicit semantics and consent. A correction may improve generic software only if it teaches a non-customer-specific parser/planner rule without leaking customer data.
+- MEDIA-DEMO-001: RESOLVED. Authorized demo sources: download, digest, preserve provenance, derive optimized versions, serve FYD copies (proves the future media pipeline). Random cold third-party URLs: do not assume republication rights; reference metadata or omit unless reuse authority is clear. Hotlinking is not the default rights strategy. Media pipeline must not become the sprint.
+- JEV-KILL-001: RESOLVED (per the earlier grill adjudication). Do NOT kill PING/FYD on Jev disagreement rate (wrong scope). FYD kill/rethink criteria are product failures: cold sites repeatedly un-understandable with reasonable acquisition; owners consistently distrust/correct most content; no advantage over commodity builders; corrections/regeneration fail to reduce owner effort; Ask FYD no better than generic RAG; real owners do not value the product. Jev gets a separate falsification criterion.
+
+
+
+### V4-RPCBIND-001: disable the undocumented rpcbind :111 listener on ping-core-01 (DECIDED 2026-09-24, Nolan: GO — bounded ops lane dispatched)
+
+Nolan ordered execution with the bounded constraints: measure before limiting, conservative ceilings with headroom, prove restart/recovery, rollback on contradiction, Postgres-native mechanisms first, restore drill before green, RPO/RTO measured from drill, Qdrant classified by rebuildability.
+
+### V4-HEALTH-001: set container memory limits and add the gateway healthcheck (DECIDED 2026-09-24, Nolan: GO — bounded ops lane dispatched)
+
+Nolan ordered execution with the bounded constraints: measure before limiting, conservative ceilings with headroom, prove restart/recovery, rollback on contradiction, Postgres-native mechanisms first, restore drill before green, RPO/RTO measured from drill, Qdrant classified by rebuildability.
+
+### V4-BACKUP-001: authorize backup automation, set the RPO, consolidate artifacts (DECIDED 2026-09-24, Nolan: GO — bounded ops lane dispatched)
+
+Nolan ordered execution with the bounded constraints: measure before limiting, conservative ceilings with headroom, prove restart/recovery, rollback on contradiction, Postgres-native mechanisms first, restore drill before green, RPO/RTO measured from drill, Qdrant classified by rebuildability.
+
+### V4-QDRANT-001: set a snapshot cadence and authorize a restore drill on a staging host (DECIDED 2026-09-24, Nolan: GO — bounded ops lane dispatched)
+
+Nolan ordered execution with the bounded constraints: measure before limiting, conservative ceilings with headroom, prove restart/recovery, rollback on contradiction, Postgres-native mechanisms first, restore drill before green, RPO/RTO measured from drill, Qdrant classified by rebuildability.
+
 Recorded, propagated, off the active surface.
 
 ### G1: append-only trigger ownership (OPERATIONALLY RESOLVED 2026-09-22)
@@ -357,3 +412,250 @@ Normal progress stays compact. Interrupt Nolan immediately only for genuinely co
 6. do not create another Grill artifact.
 
 The Grill should become sharper over time, not longer by accumulation.
+
+## Active questions — from the improvement sweep (2026-09-23)
+
+### G1. brain-postgres backup
+- **QUESTION:** Authorize daily pg_dump -Fc of the live brain-postgres/ping_runtime, staged on the Pig and copied off-host to Oracle, 14-day retention, with weekly automated restore-verification?
+- **WHY IT MATTERS:** This is the only production database with no verified backup. The mission pipeline writes every ~5 seconds; every day widens the unrecoverable-loss window. It is the single highest value-per-effort item in the sweep.
+- **WHAT EVIDENCE SAYS:** No verified backup of the live DB was found; existing pg_dump files have unknown provenance; no crons touch either plane; the DB sits on a single-volume Windows box that already lost Docker to disk pressure.
+- **CONTRADICTION / TRADEOFF:** A tiny amount of Pig I/O daily and backup storage versus an unrecoverable production loss window. Fully reversible, read-only to the live DB.
+- **DEFAULT IF NOLAN DOES NOTHING:** The gap stays open and the loss window keeps widening.
+- **RECOMMENDED NEXT EXPERIMENT:** Approve scope, destination, retention, scheduler, and restore-verification questions; build and run the first restore-verification into a scratch container.
+
+### G3. Credential hygiene batch
+- **QUESTION:** Which credential fixes to authorize? (a) rotate live brain-postgres POSTGRES_PASSWORD and convert the compose line to env-file interpolation — note the compose entry may be the stale 5433 postgres, so name which credential you want rotated; (b) chmod 600 + chown on the world-readable .env.muse holding live gateway API keys (zero downtime, cheapest real exposure closed); (c) strike dev-mode ping-vault from the trust story or fund a real Vault project; (d) name an owner and rotation procedure for the MUSE keys, or rotate now (requires gateway restarts).
+- **WHY IT MATTERS:** Literal PG password in a compose file, live gateway keys in a world-readable file, a dev vault posing as a secret store, keys with no owner or rotation.
+- **WHAT EVIDENCE SAYS:** Read-only verification, no values viewed. Literal PG password at C:\Users\nolan\PING\docker-compose.yml:40 (~12 chars); .env.muse truly world-readable (755 on ext4) holding both live gateway API keys; vault dev-mode with trivial root token; MUSE key ownership/rotation unknown; Oracle backup artifacts 664 and unencrypted. Correction: the "777" Pig perms are a drvfs artifact; real Windows ACLs are Nolan/Admins/SYSTEM plus read-only sandbox users. Exposure is narrower than feared but genuine.
+- **CONTRADICTION / TRADEOFF:** Rotation is the only fix for secrets already on disk; (b) is zero-downtime. None of this is proposed to run without your word.
+- **DEFAULT IF NOLAN DOES NOTHING:** Credentials stay as-is; the .env.muse exposure stays genuinely open to sandbox processes.
+- **RECOMMENDED NEXT EXPERIMENT:** Authorize the batch or pick sub-items; start with (b) as the cheapest real exposure closed.
+
+### G4. Oracle gateway API has no authentication
+- **QUESTION:** Port the Pig's exterior-auth middleware into the Oracle gateway image (rebuild + redeploy = release action, brief gateway downtime, must not break the event bridge), or formally record "loopback-binding is the intended and sufficient control"?
+- **WHY IT MATTERS:** Anyone or anything on the Oracle host reads the event stream with no credentials. The two planes have divergent auth postures.
+- **WHAT EVIDENCE SAYS:** The Oracle gateway image has no auth middleware; /health and /events return 200 with no credentials and with a bogus bearer. The Pig gateway HAS the middleware.
+- **CONTRADICTION / TRADEOFF:** A rebuild/redeploy is a release action on the frozen Oracle baseline versus blessing an unauthenticated API by design.
+- **DEFAULT IF NOLAN DOES NOTHING:** The unauthenticated API stays as-is; the divergence stays undocumented.
+- **RECOMMENDED NEXT EXPERIMENT:** Record the posture decision in writing either way; if porting, run a non-business-hours redeploy of the pinned digest with bridge-verification before and after.
+
+### G5. brain-postgres network exposure + backup encryption
+- **QUESTION:** (a) Rebind brain-postgres from 0.0.0.0:5432 to 127.0.0.1 (brief DB downtime on container recreate; reversible)? (b) Encrypt Oracle backups at rest with a Nolan-held key + chmod 600, and keep or delete the two mislabeled .env.bak-* files?
+- **WHY IT MATTERS:** The production DB is LAN-reachable with password as the only control, on a machine that travels. Any local foothold on the Oracle host yields the full production DB dump in plaintext today.
+- **WHAT EVIDENCE SAYS:** brain-postgres publishes 0.0.0.0:5432; Oracle backup artifacts are 664 and unencrypted; two mislabeled .env.bak files exist.
+- **CONTRADICTION / TRADEOFF:** Brief, reversible downtime versus LAN exposure; key management burden versus plaintext dumps.
+- **DEFAULT IF NOLAN DOES NOTHING:** LAN reachability and plaintext dumps persist.
+- **RECOMMENDED NEXT EXPERIMENT:** Authorize (a) and (b) together or separately; (b) can be done without any downtime.
+
+### G6. Vercel env allowlist + prober follow-up + Orca watch cron
+- **QUESTION:** Three sub-decisions. (a) Check in a VERCEL_ENV_ALLOWLIST.md and get a Vercel-team-scoped read token so a scheduled job can diff project env against the allowlist and alert? (b) For the unknown PG prober: (A) nothing further, (B) enable log_connections + %h in log_line_prefix via pg_reload_conf() (no restart) so the next probe is attributable, or (C) one deeper forensics pass? (c) Activate the Orca watch cron now, keep deferred, or drop it?
+- **WHY IT MATTERS:** "No secrets in Vercel env" is currently convention-only and unauditable. The prober question needs attribution policy. The Orca watch design is complete and waiting for a go/no-go.
+- **WHAT EVIDENCE SAYS:** The connected Vercel credential sees zero projects and gets 403 on teams, so current env is unauditable. The prober was a misconfigured local client during the 9/21 deploy window, not an external attacker; the one password-failed-for-user-"ping" line proves container-network source. Orca watch cron confirmed absent on all three surfaces.
+- **CONTRADICTION / TRADEOFF:** Read tokens are new credentials to manage; connection logging is cheap and no-restart; the watch cron is persistent state that keeps running.
+- **DEFAULT IF NOLAN DOES NOTHING:** Convention-only env rule, no prober attribution, watch stays deferred.
+- **RECOMMENDED NEXT EXPERIMENT:** (b)-B is no-restart and one command; (c) activate now; (a) decide token scope.
+
+### G7. Docker VHDX compaction window (6.2 GB)
+- **QUESTION:** Approve a maintenance window with shutdown order: stop containers → stop Docker Desktop/WSL backend → compact → restart → verify all containers healthy + gateway /health green?
+- **WHY IT MATTERS:** Disk pressure already killed the Docker daemon once; 6.2 GB is trapped inside the VHDX. Downtime pauses the mission pipeline and the gateway.
+- **WHAT EVIDENCE SAYS:** Prior disk-pressure incident killed the daemon; the alerting path (claimable task 20) is the early-warning fallback.
+- **CONTRADICTION / TRADEOFF:** Controlled downtime on the Pig (Nolan's machine) versus another uncontrolled disk-pressure kill.
+- **DEFAULT IF NOLAN DOES NOTHING:** No compaction; rely on alerting.
+- **RECOMMENDED NEXT EXPERIMENT:** Authorize the window; run the alerting task first so the next incident warns before it kills.
+
+### G8. piging2/fyd default branch → main
+- **QUESTION:** In the same browser session as the Vercel import, flip the repo default branch from fyd/builder-composition to main (~2 minutes, removes the wrong-branch trap permanently)?
+- **WHY IT MATTERS:** The wrong default branch is the trap that would import the builder composition instead of the proven candidate into Vercel.
+- **WHAT EVIDENCE SAYS:** GitHub shows default branch fyd/builder-composition; the proven candidate is main at a69bb68f.
+- **CONTRADICTION / TRADEOFF:** Two minutes, fully reversible, removes the trap permanently.
+- **DEFAULT IF NOLAN DOES NOTHING:** The wrong-branch trap stays; Vercel import must explicitly select main every time.
+- **RECOMMENDED NEXT EXPERIMENT:** Do it in the Vercel import session.
+
+Note: G2 (dual-writer) already lives in this grill as DEPLOY-PROV-001; not duplicated. Sweep's concrete breakage modes: duplicate micro-mission emission, duplicate completion/event IDs (CE-001 fragility modes multiply), migration or advisory-lock contention. No active corruption observed; evidence of duplicate events attributable to the second writer would flip the recommendation to stop :8081 immediately.
+
+## Active questions — Jev promotion / production gate closure / Orca A6 / dependency program (2026-09-23)
+
+Nolan's decision 2026-09-23: PROMOTE the verified Jev/gateway candidate, with production gate closure as the acceptance criteria. Promotion is not green until the running 8080 image is proven to contain and enforce the P0 gate. Branch fixed is not production fixed. Orca A6 re-proof decoupled. Dependency forensics after the gate is closed. Each question below carries a recorded default; the work proceeds on defaults unless Nolan overrides.
+
+### GATE-PROV-001: is the gateway image build reproducible, or is behavioral proof the only real provenance?
+
+QUESTION: For this promotion, is "source SHA → image digest → deployed container" a cryptographically reproducible chain, or a recorded claim backed only by the behavioral gate test? And do we invest in reproducible gateway builds after this cutover, or accept behavioral proof as the provenance mechanism?
+
+WHY IT MATTERS: The decision makes the chain "source SHA → image digest → deployed container → behavioral gate test" the evidence standard for every security-sensitive promotion. That standard is only as strong as its weakest link. If the image is built by an unrecorded manual docker build, the digest does not bind to the source SHA; the provenance record is then "we wrote down what we believe we built," and a future image could again ship without the gate while the paperwork looks clean.
+
+WHAT EVIDENCE SAYS: The candidate source SHA fffe99f7a was independently reproduced from a clean checkout, but that reproduced the SOURCE, not the IMAGE build. DEPLOY-PROV-001 (still active above) shows the failure mode is real: candidate-3c5d280dd reached :8080 with zero deployment-registry rows and no documented promotion. The pattern is provenance gaps at the image layer, not the git layer.
+
+CONTRADICTION / TRADEOFF: (a) Invest in reproducible builds (pinned base, recorded build command, digest comparison across two builds): real provenance, real work, slows future promotions slightly. (b) Accept behavioral proof as the mechanism: the gate test is what actually catches a bad image, and it is cheaper; but the SHA→digest link stays a claim. (c) Hybrid: record the exact build invocation plus base image digest this time, defer full reproducibility.
+
+DEFAULT IF NOLAN DOES NOTHING: Proceed with (c) now; during this promotion, build the candidate image twice from the same SHA and compare digests. Match = reproducible, record the procedure. Mismatch = scope the reproducibility work as its own item and keep behavioral proof as the bar.
+
+RECOMMENDED NEXT EXPERIMENT: The double-build digest comparison during this promotion IS the experiment.
+
+### GATE-TEST-001: what proves THE GATE denied the request, not just auth?
+
+QUESTION: Does the acceptance proof distinguish "the P0 gate denied it" from "the auth layer denied it"? And what is the legitimate governed path for POST /orchestration/engine/loop after the gate, if any?
+
+WHY IT MATTERS: The route was reachable WITHOUT authentication, so "unauthorized → DENIED" is trivially satisfied by auth middleware and proves nothing about the gate. The dangerous case is an AUTHENTICATED caller shaping a bypass (auto_scan / bypass_type material). If the proof's bypass test runs unauthenticated, we will certify the auth layer and call it the gate. Separately, the report expects "legitimate governed request → accepted through intended authority path," but no legitimate caller of autonomous-loop start is named in the evidence. If the gate disables the loop by default with no legitimate caller, that expectation is undefined and the "legitimate governed path broken" rollback condition is vacuous.
+
+WHAT EVIDENCE SAYS: P0 framing: route reachable without auth, hardcoded 0.85 fabricated confidence, bypass_type='auto_scan' synthetic stamp. The gate's job is to block autonomous start by default. No legitimate autonomous-loop caller appears in the forensic evidence.
+
+CONTRADICTION / TRADEOFF: (a) Define the matrix now: unauth → denied (auth layer), auth'd + gate closed → denied BY THE GATE with a typed gate error, auth'd + explicitly enabled → governed path; and either name the legitimate caller or declare "no legitimate autonomous starts; healthy = route denies them all." (b) Leave the matrix implicit: the proof tests something, we may certify auth as gate, and the rollback condition stays undefined.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The proof writes the 4-row expectation matrix with the expected DENYING LAYER per row before running, and asserts layer, not just outcome.
+
+RECOMMENDED NEXT EXPERIMENT: The matrix-first proof plan IS the experiment; review it before the isolated candidate proof runs.
+
+### GATE-ORDER-001: A6 kill test vs. promotion cutover on shared live state
+
+QUESTION: Confirm the ordering: Orca A6's witnessed kill-and-restart run completes BEFORE the promotion's STEP -1 re-observe, with the two proofs' verdicts independent but the mutating runs ordered? Or do you want them fully concurrent?
+
+WHY IT MATTERS: Decouple the verdicts, yes; but the STEP -1 rule says "if unexplained runtime state changed: STOP AND RECONCILE BEFORE CUTOVER," and the A6 proof deliberately kills a process and triggers restart reconciliation. Run concurrently against the same live runtime, each run's evidence confounds the other's: the promotion's journal-count/projection-digest baseline shifts mid-proof, and the A6 run's restart state could coincide with the 8080 cutover.
+
+WHAT EVIDENCE SAYS: Orca's EventRepository is a derived audit/projection adapter over the shared event runtime (UnifiedEventRuntime.emit()); the A6 proof's kill points and the promotion's re-observe both read live runtime state. Neither proof's verdict depends on the other.
+
+CONTRADICTION / TRADEOFF: (a) Ordered mutating runs, independent verdicts: A6 proof runs, then STEP -1 re-observes fresh, then cutover. Honors the reconcile rule; adds wall-clock time, no logical coupling. (b) Fully concurrent: faster, but either side can trip the other's tripwires and both proofs lose cleanliness.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The A6 proof runs first, then re-observe, then promote; the ordering is operational, not logical, and is recorded as such.
+
+RECOMMENDED NEXT EXPERIMENT: None needed; this is a confirm-or-override on the default.
+
+### GATE-HIST-001: the unprovable window, do we review downstream decisions?
+
+QUESTION: The route existed ungated in the Sep 16 and Sep 20 images; pre-Sep-22 container logs are gone, so invocation is unprovable. Do we run a bounded review for decisions made under possibly-synthetic autonomous-loop output in that window, or accept the gap and claim only "no durable contamination found"?
+
+WHY IT MATTERS: "No durable contamination" is about ROWS. But a synthetic 0.85 finding read by a human or an agent in real time could have shaped a decision that left no auto_scan row: a brief, a summary, a judgment call. The forensic honesty ("do not claim the route was never exercised") opens this; leaving it unexamined keeps a soft spot in the story.
+
+WHAT EVIDENCE SAYS: 33-table sweep: zero auto_scan/bypass_type rows, all 64 REPLAY_COMPLETED events carry source='replay'. File sinks clean. The window is roughly Sep 16 to Sep 22. No evidence of invocation; invocation unprovable either way.
+
+CONTRADICTION / TRADEOFF: (a) Bounded review: grep decision records, briefs, and summaries from Sep 16-22 for autonomous-loop citations or 0.85-confidence findings; if none, close the question with evidence. Small, finite. (b) Accept the gap: honest, cheaper, but the "was anyone influenced" question stays open.
+
+DEFAULT IF NOLAN DOES NOTHING: (b). We claim only what the forensics prove, no review.
+
+RECOMMENDED NEXT EXPERIMENT: If (a) is wanted: grep decision/brief artifacts in the window for autonomous-loop citations. Empty result closes GATE-HIST-001 with evidence.
+
+### GATE-ROLLBACK-001: what is the rollback target, given the old image is known-vulnerable?
+
+QUESTION: If the promotion fails post-cutover, is the rollback target the previous (known-ungated) image, or is this a forward-fix-only promotion with the old image held for non-security regressions?
+
+WHY IT MATTERS: "Rollback first, investigate second" is the right instinct, but rolling back to the Sep 20 image reopens the exact hole being closed. A rollback that restores a known live security defect is not a safety net; it is re-exposure with extra steps. The rollback plan needs a target that does not reintroduce the vulnerability, or an explicit acknowledgment that post-cutover failure means forward-fix under pressure.
+
+WHAT EVIDENCE SAYS: Both deployed images (Sep 16, Sep 20) lack the P0 gate; the route is ungated in every image that has ever run it. Listed rollback conditions: health regression, authority bypass, unexpected journal mutation, projection divergence, restart loop, secret leakage, provenance mismatch, legitimate path broken.
+
+CONTRADICTION / TRADEOFF: (a) Rollback target = previous image + route disabled at the edge (or container stopped): safe, but means downtime if the candidate fails. (b) Forward-fix-only: no safe rollback exists; a failed candidate gets a patched rebuild, not a revert. Honest but high-pressure. (c) Roll back to the old image as-is: fast, reopens the hole.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). Previous image is held for NON-SECURITY regressions only; any security-relevant failure rolls to "route closed" (stop/disable), never to the ungated image.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; confirm or override the default before cutover.
+
+### ORCA-A6-001: does the kill plan include the worst kill point?
+
+QUESTION: Does the witnessed A6 re-proof kill at the rendezvous window (after external effect dispatched, before the durable record lands), or only at clean points? And is "UNKNOWN external outcome stays distinguishable" implemented or merely specified?
+
+WHY IT MATTERS: A kill-and-restart proof that only kills at convenient points proves the easy case. The entire value of 6a342dd27's crash-safe dispatch rendezvous is the ambiguous middle: the process died and the adapter cannot prove whether the external effect happened. The directive is explicit: never convert "we don't know whether the external effect happened" into FAILED. If the implementation collapses UNKNOWN into FAILED (or SUCCESS), the proof will certify a contract the code does not honor.
+
+WHAT EVIDENCE SAYS: 6a342dd27 implements durable SHA-256 objective/work-order identity, crash-safe dispatch rendezvous, reconcileStartup(). The author marked T1 and T9 untested. File forensics found no Jev authority collision. The proof has never been witnessed.
+
+CONTRADICTION / TRADEOFF: (a) Require the kill-point list up front, including the rendezvous-window kill, and assert UNKNOWN distinguishability in the final state. Stronger proof, harder to stage. (b) Kill at clean points: easier, witnesses a restart, proves less.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The kill-point list and the UNKNOWN assertion are required in the proof plan before the run.
+
+RECOMMENDED NEXT EXPERIMENT: The proof plan itself is the experiment; review the kill points before authorizing the run.
+
+### DEP-INV-001: who consumes the dependency inventory?
+
+QUESTION: What is the first consumer-facing decision the hot-path dependency inventory will drive? And do we scope it to volatility-proven dependencies first, or inventory the whole hot path as ordered?
+
+WHY IT MATTERS: A 15-field inventory across the full hot path (URL → acquisition → parsing → evidence → objects → relationships → SiteSpec → renderer → Ask FYD → capability → proposal → event → projection) is a large artifact. The standing rules push both ways: "complexity must be purchased by evidence" and "do not build plugin architecture theater." An inventory with no consumer is documentation theater; an inventory scoped to proven volatility is a tool.
+
+WHAT EVIDENCE SAYS: The jsonld@9.0.0 pin is cited as the right pattern, so the inventory's natural consumers are the pinning/upgrade policy and the capability resolver. But "capability-based selection" and "escalation chains" are new machinery with no proven-volatility purchase yet. Proven-volatility candidates: JSON-LD processor, browser/acquisition engine, LLM provider, embedding provider.
+
+CONTRADICTION / TRADEOFF: (a) Full hot-path inventory now: complete, expensive, no defined first consumer. (b) Volatility-proven first: inventory + narrow contracts for the 3-4 dependencies with actual breakage evidence; the rest when they earn it. (c) Name the consumer decision first (e.g., "the next pin/replace decision after jsonld"), then inventory only what that decision needs.
+
+DEFAULT IF NOLAN DOES NOTHING: (b). After gate closure, inventory the volatility-proven set first and record the first consumer decision before expanding.
+
+RECOMMENDED NEXT EXPERIMENT: Before the inventory starts, name which dependencies have actual breakage evidence (not hypothetical volatility) and the single next pin/replace/adapter decision the inventory must support.
+
+### FYD-SCOPE-001: does the promotion lane assess the FYD product frontier?
+
+QUESTION: Should the promotion report include "FYD CURRENT FRONTIER" and "FIRST BROKEN PRODUCT STEP," or stay scoped to gate facts plus a bounded post-promotion smoke?
+
+WHY IT MATTERS: Frontier assessment is the product lane's verdict, and the 2026-09-23 FYD directive says Nolan verifies the live experience himself and no new architecture waves start. A security promotion judged on product state mixes lanes; a promotion worker doing product assessment is unscoped work that can delay or confuse the gate verdict.
+
+WHAT EVIDENCE SAYS: The specified report format asks for both gate facts and product frontier. The FYD object shape is frozen; the current frontier is OBJECT GRAPH → SITE SPEC → RENDERER → BROWSER → ASK FYD → WHY THIS → CORRECT → REGENERATE.
+
+CONTRADICTION / TRADEOFF: (a) Gate facts + bounded smoke (site still renders, Ask FYD answers, no regression from the cutover): promotion stays pure, product lane keeps its verdict. (b) Full frontier assessment in the promotion report: one report, but the security lane grades the product.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The promotion reports gate evidence and a bounded smoke; frontier assessment stays in the product lane.
+
+RECOMMENDED NEXT EXPERIMENT: None; confirm or override.
+
+### GATE-SECRET-001: how is "no secret leakage" verified in the proof?
+
+QUESTION: The acceptance criteria include "no secret leakage," and the proof needs live DB access to re-query durable state. How do we verify the proof artifacts themselves leak nothing, given the forensic worker had to scrub Pig-side /tmp scripts that held the live DB password?
+
+WHY IT MATTERS: A proof that leaks the DB password into logs, scripts, or chat while proving "no secret leakage" fails its own criterion. PG-001 (pg_hba loopback trust) is still on HOLD, so the DB password is load-bearing; the proof must not widen the exposure the forensic pass already had to clean up.
+
+WHAT EVIDENCE SAYS: The forensic worker used the live credential on the Pig and deleted /tmp scripts afterward. Proof scripts for the candidate-image test and post-promotion attack need the same access pattern.
+
+CONTRADICTION / TRADEOFF: (a) Proof runs with the existing credential pattern + a post-proof scrub audit (grep artifacts for credential material, verify no values in logs/chat). (b) Mint a read-only verification credential for the proof: cleaner, but a new credential to manage while the gateway's own access still uses the live one.
+
+DEFAULT IF NOLAN DOES NOTHING: (a), with the scrub audit as a checklist item in the report.
+
+RECOMMENDED NEXT EXPERIMENT: None; this is execution discipline, recorded here so the criterion is verifiable.
+
+### FYD-Q1: ambiguity notice — approve fail-closed public copy when an owner correction conflicts with observations?
+
+QUESTION: When an owner correction conflicts with >=2 independent observations on contact fields, should the projection suppress the contested contact facts and show an explicit public ambiguity notice ("We have conflicting information about this business and are holding the facts until the owner confirms. [Business] requested verification")? If no, the fallback is owner-wins silently.
+
+WHY IT MATTERS: Publishing either version while evidence genuinely conflicts risks publishing a wrong phone or address to the public. Fail-closed copy protects visitors and the owner; owner-wins-silently is a simpler surface but a weaker privacy posture when the owner might be wrong or the sources might be stale.
+
+WHAT EVIDENCE SAYS: SYNTH lane proposal; no production traffic yet and no live conflict has occurred. Invariant inv-09 (conflicting evidence) passes at the test level, so the machinery exists; this question is only about the public-facing copy under ambiguity.
+
+CONTRADICTION / TRADEOFF: (a) Ambiguity notice: honest, but puts a "we don't know" state on a business website, which costs some visitor trust. (b) Owner-wins silently: clean surface, but may publish a fact that two independent sources dispute, and the visitor never learns there was a question.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). Fail closed with the notice; the product's trust posture is that uncertainty is shown, not smoothed over.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; confirm or override the copy wording.
+
+### FYD-Q2: D-501 — address-visibility propagation (owner-intent semantics)
+
+QUESTION: When an owner hides the business address, should the HIDE propagate to related public location objects carrying the same normalized address value at the reader, or is HIDE scoped per-object only?
+
+WHY IT MATTERS: An owner hides the address on the business object, but the same address survives on a related public location object, and the Ask FYD concierge cites it via located_at traversal. A privacy hide that does not hide is worse than no hide: the owner believes something is private that the site still serves.
+
+WHAT EVIDENCE SAYS: D-501 documents this as leak class G2. The reader currently does not propagate. The lane's recommendation is propagation at the reader, fail-closed for privacy: the hide is about the fact, not the object.
+
+CONTRADICTION / TRADEOFF: (a) Propagate at the reader: closes G2, but changes projection semantics for every address-kind fact across related objects. (b) Per-object scope, documented: simpler, but leaves the leak class open and the owner exposed.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). Propagate; privacy semantics must be fact-scoped, not object-scoped.
+
+RECOMMENDED NEXT EXPERIMENT: After a HIDE on the live demo, probe the concierge for the same address via traversal to confirm the class closes.
+
+### FYD-Q3: D-015 — Phase 17 publish gate: approve the factory's gap list?
+
+QUESTION: Approve the factory's 7-item unauthenticated-visitor-publish readiness list as the go/no-go gate: (1) H4/R-H4 two-verifier seam, (2) R-MODEL /sites wiring, (3) SEC-FIX integration, (4) F-1..F-8 fail-closed under pressure, (5) rate limiting / abuse controls, (6) rollback plan, (7) Nolan sign-off in this brief. And is the threat model "safe"?
+
+WHY IT MATTERS: This decides when an unauthenticated visitor may publish. A wrong call either publishes a business presence with unverified claims or opens an abuse vector that damages real businesses.
+
+WHAT EVIDENCE SAYS: This is the factory's half of the readiness list, post-integration. No visitor publish is live today; everything is demo-mode. The owner-auth half of the gate is a separate item.
+
+CONTRADICTION / TRADEOFF: (a) Approve the full list as the gate: disciplined, slower to ship. (b) Narrower gate: faster, accepts residual risk on items like rate limiting and rollback.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The gate stands until all 7 close; nothing unauthenticated publishes before that.
+
+RECOMMENDED NEXT EXPERIMENT: None empirical; confirm or override the list.
+
+### FYD-Q4: golden-set bar — adopt tiered bars?
+
+QUESTION: Adopt tiered golden-set bars: 0.95 per-mission pass rate for presentation seams, 1.0 for safety-critical seams (identity, visibility, claim binding, link gating, export)? Red-run response: the integration worker halts the wave and routes to the coordinator; Nolan is notified, not asked, unless the bar itself is disputed.
+
+WHY IT MATTERS: Without a bar, wave results drift into "green enough." The 1.0 bar on safety-critical seams is the product's no-leak guarantee in measurable form; the 0.95 bar keeps presentation work from being strangled by perfection.
+
+WHAT EVIDENCE SAYS: D-012/D-213/D-214/D-217 define the metric as per-mission pass rate over the golden set. Prior waves ran without an adopted bar.
+
+CONTRADICTION / TRADEOFF: (a) Tiered bars: strict where it matters, pragmatic where it doesn't. (b) Single bar: simpler, either too lax for safety seams or too strict for presentation work.
+
+DEFAULT IF NOLAN DOES NOTHING: (a). The tiered bars are adopted for the next wave.
+
+RECOMMENDED NEXT EXPERIMENT: Run the next wave against the bars and report the per-seam pass rates.
+
