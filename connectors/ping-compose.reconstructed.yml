@@ -1,0 +1,90 @@
+# Reconstructed "ping" compose project (connectors lane, 2026-09-24)
+#
+# The original C:\Users\nolan\PING\compose.yaml is GONE from disk (containers
+# created 2026-08-02 still carry its labels; `docker compose ls` still lists the
+# project). This file reconstructs the three services faithfully from
+# `docker inspect` so the project is manageable again.
+#
+# !!! VAULT WARNING !!! `docker compose up` on the vault service DESTROYS ALL
+# VAULT DATA: ping-vault runs `vault server -dev` (inmem storage, dev mode).
+# Its false "unhealthy" is a probe bug (TLS scheme mismatch), the service is
+# healthy. Do NOT recreate ping-vault until its storage is durable (file/raft)
+# and its contents are migrated. That is a Nolan-level decision, not a lane fix.
+#
+# ENV: the original project used one shared env file (qdrant carries many
+# unrelated vars, incl. secrets). Generate a Pig-side env file from the live
+# containers BEFORE any `up`:
+#   docker inspect ping-qdrant --format '{{range .Config.Env}}{{println .}}{{end}}' > /mnt/c/Users/nolan/PING/.env.ping
+# and reference it below. Never commit that file (it holds secrets).
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: ping-qdrant
+    command: ["./entrypoint.sh"]
+    ports:
+      - "6333:6333"
+    volumes:
+      - ping_ping_qdrant:/qdrant/storage
+    env_file:
+      - .env.ping
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    healthcheck:
+      # FIXED 2026-09-24: was ["CMD","curl","-f","http://localhost:6333/health"];
+      # curl does not exist in qdrant/qdrant images -> permanent false unhealthy.
+      # /healthz needs no API key and returns 200 when serving.
+      test: ["CMD-SHELL", "timeout 5 bash -c 'exec 3<>/dev/tcp/localhost/6333 && printf \"GET /healthz HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q \"200 OK\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: ping-vault
+    entrypoint: ["docker-entrypoint.sh"]
+    command: ["server", "-dev"]
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    volumes:
+      - ping_ping_vault:/vault/data
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    healthcheck:
+      # FIXED (definition only, NOT applied): was ["CMD","vault","status"] which
+      # fails because the CLI defaults to https://127.0.0.1:8200 while this
+      # dev server speaks plain HTTP. Applying requires container recreation,
+      # which wipes inmem data -> see VAULT WARNING above. Do not apply blindly.
+      test: ["CMD-SHELL", "VAULT_ADDR=http://127.0.0.1:8200 vault status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: ping-redis
+    command: ["redis-server"]
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  ping_internal:
+    name: ping_ping_internal
+    external: true
+
+volumes:
+  ping_ping_qdrant:
+    external: true
+  ping_ping_vault:
+    external: true
