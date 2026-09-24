@@ -67,6 +67,17 @@ ACTIONS = ("cold-email", "followup-f1", "followup-f2", "review-triggered",
 # Marker regexes, longest first, case-insensitive.
 TOUCH_RX = re.compile(r"\bF2 SENT\b|\bF1 SENT\b|\bDM SENT\b|\bSUBMITTED\b|\bSENT\b",
                       re.IGNORECASE)
+# A marker directly negated ("not sent", "never sent", "not submitted") is
+# the absence of a send, never a touch. Hardened 2026-09-22: negations were
+# systematically miscounted as sends (e.g. pipeline prose "not sent").
+NEGATED_RX = re.compile(
+    r"\b(not|never)\s+(F2 SENT|F1 SENT|DM SENT|SENT|SUBMITTED)\b",
+    re.IGNORECASE)
+# "sent mail" is the Gmail Sent-folder reference in verification prose
+# ("verified in sent mail"), never a send marker. Hardened 2026-09-23:
+# the bare word "sent" inside "verified in sent mail" phantom-counted a
+# third touch on three F2 candidates whose real history was 2 sends.
+SENT_MAIL_RX = re.compile(r"\s+mail\b", re.IGNORECASE)
 DATE_RX = re.compile(r"(\d{4}-\d{2}-\d{2})")
 COMPLETE_PHRASES = ("ladder complete", "no further touches", "never again")
 SUPPRESS_HARD = ("suppress", "declined", "bounced", "opt-out", "optout",
@@ -90,6 +101,58 @@ NOTE_ASSERTS_DONE_RX = re.compile(
 
 def norm(s):
     return re.sub(r"\s+", " ", (s or "").strip().lower())
+
+
+ROW_STATUS_RX = re.compile(
+    r"^(QUEUED|DRAFTED|SENT|SUBMITTED|SKIPPED|NEW|WATCH|PARKED|EXCLUDED|"
+    r"DUPLICATE|CONTACTED|DM\s+SENT)\b[\s0-9\-/]*", re.I)
+
+
+def is_row_subject(raw, business):
+    """True if this pipeline.md line is a prospect row about `business`.
+
+    Row formats in this corpus put the prospect name first:
+      "- Kooler Garage Doors | garage doors | ..."
+      "- QUEUED 2026-09-10 | Winch & Willow Services LLC | ..."
+      "- **Winch & Willow Services LLC** (business Page ...) | cleaning | ..."
+    Audit/near-miss prose names several prospects mid-sentence; those lines
+    are NOT row-subject and need segment-level attribution instead.
+    """
+    head = raw.lstrip()
+    head = re.sub(r"^[-*]\s*", "", head)
+    head = re.sub(r"^\*\*", "", head)
+    head = ROW_STATUS_RX.sub("", head).lstrip()
+    head = head.lstrip("|").lstrip()
+    return norm(head).startswith(norm(business))
+
+
+def attributed_text(raw, business, email):
+    """Return (text, dropped_markers) for touch counting on a pipeline hit.
+
+    A row-subject line is scanned whole: every marker in the row describes
+    this prospect's outreach. Any other line is audit prose that may name
+    several prospects; only ";"- / "|"-delimited segments that mention this
+    prospect (by name or email) contribute. Markers belonging to other
+    named prospects are excluded and reported via dropped_markers.
+
+    Rationale (2026-09-24): pipeline.md:2748 names "Kooler Garage Doors"
+    alongside "Alpine Property Services pipeline SENT 2026-09-23 cold";
+    the unscoped substring scan counted Alpine's SENT as Kooler's touch,
+    manufacturing a JSONL-vs-pipeline discrepancy that blocked a legitimate
+    cold send. Fail direction preserved: a genuine row-subject line still
+    counts all its markers, and the Gmail hard block remains the backstop.
+    """
+    if is_row_subject(raw, business):
+        return raw, 0
+    b, e = norm(business), norm(email)
+    kept, dropped = [], 0
+    for seg in re.split(r"[;|]", raw):
+        low = norm(seg)
+        if (b and b in low) or (e and e in low):
+            kept.append(seg)
+        else:
+            dropped += len(TOUCH_RX.findall(seg))
+    return " ".join(kept), dropped
 
 
 def sha1(s):
@@ -137,21 +200,89 @@ def find_pipeline_rows(path, business, email):
 
 
 def touch_markers(text):
-    """Count accepted-touch markers; returns (count, dates, phrases)."""
-    up = text.upper()
-    count = len(TOUCH_RX.findall(up))
-    dates = DATE_RX.findall(text)
+    """Count accepted-touch markers; returns (count, dates, complete, collapsed).
+
+    One touch per ladder rung: the same rung (SENT / F1 SENT / F2 SENT /
+    DM SENT / SUBMITTED) re-described on different dates is one touch, not
+    two. The earliest dated description wins; a dated description refines an
+    undated one. `collapsed` lists (rung, kept_date, dropped_date) tuples so
+    callers can log the evidence. Rationale (2026-09-23): a stale queue note
+    ("F1 sent 2026-09-16") re-describing the same F1 that follow-ups.md
+    records as F1 SENT 2026-09-17 phantom-counted a third touch and blocked
+    four legitimate F2s. Genuine duplicate sends are still caught by the
+    Gmail-sent-count hard block (ladder budget 3), which is the backstop.
+
+    Guards (2026-09-22, extended 2026-09-23):
+    1. Negations ("not sent", "never sent", "not submitted") are not sends.
+    2. "sent mail" is the Gmail Sent-folder reference in verification prose
+       ("verified in sent mail"), never a send marker. Without this guard
+       the bare word "sent" inside "sent mail" phantom-counts an extra
+       touch (2026-09-23: three F2 candidates read as ladder-complete).
+    3. The same (marker, date) pair described twice (e.g. a pipeline row
+       plus a dedup-audit line referencing the same send) counts once.
+       Distinct ladder rungs (SENT vs F1 SENT vs F2 SENT) never dedup
+       against each other. Caveat: two genuinely distinct sends of the
+       same rung on the same date would merge; that does not occur in
+       this system (one touch per rung per prospect), and the
+       Gmail-vs-structured cross-check remains the backstop.
+    """
+    seen_pairs = set()
+    best_by_rung = {}
+    collapsed = []
+    for m in TOUCH_RX.finditer(text):
+        start, end = m.start(), m.end()
+        # Guard 1: a directly negated marker is the absence of a send.
+        if NEGATED_RX.search(text[max(0, start - 16):end]):
+            continue
+        marker_class = m.group(0).upper()
+        # Guard 2: "sent mail" is the Gmail Sent-folder reference, not a send.
+        if marker_class == "SENT" and SENT_MAIL_RX.match(text[end:]):
+            continue
+        # Associate the nearest same-line date; an identical
+        # (marker, date) pair is one touch no matter how often re-described.
+        ls = text.rfind("\n", 0, start) + 1
+        le = text.find("\n", end)
+        line = text[ls:] if le == -1 else text[ls:le]
+        line_off = start - ls
+        best, best_dist = None, None
+        for dm in DATE_RX.finditer(line):
+            dist = abs(dm.start() - line_off)
+            if best_dist is None or dist < best_dist:
+                best, best_dist = dm.group(1), dist
+        pair = (marker_class, best)
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+        # Guard 3: the same rung re-described on a different date is still
+        # one touch (2026-09-23: stale "F1 sent 2026-09-16" queue note vs
+        # the Gmail-verified F1 SENT 2026-09-17). Keep the earliest dated
+        # description; a dated description refines an undated one.
+        if marker_class in best_by_rung:
+            prev = best_by_rung[marker_class]
+            if best and (prev is None or best < prev):
+                collapsed.append((marker_class, best, prev))
+                best_by_rung[marker_class] = best
+            elif best != prev:
+                collapsed.append((marker_class, prev, best))
+        else:
+            best_by_rung[marker_class] = best
+    dates = [d for d in best_by_rung.values() if d]
     low = text.lower()
     complete = any(p in low for p in COMPLETE_PHRASES)
-    return count, dates, complete
+    return len(best_by_rung), dates, complete, collapsed
 
 
-def structured_verdict(row, pipeline_hits, action, today):
+def structured_verdict(row, pipeline_hits, action, today, business, email):
     """Level 1+2: canonical structured state and explicit suppression.
 
     JSONL and pipeline.md describe the SAME outreach, so touch counts are
     compared (max wins) rather than summed. A disagreement between the two
     canonical sources is itself a fail-closed discrepancy.
+
+    pipeline.md hits are attribution-scoped (2026-09-24): a row-subject
+    line is scanned whole; audit prose naming several prospects only
+    contributes segments that mention this prospect, so another prospect's
+    SENT/SUBMITTED in the same line can never count as this one's touch.
     """
     reasons = []
     blocked = False
@@ -168,12 +299,23 @@ def structured_verdict(row, pipeline_hits, action, today):
         reasons.append("WARN: no canonical JSONL row; structured state incomplete")
     pipe_lines = []
     for ln, raw in pipeline_hits:
-        pipe_lines.append(raw)
         state_parts.append("pipeline:%d:%s" % (ln, norm(raw)))
-    p_text = " ".join(pipe_lines)
+        attr_text, dropped = attributed_text(raw, business, email)
+        if dropped:
+            reasons.append(
+                "STRUCTURED: pipeline.md:%d cross-prospect attribution "
+                "filtered %d marker(s) belonging to other named prospects "
+                "(not counted)" % (ln, dropped))
+        pipe_lines.append(attr_text)
+    p_text = " ".join(t for t in pipe_lines if t)
 
-    j_touches, j_dates, j_complete = touch_markers(j_text)
-    p_touches, p_dates, p_complete = touch_markers(p_text)
+    j_touches, j_dates, j_complete, j_collapsed = touch_markers(j_text)
+    p_touches, p_dates, p_complete, p_collapsed = touch_markers(p_text)
+    for rung, kept, dropped in j_collapsed + p_collapsed:
+        reasons.append(
+            "STRUCTURED: same-rung redescription collapsed: %s kept %s, "
+            "dropped %s (one touch per rung; stale-date prose, not a new send)"
+            % (rung, kept, dropped))
     internal_disagreement = []
     if row and pipeline_hits and j_touches != p_touches:
         internal_disagreement.append(
@@ -297,7 +439,9 @@ def history_verdict(business, email, action, gmail_count, today, paths):
             if not any(n in low for n in needles):
                 continue
             if accept.search(low) and "queued" not in low:
-                history_touches += len(TOUCH_RX.findall(raw.upper())) or 1
+                # Hardened touch_markers: negated markers ("not sent") and
+                # same-line (marker, date) re-descriptions do not inflate.
+                history_touches += touch_markers(raw)[0] or 1
                 reasons.append("HISTORY-LOG: acceptance recorded: %s:%d: %s" %
                                (os.path.basename(path), ln, raw.strip()[:120]))
 
@@ -413,7 +557,8 @@ def main():
     pipeline_hits = find_pipeline_rows(paths["pipeline"], args.business, args.email)
 
     # --- Level 1+2: structured state and suppression ---
-    sv = structured_verdict(row, pipeline_hits, args.action, today)
+    sv = structured_verdict(row, pipeline_hits, args.action, today,
+                            args.business, args.email)
     state_hash = sha1(sv["state_blob"] + "|gmail=%s" % args.gmail_sent_count)
 
     # --- Level 3: verified history ---
@@ -422,8 +567,12 @@ def main():
         today, paths)
 
     # Cross-check: structured touch count vs Gmail-verified count.
+    # NOTE (F-01 fix 2026-09-24): the truthiness gate on sv["touches"] is
+    # removed on purpose. touches=0 with gmail>0 is a stale-structured-state
+    # discrepancy (stall path), not "nothing to compare". Any mismatch fails
+    # closed with DISCREPANCY (exit 2); ELIGIBLE (exit 0) requires agreement.
     cross_reasons = []
-    if args.gmail_sent_count is not None and row and sv["touches"]:
+    if args.gmail_sent_count is not None and row:
         if args.gmail_sent_count > sv["touches"]:
             cross_reasons.append(
                 "MISMATCH: Gmail verifies %d sent message(s) but structured state "
