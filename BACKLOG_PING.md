@@ -591,13 +591,13 @@ Report-era note: most findings below are ERA-R (Pig-era gateway audit, 2026-09-1
 - **extval-prospect-loop** (DEFERRED): external validation with real prospects deferred until the two-tenant loop is proven (directive 13). When it opens, the acceptance chain is: first external owner named -> first owner-submitted URL ingested with provenance -> first owner correction applied across page, Circle, Ask FYD, and search with no divergent truth -> time-to-usable-presence measured per stage -> 20 real visitor questions answered with zero plausible-filler answers. Dogfood numbers are never cited as market proof.
 - **extval-evidence-grading** (DECISION): every external finding graded CONFIRMED / STRONG INDICATION / WEAK INDICATION / UNKNOWN; never assumed.
 - **fail-fl-20260922-002** (OPEN): see FL-20260922-002-invariant (P6): mechanical failure-evidence coupling as small PING hardening.
-- **fail-ledger-hygiene** (OPEN): failure ledger entries carry classification, evidence, and the invariant learned; narrated completions are not proof.
+- **fail-ledger-hygiene** (OPEN): failure ledger entries carry classification, evidence, and the invariant learned; narrated completions are not proof. NOTE 2026-09-25 ~14:00 MDT (ping-perfecting-pass): added missing replay sections + last_seen in place to 9 entries (FL-20260924-201, FL-20260924-207 qdrant-probing, FL-20260925-209..215); replays derived from each entry's own self_heal. All remaining OPEN ledger entries are Pig/live-platform/commit-scoped and stayed untouched. Stays OPEN: convention adoption is lane-wide, one pass cannot close it.
 - **recon-public-route-findings** (OPEN): 2026-09-19 public-route findings must be re-probed against the live revision before becoming canonical.
 - **recon-secret-incident** (DONE_VERIFIED): see sec-incident-reconciled.
 - **recon-trigger-ownership** (DECISION): see db-trigger-owner; recorded resolved in the Grill.
 - **recon-3c5d280dd-provenance** (DECISION): see dep-provenance-gap; in the Grill as DEPLOY-PROV-001.
 - **ergo-repo-hygiene** (OPEN): repository ergonomics: the workspace stays navigable; archaeology outputs archived, not scattered.
-- **ergo-proof-artifact-convention** (OPEN): dated proof artifacts follow one convention (date, lane, claim, evidence).
+- **ergo-proof-artifact-convention** (OPEN): dated proof artifacts follow one convention (date, lane, claim, evidence). NOTE 2026-09-25 ~14:05 MDT (ping-perfecting-pass): audited 4 recent artifacts in goals/ping-agent-execution-stack/hidden_files/; 2 of 4 (mirror-resilience-2026-09-23, pig-health-fix-2026-09-23) lack a lane/owner field. Convention written: goals/ping-agent-execution-stack/hidden_files/proof-artifact-convention-2026-09-25.md (required header: date / lane-owner / claim / evidence). Stays OPEN until lanes adopt it.
 - **ergo-onboarding** (OPEN): new-operator onboarding path into this backlog (read NOW, then the frontier, then the domain section).
 - **perf-render-budgets** (PROVE): see renderer-performance-budgets.
 - **perf-gateway-latency** (OPEN): gateway latency budgets on the live path.
