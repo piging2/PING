@@ -104,6 +104,45 @@ describe("variant behavior", () => {
     expect(html).toContain('type="email"');
   });
 
+  test("conversion-dual without a newsletter binding renders no capture form", () => {
+    // The planner gates the newsletter CTA on the newsletter-capture
+    // capability or owner intent; without it the component must not
+    // invent a "Get useful updates" funnel.
+    const { section, ctx } = sectionFor("ContactCTA");
+    const withoutNewsletter = {
+      ...section,
+      variant: "conversion-dual",
+      ctaBindings: section.ctaBindings.filter((c) => c.kind !== "newsletter"),
+    };
+    const html = renderToStaticMarkup(resolveFamilySection(withoutNewsletter, ctx)!);
+    expect(html).not.toContain("Get useful updates");
+    expect(html).not.toContain('type="email"');
+    expect(html).not.toContain("A real person answers");
+  });
+
+  test("conversion-dual with a newsletter binding keeps the capture form", () => {
+    const { section, ctx } = sectionFor("ContactCTA");
+    const withNewsletter = {
+      ...section,
+      variant: "conversion-dual",
+      ctaBindings: [
+        ...section.ctaBindings,
+        {
+          tier: "tertiary" as const,
+          kind: "newsletter" as const,
+          label: "Owner-provided updates",
+          target: "#newsletter",
+          display: "Owner-provided updates",
+          placement: "contactcta",
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(resolveFamilySection(withNewsletter, ctx)!);
+    expect(html).toContain("Get useful updates");
+    expect(html).toContain('type="email"');
+    expect(html).toContain("Owner-provided updates");
+  });
+
   test("credibility-plus-capture keeps the footer capture with the honest disclaimer", () => {
     const { section, ctx } = sectionFor("Footer");
     const html = renderToStaticMarkup(
