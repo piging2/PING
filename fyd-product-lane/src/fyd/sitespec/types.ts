@@ -25,6 +25,14 @@ export interface ObjectGraph {
 export interface ViewerContext {
   viewerId: string | null;
   displayName: string | null;
+  /**
+   * Projection role for the field-visibility layer (VIEWER CONTEXT in the
+   * SOURCE VALUE + VISIBILITY POLICY + OWNER OVERRIDE + VIEWER CONTEXT ->
+   * PROJECTED VALUE pipeline). "members"-policy fields are visible to
+   * member/owner roles and dropped for public. The owner role sees source
+   * values verbatim (owner preview). Absent means public (fail closed).
+   */
+  role?: "public" | "member" | "owner";
 }
 
 /** How a section resolves its objects from the graph. Deterministic. */
@@ -69,6 +77,23 @@ export interface FYDPresentation {
   copy?: string;
   featuredIds?: string[];
   hidden?: boolean;
+  /**
+   * Optional field emphasis list, e.g. ["phone"]. Presentation intent only:
+   * changes affordance emphasis, never facts. Additive (2026-09-26): the
+   * renderer already reads this; the type declaration was missing.
+   */
+  fieldEmphasis?: string[];
+  /**
+   * Optional approved object ordering (object ids). Presentation intent
+   * only. Additive (2026-09-26): the renderer already reads this; the
+   * type declaration was missing.
+   */
+  objectOrder?: string[];
+  /**
+   * Optional approved hero media object id. Presentation intent only:
+   * selects which evidenced project photo leads the hero; never a fact.
+   */
+  heroMediaObjectId?: string;
 }
 
 export interface FYDSection {
@@ -284,6 +309,12 @@ export interface FYDThemeTokens {
   accentForeground: string;
   surface: string;
   ink: string;
+  /**
+   * Muted text color. Optional for backward compatibility with tokens
+   * written before the role existed. Additive (2026-09-26): the renderer
+   * already reads this; the type declaration was missing.
+   */
+  muted?: string;
   radius: "none" | "sm" | "md" | "lg" | "full";
   fontDisplay: string;
   fontBody: string;
