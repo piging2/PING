@@ -15,13 +15,20 @@
 
 import type { PingObject } from "@/lib/ping/types";
 import {
-  Cta,
+  ResponsiveImage,
   SectionShell,
+  ctaHref,
   cx,
+  generatedCopy,
+  sectionChrome,
   type FamilySectionProps,
 } from "../shared";
+import { EmphaticCta, InView } from "../motion";
+import { BTN_PRIMARY } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
+import type { MediaAssetRef } from "../types";
 import { adaptedServiceScope } from "../../proceduralize/planner";
+import { motionFor, visualScaleFor } from "../hierarchy";
 
 const HONEST_DISCLAIMER =
   "We cannot guarantee openings for the date you choose. We will confirm a time that works for you.";
@@ -82,7 +89,7 @@ export function FeaturedService({ section, ctx }: FamilySectionProps): JSX.Eleme
 
   const mediaLead = section.variant === "media-lead";
   const binding = mediaBindingsFor(section)[0];
-  const media = binding ? mediaForAsset(ctx, binding.assetId) : null;
+  const media: MediaAssetRef | null = binding ? mediaForAsset(ctx, binding.assetId) : null;
 
   // The scope line renders through the graph field-name adapter
   // (planner.ts): a direct scope field, else the service description when
@@ -100,48 +107,82 @@ export function FeaturedService({ section, ctx }: FamilySectionProps): JSX.Eleme
     section.ctaBindings.find((c) => c.kind === "schedule") ?? null;
   const phoneCta = section.ctaBindings.find((c) => c.kind === "call") ?? null;
 
+  // Exactly one primary conversion action: the quote-start for this
+  // service line, else the call. The phone survives as a quiet tel: line
+  // when it is not the primary. Schedule lives behind the evidenced
+  // product funnel (progressive disclosure), never as a competing button.
+  const primary = quoteCta ?? phoneCta;
+  const showPhoneLine = phoneCta && primary && primary.kind !== "call";
+
+  const intent = motionFor(section);
+  const headingId = section.id + "-heading";
+  // Binding kinds at this component's factual sites (bindings.ts):
+  // - service.title / scope / description: object-field (bound service
+  //   object), scope via the planner's deterministic field adapter.
+  // - products: object-field (bound product objects).
+  // - CTAs: planned CTA bindings (planner-owned intent, evidence-gated).
+  // - "Specialty" kicker: generated-copy (renderer chrome, marked).
+  // The service name is a business fact: it renders here from the
+  // object binding, never through the generated-copy section chrome.
+  const copy = (
+    <>
+      <h2 id={headingId} className="font-display text-h2 text-text-heading">
+        {service.title}
+      </h2>
+      {scope !== "" && (
+        <p className="mt-4 font-body text-lead text-text-primary">{scope}</p>
+      )}
+      {showDescription && (
+        <p className="mt-4 max-w-[65ch] font-body text-body text-text-muted">{description}</p>
+      )}
+      {primary && (
+        <div className="mt-8">
+          <EmphaticCta
+            href={ctaHref(primary, ctx)}
+            ariaLabel={primary.kind === "call" ? "Call " + primary.display : undefined}
+            className={BTN_PRIMARY}
+          >
+            {primary.kind === "call" ? "Call " + primary.display : primary.label}
+          </EmphaticCta>
+        </div>
+      )}
+      {showPhoneLine && phoneCta && (
+        <p className="mt-6 font-body text-body text-text-muted">
+          Prefer to talk?{" "}
+          <a
+            href={phoneCta.target.startsWith("tel:") ? phoneCta.target : "tel:" + phoneCta.target}
+            className="font-semibold text-text-heading underline underline-offset-4 rounded-sm focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            {phoneCta.display}
+          </a>
+        </p>
+      )}
+      <ProductFunnel products={products} ctx={ctx} scheduleCta={scheduleCta} />
+    </>
+  );
+  const visual = media && (
+    <InView intent="image-reveal">
+      <ResponsiveImage
+        asset={media}
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="aspect-landscape w-full rounded-lg object-cover shadow-lg"
+      />
+    </InView>
+  );
+
   return (
     <SectionShell
       component="FeaturedService"
       variant={section.variant}
-      title={service.title}
-      kicker="Specialty"
+      chrome={sectionChrome({ kicker: generatedCopy("Specialty") })}
+      scale={visualScaleFor(section)}
+      motion="none"
+      labelledBy={headingId}
     >
       <div className={cx("grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12")}>
-        {mediaLead && media && (
-          <div>
-            <img
-              src={media.url}
-              alt={media.alt}
-              className="aspect-landscape w-full rounded-lg object-cover shadow-lg"
-              loading="lazy"
-            />
-          </div>
-        )}
-        <div>
-          {scope !== "" && (
-            <p className="font-body text-lead text-text-primary">{scope}</p>
-          )}
-          {showDescription && (
-            <p className="mt-4 max-w-[65ch] font-body text-body text-text-muted">{description}</p>
-          )}
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            {phoneCta && <Cta cta={phoneCta} ctx={ctx} />}
-            {quoteCta && <Cta cta={quoteCta} ctx={ctx} />}
-            {!phoneCta && !quoteCta && scheduleCta && <Cta cta={scheduleCta} ctx={ctx} />}
-          </div>
-          <ProductFunnel products={products} ctx={ctx} scheduleCta={scheduleCta} />
-        </div>
-        {!mediaLead && media && (
-          <div>
-            <img
-              src={media.url}
-              alt={media.alt}
-              className="aspect-landscape w-full rounded-lg object-cover shadow-lg"
-              loading="lazy"
-            />
-          </div>
-        )}
+        {mediaLead && visual}
+        {intent === "none" ? copy : <InView intent={intent}>{copy}</InView>}
+        {!mediaLead && visual}
       </div>
     </SectionShell>
   );

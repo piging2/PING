@@ -83,18 +83,27 @@ function ConversionDual({ section, ctx }: FamilySectionProps): JSX.Element {
   );
 }
 
-function ValueCapture({ section, ctx }: FamilySectionProps): JSX.Element {
-  const contentCta = section.ctaBindings.find((c) => c.kind === "content") ?? null;
+function ValueCapture({ section, ctx }: FamilySectionProps): JSX.Element | null {
   const newsletterCta = section.ctaBindings.find((c) => c.kind === "newsletter") ?? null;
+  // Fail closed (bindings.ts rule 3): without an evidenced newsletter
+  // CTA binding there is no capture UI. The planner only plans this
+  // variant on newsletter evidence; the renderer never invents the
+  // funnel or its value proposition.
+  if (!newsletterCta) return null;
+  // The binding's display is "label: promise" (planner-owned, evidence-
+  // gated; owner-provided when intent.newsletter exists). Both lines
+  // render verbatim: owner-content, never paraphrased.
+  const promise = newsletterCta.display.startsWith(newsletterCta.label + ":")
+    ? newsletterCta.display.slice(newsletterCta.label.length + 1).trim()
+    : "";
   return (
     <SectionShell component="ContactCTA" variant="value-capture">
       <div className="max-w-[65ch]">
         <h2 className="font-display text-h2 text-text-heading">Stay in the loop</h2>
-        <p className="mt-4 font-body text-lead text-text-muted">
-          {contentCta
-            ? contentCta.label
-            : "Practical notes for people who own their homes and their weekends."}
-        </p>
+        <p className="mt-4 font-body text-lead text-text-muted">{newsletterCta.label}</p>
+        {promise !== "" && (
+          <p className="mt-2 font-body text-body text-text-muted">{promise}</p>
+        )}
         <form action="#newsletter" method="get" className="mt-8 flex flex-col gap-3 sm:flex-row">
           <label className="sr-only" htmlFor="value-email">
             Email address
@@ -112,7 +121,7 @@ function ValueCapture({ section, ctx }: FamilySectionProps): JSX.Element {
             type="submit"
             className="inline-flex min-h-[44px] items-center justify-center rounded-pill bg-cta-primary-background px-6 font-body text-body text-cta-primary-text hover:bg-cta-primary-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
-            {newsletterCta ? newsletterCta.label : "Sign me up"}
+            Subscribe
           </button>
         </form>
       </div>

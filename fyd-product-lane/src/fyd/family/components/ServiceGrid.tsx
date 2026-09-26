@@ -12,7 +12,14 @@
  */
 
 import type { PingObject } from "@/lib/ping/types";
-import { Cta, SectionShell, cx, type FamilySectionProps } from "../shared";
+import {
+  Cta,
+  SectionShell,
+  cx,
+  generatedCopy,
+  sectionChrome,
+  type FamilySectionProps,
+} from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 import { adaptedServiceScope } from "../../proceduralize/planner";
 import type { PlannedCtaBinding } from "../types";
@@ -190,8 +197,10 @@ export function ServiceGrid({ section, ctx }: FamilySectionProps): JSX.Element {
       id="services"
       component="ServiceGrid"
       variant={variant}
-      title="A few ways we can help"
-      kicker="Services"
+      chrome={sectionChrome({
+        title: generatedCopy("A few ways we can help"),
+        kicker: generatedCopy("Services"),
+      })}
     >
       {variant === "featured-plus-grid" ? (
         <FeaturedPlusGrid section={section} ctx={ctx} />

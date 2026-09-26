@@ -25,6 +25,7 @@ import { Fragment } from "react";
 import type { HomePagePlan, PlannedSection } from "../proceduralize/planner";
 import { buildFamilyCtx, type FamilyRenderInput } from "./types";
 import { resolveFamilySection } from "./registry";
+import { visualScaleFor } from "./hierarchy";
 import { FOCUS_RING, cx } from "./shared";
 
 /** Chrome sections live outside <main>; everything else is main content. */
@@ -42,10 +43,52 @@ function sortChromeFirst(sections: PlannedSection[]): {
   return { chrome, flow };
 }
 
+/**
+ * The sticky mobile call bar renders when a planned Navigation section
+ * carries a primary CTA binding. The page reserves bottom clearance on
+ * small viewports so footer content is never covered by it.
+ */
+function hasStickyBar(plan: HomePagePlan): boolean {
+  return plan.sections.some(
+    (s) =>
+      s.status === "planned" &&
+      s.component === "Navigation" &&
+      s.ctaBindings.some((c) => c.tier === "primary"),
+  );
+}
+
+/**
+ * SectionTransition: a hairline tone break after PRIMARY moments (hero,
+ * major visual proof), before the rhythm steps down. Aria-hidden: pure
+ * visual rhythm, never content.
+ */
+function SectionTransition(): JSX.Element {
+  return (
+    <div
+      aria-hidden="true"
+      className="fyd-section-transition bg-gradient-to-r from-transparent via-border-subtle to-transparent"
+      data-motion="section-transition"
+    />
+  );
+}
+
 export function PublicFamilyPage({ input }: { input: FamilyRenderInput }): JSX.Element {
   const ctx = buildFamilyCtx(input);
   const plan: HomePagePlan = input.plan;
   const { chrome, flow } = sortChromeFirst(plan.sections);
+
+  const renderFlow = (sections: PlannedSection[]) =>
+    sections.map((s) => {
+      const el = resolveFamilySection(s, ctx);
+      if (!el) return null;
+      const primary = visualScaleFor(s) === "PRIMARY";
+      return (
+        <Fragment key={s.id}>
+          {el}
+          {primary && <SectionTransition />}
+        </Fragment>
+      );
+    });
 
   const render = (sections: PlannedSection[]) =>
     sections.map((s) => {
@@ -57,7 +100,12 @@ export function PublicFamilyPage({ input }: { input: FamilyRenderInput }): JSX.E
     <div
       data-theme={ctx.themeDataTheme}
       data-family-page="true"
-      className="min-h-screen bg-surface-content font-body text-text-primary antialiased"
+      className={cx(
+        "min-h-screen bg-surface-content font-body text-text-primary antialiased",
+        // Clearance for the sticky mobile call bar (thumb-reachable phone
+        // CTA) so it never covers footer content on small viewports.
+        hasStickyBar(plan) && "pb-[76px] md:pb-0",
+      )}
     >
       <a
         href="#main"
@@ -71,7 +119,7 @@ export function PublicFamilyPage({ input }: { input: FamilyRenderInput }): JSX.E
         Skip to content
       </a>
       {render(chrome)}
-      <main id="main">{render(flow)}</main>
+      <main id="main">{renderFlow(flow)}</main>
     </div>
   );
 }

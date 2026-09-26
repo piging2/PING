@@ -7,7 +7,12 @@
  * Proof surface: no money CTAs here.
  */
 
-import { SectionShell, type FamilySectionProps } from "../shared";
+import {
+  SectionShell,
+  generatedCopy,
+  sectionChrome,
+  type FamilySectionProps,
+} from "../shared";
 import { objectsForRole } from "../types";
 
 const METRIC_LABELS: Record<string, string> = {
@@ -79,8 +84,10 @@ function TestimonialCluster({ section, ctx }: FamilySectionProps): JSX.Element {
     <SectionShell
       component="TrustBar"
       variant="testimonial-cluster"
-      title="What customers say"
-      kicker="Reviews"
+      chrome={sectionChrome({
+        title: generatedCopy("What customers say"),
+        kicker: generatedCopy("Reviews"),
+      })}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {reviews.map((r) => {

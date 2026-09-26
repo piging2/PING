@@ -28,6 +28,12 @@ export interface MediaAssetRef {
   alt: string;
   width?: number;
   height?: number;
+  /**
+   * Responsive derivatives for srcset/sizes, narrowest first. Present
+   * when the media lane supplied real variants; absent for legacy
+   * single-URL assets, which render as a plain img.
+   */
+  srcset?: Array<{ url: string; width: number }>;
 }
 
 /** Asset id -> renderable reference. Only relevance-passing assets belong here. */

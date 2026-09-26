@@ -84,6 +84,11 @@ export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
       ).filter((a) => typeof a === "string" && a.trim() !== "")
     : [];
   const capture = section.variant === "credibility-plus-capture";
+  // The capture block renders ONLY on an evidenced newsletter CTA
+  // binding (bindings.ts rule 3). The planner plans this variant on
+  // newsletter evidence and always attaches the binding; without it the
+  // footer stays credibility-only rather than inventing a funnel.
+  const newsletterCta = section.ctaBindings.find((c) => c.kind === "newsletter") ?? null;
   const planned = plannedComponents(ctx);
 
   return (
@@ -92,7 +97,7 @@ export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
       data-variant={section.variant}
       className="bg-footer-surface text-footer-text"
     >
-      {capture && (
+      {capture && newsletterCta && (
         <div className="border-b border-border-subtle">
           <div className="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-8">
             <p className="font-body text-body text-text-muted">{HONEST_DISCLAIMER}</p>

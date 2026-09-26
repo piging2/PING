@@ -10,7 +10,13 @@
  */
 
 import type { PlannedCtaBinding, PlannedSection } from "./types";
-import type { FamilyCtx } from "./types";
+import type { FamilyCtx, MediaAssetRef } from "./types";
+import type { VisualScale } from "./hierarchy";
+import { SCALE_RHYTHM } from "./hierarchy";
+import { InView, type InViewIntent } from "./motion";
+import { sectionChrome, generatedCopy, type GeneratedCopy, type SectionChrome } from "./bindings";
+
+export { sectionChrome, generatedCopy, type GeneratedCopy, type SectionChrome };
 
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -156,6 +162,45 @@ export function PhoneLink({
 }
 
 /**
+ * Responsive image from an acquired media asset. Emits srcset/sizes when
+ * the media lane supplied real variants (phones never fetch desktop
+ * bytes); falls back to a plain img for legacy single-URL assets. Alt
+ * text is evidence-derived and always present. Binding kind:
+ * object-field (url/alt/srcset all come off the acquired asset ref).
+ */
+export function ResponsiveImage({
+  asset,
+  sizes,
+  eager,
+  className,
+}: {
+  asset: MediaAssetRef;
+  /** Sizes hint for the layout slot, e.g. "(max-width: 768px) 100vw, 50vw". */
+  sizes?: string;
+  /** Above-the-fold imagery loads eager; everything else lazy. */
+  eager?: boolean;
+  className?: string;
+}): JSX.Element {
+  const srcset =
+    asset.srcset && asset.srcset.length > 0
+      ? asset.srcset.map((v) => v.url + " " + v.width + "w").join(", ")
+      : undefined;
+  return (
+    <img
+      src={asset.url}
+      alt={asset.alt}
+      srcSet={srcset}
+      sizes={srcset && sizes ? sizes : undefined}
+      width={asset.width}
+      height={asset.height}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      className={className}
+    />
+  );
+}
+
+/**
  * The single subtle inspect affordance for one claim cluster (deletion
  * list item 4; 07 inspect/trust mode). One per cluster section, never
  * repeated under every card and never on the hero image. Routes to the
@@ -189,41 +234,64 @@ export function InspectAffordance({
 }
 
 /**
- * Section shell: rhythm, container, and the semantic heading. Section
- * titles are renderer-owned presentation defaults; the business facts
- * come from the bindings.
+ * Section shell: rhythm, container, and the semantic heading.
+ *
+ * Binding contract (bindings.ts):
+ * - `chrome` accepts ONLY GeneratedCopy-branded strings: generic
+ *   presentation chrome ("Recent work", "Services"), never business
+ *   facts. A plain string does not typecheck here.
+ * - Business facts (service names, owner identity) render at the
+ *   component's own factual sites from typed bindings, never through
+ *   this chrome.
+ * - `scale` sets the visual rhythm (PRIMARY breathes, UTILITY stays
+ *   quiet) and is recorded as data-visual-scale for tests.
+ * - `motion` wraps the section BODY (not the heading) in the typed
+ *   motion vocabulary. Content never depends on the animation.
  */
 export function SectionShell({
   id,
-  title,
-  kicker,
-  intro,
+  chrome,
   dark,
   children,
   component,
   variant,
   labelledBy,
+  scale,
+  motion,
 }: {
   id?: string;
-  title?: string;
-  kicker?: string;
-  intro?: string;
+  chrome?: SectionChrome;
   dark?: boolean;
   children: React.ReactNode;
   /** Registry name, recorded for tests and the lab surface (inert data attributes). */
   component: string;
   variant: string;
   labelledBy?: string;
+  /** Visual scale; defaults to SECONDARY rhythm when the caller has no scale opinion. */
+  scale?: VisualScale;
+  /** Typed motion intent for the section body; "none"/absent renders no wrapper. */
+  motion?: InViewIntent | "none";
 }): JSX.Element {
+  const title = chrome?.title;
+  const kicker = chrome?.kicker;
+  const intro = chrome?.intro;
   const headingId = labelledBy ?? (id ? id + "-heading" : undefined);
+  const resolvedScale: VisualScale = scale ?? "SECONDARY";
+  const body =
+    motion && motion !== "none" ? (
+      <InView intent={motion}>{children}</InView>
+    ) : (
+      <>{children}</>
+    );
   return (
     <section
       id={id}
-      aria-labelledby={title ? headingId : undefined}
+      aria-labelledby={title ? headingId : labelledBy}
       data-component={component}
       data-variant={variant}
+      data-visual-scale={resolvedScale}
       className={cx(
-        "py-16 md:py-24",
+        SCALE_RHYTHM[resolvedScale],
         dark ? "bg-surface-brand text-text-inverse" : "bg-surface-content text-text-primary",
       )}
     >
@@ -249,7 +317,7 @@ export function SectionShell({
             {intro && <p className="mt-4 font-body text-lead text-text-muted">{intro}</p>}
           </div>
         )}
-        {children}
+        {body}
       </div>
     </section>
   );

@@ -9,7 +9,13 @@
  * fields); never invented.
  */
 
-import { SectionShell, type FamilySectionProps } from "../shared";
+import {
+  SectionShell,
+  generatedCopy,
+  sectionChrome,
+  type FamilySectionProps,
+} from "../shared";
+import { visualScaleFor } from "../hierarchy";
 import { adaptedAddress, adaptedServiceAreaList } from "../../proceduralize/planner";
 import { SCHEMA_ROLES } from "../../sitespec/schemas";
 import type { PingObject } from "@/lib/ping/types";
@@ -41,13 +47,22 @@ export function ServiceArea({ section, ctx }: FamilySectionProps): JSX.Element {
   const hub = hubAddressVariant ? hubAddress(ctx) : null;
   const areas = areasOf(ctx, hubAddressVariant && hub !== null);
 
+  // Fail closed: without evidenced areas there is no area section. The
+  // planner omits the section on vague coverage (AREA-ELIG); the
+  // renderer never fills the gap with a "coming soon" promise.
+  if (!hub && areas.length === 0) return <></>;
+
   return (
     <SectionShell
       id="service-area"
       component="ServiceArea"
       variant={section.variant}
-      title="Where we work"
-      kicker="Service area"
+      chrome={sectionChrome({
+        title: generatedCopy("Where we work"),
+        kicker: generatedCopy("Service area"),
+      })}
+      scale={visualScaleFor(section)}
+      motion="none"
     >
       {hubAddressVariant && hub && (
         <p className="mb-6 font-body text-lead text-text-heading">{hub}</p>

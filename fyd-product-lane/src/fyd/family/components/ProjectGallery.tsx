@@ -9,7 +9,13 @@
  */
 
 import type { PingObject } from "@/lib/ping/types";
-import { SectionShell, cx, type FamilySectionProps } from "../shared";
+import {
+  SectionShell,
+  cx,
+  generatedCopy,
+  sectionChrome,
+  type FamilySectionProps,
+} from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 
 function galleryItems(
@@ -129,8 +135,10 @@ export function ProjectGallery({ section, ctx }: FamilySectionProps): JSX.Elemen
       id="projects"
       component="ProjectGallery"
       variant={section.variant}
-      title="Recent work"
-      kicker="Portfolio"
+      chrome={sectionChrome({
+        title: generatedCopy("Recent work"),
+        kicker: generatedCopy("Portfolio"),
+      })}
     >
       {section.variant === "editorial" ? (
         <Editorial items={items} />

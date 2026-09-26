@@ -20,3 +20,24 @@ export {
   type MediaAssetRef,
   type MediaManifest,
 } from "./types";
+export {
+  visualScaleFor,
+  motionFor,
+  fallbackVisualScale,
+  fallbackMotionFor,
+  SCALE_RHYTHM,
+  type VisualScale,
+  type MotionIntent,
+} from "./hierarchy";
+export { InView, EmphaticCta, CountUp, type InViewIntent } from "./motion";
+export { ResponsiveImage, SectionShell } from "./shared";
+export {
+  generatedCopy,
+  sectionChrome,
+  verifierSourceFor,
+  renderAtomClassificationFor,
+  FAMILY_GENERATED_COPY_REF,
+  type GeneratedCopy,
+  type RenderBindingKind,
+  type SectionChrome,
+} from "./bindings";
