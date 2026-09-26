@@ -193,7 +193,7 @@ function ServiceLedHero({ section, ctx }: FamilySectionProps): JSX.Element {
                   )}
                 >
                   <span>{label}</span>
-                  <span aria-hidden="true">{"->"}</span>
+                  <span aria-hidden="true">{"\u2192"}</span>
                 </a>
               </li>
             ))}

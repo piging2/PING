@@ -119,7 +119,7 @@ export function Cta({
   if (tone === "hook") {
     return (
       <a href={href} className={HOOK_LINK}>
-        {cta.label} {"->"}
+        {cta.label} <span aria-hidden="true">{"\u2192"}</span>
       </a>
     );
   }
