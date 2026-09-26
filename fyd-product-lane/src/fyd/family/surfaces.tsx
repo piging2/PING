@@ -101,12 +101,12 @@ export function FamilyLabPanel({
       <dl className="mt-4 grid grid-cols-1 gap-2 font-body text-small text-text-muted sm:grid-cols-3">
         <div>
           <dt className="uppercase tracking-[0.08em] text-caption">Plan</dt>
-          <dd>{plan.id}</dd>
+          <dd>{plan.planVersion}</dd>
         </div>
         <div>
           <dt className="uppercase tracking-[0.08em] text-caption">Theme</dt>
           <dd>
-            {ctx.themeId} ({ctx.themeDataTheme})
+            {plan.theme.name} ({ctx.themeDataTheme})
           </dd>
         </div>
         <div>
