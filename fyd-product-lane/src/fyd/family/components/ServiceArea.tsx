@@ -27,8 +27,8 @@ function locationsOf(ctx: FamilySectionProps["ctx"]): PingObject[] {
  * hub line; the area list is owner service_areas, then location titles,
  * then the adapted service-radius region. Nothing is invented.
  */
-function areasOf(ctx: FamilySectionProps["ctx"]): string[] {
-  return adaptedServiceAreaList(ctx.owner, locationsOf(ctx));
+function areasOf(ctx: FamilySectionProps["ctx"], excludeHub: boolean): string[] {
+  return adaptedServiceAreaList(ctx.owner, locationsOf(ctx), { excludeHubLine: excludeHub });
 }
 
 function hubAddress(ctx: FamilySectionProps["ctx"]): string | null {
@@ -37,9 +37,9 @@ function hubAddress(ctx: FamilySectionProps["ctx"]): string | null {
 }
 
 export function ServiceArea({ section, ctx }: FamilySectionProps): JSX.Element {
-  const areas = areasOf(ctx);
-  const hub = hubAddress(ctx);
   const hubAddressVariant = section.variant === "hub-address";
+  const hub = hubAddressVariant ? hubAddress(ctx) : null;
+  const areas = areasOf(ctx, hubAddressVariant && hub !== null);
 
   return (
     <SectionShell

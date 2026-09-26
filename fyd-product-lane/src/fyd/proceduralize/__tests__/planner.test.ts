@@ -11,6 +11,7 @@ import {
   planPage,
   planPageFromGraph,
   formatPhoneDisplay,
+  adaptedServiceAreaList,
   type HomePagePlan,
   type PlannerInput,
   type ScoredMediaAsset,
@@ -921,5 +922,38 @@ describe("family, not clones", () => {
     // No media, no intent: the 5-service taxonomy selects service-led, never a fake-photo hero.
     expect(sectionBy(plan, "Hero")[0].variant).toBe("service-led");
     expect(JSON.stringify(planPageFromGraph(hppLikeInput().graph))).toBe(JSON.stringify(plan));
+  });
+});
+
+// ============================================================================
+// Service-area adapter: hub line never repeats inside the area list
+// ============================================================================
+
+describe("adaptedServiceAreaList hub exclusion", () => {
+  const hubOwner = () =>
+    ownerWith(
+      { phone: "+15551234567", address: "Grand Junction, Colorado 81501, United States" },
+      "Coppersmith Plumbing LLC",
+    );
+  const hubLocation = () =>
+    mkObject(
+      "loc-1",
+      "ping.social.location@1",
+      "Grand Junction, Colorado, 81501, United States",
+    );
+
+  test("without exclusion, the hub-equivalent location title appears in the list", () => {
+    const list = adaptedServiceAreaList(hubOwner(), [hubLocation()]);
+    expect(list).toContain("Grand Junction, Colorado, 81501, United States");
+  });
+
+  test("excludeHubLine drops the hub line and its punctuation variants, keeps real regions", () => {
+    const owner = hubOwner();
+    owner.description = "We serviced Western Colorado for over 25 years.";
+    const list = adaptedServiceAreaList(owner, [hubLocation()], { excludeHubLine: true });
+    expect(list).not.toContain("Grand Junction, Colorado, 81501, United States");
+    expect(list).not.toContain("Grand Junction, Colorado 81501, United States");
+    // Distinct verified region names survive the exclusion.
+    expect(list).toContain("Western Colorado");
   });
 });

@@ -212,22 +212,32 @@ export function adaptedServiceRadius(owner: PingObject | null): string {
  * Named service areas for RENDER (the planner's namedServiceAreas keeps its
  * eligibility role): owner service_areas, then location titles, then the
  * adapted radius region. Normalized-deduped so the same place written two
- * ways does not double-render.
+ * ways does not double-render. With excludeHubLine, the hub address line
+ * (rendered separately by the hub-address variant) is seeded into the
+ * seen-set so it never repeats inside the list.
  */
 export function adaptedServiceAreaList(
   owner: PingObject | null,
   locations: PingObject[],
+  opts?: { excludeHubLine?: boolean },
 ): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
+  const key = (t: string): string => t.toLowerCase().replace(/[^a-z0-9]/g, "");
   const push = (s: string): void => {
     const t = s.replace(/\s+/g, " ").trim();
     if (t === "") return;
-    const key = t.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (seen.has(key)) return;
-    seen.add(key);
+    const k = key(t);
+    if (seen.has(k)) return;
+    seen.add(k);
     out.push(t);
   };
+  if (opts?.excludeHubLine && owner) {
+    for (const line of adaptedAddress(owner, locations).lines) {
+      const t = line.replace(/\s+/g, " ").trim();
+      if (t !== "") seen.add(key(t));
+    }
+  }
   if (owner) {
     for (const a of fieldList(owner, "service_areas")) push(a);
   }
