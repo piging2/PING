@@ -25,6 +25,7 @@ import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
 import { SCHEMA_ROLES, type FYDSchemaRole } from "../sitespec/schemas";
 import { ROLE_PREDICATES, INVERSE_ROLE_PREDICATES } from "./generator";
+import { TRADE_KEYWORDS, KNOWN_TRADES } from "../media/trade-keywords";
 
 // ============================================================================
 // ADAPTER SECTION: canonical FYD types.
@@ -311,6 +312,13 @@ export interface ScoredMediaAsset {
   depictsPersonId?: string;
   /** Optional component breakdown for provenance. */
   components?: Record<string, number>;
+  /**
+   * The scorer's winning business-trade key for this role verdict
+   * (e.g. "hvac", "plumbing"). Lets the planner bind unbound pool
+   * assets only to service lines in the same trade: a condenser photo
+   * that won under hvac must never illustrate a Plumbing section.
+   */
+  onTrade?: string;
 }
 
 export interface MediaAvailability {
@@ -1236,21 +1244,11 @@ function computeFacts(
   const serviceGridEligible = g.services.length >= 2;
   const serviceMediaById = new Map<string, MediaBinding>();
   if (serviceGridEligible) {
-    const pool = [
-      ...media.passingUnbound("service-imagery"),
-      ...media.passingUnbound("work-detail"),
-    ];
-    let poolCursor = 0;
+    const usedGridAssets = new Set<string>();
     for (const s of servicesOrdered) {
-      const specific =
-        media.passingForObject("service-imagery", s.id)[0] ??
-        media.passingForObject("work-detail", s.id)[0] ??
-        null;
-      if (specific) {
-        serviceMediaById.set(s.id, { role: specific.role, assetId: specific.assetId, objectId: s.id });
-      } else if (poolCursor < pool.length) {
-        const p = pool[poolCursor++];
-        serviceMediaById.set(s.id, { role: p.role, assetId: p.assetId, objectId: s.id });
+      const m = takeDistinctServiceMedia(media, s, usedGridAssets);
+      if (m) {
+        serviceMediaById.set(s.id, { role: m.role, assetId: m.assetId, objectId: s.id });
       }
     }
   }
@@ -1498,6 +1496,69 @@ function buildTrustMetrics(ctx: PlanCtx): void {
   );
 }
 
+/**
+ * Infer a service line's business-trade key from its title using the
+ * scorer's trade vocabulary (media-score@1, same vocabulary that produced
+ * ScoredMediaAsset.onTrade). Returns null when the title carries no trade
+ * keyword: the planner then cannot prove a trade match.
+ */
+function serviceTradeKey(title: string): string | null {
+  const tokens = title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  if (tokens.length === 0) return null;
+  let best: string | null = null;
+  let bestHits = 0;
+  for (const trade of KNOWN_TRADES) {
+    const kws: readonly string[] = TRADE_KEYWORDS[trade] ?? [];
+    let hits = 0;
+    for (const t of tokens) if (kws.includes(t)) hits++;
+    if (hits > bestHits) {
+      best = trade;
+      bestHits = hits;
+    }
+  }
+  return best;
+}
+
+/**
+ * Bind at most one distinct asset per service line. Object-specific
+ * evidence (asset bound to the service object) always wins. The unbound
+ * pool binds only when the asset's winning trade matches the service
+ * line's trade; when the line's trade is unknowable from its title, the
+ * business-level relevance verdict is the evidence. Returns null when no
+ * honest binding exists: the caller falls back to a media-optional
+ * variant instead of repeating or misbinding imagery.
+ */
+function takeDistinctServiceMedia(
+  media: MediaIndex,
+  service: PingObject,
+  usedAssetIds: Set<string>,
+): ScoredMediaAsset | null {
+  const objectSpecific =
+    media.passingForObject("service-imagery", service.id)[0] ??
+    media.passingForObject("work-detail", service.id)[0] ??
+    media.passingForObject("project-photo", service.id)[0] ??
+    null;
+  if (objectSpecific && !usedAssetIds.has(objectSpecific.assetId)) {
+    usedAssetIds.add(objectSpecific.assetId);
+    return objectSpecific;
+  }
+  const tradeKey = serviceTradeKey(service.title);
+  for (const role of ["service-imagery", "work-detail"] as const) {
+    const next = media
+      .passingUnbound(role)
+      .find(
+        (a) =>
+          !usedAssetIds.has(a.assetId) &&
+          (tradeKey === null || (a.onTrade ?? null) === tradeKey),
+      );
+    if (next) {
+      usedAssetIds.add(next.assetId);
+      return next;
+    }
+  }
+  return null;
+}
+
 function buildFeaturedServices(ctx: PlanCtx): void {
   const { g, facts, caps } = ctx;
   if (!facts.featuredEligible) {
@@ -1509,16 +1570,16 @@ function buildFeaturedServices(ctx: PlanCtx): void {
   }
   const byIdMap = new Map(g.services.map((s) => [s.id, s]));
   const products = [...g.products].sort(byId);
+  // One asset binds to at most one featured section, and only on a trade
+  // match: a repeated image across service lines reads as template
+  // filler, and a cross-trade image (condenser photo on Plumbing) is a
+  // wrong-media hard-gate failure. When no honest binding exists, the
+  // section falls back to scope-lead (media-optional).
+  const usedFeaturedAssets = new Set<string>();
   facts.featuredIds.forEach((serviceId, i) => {
     const service = byIdMap.get(serviceId);
     if (!service) return;
-    const lineMedia =
-      ctx.media.passingForObject("service-imagery", serviceId)[0] ??
-      ctx.media.passingForObject("work-detail", serviceId)[0] ??
-      ctx.media.passingForObject("project-photo", serviceId)[0] ??
-      ctx.media.passingUnbound("service-imagery")[0] ??
-      ctx.media.passingUnbound("work-detail")[0] ??
-      null;
+    const lineMedia = takeDistinctServiceMedia(ctx.media, service, usedFeaturedAssets);
     const variant = lineMedia ? "media-lead" : "scope-lead";
     const boundProducts = products.filter((_, pi) => pi % facts.featuredIds.length === i).slice(0, 3);
     const objectBindings: ObjectBinding[] = [{ role: "service", objectIds: [serviceId] }];

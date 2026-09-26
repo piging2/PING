@@ -609,6 +609,56 @@ describe("media bar integrity", () => {
     const story = sectionBy(plan, "BusinessStory")[0];
     expect(story.mediaBindings.map((b) => b.assetId)).toEqual(["portrait-1"]);
   });
+
+  test("featured services never repeat one image and never cross trades", () => {
+    // Two service lines (Plumbing, Heating & Cooling) and a single
+    // unbound condenser asset that won under hvac: it may illustrate the
+    // HVAC line only. Plumbing gets no honest binding -> scope-lead.
+    const plumbing = service("svc-plumb", "Plumbing", "Pipes, drains, fixtures");
+    const hvacSvc = service("svc-hvac", "Heating & Cooling", "Furnaces and AC");
+    const condenser = mkAsset("condenser-1", "service-imagery", 0.92, true, { onTrade: "hvac" });
+    const plan = planPage(
+      minimalInput({
+        graph: {
+          objects: [ownerWith({ phone: "+15551234567" }), plumbing, hvacSvc],
+          relationships: [providesRel("r1", plumbing.id), providesRel("r2", hvacSvc.id)],
+        },
+        media: { assets: [condenser] },
+      }),
+    ) as HomePagePlan;
+    const featured = sectionBy(plan, "FeaturedService");
+    expect(featured).toHaveLength(2);
+    const byService = new Map(featured.map((s) => [s.objectBindings[0].objectIds[0], s]));
+    const hvacSection = byService.get("svc-hvac")!;
+    const plumbingSection = byService.get("svc-plumb")!;
+    expect(hvacSection.variant).toBe("media-lead");
+    expect(hvacSection.mediaBindings.map((b) => b.assetId)).toEqual(["condenser-1"]);
+    // Condenser is hvac-won: binding it to Plumbing would be wrong media.
+    expect(plumbingSection.variant).toBe("scope-lead");
+    expect(plumbingSection.mediaBindings).toHaveLength(0);
+  });
+
+  test("featured services consume each unbound asset at most once", () => {
+    // Two plumbing-titled lines, one on-trade unbound asset: the first
+    // line binds it, the second falls back to scope-lead (no repeat).
+    const s1 = service("svc-a", "Plumbing", "Pipes and fixtures");
+    const s2 = service("svc-b", "Drain Cleaning", "Drains and sewers");
+    const asset = mkAsset("pipe-1", "service-imagery", 0.9, true, { onTrade: "plumbing" });
+    const plan = planPage(
+      minimalInput({
+        graph: {
+          objects: [ownerWith({ phone: "+15551234567" }), s1, s2],
+          relationships: [providesRel("r1", s1.id), providesRel("r2", s2.id)],
+        },
+        media: { assets: [asset] },
+      }),
+    ) as HomePagePlan;
+    const featured = sectionBy(plan, "FeaturedService");
+    expect(featured).toHaveLength(2);
+    const bound = featured.flatMap((s) => s.mediaBindings.map((b) => b.assetId));
+    expect(bound).toEqual(["pipe-1"]);
+    expect(featured.map((s) => s.variant)).toContain("scope-lead");
+  });
 });
 
 // ============================================================================

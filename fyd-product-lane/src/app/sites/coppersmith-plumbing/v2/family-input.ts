@@ -193,6 +193,7 @@ export function scoreCoppersmithMedia(
         score: v.score,
         passed: v.passed,
         components: { ...v.components },
+        onTrade: v.trade,
       });
     }
     // Logo-mark: the scorer has no logo role. Brand-mark assets that
