@@ -10,7 +10,7 @@
  * covers the primary CTA.
  */
 
-import { Cta, FOCUS_RING, PhoneLink, cx, type FamilySectionProps } from "../shared";
+import { Cta, FOCUS_RING, PhoneLink, cx, formatHoursDisplay, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 
 export function Navigation({ section, ctx }: FamilySectionProps): JSX.Element {
@@ -22,7 +22,8 @@ export function Navigation({ section, ctx }: FamilySectionProps): JSX.Element {
   const logoBinding = mediaBindingsFor(section, "logo-mark")[0];
   const logo = logoBinding ? mediaForAsset(ctx, logoBinding.assetId) : null;
 
-  const hours = ctx.owner ? String(ctx.owner.fields["hours"] ?? "").trim() : "";
+  const hoursRaw = ctx.owner ? String(ctx.owner.fields["hours"] ?? "").trim() : "";
+  const hours = formatHoursDisplay(hoursRaw);
 
   return (
     <>

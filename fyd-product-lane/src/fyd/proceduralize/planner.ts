@@ -44,6 +44,197 @@ import { ROLE_PREDICATES, INVERSE_ROLE_PREDICATES } from "./generator";
 // No other file section may import canonical types directly.
 // ============================================================================
 
+// ---------------------------------------------------------------------------
+// GRAPH FIELD-NAME ADAPTER: graph vocabulary -> planner vocabulary.
+//
+// The canonical object graph emits different field names than the planner's
+// locked vocabulary (family-spec): services carry `description` where the
+// planner reads `scope`; the business carries `locality` (and location
+// objects carry address_locality/address_region/...) where the planner reads
+// `address`. This adapter is the ONLY place that translates. Planner logic
+// below reads through these functions, never raw graph field names, for
+// scope and address.
+//
+// The adapter never invents data: when no evidence exists the planner field
+// reads empty and the section stays ineligible (never degraded, never
+// rendered from nothing).
+//
+// NOTE: these functions call fieldValue/fieldList/byId, hoisted function
+// declarations defined in PURE HELPERS below. Calls happen at plan time,
+// after module init, so hoisting is safe.
+// ---------------------------------------------------------------------------
+
+/**
+ * A description "reads as a scope line" when it is a short human sentence
+ * about the offering: bounded length, no URL, non-empty after trim.
+ * Provenance boilerplate, paragraphs, and link-like text are not scope
+ * lines and are never promoted.
+ */
+const SCOPE_LINE_MAX_LEN = 280;
+const SCOPE_LINE_URL_PATTERN = /https?:\/\/|www\./i;
+
+function readsAsScopeLine(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t === "" || t.length > SCOPE_LINE_MAX_LEN) return false;
+  if (SCOPE_LINE_URL_PATTERN.test(t)) return false;
+  return true;
+}
+
+/**
+ * Service scope, graph vocabulary -> planner vocabulary. A direct `scope`
+ * field wins; otherwise the service `description` (top-level, then fields)
+ * is promoted ONLY when it reads as a scope line. Scope is never
+ * synthesized from the title or keywords: no scope-like description means
+ * no scope, and the buying-unit rules stay ineligible.
+ */
+export function adaptedServiceScope(service: PingObject): string {
+  const direct = fieldValue(service, "scope").trim();
+  if (direct !== "") return direct;
+  const raw =
+    typeof service.description === "string" && service.description.trim() !== ""
+      ? service.description
+      : fieldValue(service, "description");
+  const desc = raw.replace(/\s+/g, " ").trim();
+  if (!readsAsScopeLine(desc)) return "";
+  return desc;
+}
+
+export interface AdaptedAddress {
+  /** Formatted address lines from evidence, most specific first. */
+  lines: string[];
+  /** True when a line carries street-level detail (routable: map-route honest). */
+  streetLevel: boolean;
+}
+
+/**
+ * Street-address field keys the graph is known to emit (bounded list; the
+ * adapter never guesses other keys).
+ */
+const STREET_ADDRESS_KEYS = [
+  "street_address",
+  "address_line1",
+  "address_street",
+  "streetaddress",
+];
+
+/** Compose one address line from a location object's locality components. */
+function composeLocalityLine(l: PingObject): { line: string; streetLevel: boolean } {
+  const street =
+    STREET_ADDRESS_KEYS.map((k) => fieldValue(l, k).trim()).find((s) => s !== "") ?? "";
+  const locality = fieldValue(l, "address_locality").trim();
+  const region = fieldValue(l, "address_region").trim();
+  const postal = fieldValue(l, "postal_code").trim();
+  const country = fieldValue(l, "address_country").trim();
+  const cityRegion = [locality, region].filter((s) => s !== "").join(", ");
+  let line = cityRegion;
+  if (postal !== "") line = (line !== "" ? line + " " : "") + postal;
+  if (country !== "") line = (line !== "" ? line + ", " : "") + country;
+  if (line === "") {
+    // Fall back to the location's own composed locality string when the
+    // components are absent (still the graph's words, not ours).
+    line = fieldValue(l, "locality").trim();
+  }
+  if (street !== "") line = street + (line !== "" ? ", " + line : "");
+  return { line: line.replace(/\s+/g, " ").trim(), streetLevel: street !== "" };
+}
+
+/**
+ * Owner address lines, graph vocabulary -> planner vocabulary. A direct
+ * `address` field wins; otherwise location objects (the located_at claims)
+ * composed from their locality components; otherwise the owner's own
+ * `locality` field. Every line is formatted evidence; nothing is invented.
+ */
+export function adaptedAddress(
+  owner: PingObject | null,
+  locations: PingObject[],
+): AdaptedAddress {
+  if (owner) {
+    const direct = fieldValue(owner, "address").trim();
+    if (direct !== "") {
+      return {
+        lines: [direct.replace(/\s+/g, " ").trim()],
+        streetLevel: STREET_ADDRESS_KEYS.some((k) => fieldValue(owner, k).trim() !== ""),
+      };
+    }
+  }
+  const lines: string[] = [];
+  let streetLevel = false;
+  for (const l of [...locations].sort(byId)) {
+    const composed = composeLocalityLine(l);
+    if (composed.line !== "" && !lines.includes(composed.line)) {
+      lines.push(composed.line);
+      streetLevel = streetLevel || composed.streetLevel;
+    }
+  }
+  if (lines.length === 0 && owner) {
+    const loc = fieldValue(owner, "locality").trim().replace(/\s+/g, " ");
+    if (loc !== "") lines.push(loc);
+  }
+  return { lines, streetLevel };
+}
+
+/**
+ * Service-radius evidence, graph vocabulary -> planner vocabulary.
+ * Explicit radius/serving fields win; otherwise the owner's own
+ * description making a service-region claim ("serviced Western Colorado"
+ * yields "Western Colorado"). The region phrase is quoted from the
+ * business's own words; when the description makes no region claim the
+ * radius reads empty and hub-address stays ineligible.
+ */
+const SERVICE_REGION_CLAIM =
+  /\bservic(?:e|es|ed|ing)\s+(?:the\s+)?([A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*)*)/i;
+
+export function adaptedServiceRadius(owner: PingObject | null): string {
+  if (!owner) return "";
+  const direct =
+    fieldValue(owner, "service_radius").trim() || fieldValue(owner, "serving").trim();
+  if (direct !== "") return direct.replace(/\s+/g, " ").trim();
+  const desc =
+    typeof owner.description === "string" && owner.description.trim() !== ""
+      ? owner.description
+      : fieldValue(owner, "description");
+  const m = SERVICE_REGION_CLAIM.exec(desc.replace(/\s+/g, " "));
+  if (!m || !m[1]) return "";
+  // Keep the leading run of capitalized words (the region name itself);
+  // stop at the first lowercase word ("for over 25 years" is duration,
+  // not region). Nothing invented beyond the owner's own claim.
+  const taken: string[] = [];
+  for (const w of m[1].trim().split(/\s+/)) {
+    if (!/^[A-Z]/.test(w)) break;
+    taken.push(w);
+    if (taken.length >= 4) break;
+  }
+  return taken.join(" ");
+}
+
+/**
+ * Named service areas for RENDER (the planner's namedServiceAreas keeps its
+ * eligibility role): owner service_areas, then location titles, then the
+ * adapted radius region. Normalized-deduped so the same place written two
+ * ways does not double-render.
+ */
+export function adaptedServiceAreaList(
+  owner: PingObject | null,
+  locations: PingObject[],
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (s: string): void => {
+    const t = s.replace(/\s+/g, " ").trim();
+    if (t === "") return;
+    const key = t.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
+  };
+  if (owner) {
+    for (const a of fieldList(owner, "service_areas")) push(a);
+  }
+  for (const l of [...locations].sort(byId)) push(l.title.trim());
+  if (owner) push(adaptedServiceRadius(owner));
+  return out;
+}
+
 /** Registry component names, exactly as family-spec.md names them. */
 export type RegistryComponent =
   | "Navigation"
@@ -112,7 +303,11 @@ export interface ScoredMediaAsset {
   passed: boolean;
   /** Object ids this asset depicts (project photos, per-service imagery). */
   objectIds?: string[];
-  /** Person object id this portrait provably depicts (never stock). */
+  /**
+   * Person object id this portrait provably depicts (never stock).
+   * Required for owner-portrait/team-photo binding: the depicts-person
+   * rule (portraitRoleBindable) rejects those roles without it.
+   */
   depictsPersonId?: string;
   /** Optional component breakdown for provenance. */
   components?: Record<string, number>;
@@ -613,9 +808,13 @@ function deriveCapabilities(g: Grouped): PlannerCapability[] {
   const phone = fieldValue(g.owner, "phone").trim();
   if (phone !== "") caps.push("phone-tap");
   if (fieldValue(g.owner, "hours").trim() !== "") caps.push("hours-display");
-  if (fieldValue(g.owner, "address").trim() !== "") {
+  // Address evidence comes through the graph field-name adapter: a direct
+  // address field, location-object locality components, or the owner
+  // locality. map-route needs street-level detail to be honest.
+  const addr = adaptedAddress(g.owner, g.locations);
+  if (addr.lines.length > 0) {
     caps.push("address-display");
-    caps.push("map-route");
+    if (addr.streetLevel) caps.push("map-route");
   }
   if (fieldValue(g.owner, "socials").trim() !== "") caps.push("social-link");
   if (fieldList(g.owner, "content_links").length > 0) caps.push("content-link");
@@ -657,7 +856,7 @@ function isEmergencyTrade(g: Grouped, intent: OwnerIntent): boolean {
   const haystack = (
     fieldValue(g.owner, "trade") +
     " " +
-    g.services.map((s) => s.title + " " + fieldValue(s, "scope")).join(" ")
+    g.services.map((s) => s.title + " " + adaptedServiceScope(s)).join(" ")
   ).toLowerCase();
   return EMERGENCY_TRADE_SIGNALS.some((t) => t.keywords.some((k) => haystack.includes(k)));
 }
@@ -666,7 +865,7 @@ function isEmergencyTrade(g: Grouped, intent: OwnerIntent): boolean {
 function distinctScopes(services: PingObject[]): string[] {
   const seen = new Set<string>();
   for (const s of services) {
-    const scope = fieldValue(s, "scope").trim().toLowerCase();
+    const scope = adaptedServiceScope(s).trim().toLowerCase();
     if (scope !== "") seen.add(scope);
   }
   return [...seen].sort();
@@ -783,6 +982,33 @@ function metricFacts(owner: PingObject): string[] {
 
 // --- Media availability index: the planner's read-only view of scored media ---
 
+/**
+ * DEPICTS-PERSON RULE (family-spec 9-role media vocabulary; planner-owned
+ * binding contract, enforced here in exactly one place): an asset may bind
+ * to the owner-portrait or team-photo media role ONLY when it carries
+ * depicts-person evidence, a depictsPersonId that references a person
+ * object in the graph. Without it the asset is ineligible for those roles
+ * regardless of score. (The scorer's owner-portrait bar has minRelevance
+ * 0.0, so product photos pass it; binding one as a portrait would be a
+ * wrong-media hard-gate failure.) Every binding path reads through the
+ * MediaIndex pools (best/passing/passingForObject/passingUnbound), so
+ * filtering at index time covers all of them. This is a binding gate, not
+ * a re-score: the planner still never touches the scorer's numbers.
+ */
+const PERSON_PORTRAIT_ROLES: ReadonlySet<PlannerMediaRole> = new Set([
+  "owner-portrait",
+  "team-photo",
+]);
+
+export function portraitRoleBindable(
+  asset: ScoredMediaAsset,
+  personIds: ReadonlySet<string>,
+): boolean {
+  if (!PERSON_PORTRAIT_ROLES.has(asset.role)) return true;
+  const id = (asset.depictsPersonId ?? "").trim();
+  return id !== "" && personIds.has(id);
+}
+
 interface MediaIndex {
   /** Best passing asset per role, deterministic: score desc, assetId asc. */
   best(role: PlannerMediaRole): ScoredMediaAsset | null;
@@ -794,10 +1020,14 @@ interface MediaIndex {
   passingUnbound(role: PlannerMediaRole): ScoredMediaAsset[];
 }
 
-function indexMedia(availability: MediaAvailability | undefined): MediaIndex {
+function indexMedia(
+  availability: MediaAvailability | undefined,
+  personIds: ReadonlySet<string>,
+): MediaIndex {
   const byRole = new Map<PlannerMediaRole, ScoredMediaAsset[]>();
   for (const a of availability?.assets ?? []) {
     if (!a.passed) continue; // the planner never sees failed assets as bindable
+    if (!portraitRoleBindable(a, personIds)) continue; // depicts-person gate
     const list = byRole.get(a.role) ?? [];
     list.push(a);
     byRole.set(a.role, list);
@@ -958,7 +1188,8 @@ function computeFacts(
   const densityLow = signal?.imageDensityBand === "low";
   const phone = g.owner ? fieldValue(g.owner, "phone").trim() : "";
   const namedAreasPre = namedServiceAreas(g);
-  const locationEvidence = namedAreasPre.length >= 1 || (g.owner ? fieldValue(g.owner, "address").trim() !== "" : false);
+  const locationEvidence =
+    namedAreasPre.length >= 1 || adaptedAddress(g.owner, g.locations).lines.length > 0;
 
   let heroVariant: string;
   let heroRuleId: string;
@@ -990,7 +1221,7 @@ function computeFacts(
   } else {
     const byScope = new Map<string, PingObject[]>();
     for (const s of servicesOrdered) {
-      const scope = fieldValue(s, "scope").trim().toLowerCase();
+      const scope = adaptedServiceScope(s).trim().toLowerCase();
       if (scope === "") continue;
       const list = byScope.get(scope) ?? [];
       list.push(s);
@@ -1061,10 +1292,12 @@ function computeFacts(
 
   // --- ServiceArea ---
   const namedAreas = namedAreasPre;
-  const address = g.owner ? fieldValue(g.owner, "address").trim() : "";
-  const radiusEvidence =
-    (g.owner ? fieldValue(g.owner, "service_radius").trim() : "") !== "" ||
-    (g.owner ? fieldValue(g.owner, "serving").trim() : "") !== "";
+  // Address and radius evidence come through the graph field-name
+  // adapter: location-object locality components compose the address
+  // lines; the radius is an explicit field or the owner's own
+  // service-region claim. No evidence => the section stays ineligible.
+  const address = adaptedAddress(g.owner, g.locations).lines[0] ?? "";
+  const radiusEvidence = adaptedServiceRadius(g.owner) !== "";
   const areaEligible = namedAreas.length >= 2 || (address !== "" && radiusEvidence);
   const areaVariant = namedAreas.length >= 2 ? "area-list" : "hub-address";
 
@@ -1943,7 +2176,7 @@ export function planPage(input: PlannerInput): HomePagePlan | null {
 
   const intent: OwnerIntent = input.ownerIntent ?? {};
   const caps = new Set<PlannerCapability>(input.capabilities ?? deriveCapabilities(g));
-  const media = indexMedia(input.media);
+  const media = indexMedia(input.media, new Set(g.people.map((p) => p.id)));
   const { signal, note: signalNote } = sanitizeSignal(input.designSignal);
   const emergency = isEmergencyTrade(g, intent);
   const phone = fieldValue(g.owner, "phone").trim();

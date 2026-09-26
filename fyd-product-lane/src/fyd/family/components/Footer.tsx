@@ -13,6 +13,9 @@
  */
 
 import { InspectAffordance, cx, type FamilySectionProps } from "../shared";
+import { adaptedAddress } from "../../proceduralize/planner";
+import { SCHEMA_ROLES } from "../../sitespec/schemas";
+import type { PingObject } from "@/lib/ping/types";
 
 const HONEST_DISCLAIMER =
   "We cannot guarantee openings for the date you choose. We will confirm a time that works for you.";
@@ -24,8 +27,56 @@ function licenseLine(ctx: FamilySectionProps["ctx"]): string | null {
   return s !== "" ? s : null;
 }
 
+/** Location objects from the graph (the planner's Grouped.locations equivalent). */
+function locationsOf(ctx: FamilySectionProps["ctx"]): PingObject[] {
+  return ctx.input.graph.objects.filter(
+    (o) => SCHEMA_ROLES.location.includes(o.schema) && o.visibility === "public",
+  );
+}
+
+/**
+ * The locality line renders through the graph field-name adapter
+ * (planner.ts): location-object locality components, else the owner's own
+ * locality field. Never invented.
+ */
+function localityLine(ctx: FamilySectionProps["ctx"]): string | null {
+  const lines = adaptedAddress(ctx.owner, locationsOf(ctx)).lines;
+  return lines.length > 0 ? lines[0] : null;
+}
+
+/**
+ * Footer anchor links must never be dead: each link renders only when the
+ * target component is actually planned (ServiceGrid owns #services,
+ * ProjectGallery owns #projects, ServiceArea owns #service-area).
+ * Ineligible sections mean no link, not a dangling anchor.
+ */
+function plannedComponents(ctx: FamilySectionProps["ctx"]): Set<string> {
+  return new Set(ctx.input.plan.sections.map((s) => s.component));
+}
+
+function footerLink(
+  planned: Set<string>,
+  component: string,
+  href: string,
+  label: string,
+): JSX.Element | null {
+  if (!planned.has(component)) return null;
+  return (
+    <a
+      href={href}
+      className={cx(
+        "inline-flex min-h-[44px] items-center font-body text-small text-text-muted hover:text-text-primary",
+        "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring rounded-sm",
+      )}
+    >
+      {label}
+    </a>
+  );
+}
+
 export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
   const license = licenseLine(ctx);
+  const locality = localityLine(ctx);
   const areas = ctx.owner
     ? (Array.isArray(ctx.owner.fields["service_areas"])
         ? (ctx.owner.fields["service_areas"] as string[])
@@ -33,6 +84,7 @@ export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
       ).filter((a) => typeof a === "string" && a.trim() !== "")
     : [];
   const capture = section.variant === "credibility-plus-capture";
+  const planned = plannedComponents(ctx);
 
   return (
     <footer
@@ -75,6 +127,9 @@ export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
             <p className="font-body text-body font-semibold text-text-heading">{ctx.legalName}</p>
+            {locality && (
+              <p className="mt-2 font-body text-small text-text-muted">{locality}</p>
+            )}
             {license && (
               <p className="mt-2 font-body text-small text-text-muted">Licensed {license}</p>
             )}
@@ -86,33 +141,9 @@ export function Footer({ section, ctx }: FamilySectionProps): JSX.Element {
             )}
           </div>
           <nav aria-label="Footer" className="flex flex-col gap-1">
-            <a
-              href="#services"
-              className={cx(
-                "inline-flex min-h-[44px] items-center font-body text-small text-text-muted hover:text-text-primary",
-                "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring rounded-sm",
-              )}
-            >
-              Services
-            </a>
-            <a
-              href="#projects"
-              className={cx(
-                "inline-flex min-h-[44px] items-center font-body text-small text-text-muted hover:text-text-primary",
-                "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring rounded-sm",
-              )}
-            >
-              Recent work
-            </a>
-            <a
-              href="#service-area"
-              className={cx(
-                "inline-flex min-h-[44px] items-center font-body text-small text-text-muted hover:text-text-primary",
-                "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring rounded-sm",
-              )}
-            >
-              Service area
-            </a>
+            {footerLink(planned, "ServiceGrid", "#services", "Services")}
+            {footerLink(planned, "ProjectGallery", "#projects", "Recent work")}
+            {footerLink(planned, "ServiceArea", "#service-area", "Service area")}
           </nav>
           <div>
             <p className="font-body text-small text-text-muted">Powered by FYD</p>

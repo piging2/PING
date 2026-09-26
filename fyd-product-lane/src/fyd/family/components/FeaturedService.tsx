@@ -22,6 +22,7 @@ import {
   type FamilySectionProps,
 } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
+import { adaptedServiceScope } from "../../proceduralize/planner";
 
 const HONEST_DISCLAIMER =
   "We cannot guarantee openings for the date you choose. We will confirm a time that works for you.";
@@ -84,9 +85,14 @@ export function FeaturedService({ section, ctx }: FamilySectionProps): JSX.Eleme
   const binding = mediaBindingsFor(section)[0];
   const media = binding ? mediaForAsset(ctx, binding.assetId) : null;
 
-  const scope = typeof service.fields["scope"] === "string" ? service.fields["scope"].trim() : "";
+  // The scope line renders through the graph field-name adapter
+  // (planner.ts): a direct scope field, else the service description when
+  // it reads as a scope line. The description paragraph renders only when
+  // it carries different text, so an adapted scope never double-renders.
+  const scope = adaptedServiceScope(service);
   const description =
     typeof service.description === "string" ? service.description.replace(/\s+/g, " ").trim() : "";
+  const showDescription = description !== "" && description !== scope;
 
   const quoteCta =
     section.ctaBindings.find((c) => c.kind === "quote-start" && c.contextObjectId === service.id) ??
@@ -117,7 +123,7 @@ export function FeaturedService({ section, ctx }: FamilySectionProps): JSX.Eleme
           {scope !== "" && (
             <p className="font-body text-lead text-text-primary">{scope}</p>
           )}
-          {description !== "" && (
+          {showDescription && (
             <p className="mt-4 max-w-[65ch] font-body text-body text-text-muted">{description}</p>
           )}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

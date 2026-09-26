@@ -14,11 +14,17 @@
 import type { PingObject } from "@/lib/ping/types";
 import { Cta, InspectAffordance, SectionShell, cx, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
+import { adaptedServiceScope } from "../../proceduralize/planner";
 import type { PlannedCtaBinding } from "../types";
 
+/**
+ * The scope line renders through the graph field-name adapter (planner.ts):
+ * a direct scope field, else the service description when it reads as a
+ * scope line. The description paragraph below renders only when it carries
+ * different text, so an adapted scope never double-renders.
+ */
 function serviceScope(s: PingObject): string {
-  const v = s.fields["scope"];
-  return typeof v === "string" ? v.trim() : "";
+  return adaptedServiceScope(s);
 }
 
 function hookFor(
@@ -54,6 +60,9 @@ function ServiceCard({
   const scope = serviceScope(service);
   const description =
     typeof service.description === "string" ? service.description.replace(/\s+/g, " ").trim() : "";
+  // When the scope line was adapted from the description, the description
+  // paragraph would repeat it: show the paragraph only for distinct text.
+  const showDescription = description !== "" && description !== scope;
   return (
     <article
       className={cx(
@@ -74,7 +83,7 @@ function ServiceCard({
         {scope !== "" && (
           <p className="mt-2 font-body text-body font-medium text-text-primary">{scope}</p>
         )}
-        {description !== "" && (
+        {showDescription && (
           <p className="mt-3 flex-1 font-body text-body text-service-card-body">{description}</p>
         )}
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">

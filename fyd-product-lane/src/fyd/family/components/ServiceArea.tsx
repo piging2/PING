@@ -10,19 +10,30 @@
  */
 
 import { InspectAffordance, SectionShell, type FamilySectionProps } from "../shared";
+import { adaptedAddress, adaptedServiceAreaList } from "../../proceduralize/planner";
+import { SCHEMA_ROLES } from "../../sitespec/schemas";
+import type { PingObject } from "@/lib/ping/types";
 
+/** Location objects from the graph (the planner's Grouped.locations equivalent). */
+function locationsOf(ctx: FamilySectionProps["ctx"]): PingObject[] {
+  return ctx.input.graph.objects.filter(
+    (o) => SCHEMA_ROLES.location.includes(o.schema) && o.visibility === "public",
+  );
+}
+
+/**
+ * The hub address and the area list render through the graph field-name
+ * adapter (planner.ts): location-object locality components compose the
+ * hub line; the area list is owner service_areas, then location titles,
+ * then the adapted service-radius region. Nothing is invented.
+ */
 function areasOf(ctx: FamilySectionProps["ctx"]): string[] {
-  if (!ctx.owner) return [];
-  const raw = ctx.owner.fields["service_areas"];
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((a): a is string => typeof a === "string" && a.trim() !== "");
+  return adaptedServiceAreaList(ctx.owner, locationsOf(ctx));
 }
 
 function hubAddress(ctx: FamilySectionProps["ctx"]): string | null {
-  if (!ctx.owner) return null;
-  const v = ctx.owner.fields["address"];
-  const s = typeof v === "string" ? v.trim() : "";
-  return s !== "" ? s : null;
+  const lines = adaptedAddress(ctx.owner, locationsOf(ctx)).lines;
+  return lines.length > 0 ? lines[0] : null;
 }
 
 export function ServiceArea({ section, ctx }: FamilySectionProps): JSX.Element {

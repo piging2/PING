@@ -31,6 +31,7 @@ import {
   mediaManifestFor,
 } from "./fixtures";
 import type { FamilyRenderInput } from "../types";
+import { formatHoursDisplay } from "../shared";
 
 function render(input: FamilyRenderInput): string {
   return renderToStaticMarkup(<PublicFamilyPage input={input} />);
@@ -371,5 +372,61 @@ describe("section status gate", () => {
     const html = render(input);
     expect(html).not.toContain("sec-proposed");
     expect(html).not.toContain("testimonial-cluster-empty-state");
+  });
+});
+
+// ============================================================================
+// Human hours + footer anchor honesty + adapted locality
+// ============================================================================
+
+describe("human hours", () => {
+  test("formatHoursDisplay turns machine hours into human hours", () => {
+    expect(formatHoursDisplay("Mo,Tu,We,Th,Fr 07:30-16:00")).toBe("Mon-Fri 7:30 AM - 4:00 PM");
+    expect(formatHoursDisplay("Sa,Su 09:00-12:00")).toBe("Sat-Sun 9:00 AM - 12:00 PM");
+    expect(formatHoursDisplay("Mo,We,Fr 08:00-17:00")).toBe("Mon, Wed, Fri 8:00 AM - 5:00 PM");
+    expect(formatHoursDisplay("Mo 09:00-17:00")).toBe("Mon 9:00 AM - 5:00 PM");
+    expect(formatHoursDisplay("Mo,Tu,We,Th,Fr,Sa,Su 00:00-23:59")).toBe(
+      "Mon-Sun 12:00 AM - 11:59 PM",
+    );
+  });
+
+  test("formatHoursDisplay passes unknown formats through untouched", () => {
+    // Never invent hours, never mangle what is not understood.
+    expect(formatHoursDisplay("Open 24 hours")).toBe("Open 24 hours");
+    expect(formatHoursDisplay("Mo-Fr 7am-5pm")).toBe("Mo-Fr 7am-5pm");
+    expect(formatHoursDisplay("")).toBe("");
+  });
+
+  test("Navigation renders human hours, never the raw machine string", () => {
+    const input = copper();
+    const ownerObj = input.graph.objects.find(
+      (o) => o.schema === "ping.social.business@1",
+    );
+    if (!ownerObj) throw new Error("fixture owner missing");
+    ownerObj.fields["hours"] = "Mo,Tu,We,Th,Fr 07:30-16:00";
+    const html = render(input);
+    expect(html).toContain("Mon-Fri 7:30 AM - 4:00 PM");
+    expect(html).not.toContain("Mo,Tu,We,Th,Fr 07:30-16:00");
+  });
+});
+
+describe("footer anchors are never dead", () => {
+  test("Coppersmith-like: Services and Service area linked, Recent work omitted (ProjectGallery ineligible)", () => {
+    const html = render(copper());
+    expect(html).toContain('href="#services"');
+    expect(html).toContain('href="#service-area"');
+    expect(html).not.toContain('href="#projects"');
+  });
+
+  test("HPP-like: Recent work linked when ProjectGallery is planned", () => {
+    const html = render(hpp());
+    expect(html).toContain('href="#services"');
+    expect(html).toContain('href="#projects"');
+  });
+
+  test("footer renders the adapted locality line, not the raw address field alone", () => {
+    const html = render(copper());
+    // Copper-like fixture carries a direct address field; the footer shows it.
+    expect(html).toContain("630 Maldonado Street, Grand Junction CO");
   });
 });

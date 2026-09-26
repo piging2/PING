@@ -264,6 +264,80 @@ export function firstSentence(text: string, maxChars = 180): string {
   return sentence.length > maxChars ? sentence.slice(0, maxChars).trimEnd() + "..." : sentence;
 }
 
+/**
+ * Human hours from a machine hours string. "Mo,Tu,We,Th,Fr 07:30-16:00"
+ * becomes "Mon-Fri 7:30 AM - 4:00 PM". Consecutive days collapse to a
+ * range; non-consecutive days list out. Pure and deterministic. Anything
+ * that does not parse as day-list + HH:MM-HH:MM passes through untouched:
+ * never invent hours, never reformat what is not understood.
+ */
+const HOURS_DAY_SHORT: Record<string, string> = {
+  mo: "Mon",
+  tu: "Tue",
+  we: "Wed",
+  th: "Thu",
+  fr: "Fri",
+  sa: "Sat",
+  su: "Sun",
+};
+const HOURS_DAY_ORDER = ["mo", "tu", "we", "th", "fr", "sa", "su"];
+const HOURS_PATTERN = /^([A-Za-z]{2}(?:,[A-Za-z]{2})*)\s+(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/;
+
+function formatHoursTime(h: number, min: string): string {
+  const ap = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + ":" + min + " " + ap;
+}
+
+export function formatHoursDisplay(raw: string): string {
+  const s = (raw ?? "").trim();
+  const m = HOURS_PATTERN.exec(s);
+  if (!m) return s;
+  const days = m[1]
+    .split(",")
+    .map((d) => d.toLowerCase())
+    .filter((d) => HOURS_DAY_SHORT[d] !== undefined);
+  if (days.length === 0) return s;
+  const h1 = Number(m[2]);
+  const h2 = Number(m[4]);
+  const min1 = Number(m[3]);
+  const min2 = Number(m[5]);
+  if (
+    !Number.isInteger(h1) || !Number.isInteger(h2) ||
+    h1 > 23 || h2 > 23 || min1 > 59 || min2 > 59
+  ) {
+    return s;
+  }
+  // Collapse consecutive day runs in week order (Mon-Fri); list the rest.
+  const idx = [...new Set(days.map((d) => HOURS_DAY_ORDER.indexOf(d)))].sort((a, b) => a - b);
+  const parts: string[] = [];
+  let runStart = idx[0];
+  let runPrev = idx[0];
+  for (let i = 1; i <= idx.length; i++) {
+    const cur = idx[i];
+    if (cur === runPrev + 1) {
+      runPrev = cur;
+      continue;
+    }
+    parts.push(
+      runStart === runPrev
+        ? HOURS_DAY_SHORT[HOURS_DAY_ORDER[runStart]]
+        : HOURS_DAY_SHORT[HOURS_DAY_ORDER[runStart]] +
+          "-" +
+          HOURS_DAY_SHORT[HOURS_DAY_ORDER[runPrev]],
+    );
+    runStart = cur;
+    runPrev = cur;
+  }
+  return (
+    parts.join(", ") +
+    " " +
+    formatHoursTime(h1, m[3]) +
+    " - " +
+    formatHoursTime(h2, m[5])
+  );
+}
+
 /** Props every family section component receives. */
 export interface FamilySectionProps {
   section: PlannedSection;

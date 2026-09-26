@@ -15,6 +15,10 @@ import { Cta, SectionShell, cx, type FamilySectionProps } from "../shared";
 function ConversionDual({ section, ctx }: FamilySectionProps): JSX.Element {
   const phoneCta = section.ctaBindings.find((c) => c.kind === "call") ?? null;
   const estimateCta = section.ctaBindings.find((c) => c.kind === "estimate") ?? null;
+  // A "schedule" binding (installation/service scheduling path) is a
+  // planned secondary conversion alongside estimate; the planner emits it
+  // for conversion-dual when the schedule-path capability is evidenced.
+  const scheduleCta = section.ctaBindings.find((c) => c.kind === "schedule") ?? null;
   const newsletterCta =
     section.ctaBindings.find((c) => c.kind === "newsletter") ?? null;
 
@@ -31,6 +35,7 @@ function ConversionDual({ section, ctx }: FamilySectionProps): JSX.Element {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             {phoneCta && <Cta cta={phoneCta} ctx={ctx} />}
             {estimateCta && <Cta cta={estimateCta} ctx={ctx} />}
+            {scheduleCta && <Cta cta={scheduleCta} ctx={ctx} />}
           </div>
         </div>
         <div>
