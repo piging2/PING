@@ -7,7 +7,7 @@
  * Proof surface: no money CTAs here.
  */
 
-import { InspectAffordance, SectionShell, type FamilySectionProps } from "../shared";
+import { SectionShell, type FamilySectionProps } from "../shared";
 import { objectsForRole } from "../types";
 
 const METRIC_LABELS: Record<string, string> = {
@@ -61,11 +61,6 @@ function MetricsStrip({ section, ctx }: FamilySectionProps): JSX.Element {
             </div>
           ))}
         </dl>
-        {owner && (
-          <div className="mt-4">
-            <InspectAffordance ctx={ctx} objectId={owner.id} inverse />
-          </div>
-        )}
       </div>
     </section>
   );
@@ -109,11 +104,6 @@ function TestimonialCluster({ section, ctx }: FamilySectionProps): JSX.Element {
           );
         })}
       </div>
-      {owner && (
-        <div className="mt-8">
-          <InspectAffordance ctx={ctx} objectId={owner.id} />
-        </div>
-      )}
     </SectionShell>
   );
 }

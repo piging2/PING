@@ -16,7 +16,7 @@
  * full-width and thumb-reachable.
  */
 
-import { Cta, InspectAffordance, cx, firstSentence, type FamilySectionProps } from "../shared";
+import { Cta, cx, firstSentence, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 
 function HeroCtas({ section, ctx }: FamilySectionProps): JSX.Element {
@@ -74,20 +74,6 @@ function HeroSubhead({
   );
 }
 
-function QuietInspect({
-  section,
-  ctx,
-  inverse,
-}: FamilySectionProps & { inverse?: boolean }): JSX.Element | null {
-  const owner = ctx.owner;
-  if (!owner) return null;
-  // One subtle affordance for the hero claim cluster. Never on the image.
-  return (
-    <div className="mt-8">
-      <InspectAffordance ctx={ctx} objectId={owner.id} inverse={inverse} />
-    </div>
-  );
-}
 
 function MediaRichHero({ section, ctx }: FamilySectionProps): JSX.Element {
   const binding = mediaBindingsFor(section, "hero-documentary")[0];
@@ -121,7 +107,6 @@ function MediaRichHero({ section, ctx }: FamilySectionProps): JSX.Element {
           <HeroHeadline section={section} ctx={ctx} inverse={!!media} />
           <HeroSubhead ctx={ctx} inverse={!!media} />
           <HeroCtas section={section} ctx={ctx} />
-          <QuietInspect section={section} ctx={ctx} />
         </div>
       </div>
     </section>
@@ -151,7 +136,6 @@ function IdentityLedHero({ section, ctx }: FamilySectionProps): JSX.Element {
           <HeroHeadline section={section} ctx={ctx} />
           <HeroSubhead ctx={ctx} />
           <HeroCtas section={section} ctx={ctx} />
-          <QuietInspect section={section} ctx={ctx} />
         </div>
       </div>
     </section>
@@ -178,7 +162,6 @@ function ServiceLedHero({ section, ctx }: FamilySectionProps): JSX.Element {
           <HeroHeadline section={section} ctx={ctx} />
           <HeroSubhead ctx={ctx} />
           <HeroCtas section={section} ctx={ctx} />
-          <QuietInspect section={section} ctx={ctx} />
         </div>
         <nav aria-label="Service lines" className="md:pt-2">
           <ul className="divide-y divide-border-subtle border-y border-border-subtle">
@@ -244,7 +227,6 @@ function LocalActionHero({ section, ctx }: FamilySectionProps): JSX.Element {
               {areas.length > 4 ? ", and more" : ""}
             </p>
           )}
-          <QuietInspect section={section} ctx={ctx} inverse />
         </div>
       </div>
     </section>

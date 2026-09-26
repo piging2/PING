@@ -9,7 +9,7 @@
  */
 
 import type { PingObject } from "@/lib/ping/types";
-import { InspectAffordance, SectionShell, cx, type FamilySectionProps } from "../shared";
+import { SectionShell, cx, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 
 function galleryItems(
@@ -124,7 +124,6 @@ function Carousel({ items }: { items: ReturnType<typeof galleryItems> }): JSX.El
 
 export function ProjectGallery({ section, ctx }: FamilySectionProps): JSX.Element {
   const items = galleryItems(section, ctx);
-  const owner = ctx.owner;
   return (
     <SectionShell
       id="projects"
@@ -139,11 +138,6 @@ export function ProjectGallery({ section, ctx }: FamilySectionProps): JSX.Elemen
         <Carousel items={items} />
       ) : (
         <Masonry items={items} />
-      )}
-      {owner && (
-        <div className="mt-8">
-          <InspectAffordance ctx={ctx} objectId={owner.id} />
-        </div>
       )}
     </SectionShell>
   );

@@ -10,7 +10,7 @@
  * text appears once, not on every face.
  */
 
-import { InspectAffordance, SectionShell, cx, type FamilySectionProps } from "../shared";
+import { SectionShell, cx, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 
 function FounderLed({ section, ctx }: FamilySectionProps): JSX.Element {
@@ -62,11 +62,6 @@ function FounderLed({ section, ctx }: FamilySectionProps): JSX.Element {
         {story !== "" && (
           <p className="mt-6 max-w-[65ch] font-body text-body text-text-primary">{story}</p>
         )}
-        {owner && (
-          <div className="mt-8">
-            <InspectAffordance ctx={ctx} objectId={owner.id} />
-          </div>
-        )}
       </div>
     </div>
   );
@@ -74,7 +69,6 @@ function FounderLed({ section, ctx }: FamilySectionProps): JSX.Element {
 
 function TeamGrid({ section, ctx }: FamilySectionProps): JSX.Element {
   const members = objectsForRole(ctx, section, "person").slice(0, 4);
-  const owner = ctx.owner;
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,11 +102,6 @@ function TeamGrid({ section, ctx }: FamilySectionProps): JSX.Element {
           );
         })}
       </div>
-      {owner && (
-        <div className="mt-8">
-          <InspectAffordance ctx={ctx} objectId={owner.id} inverse />
-        </div>
-      )}
     </div>
   );
 }

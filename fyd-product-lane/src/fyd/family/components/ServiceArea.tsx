@@ -9,7 +9,7 @@
  * fields); never invented.
  */
 
-import { InspectAffordance, SectionShell, type FamilySectionProps } from "../shared";
+import { SectionShell, type FamilySectionProps } from "../shared";
 import { adaptedAddress, adaptedServiceAreaList } from "../../proceduralize/planner";
 import { SCHEMA_ROLES } from "../../sitespec/schemas";
 import type { PingObject } from "@/lib/ping/types";
@@ -40,7 +40,6 @@ export function ServiceArea({ section, ctx }: FamilySectionProps): JSX.Element {
   const areas = areasOf(ctx);
   const hub = hubAddress(ctx);
   const hubAddressVariant = section.variant === "hub-address";
-  const owner = ctx.owner;
 
   return (
     <SectionShell
@@ -66,11 +65,6 @@ export function ServiceArea({ section, ctx }: FamilySectionProps): JSX.Element {
         </ul>
       ) : (
         <p className="font-body text-body text-text-muted">Service area details coming soon.</p>
-      )}
-      {owner && (
-        <div className="mt-8">
-          <InspectAffordance ctx={ctx} objectId={owner.id} />
-        </div>
       )}
     </SectionShell>
   );

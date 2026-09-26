@@ -16,7 +16,6 @@
 import type { PingObject } from "@/lib/ping/types";
 import {
   Cta,
-  InspectAffordance,
   SectionShell,
   cx,
   type FamilySectionProps,
@@ -132,9 +131,6 @@ export function FeaturedService({ section, ctx }: FamilySectionProps): JSX.Eleme
             {!phoneCta && !quoteCta && scheduleCta && <Cta cta={scheduleCta} ctx={ctx} />}
           </div>
           <ProductFunnel products={products} ctx={ctx} scheduleCta={scheduleCta} />
-          <div className="mt-6">
-            <InspectAffordance ctx={ctx} objectId={service.id} />
-          </div>
         </div>
         {!mediaLead && media && (
           <div>

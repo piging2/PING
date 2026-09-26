@@ -12,7 +12,7 @@
  */
 
 import type { PingObject } from "@/lib/ping/types";
-import { Cta, InspectAffordance, SectionShell, cx, type FamilySectionProps } from "../shared";
+import { Cta, SectionShell, cx, type FamilySectionProps } from "../shared";
 import { mediaForAsset, mediaBindingsFor, objectsForRole } from "../types";
 import { adaptedServiceScope } from "../../proceduralize/planner";
 import type { PlannedCtaBinding } from "../types";
@@ -199,11 +199,6 @@ export function ServiceGrid({ section, ctx }: FamilySectionProps): JSX.Element {
         <MediaGrid section={section} ctx={ctx} />
       ) : (
         <CardsGrid section={section} ctx={ctx} />
-      )}
-      {clusterId && (
-        <div className="mt-8">
-          <InspectAffordance ctx={ctx} objectId={clusterId} />
-        </div>
       )}
     </SectionShell>
   );

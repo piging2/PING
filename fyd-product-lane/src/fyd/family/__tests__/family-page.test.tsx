@@ -245,15 +245,13 @@ describe("public deletion list", () => {
     expect(text).not.toContain("WEBSITE STATEMENT");
   });
 
-  test.each(cases)("%s: no repeated Why this, no per-card inspect", (_name, make) => {
+  test.each(cases)("%s: exactly one Why this per page (never per section)", (_name, make) => {
     const html = render(make());
     const text = visibleText(html);
     const whyCount = (text.match(/Why this\?/g) ?? []).length;
-    // One subtle affordance per claim cluster, never per card: at most one
-    // per rendered section.
-    const sectionCount = (html.match(/data-component="/g) ?? []).length;
-    expect(whyCount).toBeGreaterThan(0);
-    expect(whyCount).toBeLessThanOrEqual(sectionCount);
+    // The approved deletion list collapsed the repeated per-section
+    // affordances to ONE subtle inspect affordance per page (footer).
+    expect(whyCount).toBe(1);
     // Never inside a card.
     const articles = html.match(/<article[\s\S]*?<\/article>/gi) ?? [];
     for (const a of articles) {
