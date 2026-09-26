@@ -114,27 +114,36 @@ function MediaRichHero({ section, ctx }: FamilySectionProps): JSX.Element {
 }
 
 function IdentityLedHero({ section, ctx }: FamilySectionProps): JSX.Element {
-  const binding = mediaBindingsFor(section, "logo-mark")[0];
-  const logo = binding ? mediaForAsset(ctx, binding.assetId) : null;
+  // The header owns the brand mark; the hero never re-renders the logo.
+  // On a dark brand surface the typography does the work: copper kicker
+  // naming the evidenced service lines, the display-size identity
+  // headline, the owner's own subhead, and the verified contact CTAs.
+  const services = objectsForRole(ctx, section, "service");
+  const kicker =
+    services.length > 0
+      ? services
+          .slice(0, 4)
+          .map((s) => s.title.trim())
+          .filter((t) => t !== "")
+          .join("  ·  ")
+      : null;
   return (
     <section
       id="top"
       data-component="Hero"
       data-variant="identity-led"
-      className="bg-surface-content"
+      className="bg-surface-brand text-text-inverse"
       aria-label="Introduction"
     >
-      <div className="mx-auto w-full max-w-[1200px] px-4 py-20 md:px-8 md:py-32">
+      <div className="mx-auto w-full max-w-[1200px] px-4 py-24 md:px-8 md:py-40">
         <div className="max-w-[800px]">
-          {logo && (
-            <img
-              src={logo.url}
-              alt={ctx.legalName + " logo"}
-              className="mb-8 h-16 w-auto md:h-20"
-            />
+          {kicker && (
+            <p className="mb-6 font-body text-small font-semibold uppercase tracking-[0.08em] text-accent-craft">
+              {kicker}
+            </p>
           )}
-          <HeroHeadline section={section} ctx={ctx} />
-          <HeroSubhead ctx={ctx} />
+          <HeroHeadline section={section} ctx={ctx} inverse />
+          <HeroSubhead ctx={ctx} inverse />
           <HeroCtas section={section} ctx={ctx} />
         </div>
       </div>
