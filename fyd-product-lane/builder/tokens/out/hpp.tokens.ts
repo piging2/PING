@@ -224,7 +224,7 @@ export const hppTokens = {
     "h1": "40px",
     "h2": "32px",
     "h3": "24px",
-    "hero": "clamp(44, 6vw + 16, 72)",
+    "hero": "clamp(44px, 6vw + 16px, 72px)",
     "lead": "20px",
     "measure": "65ch",
     "small": "14px"

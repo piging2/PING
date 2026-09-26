@@ -37,6 +37,39 @@ function isPrimitiveId(id) {
 const PRIMITIVE_ALLOWLIST = new Set(["hero.scrim"]);
 
 /**
+ * CSS math-function guard (see validateTheme): extract the inner bodies
+ * of clamp()/calc()/min()/max() calls, then find unitless non-zero
+ * numbers inside them.
+ */
+const MATH_FN_RE = /\b(?:clamp|calc|min|max)\(/i;
+
+function mathFnBodies(value) {
+  const bodies = [];
+  const re = /\b(?:clamp|calc|min|max)\(/gi;
+  let m;
+  while ((m = re.exec(value)) !== null) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    for (; i < value.length && depth > 0; i++) {
+      if (value[i] === "(") depth++;
+      else if (value[i] === ")") depth--;
+    }
+    bodies.push(value.slice(m.index + m[0].length, i - 1));
+  }
+  return bodies;
+}
+
+function unitlessNonZero(body) {
+  const bad = [];
+  const re = /(\d+(?:\.\d+)?)([a-z%]*)/gi;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    if (m[2] === "" && Number(m[1]) !== 0) bad.push(m[1]);
+  }
+  return bad;
+}
+
+/**
  * Validate one theme's file set.
  * theme: { name, files: [{ path, tier }] }.
  * Returns { errors: string[], provisionalFiles: string[] }.
@@ -63,6 +96,25 @@ function validateTheme(theme) {
     resolveAll(flat);
   } catch (e) {
     errors.push(e.message);
+  }
+
+  // CSS math functions (clamp/calc/min/max) reject unitless non-zero
+  // numbers: `clamp(44, 6vw + 16, 72)` is invalid CSS and the browser
+  // drops the whole declaration (this exact bug shipped the hero
+  // headline at body-copy size). Fail the build instead of shipping a
+  // silently-dead declaration.
+  for (const [key, tok] of flat) {
+    if (typeof tok.value !== "string") continue;
+    if (!MATH_FN_RE.test(tok.value)) continue;
+    for (const body of mathFnBodies(tok.value)) {
+      const bad = unitlessNonZero(body);
+      if (bad.length > 0) {
+        errors.push(
+          `${tok.file}: token "${key}" has unitless number(s) ${bad.join(", ")} inside CSS math; ` +
+            `unitless non-zero values are invalid CSS and browsers drop the declaration`,
+        );
+      }
+    }
   }
 
   for (const [key, tok] of flat) {
