@@ -45,6 +45,37 @@ describe("token validation", () => {
     });
     expect(errors.some((e: string) => e.includes("hero.kicker") && e.includes("primitive"))).toBe(true);
   });
+
+  test("unitless non-zero numbers inside clamp/calc/min/max fail validation", () => {
+    const { errors } = validateTheme({
+      name: "broken",
+      files: [{ path: path.join(FIXTURES, "validate-math-units.tokens.json"), tier: "semantic" }],
+    });
+    // Each bad token is named with its offending unitless number(s).
+    expect(errors.some((e: string) => e.includes("type.hero-bad-clamp") && e.includes("44") && e.includes("72"))).toBe(true);
+    expect(errors.some((e: string) => e.includes("type.hero-bad-calc") && e.includes("20"))).toBe(true);
+    expect(errors.some((e: string) => e.includes("type.hero-bad-min") && e.includes("10"))).toBe(true);
+    expect(errors.some((e: string) => e.includes("type.hero-bad-max") && e.includes("5"))).toBe(true);
+    expect(errors.some((e: string) => e.includes("type.hero-bad-nested") && e.includes("5"))).toBe(true);
+    // Unit-bearing values, nested unit-bearing values, and unitless zero pass.
+    expect(errors.some((e: string) => e.includes("type.hero-good-clamp"))).toBe(false);
+    expect(errors.some((e: string) => e.includes("type.hero-good-nested"))).toBe(false);
+    expect(errors.some((e: string) => e.includes("type.hero-good-zero"))).toBe(false);
+  });
+
+  test("compiled outputs carry the unit-bearing clamp (token clamp regression)", () => {
+    const fs = require("fs");
+    for (const name of ["coppersmith", "hpp"]) {
+      const css = fs.readFileSync(
+        path.join(__dirname, "..", "..", "..", "..", "builder", "tokens", "out", name + ".tokens.css"),
+        "utf8",
+      );
+      expect(css).toContain("clamp(44px, 6vw + 16px, 72px)");
+      // No unitless non-zero math args anywhere in the compiled output.
+      expect(css).not.toMatch(/clamp\(\d+,/);
+      expect(css).not.toMatch(/calc\([^)]*\s\d+[,)]/);
+    }
+  });
 });
 
 describe("contrast gate", () => {

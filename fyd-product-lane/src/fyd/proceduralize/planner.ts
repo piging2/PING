@@ -26,6 +26,7 @@ import type { PingObject, PingRelationship } from "@/lib/ping/types";
 import { SCHEMA_ROLES, type FYDSchemaRole } from "../sitespec/schemas";
 import { ROLE_PREDICATES, INVERSE_ROLE_PREDICATES } from "./generator";
 import { TRADE_KEYWORDS, KNOWN_TRADES } from "../media/trade-keywords";
+import { fallbackVisualScale, type VisualScale } from "@/fyd/family/hierarchy";
 
 // ============================================================================
 // ADAPTER SECTION: canonical FYD types.
@@ -264,6 +265,43 @@ export type RegistryComponent =
 export type SectionJob = "PERSUADE" | "PROVE" | "CONVERT" | "REASSURE" | "SERVE" | "CLOSE";
 
 /**
+ * Family grammar stage: the conversion-spine position a section occupies.
+ * Page order is (stage, evidence-weight, build order): the grammar fixes
+ * the spine (HERO -> TRUST -> SERVICES -> VISUAL PROOF -> PROJECTS ->
+ * HUMAN STORY -> SOCIAL PROOF IF REAL -> CONVERSION) and evidence weight
+ * orders sections within a stage, never source-document order.
+ */
+export type SectionGrammarStage =
+  | "navigation"
+  | "hero"
+  | "trust"
+  | "services"
+  | "visual-proof"
+  | "projects"
+  | "human-story"
+  | "social-proof"
+  | "location"
+  | "conversion"
+  | "serve"
+  | "close";
+
+/** Grammar spine order: lower stages render earlier. */
+export const GRAMMAR_STAGE_ORDER: Record<SectionGrammarStage, number> = {
+  navigation: 0,
+  hero: 1,
+  trust: 2,
+  services: 3,
+  "visual-proof": 4,
+  projects: 5,
+  "human-story": 6,
+  "social-proof": 7,
+  location: 8,
+  conversion: 9,
+  serve: 10,
+  close: 11,
+};
+
+/**
  * Bounded capability vocabulary (family-spec). Capabilities are canonical
  * evidence about what the business offers; they never come from the
  * design signal.
@@ -382,7 +420,12 @@ export interface OwnerIntent {
   tradeCategory?: "emergency" | "project";
   /** Owner-approved honest empty-state copy for the review cluster. */
   honestEmptyStateCopy?: string;
-  /** Opt-in to the proposed honest empty state when no reviews exist. Default true. */
+  /**
+   * Owner opt-in to the proposed honest empty state when no reviews exist.
+   * Default false: no review evidence => no review section at all. When
+   * true AND honestEmptyStateCopy is supplied, the planner proposes (never
+   * publishes) a "Reviews are coming soon" TrustBar section.
+   */
   honestEmptyStateAllowed?: boolean;
   /** Value-capture evidence: newsletter label + specific promise. */
   newsletter?: { label: string; promise: string };
@@ -464,6 +507,27 @@ export interface PlannedSection {
   job: SectionJob;
   jobSecondary?: SectionJob;
   order: number;
+  /**
+   * Planner-tagged visual scale (PRIMARY / SECONDARY / UTILITY), same
+   * vocabulary as the renderer's hierarchy contract. The renderer prefers
+   * this tag over its component/variant fallback map.
+   */
+  visualScale: VisualScale;
+  /** Family grammar stage: the conversion-spine position (see GRAMMAR_STAGE_ORDER). */
+  grammarStage: SectionGrammarStage;
+  /**
+   * Evidence weight: bound-object evidence (role-weighted) + media
+   * bindings + CTA bindings. Within a grammar stage, higher weight
+   * renders earlier; ties keep deterministic build order.
+   */
+  importance: number;
+  /**
+   * Normalized concept identity for semantic dedup (see
+   * normalizeConceptId): two sections with the same component and
+   * conceptKey are two renderings of one concept, and only the
+   * higher-importance one survives.
+   */
+  conceptKey: string;
   objectBindings: ObjectBinding[];
   mediaBindings: MediaBinding[];
   ctaBindings: PlannedCtaBinding[];
@@ -844,6 +908,17 @@ function deriveCapabilities(g: Grouped): PlannerCapability[] {
 }
 
 /**
+ * Canonical graph-evidence capability derivation for producer-side
+ * builders. Same evidence rules the planner itself applies; builders
+ * compose this with observation-derived (CTA tiers, booking behavior)
+ * and trade-derived (estimate-path) capabilities. One authority for what
+ * graph evidence means.
+ */
+export function deriveGraphCapabilities(graph: ObjectGraph): PlannerCapability[] {
+  return deriveCapabilities(groupRoles(graph));
+}
+
+/**
  * Deterministic US phone formatting. +1 E.164 becomes (XXX) XXX-XXXX.
  * Values that do not match are passed through untouched; the display value
  * is never raw E.164 when a format is recognized.
@@ -867,8 +942,7 @@ function phoneTelTarget(raw: string): string {
 }
 
 /** Emergency-prone trade evidence (family-spec: plumbing/HVAC/electrical). Owner override wins. */
-function isEmergencyTrade(g: Grouped, intent: OwnerIntent): boolean {
-  if (intent.tradeCategory === "emergency") return true;
+function isEmergencyTrade(g: Grouped, intent: OwnerIntent): boolean {  if (intent.tradeCategory === "emergency") return true;
   if (intent.tradeCategory === "project") return false;
   if (!g.owner) return false;
   const haystack = (
@@ -877,6 +951,56 @@ function isEmergencyTrade(g: Grouped, intent: OwnerIntent): boolean {
     g.services.map((s) => s.title + " " + adaptedServiceScope(s)).join(" ")
   ).toLowerCase();
   return EMERGENCY_TRADE_SIGNALS.some((t) => t.keywords.some((k) => haystack.includes(k)));
+}
+
+/**
+ * Graph-text emergency-trade evidence (family-spec: plumbing/HVAC/electrical
+ * keyword table), with no owner override applied. Producer-side builders
+ * use this to derive theme/conversion intent from the same evidence the
+ * planner itself consumes; isEmergencyTrade remains the canonical consumer
+ * (an explicit intent.tradeCategory wins there).
+ */
+export function detectEmergencyTrade(graph: ObjectGraph): boolean {
+  return isEmergencyTrade(groupRoles(graph), {});
+}
+
+/**
+ * Generic urgency-signal detection over the whole object graph: any
+ * urgency phrase in the business, service, or people text marks the
+ * business as urgency-driven (24/7, emergency, same-day, ...). No
+ * customer names, no site conditionals: pure graph-text evidence.
+ */
+const URGENCY_SIGNALS = [
+  "24/7",
+  "24-7",
+  "24 hour",
+  "emergency",
+  "same-day",
+  "same day",
+  "burst",
+  "flood",
+  "no heat",
+  "no cool",
+  "after hours",
+  "nights and weekends",
+];
+
+export function detectUrgencySignals(graph: ObjectGraph): boolean {
+  const g = groupRoles(graph);
+  const chunks: string[] = [];
+  if (g.owner) {
+    chunks.push(
+      g.owner.description,
+      fieldValue(g.owner, "phone"),
+      fieldValue(g.owner, "businessName"),
+      fieldValue(g.owner, "legalName"),
+      fieldValue(g.owner, "tagline"),
+    );
+  }
+  for (const s of g.services) chunks.push(s.title, s.description, fieldValue(s, "scope"));
+  for (const p of g.people) chunks.push(p.title, p.description);
+  const hay = chunks.join("\n").toLowerCase();
+  return URGENCY_SIGNALS.some((sig) => hay.includes(sig));
 }
 
 /** Distinct non-empty service scope texts (the service taxonomy signal). */
@@ -888,6 +1012,89 @@ function distinctScopes(services: PingObject[]): string[] {
   }
   return [...seen].sort();
 }
+
+// ---------------------------------------------------------------------------
+// SEMANTIC DEDUP: normalized concept identity.
+//
+// Two source representations of the same concept ("Plumbing" vs "Plumbing
+// Services", "Specialty" vs "Services") must not produce duplicate
+// sections. normalizeConceptId maps a title/scope to a canonical key:
+// lowercase, non-alphanumerics collapsed, generic taxonomy filler words
+// dropped. Objects sharing a key are the same concept; the planner keeps
+// the richest representation and records the merge. Sections carry the
+// key as conceptKey so a second rendering of the same concept cannot
+// survive the final section pass either.
+// ---------------------------------------------------------------------------
+
+/** Generic taxonomy filler words that carry no concept identity. */
+const CONCEPT_GENERIC_WORDS = new Set([
+  "service",
+  "services",
+  "specialty",
+  "specialties",
+  "speciality",
+  "specialities",
+  "solution",
+  "solutions",
+  "company",
+  "co",
+  "group",
+  "pros",
+  "expert",
+  "experts",
+  "team",
+  "the",
+  "and",
+]);
+
+export function normalizeConceptId(text: string): string {
+  const words = text
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w !== "" && !CONCEPT_GENERIC_WORDS.has(w));
+  return words.join("");
+}
+
+/**
+ * Dedupe objects by normalized concept identity, keeping the richest
+ * representation of each concept. Richness: longest scope text, then
+ * explicit priority rank, then deterministic id order. Returns the
+ * survivors in their input order and the dropped ids (sorted).
+ */
+export function dedupeByConcept<T extends { id: string }>(
+  objects: T[],
+  conceptOf: (o: T) => string,
+  richnessOf: (o: T) => number,
+): { kept: T[]; dropped: string[] } {
+  const best = new Map<string, T>();
+  for (const o of objects) {
+    const key = conceptOf(o);
+    const prev = best.get(key);
+    if (!prev) {
+      best.set(key, o);
+      continue;
+    }
+    const rNew = richnessOf(o);
+    const rPrev = richnessOf(prev);
+    if (rNew > rPrev || (rNew === rPrev && o.id < prev.id)) {
+      best.set(key, o);
+    }
+  }
+  const keptIds = new Set([...best.values()].map((o) => o.id));
+  return {
+    kept: objects.filter((o) => keptIds.has(o.id)),
+    dropped: objects
+      .filter((o) => !keptIds.has(o.id))
+      .map((o) => o.id)
+      .sort(),
+  };
+}
+
+/** Person fields that count as real story evidence for the story section. */
+const STORY_EVIDENCE_FIELDS = ["bio", "story", "quote", "persona_note", "about"];
 
 /**
  * Service priority order: owner intent first, then the priority field rank,
@@ -1099,6 +1306,12 @@ interface Facts {
   serviceGridEligible: boolean;
   serviceGridVariant: string;
   serviceMediaById: Map<string, MediaBinding>;
+  /** Object ids lost to service concept dedup (same concept, weaker representation). */
+  dedupedServiceIds: string[];
+  /** Priority-ordered services AFTER concept dedup: the canonical service list. */
+  servicesDeduped: PingObject[];
+  /** Object ids lost to gallery concept dedup (same project, weaker telling). */
+  dedupedGalleryIds: string[];
   galleryItems: PingObject[];
   galleryEligible: boolean;
   galleryVariant: string;
@@ -1146,6 +1359,119 @@ function pushEligibility(
   ctx.eligibility.push({ component, variant, eligible, ruleId, reason });
 }
 
+/**
+ * Grammar stage per component: the family conversion spine. The grammar is
+ * generic (harvested from the HPP contractor-family reference), never
+ * customer-specific: hero first, trust proof, services, visual proof,
+ * projects, human story, social proof only if real, location, conversion,
+ * then utility surfaces (serve, close).
+ */
+function grammarStageFor(component: RegistryComponent, variant: string): SectionGrammarStage {
+  switch (component) {
+    case "Navigation":
+      return "navigation";
+    case "Hero":
+      return "hero";
+    case "TrustBar":
+      return variant === "testimonial-cluster" ? "social-proof" : "trust";
+    case "FeaturedService":
+    case "ServiceGrid":
+      return "services";
+    case "ProjectGallery":
+      return variant === "editorial" ? "visual-proof" : "projects";
+    case "BusinessStory":
+      return "human-story";
+    case "ServiceArea":
+      return "location";
+    case "ContactCTA":
+      return "conversion";
+    case "AskFYD-entry":
+      return "serve";
+    case "Footer":
+      return "close";
+  }
+}
+
+/**
+ * Evidence importance: role-weighted bound objects + media bindings +
+ * CTA bindings. Deterministic (integer arithmetic over plan evidence),
+ * comparable WITHIN a grammar stage only; the grammar spine fixes the
+ * cross-stage order. Higher importance renders earlier within its stage.
+ */
+function sectionImportance(
+  objectBindings: ObjectBinding[],
+  mediaBindings: MediaBinding[],
+  ctaBindings: PlannedCtaBinding[],
+): number {
+  const OBJECT_ROLE_WEIGHT: Record<ObjectBinding["role"], number> = {
+    service: 4,
+    project: 4,
+    review: 4,
+    business: 3,
+    person: 3,
+    product: 3,
+    location: 2,
+    content: 1,
+  };
+  const MEDIA_BINDING_WEIGHT: Record<PlannerMediaRole, number> = {
+    "hero-documentary": 5,
+    "owner-portrait": 4,
+    "project-photo": 4,
+    "service-imagery": 3,
+    "work-detail": 3,
+    "product-photo": 3,
+    "location-photo": 2,
+    "team-photo": 2,
+    "logo-mark": 1,
+  };
+  let w = 0;
+  for (const b of objectBindings) w += OBJECT_ROLE_WEIGHT[b.role] ?? 1;
+  for (const b of mediaBindings) w += MEDIA_BINDING_WEIGHT[b.role] ?? 1;
+  w += ctaBindings.length;
+  return w;
+}
+
+/**
+ * Normalized concept identity per section, used for the final semantic
+ * dedup pass: two sections with the same component and conceptKey are
+ * two renderings of one concept, and only the higher-importance one
+ * survives.
+ */
+function conceptKeyFor(
+  component: RegistryComponent,
+  variant: string,
+  objectBindings: ObjectBinding[],
+): string {
+  switch (component) {
+    case "FeaturedService": {
+      const ids = objectBindings.flatMap((b) => b.objectIds).sort();
+      return "service:" + ids.join("+");
+    }
+    case "ServiceGrid":
+      return "services";
+    case "ProjectGallery":
+      return variant === "editorial" ? "visual-proof" : "projects";
+    case "BusinessStory":
+      return "story";
+    case "TrustBar":
+      return variant === "testimonial-cluster" ? "reviews" : "metrics";
+    case "Hero":
+      return "hero";
+    case "Navigation":
+      return "nav";
+    case "ServiceArea":
+      return "area";
+    case "ContactCTA":
+      return "contact";
+    case "AskFYD-entry":
+      return "ask";
+    case "Footer":
+      return "footer";
+    default:
+      return component + ":" + variant;
+  }
+}
+
 function makeSection(
   ctx: PlanCtx,
   component: RegistryComponent,
@@ -1167,6 +1493,7 @@ function makeSection(
         : ctx.signal?.imageFinish === "mixed"
           ? "mixed"
           : "none";
+  const grammarStage = grammarStageFor(component, variant);
   return {
     id: "home:" + component.toLowerCase() + ":" + order,
     component,
@@ -1174,6 +1501,10 @@ function makeSection(
     job,
     ...(jobSecondary ? { jobSecondary } : {}),
     order,
+    visualScale: fallbackVisualScale(component, variant),
+    grammarStage,
+    importance: sectionImportance(objectBindings, mediaBindings, ctaBindings),
+    conceptKey: conceptKeyFor(component, variant, objectBindings),
     objectBindings,
     mediaBindings,
     ctaBindings,
@@ -1196,8 +1527,23 @@ function computeFacts(
   emergency: boolean,
   caps: Set<PlannerCapability>,
 ): Facts {
-  const servicesOrdered = orderServicesByPriority(g.services, intent);
-  const distinctLineCount = distinctScopes(g.services).length;
+  // Semantic dedup FIRST: two source representations of one concept
+  // ("Plumbing" vs "Plumbing Services") collapse to the richest
+  // representation before any eligibility or ordering reads the list.
+  // Priority-ordered input keeps business-priority precedence; richness
+  // breaks concept ties (explicit priority rank, then scope length).
+  const servicesOrderedRaw = orderServicesByPriority(g.services, intent);
+  const serviceDedup = dedupeByConcept(
+    servicesOrderedRaw,
+    (s) => normalizeConceptId(s.title),
+    (s) => {
+      const p = Number(fieldValue(s, "priority"));
+      const priorityBonus = Number.isFinite(p) && p > 0 ? 100000 / p : 0;
+      return priorityBonus + adaptedServiceScope(s).length;
+    },
+  );
+  const servicesOrdered = serviceDedup.kept;
+  const distinctLineCount = distinctScopes(servicesOrdered).length;
 
   // --- Hero variant chain (family-spec IF/THEN, ordered ELSE chain) ---
   const heroMediaAsset = media.best("hero-documentary");
@@ -1217,7 +1563,7 @@ function computeFacts(
   } else if (logoMarkAsset && brandVoice !== "") {
     heroVariant = "identity-led";
     heroRuleId = "HERO-V2";
-  } else if (g.services.length >= 4 || distinctLineCount >= 2) {
+  } else if (servicesOrdered.length >= 4 || distinctLineCount >= 2) {
     heroVariant = "service-led";
     heroRuleId = "HERO-V3";
   } else if (emergency && phone !== "" && locationEvidence) {
@@ -1251,7 +1597,10 @@ function computeFacts(
   const featuredEligible = featuredIds.length >= 2;
 
   // --- ServiceGrid ---
-  const serviceGridEligible = g.services.length >= 2;
+  // Eligibility counts distinct concepts, not raw representations: two
+  // source rows for one concept ("Plumbing" vs "Plumbing Services") are
+  // one card, not a grid.
+  const serviceGridEligible = servicesOrdered.length >= 2;
   const serviceMediaById = new Map<string, MediaBinding>();
   if (serviceGridEligible) {
     const usedGridAssets = new Set<string>();
@@ -1264,16 +1613,28 @@ function computeFacts(
   }
   const coverage =
     servicesOrdered.length > 0 ? serviceMediaById.size / servicesOrdered.length : 0;
-  const flagship = flagshipServiceId(g.services, intent);
+  const flagship = flagshipServiceId(servicesOrdered, intent);
   let serviceGridVariant = "cards";
   if (coverage >= 0.6) serviceGridVariant = "media-grid";
-  else if (g.services.length >= 4 && flagship) serviceGridVariant = "featured-plus-grid";
+  else if (servicesOrdered.length >= 4 && flagship) serviceGridVariant = "featured-plus-grid";
 
   // --- ProjectGallery: >=2 gallery-quality items or INELIGIBLE (never degraded) ---
   const published = [...g.posts, ...g.articles].sort(byId);
-  const galleryItems = published.filter(
+  // Semantic dedup: two posts about one project concept ("Before/After:
+  // Kitchen" vs "Kitchen Remodel") collapse to the richest telling.
+  const galleryItemsRaw = published.filter(
     (o) => o.title.trim() !== "" && media.passingForObject("project-photo", o.id).length >= 1,
   );
+  const galleryDedup = dedupeByConcept(
+    galleryItemsRaw,
+    (o) => normalizeConceptId(o.title),
+    (o) => {
+      const narrative = (o.description + " " + fieldValue(o, "narrative")).trim();
+      const location = fieldValue(o, "location").trim();
+      return narrative.length * 2 + (location !== "" ? 500 : 0);
+    },
+  );
+  const galleryItems = galleryDedup.kept;
   const galleryEligible = galleryItems.length >= 2;
   let galleryVariant = "carousel";
   if (galleryItems.length >= 6) {
@@ -1288,15 +1649,37 @@ function computeFacts(
   }
 
   // --- TrustBar testimonial-cluster ---
+  // No review evidence => no review section, full stop. The honest empty
+  // state ("Reviews are coming soon") is a proposed section ONLY when the
+  // owner explicitly opts in; absence of reviews is never itself a
+  // section. Never emit placeholder reviews.
   const reviews = namedReviews(published);
   const clusterEligible = reviews.length >= 1;
   const emptyStateProposed =
-    !clusterEligible && intent.honestEmptyStateAllowed !== false;
+    !clusterEligible &&
+    (intent.honestEmptyStateAllowed === true ||
+      (intent.honestEmptyStateCopy ?? "").trim() !== "");
 
   // --- BusinessStory ---
+  // A named founder alone is not enough: the story section requires real
+  // story evidence — a story-bearing field (description, bio, story, quote,
+  // persona_note, about) on at least one bound person, or provably bound
+  // owner/team portrait media (depicts-person evidence). Otherwise the
+  // section is omitted, never fabricated.
   const storyPeople = ownerFounders(g.people);
-  const storyEligible = storyPeople.length >= 1;
   const storyVariant = namedPeopleWithRoles(g.people).length >= 3 ? "team-grid" : "founder-led";
+  const boundStoryPeople =
+    storyVariant === "team-grid" ? namedPeopleWithRoles(g.people) : storyPeople;
+  const boundStoryIds = new Set(boundStoryPeople.map((p) => p.id));
+  const storyEvidence = boundStoryPeople.some(
+    (p) =>
+      p.description.trim() !== "" ||
+      STORY_EVIDENCE_FIELDS.some((f) => fieldValue(p, f).trim() !== ""),
+  );
+  const portraitEvidence = [...media.passing("owner-portrait"), ...media.passing("team-photo")].some(
+    (a) => a.depictsPersonId !== undefined && boundStoryIds.has(a.depictsPersonId),
+  );
+  const storyEligible = storyPeople.length >= 1 && (storyEvidence || portraitEvidence);
 
   // --- ServiceArea ---
   const namedAreas = namedAreasPre;
@@ -1310,7 +1693,7 @@ function computeFacts(
   const areaVariant = namedAreas.length >= 2 ? "area-list" : "hub-address";
 
   // --- Navigation / Footer / newsletter ---
-  const navVariant = g.services.length >= 4 || distinctLineCount >= 2 ? "taxonomic" : "minimal";
+  const navVariant = servicesOrdered.length >= 4 || distinctLineCount >= 2 ? "taxonomic" : "minimal";
   const newsletterEvidence =
     caps.has("newsletter-capture") || intent.newsletter !== undefined;
   const footerVariant = newsletterEvidence ? "credibility-plus-capture" : "credibility";
@@ -1328,6 +1711,9 @@ function computeFacts(
     serviceGridEligible,
     serviceGridVariant,
     serviceMediaById,
+    dedupedServiceIds: serviceDedup.dropped,
+    servicesDeduped: servicesOrdered,
+    dedupedGalleryIds: galleryDedup.dropped,
     galleryItems,
     galleryEligible,
     galleryVariant,
@@ -1369,11 +1755,11 @@ function buildNavigation(ctx: PlanCtx): void {
     "NAV-ELIG: Navigation always present, exactly one per site (family-spec composition rules).",
     taxonomic
       ? "NAV-V-taxonomic: " +
-        g.services.length +
-        " services, " +
+        ctx.servicesOrdered.length +
+        " distinct service concepts, " +
         ctx.distinctLineCount +
         " distinct service lines (>=4 services OR >=2 lines)."
-      : "NAV-V-minimal: " + g.services.length + " services, no distinct lines; phone-first conversion.",
+      : "NAV-V-minimal: " + ctx.servicesOrdered.length + " distinct service concepts; phone-first conversion.",
     facts.logoMarkAsset
       ? "NAV-MEDIA: logo-mark bound from scored media (asset " + facts.logoMarkAsset.assetId + "); never a fake logo."
       : "NAV-MEDIA: no passing logo-mark asset; business name in type is the fallback.",
@@ -1652,7 +2038,7 @@ function buildServiceGrid(ctx: PlanCtx): void {
   if (!facts.serviceGridEligible) {
     pushEligibility(
       ctx, "ServiceGrid", null, false, "SG-ELIG",
-      g.services.length + " services (<2 required); section omitted",
+      ctx.servicesOrdered.length + " distinct service concepts (<2 required); section omitted",
     );
     return;
   }
@@ -1687,7 +2073,7 @@ function buildServiceGrid(ctx: PlanCtx): void {
         : "SG-V-cards: flat service set, no single flagship; scan-and-convert.";
   pushEligibility(
     ctx, "ServiceGrid", facts.serviceGridVariant, true, "SG-ELIG",
-    g.services.length + " services; " + variantRationale,
+    ctx.servicesOrdered.length + " distinct service concepts; " + variantRationale,
   );
   ctx.sections.push(
     makeSection(
@@ -2252,9 +2638,11 @@ export function planPage(input: PlannerInput): HomePagePlan | null {
   const emergency = isEmergencyTrade(g, intent);
   const phone = fieldValue(g.owner, "phone").trim();
   const phoneDisplay = phone !== "" ? formatPhoneDisplay(phone) : "";
-  const servicesOrdered = orderServicesByPriority(g.services, intent);
-  const distinctLineCount = distinctScopes(g.services).length;
   const facts = computeFacts(g, media, signal, intent, emergency, caps);
+  // The canonical service list is the concept-deduped one: every builder
+  // downstream reads facts.servicesDeduped, never the raw grouped services.
+  const servicesOrdered = facts.servicesDeduped;
+  const distinctLineCount = distinctScopes(servicesOrdered).length;
 
   const notes: string[] = [];
   if (signalNote) notes.push(signalNote);
@@ -2313,7 +2701,10 @@ export function planPage(input: PlannerInput): HomePagePlan | null {
     sections: [],
   };
 
-  // Fixed family order; ineligible sections are omitted, order is preserved.
+  // Builders emit in registry order; the final pass is the ONLY place
+  // order is decided: semantic dedup first, then the family grammar
+  // spine, then evidence importance within a stage, then build order.
+  // No builder may assume its emission position survives.
   buildNavigation(ctx);
   buildHero(ctx);
   buildTrustMetrics(ctx);
@@ -2326,6 +2717,69 @@ export function planPage(input: PlannerInput): HomePagePlan | null {
   buildContactCtas(ctx);
   buildAskFyd(ctx);
   buildFooter(ctx);
+
+  // --- Final pass 1: section-level semantic dedup ---
+  // Same component + same conceptKey = two renderings of one concept.
+  // Keep the higher-importance rendering; ties keep the earlier build.
+  const conceptBest = new Map<string, PlannedSection>();
+  for (const s of ctx.sections) {
+    const key = s.component + "|" + s.conceptKey;
+    const prev = conceptBest.get(key);
+    if (!prev || s.importance > prev.importance || (s.importance === prev.importance && s.order < prev.order)) {
+      conceptBest.set(key, s);
+    }
+  }
+  const dedupedSections = ctx.sections.filter(
+    (s) => conceptBest.get(s.component + "|" + s.conceptKey) === s,
+  );
+  const droppedSectionCount = ctx.sections.length - dedupedSections.length;
+
+  // --- Final pass 2: grammar spine, then evidence weight, then build order ---
+  const buildIndex = new Map(dedupedSections.map((s, i) => [s, i]));
+  const ordered = [...dedupedSections].sort((a, b) => {
+    const stageDelta = GRAMMAR_STAGE_ORDER[a.grammarStage] - GRAMMAR_STAGE_ORDER[b.grammarStage];
+    if (stageDelta !== 0) return stageDelta;
+    if (b.importance !== a.importance) return b.importance - a.importance;
+    return (buildIndex.get(a) ?? 0) - (buildIndex.get(b) ?? 0);
+  });
+
+  // --- Final pass 3: deterministic reindex (order + id follow position) ---
+  ordered.forEach((s, i) => {
+    s.order = i;
+    s.id = "home:" + s.component.toLowerCase() + ":" + i;
+  });
+  ctx.sections = ordered;
+
+  if (droppedSectionCount > 0) {
+    notes.push(
+      droppedSectionCount +
+        " duplicate concept rendering(s) removed at the section level " +
+        "(same component + concept identity; the higher-evidence rendering survived).",
+    );
+  }
+  if (facts.dedupedServiceIds.length > 0) {
+    notes.push(
+      "service concept dedup merged " +
+        facts.dedupedServiceIds.length +
+        " weaker representation(s): " +
+        facts.dedupedServiceIds.join(", ") +
+        ".",
+    );
+  }
+  if (facts.dedupedGalleryIds.length > 0) {
+    notes.push(
+      "gallery concept dedup merged " +
+        facts.dedupedGalleryIds.length +
+        " weaker project telling(s): " +
+        facts.dedupedGalleryIds.join(", ") +
+        ".",
+    );
+  }
+  notes.push(
+    "section order: family grammar spine (navigation, hero, trust, services, " +
+      "visual-proof, projects, human-story, social-proof, location, conversion, " +
+      "serve, close), then evidence importance within each stage, then build order.",
+  );
 
   const headline = resolveHeadline(ctx);
   const theme: ThemeReference = {

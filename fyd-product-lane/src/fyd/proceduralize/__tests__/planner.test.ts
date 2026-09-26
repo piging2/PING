@@ -216,7 +216,7 @@ describe("eligibility rules", () => {
     expect(sectionBy(withMedia, "ProjectGallery")).toHaveLength(1);
   });
 
-  test("BusinessStory: needs a named owner/founder person", () => {
+  test("BusinessStory: needs a named owner/founder person WITH story evidence", () => {
     const owner = ownerWith({ phone: "+15551234567" });
     const tech = mkObject("per-1", "ping.social.person@1", "Sam Rivera", { role: "technician" });
     const noStory = planPage({
@@ -228,7 +228,25 @@ describe("eligibility rules", () => {
     }) as HomePagePlan;
     expect(sectionBy(noStory, "BusinessStory")).toHaveLength(0);
 
-    const founder = mkObject("per-2", "ping.social.person@1", "Taylor Morgan", { role: "founder" });
+    // A named founder alone is not enough: without story evidence
+    // (bio/story/quote/description or a provably bound portrait) the
+    // section is omitted, never fabricated.
+    const founderBare = mkObject("per-2", "ping.social.person@1", "Taylor Morgan", { role: "founder" });
+    const bare = planPage({
+      graph: {
+        objects: [owner, founderBare],
+        relationships: [mkRel("r1", "owner-1", "employs", "per-2")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+    }) as HomePagePlan;
+    expect(sectionBy(bare, "BusinessStory")).toHaveLength(0);
+
+    const founder = mkObject(
+      "per-2",
+      "ping.social.person@1",
+      "Taylor Morgan",
+      { role: "founder", bio: "Third-generation plumber; started sweeping the shop at fourteen." },
+    );
     const story = planPage({
       graph: {
         objects: [owner, founder],
@@ -242,7 +260,11 @@ describe("eligibility rules", () => {
   test("BusinessStory: >=3 named people with roles selects team-grid", () => {
     const owner = ownerWith({ phone: "+15551234567" });
     const people = ["per-1", "per-2", "per-3"].map((id, i) =>
-      mkObject(id, "ping.social.person@1", "Person " + (i + 1), { role: i === 0 ? "owner" : "technician" }),
+      mkObject(id, "ping.social.person@1", "Person " + (i + 1), {
+        role: i === 0 ? "owner" : "technician",
+        // Story evidence on one bound person is enough for the section.
+        ...(i === 0 ? { bio: "Founded the company in 2009 with one truck." } : {}),
+      }),
     );
     const plan = planPage({
       graph: {
@@ -323,11 +345,13 @@ describe("eligibility rules", () => {
     expect(sectionBy(twoFacts, "TrustBar", "metrics-strip")).toHaveLength(1);
   });
 
-  test("Testimonials: named specific reviews select the cluster; absent reviews propose the honest empty state", () => {
+  test("Testimonials: named specific reviews select the cluster; absent reviews mean no review section", () => {
+    // Default: no review evidence => no review section at all. The empty
+    // state is opt-in only (see next test); absence of reviews is never
+    // itself a section, and reviews are never fabricated.
     const empty = planPage(minimalInput()) as HomePagePlan;
-    const proposed = sectionBy(empty, "TrustBar", "testimonial-cluster-empty-state");
-    expect(proposed).toHaveLength(1);
-    expect(proposed[0].status).toBe("proposed");
+    expect(sectionBy(empty, "TrustBar", "testimonial-cluster")).toHaveLength(0);
+    expect(sectionBy(empty, "TrustBar", "testimonial-cluster-empty-state")).toHaveLength(0);
 
     const owner = ownerWith({ phone: "+15551234567" });
     const review = mkObject(
@@ -348,12 +372,27 @@ describe("eligibility rules", () => {
     expect(sectionBy(withReview, "TrustBar", "testimonial-cluster-empty-state")).toHaveLength(0);
   });
 
-  test("Testimonials: owner can opt out of the honest empty state", () => {
-    const plan = planPage(
+  test("Testimonials: the honest empty state is owner opt-in only, proposed never published", () => {
+    // Opted out (default): absent reviews => no section.
+    const out = planPage(
       minimalInput({ ownerIntent: { honestEmptyStateAllowed: false } }),
     ) as HomePagePlan;
-    expect(sectionBy(plan, "TrustBar", "testimonial-cluster-empty-state")).toHaveLength(0);
-    expect(sectionBy(plan, "TrustBar", "testimonial-cluster")).toHaveLength(0);
+    expect(sectionBy(out, "TrustBar", "testimonial-cluster-empty-state")).toHaveLength(0);
+    expect(sectionBy(out, "TrustBar", "testimonial-cluster")).toHaveLength(0);
+
+    // Opted in with owner copy: the empty state is PROPOSED, never planned.
+    const proposed = planPage(
+      minimalInput({
+        ownerIntent: {
+          honestEmptyStateAllowed: true,
+          honestEmptyStateCopy: "Reviews are coming soon.",
+        },
+      }),
+    ) as HomePagePlan;
+    const sections = sectionBy(proposed, "TrustBar", "testimonial-cluster-empty-state");
+    expect(sections).toHaveLength(1);
+    expect(sections[0].status).toBe("proposed");
+    expect(sections[0].job).toBe("PROVE");
   });
 
   test("ContactCTA: ineligible when no primary CTA binding is resolvable", () => {
@@ -376,15 +415,14 @@ describe("eligibility rules", () => {
     expect(sectionBy(plan, "AskFYD-entry", "floating-entry")).toHaveLength(1);
   });
 
-  test("deterministic section order follows the family spec", () => {
+  test("deterministic section order follows the family grammar", () => {
     const plan = planPage(minimalInput()) as HomePagePlan;
     // minimalInput: 1 service (no ServiceGrid), no gallery, no story, no metrics,
-    // no areas, no reviews (honest empty state proposed).
+    // no areas, no reviews (no review section without evidence or owner opt-in).
     const order = plan.sections.map((s) => s.component + ":" + s.variant);
     expect(order).toEqual([
       "Navigation:minimal",
       "Hero:identity-led",
-      "TrustBar:testimonial-cluster-empty-state",
       "ContactCTA:conversion-dual",
       "AskFYD-entry:floating-entry",
       "Footer:credibility",
@@ -395,6 +433,275 @@ describe("eligibility rules", () => {
     expect(ids[0]).toBe("home:navigation:0");
     // Every section carries a job; the page job list mirrors section order.
     expect(plan.pageJobs).toEqual(plan.sections.map((s) => s.job));
+    // Every section is planner-tagged: visual scale, grammar stage,
+    // evidence importance, and a concept identity for semantic dedup.
+    for (const s of plan.sections) {
+      expect(["PRIMARY", "SECONDARY", "UTILITY"]).toContain(s.visualScale);
+      expect(typeof s.importance).toBe("number");
+      expect(s.conceptKey.length).toBeGreaterThan(0);
+    }
+    const stages = plan.sections.map((s) => s.grammarStage);
+    expect(stages).toEqual(["navigation", "hero", "conversion", "serve", "close"]);
+    // Grammar stages are non-decreasing across the page.
+    const stageRank: Record<string, number> = {
+      navigation: 0, hero: 1, trust: 2, services: 3, "visual-proof": 4,
+      projects: 5, "human-story": 6, "social-proof": 7, location: 8,
+      conversion: 9, serve: 10, close: 11,
+    };
+    const ranks = stages.map((st) => stageRank[st]);
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+  });
+});
+
+// ============================================================================
+// Semantic dedup: one concept, one section
+// ============================================================================
+
+describe("semantic dedup", () => {
+  test("two service representations of one concept collapse to the richest", () => {
+    const owner = ownerWith({ phone: "+15551234567", trade: "plumbing" });
+    const dup = service("svc-a", "Plumbing", "Residential plumbing");
+    const richer = mkObject(
+      "svc-b",
+      "ping.social.service@1",
+      "Plumbing Services",
+      { scope: "Full-service residential and commercial plumbing, drain cleaning", priority: "1" },
+      "Plumbing Services done right.",
+    );
+    const other = service("svc-c", "HVAC", "Heating and cooling");
+    const plan = planPage({
+      graph: {
+        objects: [owner, dup, richer, other],
+        relationships: [providesRel("r1", "svc-a"), providesRel("r2", "svc-b"), providesRel("r3", "svc-c")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+      ownerIntent: { serviceLinesAsBuyingUnits: true },
+    }) as HomePagePlan;
+
+    // The weaker representation is merged away: never bound, named in the notes.
+    const boundIds = plan.sections.flatMap((s) => s.objectBindings.flatMap((b) => b.objectIds));
+    expect(boundIds).not.toContain("svc-a");
+    expect(boundIds).toContain("svc-b");
+    expect(boundIds).toContain("svc-c");
+    expect(plan.plannerNotes.join("\n")).toContain("svc-a");
+
+    // Two distinct concepts => two featured buying units, no duplicates.
+    const featured = plan.sections.filter((s) => s.component === "FeaturedService");
+    expect(featured).toHaveLength(2);
+    const keys = featured.map((s) => s.conceptKey);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  test("a single concept never earns a ServiceGrid", () => {
+    const owner = ownerWith({ phone: "+15551234567", trade: "plumbing" });
+    const dup = service("svc-a", "Plumbing", "Residential plumbing");
+    const richer = service("svc-b", "Plumbing Services", "Full-service plumbing");
+    const plan = planPage({
+      graph: {
+        objects: [owner, dup, richer],
+        relationships: [providesRel("r1", "svc-a"), providesRel("r2", "svc-b")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+    }) as HomePagePlan;
+    // Two rows, one concept: grid needs >=2 distinct concepts.
+    expect(plan.sections.filter((s) => s.component === "ServiceGrid")).toHaveLength(0);
+    expect(plan.sections.filter((s) => s.component === "FeaturedService")).toHaveLength(0);
+  });
+
+  test("two project tellings of one project collapse to the richer telling", () => {
+    const owner = ownerWith({ phone: "+15551234567", trade: "carpentry" });
+    const thin = mkObject(
+      "post-1", "ping.social.post@1", "Kitchen Remodel",
+      { location: "Corvallis" }, "Nice kitchen.",
+    );
+    const rich = mkObject(
+      "post-2", "ping.social.post@1", "Kitchen remodel services",
+      { location: "Corvallis", narrative: "Full gut renovation: custom cabinets, quartz counters, new lighting." },
+      "A kitchen with a story.",
+    );
+    const other = mkObject(
+      "post-3", "ping.social.post@1", "Cedar Deck Overlook",
+      { location: "Albany" }, "A deck with a story.",
+    );
+    const plan = planPage({
+      graph: {
+        objects: [owner, thin, rich, other],
+        relationships: [
+          mkRel("r1", "owner-1", "publishes", "post-1"),
+          mkRel("r2", "owner-1", "publishes", "post-2"),
+          mkRel("r3", "owner-1", "publishes", "post-3"),
+        ],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+      media: {
+        assets: [
+          mkAsset("pp-1", "project-photo", 0.85, true, { objectIds: ["post-1"] }),
+          mkAsset("pp-2", "project-photo", 0.9, true, { objectIds: ["post-2"] }),
+          mkAsset("pp-3", "project-photo", 0.85, true, { objectIds: ["post-3"] }),
+        ],
+      },
+    }) as HomePagePlan;
+    const gallery = plan.sections.filter((s) => s.component === "ProjectGallery");
+    expect(gallery).toHaveLength(1);
+    const boundIds = gallery[0].objectBindings.flatMap((b) => b.objectIds);
+    expect(boundIds).toContain("post-2");
+    expect(boundIds).toContain("post-3");
+    expect(boundIds).not.toContain("post-1");
+    expect(plan.plannerNotes.join("\n")).toContain("post-1");
+  });
+
+  test("section-level dedup keeps the higher-evidence rendering of one concept", () => {
+    // Two FeaturedService sections can never share a conceptKey: the final
+    // pass keeps the higher-importance rendering. (Unit-level: same
+    // component + conceptKey collapses.)
+    const owner = ownerWith({ phone: "+15551234567", trade: "plumbing" });
+    const a = service("svc-a", "Plumbing", "Residential plumbing", "1");
+    const b = service("svc-b", "HVAC", "Heating and cooling", "2");
+    const plan = planPage({
+      graph: {
+        objects: [owner, a, b],
+        relationships: [providesRel("r1", "svc-a"), providesRel("r2", "svc-b")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+      ownerIntent: { serviceLinesAsBuyingUnits: true },
+    }) as HomePagePlan;
+    const featured = plan.sections.filter((s) => s.component === "FeaturedService");
+    expect(featured).toHaveLength(2);
+    const keys = featured.map((s) => s.component + "|" + s.conceptKey);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+// ============================================================================
+// Eligibility omission: no evidence => no section, never a placeholder
+// ============================================================================
+
+describe("eligibility omission", () => {
+  test("no reviews and no opt-in => no review section anywhere", () => {
+    const plan = planPage(minimalInput()) as HomePagePlan;
+    const reviewSections = plan.sections.filter(
+      (s) => s.component === "TrustBar" && s.variant.startsWith("testimonial-cluster"),
+    );
+    expect(reviewSections).toHaveLength(0);
+    // The omission is recorded in the eligibility log, but no section exists.
+    expect(JSON.stringify(plan.sections)).not.toContain("testimonial-cluster");
+  });
+
+  test("no projects => no gallery", () => {
+    const plan = planPage(minimalInput()) as HomePagePlan;
+    expect(plan.sections.filter((s) => s.component === "ProjectGallery")).toHaveLength(0);
+  });
+
+  test("no story evidence => no story section", () => {
+    const owner = ownerWith({ phone: "+15551234567" });
+    const founder = mkObject("per-1", "ping.social.person@1", "Taylor Morgan", { role: "founder" });
+    const plan = planPage({
+      graph: {
+        objects: [owner, founder],
+        relationships: [mkRel("r1", "owner-1", "employs", "per-1")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+    }) as HomePagePlan;
+    expect(plan.sections.filter((s) => s.component === "BusinessStory")).toHaveLength(0);
+  });
+
+  test("no services => no service sections, page still plans", () => {
+    const plan = planPage(
+      minimalInput({
+        graph: {
+          objects: [ownerWith({ phone: "+15551234567", trade: "carpentry" })],
+          relationships: [],
+        },
+      }),
+    ) as HomePagePlan;
+    expect(plan.sections.filter((s) => s.component === "ServiceGrid")).toHaveLength(0);
+    expect(plan.sections.filter((s) => s.component === "FeaturedService")).toHaveLength(0);
+    // Always-on surfaces still plan.
+    expect(plan.sections.map((s) => s.component)).toEqual(
+      expect.arrayContaining(["Navigation", "Hero", "Footer"]),
+    );
+  });
+});
+
+// ============================================================================
+// Evidence-weighted ordering within the grammar spine
+// ============================================================================
+
+describe("evidence-weighted ordering", () => {
+  test("within a stage, higher evidence importance renders first regardless of build order", () => {
+    const owner = ownerWith({ phone: "+15551234567", trade: "plumbing" });
+    // svc-3 is built LAST (priority 3) but carries the only service imagery.
+    const a = service("svc-a", "Plumbing", "Residential plumbing", "1");
+    const b = service("svc-b", "HVAC", "Heating and cooling", "2");
+    const c = service("svc-c", "Electrical", "Panels and wiring", "3");
+    const plan = planPage({
+      graph: {
+        objects: [owner, a, b, c],
+        relationships: [providesRel("r1", "svc-a"), providesRel("r2", "svc-b"), providesRel("r3", "svc-c")],
+      },
+      capabilities: ["phone-tap", "ask-affordance"],
+      ownerIntent: { serviceLinesAsBuyingUnits: true },
+      media: {
+        assets: [mkAsset("svc-img-c", "service-imagery", 0.8, true, { objectIds: ["svc-c"] })],
+      },
+    }) as HomePagePlan;
+    const featured = plan.sections.filter((s) => s.component === "FeaturedService");
+    expect(featured).toHaveLength(3);
+    const firstBound = featured[0].objectBindings[0].objectIds;
+    expect(firstBound).toEqual(["svc-c"]);
+    // Importance is strictly non-increasing within the stage.
+    const imps = featured.map((s) => s.importance);
+    expect([...imps].sort((x, y) => y - x)).toEqual(imps);
+    expect(featured[0].importance).toBeGreaterThan(featured[1].importance);
+  });
+
+  test("conversion, serve, and close hold deterministic terminal positions", () => {
+    const plan = planPage(coppersmithLikeInput()) as HomePagePlan;
+    const tail = plan.sections.slice(-3).map((s) => s.component);
+    expect(tail).toEqual(["ContactCTA", "AskFYD-entry", "Footer"]);
+    expect(plan.sections[0].component).toBe("Navigation");
+    expect(plan.sections[1].component).toBe("Hero");
+  });
+
+  test("every section carries the renderer visual-scale contract", () => {
+    const plan = planPage(coppersmithLikeInput()) as HomePagePlan;
+    const scales = new Map(plan.sections.map((s) => [s.component + ":" + s.variant, s.visualScale]));
+    // Spot-check the contract against the family hierarchy: hero is the
+    // primary moment, metrics are a utility strip, footer is utility.
+    expect(scales.get("Hero:" + plan.sections.find((s) => s.component === "Hero")!.variant)).toBe("PRIMARY");
+    expect(scales.get("Footer:credibility")).toBe("UTILITY");
+  });
+});
+
+// ============================================================================
+// Deterministic baseline: same inputs -> byte-identical SiteSpec
+// ============================================================================
+
+describe("deterministic baseline", () => {
+  test("full-evidence plan is byte-identical across runs", () => {
+    const a = planPage(coppersmithLikeInput());
+    const b = planPage(coppersmithLikeInput());
+    expect(a).not.toBeNull();
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+
+  test("no customer-name conditionals: renaming the business changes only name-derived strings", () => {
+    const renamed: PlannerInput = {
+      ...coppersmithLikeInput(),
+      graph: {
+        objects: coppersmithLikeInput().graph.objects.map((o) =>
+          o.id === "owner-1" ? { ...o, title: "Generic Trade Co LLC" } : o,
+        ),
+        relationships: coppersmithLikeInput().graph.relationships,
+      },
+    };
+    const a = planPage(coppersmithLikeInput()) as HomePagePlan;
+    const b = planPage(renamed) as HomePagePlan;
+    // Same evidence shape => same section spine (components, variants, stages).
+    expect(b.sections.map((s) => s.component + ":" + s.variant)).toEqual(
+      a.sections.map((s) => s.component + ":" + s.variant),
+    );
+    expect(b.sections.map((s) => s.grammarStage)).toEqual(a.sections.map((s) => s.grammarStage));
   });
 });
 
@@ -814,7 +1121,10 @@ function coppersmithLikeInput(): PlannerInput {
     service("svc-vent", "Ventilation", "Ductwork and ventilation"),
   ];
   const people = [
-    mkObject("per-1", "ping.social.person@1", "Owner One", { role: "owner" }),
+    mkObject("per-1", "ping.social.person@1", "Owner One", {
+      role: "owner",
+      bio: "Master plumber; founded the company in 2001 with one truck.",
+    }),
     mkObject("per-2", "ping.social.person@1", "Tech Two", { role: "technician" }),
     mkObject("per-3", "ping.social.person@1", "Tech Three", { role: "technician" }),
     mkObject("per-4", "ping.social.person@1", "Tech Four", { role: "installer" }),

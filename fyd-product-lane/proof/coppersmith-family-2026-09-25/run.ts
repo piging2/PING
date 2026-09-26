@@ -16,11 +16,14 @@ import { join } from "node:path";
 import { observePresentation, validatePresentationObservation } from "@/fyd/proceduralize/presentation-observe";
 import { getPipelineManifest } from "@/fyd/media/bundle-media";
 import {
-  buildCoppersmithPlan,
-  COPPERSMITH_SITE_ID,
-  scoreCoppersmithMedia,
+  buildFamilyPlan,
+  detectTradeEvidence,
+  scoreSiteMedia,
   toDesignSignal,
-} from "@/app/sites/coppersmith-plumbing/v2/family-input";
+} from "@/app/sites/_shared/family-input";
+import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
+
+const SITE_ID = "coppersmith-plumbing";
 
 const PROOF = join(process.cwd(), "proof", "coppersmith-family-2026-09-25");
 const FIXTURE = join(
@@ -59,9 +62,14 @@ function main() {
   console.log("  imageDensity=" + obs.imageDensity.band + " finish=" + obs.imageTreatment.finish);
 
   // --- 2. Score the manifest ---
-  const manifest = getPipelineManifest(COPPERSMITH_SITE_ID);
+  const manifest = getPipelineManifest(SITE_ID);
   if (!manifest) throw new Error("production media manifest missing");
-  const { scored, report } = scoreCoppersmithMedia(manifest.media, obs);
+  const trades = detectTradeEvidence(COPPERSMITH_GRAPH);
+  const ownerTitle =
+    COPPERSMITH_GRAPH.objects.find(
+      (o) => o.schema === "ping.social.business@1" && o.visibility === "public",
+    )?.title?.trim() ?? "Coppersmith Plumbing - HVAC - Mechanical";
+  const { scored, report } = scoreSiteMedia(manifest.media, trades, obs, ownerTitle);
   writeFileSync(join(PROOF, "scorecards.json"), JSON.stringify(report, null, 2) + "\n");
 
   const passingByRole = new Map<string, string[]>();
@@ -84,7 +92,7 @@ function main() {
   }
 
   // --- 3. Plan ---
-  const plan = buildCoppersmithPlan();
+  const plan = buildFamilyPlan(SITE_ID);
   writeFileSync(join(PROOF, "plan.json"), JSON.stringify(plan, null, 2) + "\n");
 
   console.log("\nplan: theme=" + plan.theme.name);
