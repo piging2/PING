@@ -103,11 +103,13 @@ _SECRET_PATTERNS = (
     ("client_secret_assignment", re.compile(
         r"(?i)\b(client[_-]?secret)\b\s*[:=]\s*\S+")),
     ("secret_assignment", re.compile(
-        r"(?i)\b(secret|token|bearer|passwd|password|pwd)\b\s*[:=]\s*\S+")),
+        r"(?i)\b(secret|token|bearer|passwd|password|pwd|aws_secret_access_key)"
+        r"\b\s*[:=]\s*\S+")),
     ("bearer_token", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9\-._~+/=]{8,}")),
     ("pem_private_key", re.compile(
         r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")),
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9]{16,}\b")),
+    ("openai_project_key", re.compile(r"\bsk-proj-[A-Za-z0-9]{16,}\b")),
     ("aws_access_key_id", re.compile(r"\b(?:AKIA|ABIA|ACCA|ASIA)[0-9A-Z]{16}\b")),
     ("stripe_secret_key", re.compile(r"\bsk_(?:live|test)_[A-Za-z0-9]{8,}\b")),
     ("github_fine_grained_pat", re.compile(

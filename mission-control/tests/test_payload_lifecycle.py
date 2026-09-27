@@ -349,6 +349,39 @@ else:
     os.environ["TZ"] = orig_tz
 time.tzset()
 
+# ---- 13. regression: follow-up scanner gaps (re-falsifier G1/G2) --------
+# Defect 4 (G1): OpenAI project keys sk-proj-<tail> are rejected by
+# audit_metadata() and blocked at the envelope. The plain sk- pattern
+# never saw the proj- infix, so project keys smuggled past.
+# Defect 5 (G2): the label aws_secret_access_key is caught by the
+# secret_assignment label alternation even though underscores defeat the
+# \b boundary around "secret" alone.
+FOLLOWUP_SHAPES = {
+    # all synthetic fixtures; nothing here is a real credential
+    "openai_project_key":
+        "deployed sk-proj-SYNTHETIC4fK9sD2mQ8vXzN1pL7wRtY6uH3jG0bN5cV8xA2sD9fK4mQ",
+    "aws_secret_access_key_label":
+        "rotated aws_secret_access_key="
+        "wJalrXUtnFEMIKSYNTHETICbPxRfiCYEXAMPLEKEY",
+}
+for shape_name, shaped_value in FOLLOWUP_SHAPES.items():
+    try:
+        PL.audit_metadata("act", "actor", "cap", "ref",
+                          PL.sha256_hex("evidence"),
+                          "result " + shaped_value)
+        check("followup shape rejected by audit_metadata: " + shape_name,
+              False)
+    except PL.SecretShapedMaterialError as e:
+        check("followup shape rejected by audit_metadata: " + shape_name,
+              True)
+        check("followup guard withholds value: " + shape_name,
+              shaped_value not in str(e) and "withheld" in str(e))
+    try:
+        PL.build_audit_event("MC_CHECKPOINT", dict(md, result=shaped_value))
+        check("followup shape blocked at envelope: " + shape_name, False)
+    except PL.SecretShapedMaterialError:
+        check("followup shape blocked at envelope: " + shape_name, True)
+
 print()
 if FAILURES:
     print("FAILURES:", len(FAILURES), FAILURES)
