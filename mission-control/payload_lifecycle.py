@@ -36,6 +36,7 @@ import os
 import re
 import sys
 import time
+import calendar
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -107,6 +108,10 @@ _SECRET_PATTERNS = (
     ("pem_private_key", re.compile(
         r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")),
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9]{16,}\b")),
+    ("aws_access_key_id", re.compile(r"\b(?:AKIA|ABIA|ACCA|ASIA)[0-9A-Z]{16}\b")),
+    ("stripe_secret_key", re.compile(r"\bsk_(?:live|test)_[A-Za-z0-9]{8,}\b")),
+    ("github_fine_grained_pat", re.compile(
+        r"\bgithub_pat_[A-Za-z0-9_]{16,}\b")),
     ("generic_provider_token", re.compile(
         r"\b(?:ghp|gho|gsk|AIza|xox[bap]|ya29)[-_A-Za-z0-9]{16,}\b")),
     ("otp_code", re.compile(r"(?i)\b(otp|one[-_ ]?time[_ ]?code|mfa[_ ]?code)"
@@ -329,10 +334,14 @@ class PayloadStore:
                 and e["state"] != "ERASED"]
 
     # -- transitions ----------------------------------------------------
-    def transition(self, ref, to_state, reason="", at=None):
+    def transition(self, ref, to_state, reason="", at=None,
+                   _via_erasure_flow=False):
         """Move a payload forward in the lifecycle. Backward moves raise.
-        ERASED is reachable from any state but only through this path
-        (the erasure flow); normal forward order otherwise applies."""
+        ERASED is reachable from any state but ONLY through the erasure flow
+        (request_erasure passes _via_erasure_flow=True); a direct
+        transition(ref, "ERASED") raises IllegalTransitionError so content
+        can never be orphaned on disk with no DATA_ERASURE_COMPLETED event.
+        Normal forward order otherwise applies."""
         entry = self._manifest.get(ref)
         if entry is None:
             raise UnknownPayloadRefError("unknown payload_ref: %s" % ref)
@@ -343,6 +352,10 @@ class PayloadStore:
         if from_state == "ERASED":
             raise IllegalTransitionError(
                 "payload %s is ERASED; no further transitions" % ref)
+        if to_state == "ERASED" and not _via_erasure_flow:
+            raise IllegalTransitionError(
+                "payload %s: ERASED is reachable only through the erasure "
+                "flow (request_erasure), never by direct transition" % ref)
         if to_state != "ERASED" and _FORWARD_INDEX[to_state] <= \
                 _FORWARD_INDEX[from_state]:
             raise IllegalTransitionError(
@@ -371,8 +384,8 @@ class PayloadStore:
                 continue
             entered_at = entry["state_history"][-1]["at"]
             try:
-                entered = time.mktime(time.strptime(entered_at,
-                                                    "%Y-%m-%dT%H:%M:%SZ"))
+                entered = calendar.timegm(time.strptime(entered_at,
+                                                        "%Y-%m-%dT%H:%M:%SZ"))
             except (ValueError, TypeError):
                 continue
             if now - entered >= dwell:
@@ -440,7 +453,7 @@ class PayloadStore:
                                 + policy_name, at=at)
             self.transition(ref, "ERASED",
                             reason="erasure completed, policy " + policy_name,
-                            at=at)
+                            at=at, _via_erasure_flow=True)
             entry = self.entry(ref)
             entry["tombstone"] = {"kind": "erasure", "at": at,
                                   "policy": policy_name}

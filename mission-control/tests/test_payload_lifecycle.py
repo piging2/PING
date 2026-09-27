@@ -23,6 +23,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 
 FAILURES = []
 
@@ -269,6 +270,84 @@ check("policy reads dwell from json file",
 check("DATA_ERASURE_COMPLETED registered",
       "DATA_ERASURE_COMPLETED" in EMIT.MC_EVENT_TYPES)
 check("PAYLOAD_REDACTED registered", "PAYLOAD_REDACTED" in EMIT.MC_EVENT_TYPES)
+
+# ---- 12. regression: falsifier defects fixed ------------------------------
+# Defect 1: provider-prefix secret shapes are rejected by audit_metadata().
+SMUGGLED_SHAPES = {
+    # all synthetic fixtures; AKIAIOSFODNN7EXAMPLE is the AWS doc example key
+    "aws_access_key_id": "deployed with key id AKIAIOSFODNN7EXAMPLE today",
+    "stripe_live_secret_key": "charged sk_live_SYNTHETIC1234567890 ok",
+    "github_fine_grained_pat":
+        "used github_pat_SYNTHETIC_abcdefghijklmnop1234567890 here",
+}
+for shape_name, shaped_value in SMUGGLED_SHAPES.items():
+    try:
+        PL.audit_metadata("act", "actor", "cap", "ref",
+                          PL.sha256_hex("evidence"), "result " + shaped_value)
+        check("smuggled shape rejected: " + shape_name, False)
+    except PL.SecretShapedMaterialError as e:
+        check("smuggled shape rejected: " + shape_name, True)
+        check("guard withholds smuggled value: " + shape_name,
+              shaped_value not in str(e) and "withheld" in str(e))
+    try:
+        PL.build_audit_event("MC_CHECKPOINT", dict(md, result=shaped_value))
+        check("smuggled shape blocked at envelope: " + shape_name, False)
+    except PL.SecretShapedMaterialError:
+        check("smuggled shape blocked at envelope: " + shape_name, True)
+
+# Defect 2: direct transition to ERASED is refused; the erasure flow still
+# works.
+ref5 = store.put({"note": "must not be orphaned"}, "synthetic-subject-005",
+                 payload_class=PL.PAYLOAD_CLASS_NON_SENSITIVE,
+                 ref="pl_synth005")
+try:
+    store.transition(ref5, "ERASED", reason="bypass attempt")
+    check("direct transition to ERASED refused", False)
+except PL.IllegalTransitionError:
+    check("direct transition to ERASED refused", True)
+check("refused ERASED leaves state ACTIVE",
+      store.entry(ref5)["state"] == "ACTIVE")
+check("refused ERASED leaves content intact",
+      store.get(ref5)["note"] == "must not be orphaned"
+      and os.path.exists(
+          os.path.join(STORE, "payloads", "pl_synth005.json")))
+event_e5, how_e5, erased5 = store.request_erasure(
+    "synthetic-subject-005", "regression-erasure", journal_file=JOURNAL,
+    actor="privacy-officer", at="2026-09-26T19:20:00Z")
+check("erasure flow still reaches ERASED",
+      erased5 == ["pl_synth005"]
+      and store.entry(ref5)["state"] == "ERASED"
+      and not os.path.exists(
+          os.path.join(STORE, "payloads", "pl_synth005.json"))
+      and how_e5 == "appended"
+      and event_e5["event_type"] == "DATA_ERASURE_COMPLETED")
+try:
+    store.transition(ref5, "STALE", reason="resurrect")
+    check("post-erasure transition refused", False)
+except PL.IllegalTransitionError:
+    check("post-erasure transition refused", True)
+
+# Defect 3: sweep dwell math is timezone-independent.
+orig_tz = os.environ.get("TZ")
+tz_store = PL.PayloadStore(os.path.join(tmp, "tz-store"))
+tz_pol = PL.RetentionPolicy({"ACTIVE": 3600}, name="tz-regression")
+for i, zone in enumerate(("America/Denver", "UTC", "Pacific/Kiritimati")):
+    os.environ["TZ"] = zone
+    time.tzset()
+    tz_ref = "pl_tz%d" % i
+    tz_at = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                          time.gmtime(time.time() - 3600))
+    tz_store.put({"k": "v"}, "tz-subject", ref=tz_ref, at=tz_at,
+                 payload_class=PL.PAYLOAD_CLASS_NON_SENSITIVE)
+    tz_applied = tz_store.sweep(tz_pol)
+    check("sweep transitions 3600s-aged payload under TZ=" + zone,
+          (tz_ref, "ACTIVE", "STALE") in tz_applied
+          and tz_store.entry(tz_ref)["state"] == "STALE")
+if orig_tz is None:
+    del os.environ["TZ"]
+else:
+    os.environ["TZ"] = orig_tz
+time.tzset()
 
 print()
 if FAILURES:
