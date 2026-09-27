@@ -1,28 +1,27 @@
 /**
- * FYD family demo: Coppersmith Plumbing & HVAC.
+ * FYD family demo: Coppersmith Plumbing & HVAC (Coppersmith-first proving).
  *
- * Renders the family page from the ONE generic planning path:
- * buildFamilyInput("coppersmith-plumbing") from the shared family-input
- * builder (pinned graph fixture + authorized demo media ingest + pinned
- * presentation observation -> score.ts verdicts -> planPage()).
+ * Renders the family page from the deterministic pipeline:
+ * pinned graph fixture + authorized demo media ingest + pinned presentation
+ * observation -> score.ts verdicts -> planPage() -> PublicFamilyPage with
+ * the coppersmith theme.
  *
- * No customer-specific planning logic lives on this route; all policy is
- * generic and evidence-driven. Sibling of the legacy generator demo at
- * /sites/coppersmith-plumbing (left intact; cutover comes after the owner
- * test passes).
+ * Sibling of the legacy generator demo at /sites/coppersmith-plumbing
+ * (left intact; cutover comes after the owner test passes).
  */
 
 import { PublicFamilyPage } from "@/fyd/family/family-page";
-import { buildFamilyInput } from "@/app/sites/_shared/family-input";
-
-const SITE_ID = "coppersmith-plumbing";
+import {
+  buildCoppersmithFamilyInput,
+  COPPERSMITH_SITE_ID,
+} from "./family-input";
 
 export async function generateMetadata() {
-  const input = buildFamilyInput(SITE_ID);
+  const input = buildCoppersmithFamilyInput();
   const name =
     input.graph.objects.find(
       (o) => o.schema === "ping.social.business@1" && o.visibility === "public",
-    )?.title?.trim() ?? SITE_ID;
+    )?.title?.trim() ?? COPPERSMITH_SITE_ID;
   return {
     title: name + " | FYD Family Demo",
     description:
@@ -31,6 +30,6 @@ export async function generateMetadata() {
 }
 
 export default function CoppersmithFamilyV2Page() {
-  const input = buildFamilyInput(SITE_ID);
+  const input = buildCoppersmithFamilyInput();
   return <PublicFamilyPage input={input} />;
 }

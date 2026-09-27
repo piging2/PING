@@ -32,7 +32,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { dirname } from "node:path";
 import { attachMediaToGraph } from "./attach";
-import { classifyRights, discoverImages, effectiveFileName, type DiscoveredImage } from "./discover";
+import { classifyRights, discoverImages, type DiscoveredImage } from "./discover";
 import { generateDerivatives, hashContentBytes } from "./derivatives";
 import { safeFetchImage, safeFetchPage } from "./safe-fetch";
 import {
@@ -56,12 +56,6 @@ export interface IngestOptions {
   manifestPath: string;
   /** Cap on images ingested per site (safety bound). */
   maxImages?: number;
-  /**
-   * Extra origins treated as the business's own site storage (e.g. the
-   * deployment's own asset blob store). Passed to classifyRights; the
-   * authorization basis is recorded per asset.
-   */
-  allowedOrigins?: string[];
   /**
    * Experimental/preview run: the manifest is stamped preview: true and
    * the caller must write it outside the production manifests dir
@@ -117,12 +111,7 @@ export async function ingestSiteMedia(opts: IngestOptions): Promise<MediaManifes
     const observedAt = new Date().toISOString();
     // RIGHTS GATE: classify before any bytes move. Unclear provenance is
     // never acquired, derived, or served; the reference is retained only.
-    // The site's own alt text and deployment-local storage origins are
-    // evidence the classifier may use; nothing here invents ownership.
-    const { rightsSource, basis } = classifyRights(ref.url, opts.businessSlug, origin, {
-      altText: ref.alt,
-      allowedOrigins: opts.allowedOrigins,
-    });
+    const { rightsSource, basis } = classifyRights(ref.url, opts.businessSlug, origin);
     if (!isAcquirable(rightsSource)) {
       observations.push({
         sourceUrl: ref.url,
@@ -178,7 +167,7 @@ export async function ingestSiteMedia(opts: IngestOptions): Promise<MediaManifes
       continue;
     }
 
-    const file = effectiveFileName(new URL(res.finalUrl));
+    const file = new URL(res.finalUrl).pathname.split("/").pop() ?? "";
     const roles = roleFor(file, gen.width, gen.height, !heroAssigned);
     if (roles.includes("hero")) heroAssigned = true;
     const title = (ref.alt && ref.alt.trim()) || file.replace(/[-_]/g, " ").replace(/\.[a-z0-9]+$/i, "") || "Site image";

@@ -19,13 +19,9 @@ import { PublicFamilyPage } from "@/fyd/family/family-page";
 import type { FamilyRenderInput } from "@/fyd/family/types";
 import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
 import {
-  buildFamilyInput,
-  buildFamilyPlan,
-} from "@/app/sites/_shared/family-input";
-
-const SITE_ID = "coppersmith-plumbing";
-const buildCoppersmithFamilyInput = () => buildFamilyInput(SITE_ID);
-const buildCoppersmithPlan = () => buildFamilyPlan(SITE_ID);
+  buildCoppersmithFamilyInput,
+  buildCoppersmithPlan,
+} from "../family-input";
 
 function render(input: FamilyRenderInput): string {
   return renderToStaticMarkup(<PublicFamilyPage input={input} />);
