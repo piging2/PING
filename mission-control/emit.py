@@ -37,6 +37,7 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _OUTREACH = os.path.normpath(os.path.join(_HERE, "..", "outreach"))
@@ -76,16 +77,34 @@ MC_EVENT_TYPES = {
     # no existing caller is affected.
     "MC_LANE_UNKNOWN", "MC_REVOKED", "REVOKED_AFTER_DISPATCH",
     "MC_WORK_ORDER_ISSUED",
+    # Canonical approval primitive (2026-09-26, mc/approval-request lane,
+    # Batch-6 APPROVAL SURFACE + APPROVAL TIMEOUT; harvested into p0/approval
+    # 2026-09-27). Chat and Mission Control resolve the SAME ApprovalRequest
+    # through the same transition. Additive only: no existing caller is
+    # affected.
+    # NOTE: there is deliberately NO auto-approve / EXPIRE_APPROVE type.
+    # Silence is never approval.
+    "MC_APPROVAL_REQUESTED", "MC_APPROVAL_APPROVED", "MC_APPROVAL_DENIED",
+    "MC_APPROVAL_EXPIRED", "MC_APPROVAL_REFUSED",
 }
 
 # The pass-health subset, for the pass-oriented helpers.
 MC_PASS_EVENT_TYPES = frozenset(
     t for t in MC_EVENT_TYPES if t.startswith("MC_PASS_"))
 
+# The approval subset, for the approval-oriented helpers.
+MC_APPROVAL_EVENT_TYPES = frozenset(
+    t for t in MC_EVENT_TYPES if t.startswith("MC_APPROVAL_"))
+
 
 def mint_event_id(lane, event_type, source_timestamp, summary):
     seed = "|".join([lane, event_type, source_timestamp, summary])
     return "mc-bf-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12]
+
+
+def mint_approval_event_id(approval_id, event_type, proposal_digest, stamp):
+    seed = "|".join([approval_id, event_type, proposal_digest, stamp])
+    return "mc-apr-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
 
 
 def existing_event_ids(path):
@@ -175,6 +194,41 @@ def emit_pass_events(events, journal_file=None, dry_run=False):
     return [emit_pass_event(t, p, plat, d, journal_file=journal_file,
                             dry_run=dry_run)
             for (t, p, plat, d) in events]
+
+
+def emit_approval_event(event_type, approval_id, data,
+                        journal_file=None, dry_run=False):
+    """Emit one MC_APPROVAL_* event for an approval request.
+
+    Envelope matches the journal contract
+    {event_id, timestamp, event_type, aggregate_id, aggregate_type,
+    event_data}; aggregate is mc:approval:<id>. event_id is
+    content-derived (approval id + type + digest + decision stamp), so
+    re-emission of the same transition is idempotent.
+
+    event_data carries digests and metadata only, never the raw proposal
+    body (Batch 6: audit metadata vs erasable payload).
+
+    Returns (event, "appended" | "duplicate-skipped"). Raises ValueError
+    on a non-MC_APPROVAL_* type.
+    """
+    if event_type not in MC_APPROVAL_EVENT_TYPES:
+        raise ValueError("approval events must be MC_APPROVAL_*, got %r"
+                         % event_type)
+    journal_file = journal_file or JOURNAL_FILE
+    stamp = data.get("stamp") or datetime.now(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    event_id = mint_approval_event_id(
+        approval_id, event_type, data.get("proposal_digest", ""), stamp)
+    event = {
+        "event_id": event_id,
+        "timestamp": stamp,  # decision/acceptance time
+        "event_type": event_type,
+        "aggregate_id": "mc:approval:%s" % approval_id,
+        "aggregate_type": "mc_approval",
+        "event_data": dict(data),
+    }
+    return _append(event, journal_file, dry_run=dry_run)
 
 
 def _cli():
