@@ -72,16 +72,29 @@ const fakeEventRuntime = {
   });
   check('identity_5 denied fail-closed', r1.outcome === OUTCOME.DENIED, JSON.stringify(r1));
   check('identity_5: no transport invoked', invoked === false);
+  // Defect-2 (2026-09-27): identity-policy denials are typed
+  // AUTHORIZATION refusals.
+  check('identity_5: authorization_refusal typed',
+    r1.authorization_refusal === true && r1.refusal_source === 'identity-policy', JSON.stringify(r1).slice(0, 200));
 
   // 2. Unknown agent denied by the vendored fail-closed adapter.
   const r2 = await adapter.dispatchExecution({ ...BASE_OPTS, agentId: 'nope',
     transportFn: () => { throw new Error('must not run'); } });
   check('unknown agent denied', r2.outcome === OUTCOME.DENIED, JSON.stringify(r2));
+  // Defect-2 (2026-09-27): CapabilityAuthority denials are typed
+  // AUTHORIZATION refusals with the authority's reason.
+  check('unknown agent: authorization_refusal typed',
+    r2.authorization_refusal === true && r2.refusal_source === 'capability-authority' &&
+    typeof r2.authority_reason === 'string' && r2.authority_reason.length > 0,
+    JSON.stringify(r2).slice(0, 200));
 
   // 3. Capability outside the profile allowlist denied.
   const r3 = await adapter.dispatchExecution({ ...BASE_OPTS, capability: 'exec.write',
     transportFn: () => { throw new Error('must not run'); } });
   check('unlisted capability denied', r3.outcome === OUTCOME.DENIED, JSON.stringify(r3));
+  check('unlisted capability: authorization_refusal typed',
+    r3.authorization_refusal === true && r3.refusal_source === 'capability-authority',
+    JSON.stringify(r3).slice(0, 200));
 
   // 4. extractEnvelope shapes.
   check('extractEnvelope: JSON in prose', adapter.extractEnvelope('blah {"a":1} blah').ok === true);
@@ -165,6 +178,11 @@ const fakeEventRuntime = {
     execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' },
     transportFn: () => { r12bTransportRan = true; throw new Error('must not run'); } });
   check('same-attempt retry refused as duplicate', r12b.outcome === OUTCOME.DENIED && r12b.reason === 'duplicate_attempt' && !r12bTransportRan, JSON.stringify(r12b).slice(0, 300));
+  // Defect-2 (2026-09-27): gate refusals are explicitly NOT
+  // authorization refusals.
+  check('duplicate refusal typed as non-authorization',
+    r12b.authorization_refusal === false && r12b.refusal_source === 'dispatch-gate',
+    JSON.stringify(r12b).slice(0, 200));
   check('duplicate retry never overwrites the artifact', fs.readFileSync(r12a.artifactPath, 'utf8') === art12Before);
   check('idempotency key deterministic across attempts',
     adapter.idempotencyKeyFor({ execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' }, input: BASE_OPTS.input, tenant_id: null, capability: 'text.summarize' }) ===

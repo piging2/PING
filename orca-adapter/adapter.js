@@ -252,6 +252,105 @@ function readIndexRecords(evidenceDir, idempotencyKey) {
 }
 
 /**
+ * Defect-4 closure (2026-09-27): cross-process mutual exclusion for the
+ * idempotency index. The index is append-only JSONL; without a lock, the
+ * gate's read-check-append sequence races across processes: two
+ * dispatchers can both pass the read/check boundary before either
+ * records its reservation, dispatching the same intent twice.
+ *
+ * The lock is a lockfile created atomically (O_EXCL). A holder that died
+ * without releasing is reclaimed via PID liveness (process.kill(pid, 0)),
+ * so a crashed dispatcher can never wedge the index forever. The lock is
+ * reentrant within one process (held-count per resolved evidenceDir).
+ * Acquisition waits up to `timeoutMs` with a fixed 25ms poll; on timeout
+ * it throws `idempotency_lock_timeout` (fail closed, never proceed
+ * unlocked).
+ */
+const INDEX_LOCKFILE = 'idempotency-index.lock';
+const _indexLockHolders = new Map(); // resolved evidenceDir -> { count }
+
+function lockPathFor(evidenceDir) {
+  return path.join(evidenceDir, INDEX_LOCKFILE);
+}
+
+function _sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function acquireIndexLock(evidenceDir, timeoutMs = 10000) {
+  const dir = path.resolve(evidenceDir);
+  const held = _indexLockHolders.get(dir);
+  if (held) {
+    held.count += 1;
+    return; // reentrant: this process already holds it
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  const lockPath = lockPathFor(dir);
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    let fd = null;
+    try {
+      fd = fs.openSync(lockPath, 'wx', 0o644);
+    } catch (e) {
+      if (!e || e.code !== 'EEXIST') throw e;
+      // Someone holds it (or held it and died, or crashed between
+      // create and PID write leaving an empty/corrupt file).
+      let raw = null;
+      try { raw = fs.readFileSync(lockPath, 'utf8'); } catch (_) { raw = null; }
+      const pid = raw === null ? null : (() => {
+        const p = parseInt(String(raw).trim(), 10);
+        return Number.isInteger(p) && p > 0 ? p : null;
+      })();
+      let live = false;
+      if (pid !== null) {
+        try { process.kill(pid, 0); live = true; } catch (_) { live = false; }
+      }
+      if (!live) {
+        // Reclaim only if the file content is UNCHANGED since we read
+        // it: avoids deleting a fresh live holder's lock on a TOCTOU.
+        try {
+          const now = fs.readFileSync(lockPath, 'utf8');
+          if (now === raw) fs.unlinkSync(lockPath);
+        } catch (_) { /* lost the race; retry */ }
+        continue; // stale holder reclaimed (or lost race); retry
+      }
+      if (Date.now() >= deadline) {
+        throw new Error(
+          `idempotency_lock_timeout: could not acquire ${INDEX_LOCKFILE} in ${timeoutMs}ms`);
+      }
+      _sleepMs(Math.min(25, Math.max(0, deadline - Date.now())));
+      continue;
+    }
+    try {
+      fs.writeSync(fd, String(process.pid) + '\n');
+    } finally {
+      try { fs.closeSync(fd); } catch (_) { /* best effort */ }
+    }
+    _indexLockHolders.set(dir, { count: 1 });
+    return;
+  }
+}
+
+function releaseIndexLock(evidenceDir) {
+  const dir = path.resolve(evidenceDir);
+  const held = _indexLockHolders.get(dir);
+  if (!held) return;
+  held.count -= 1;
+  if (held.count > 0) return;
+  _indexLockHolders.delete(dir);
+  try { fs.unlinkSync(lockPathFor(dir)); } catch (_) { /* best effort */ }
+}
+
+function withIndexLock(evidenceDir, fn) {
+  acquireIndexLock(evidenceDir);
+  try {
+    return fn();
+  } finally {
+    releaseIndexLock(evidenceDir);
+  }
+}
+
+/**
  * (b) Is a recorded attempt UNCERTAIN? True when the dispatcher has no
  * trustworthy verdict: outcome unknown/escalated, the contract's
  * status:'unknown' signal, effect_state effect_unknown (which every
@@ -289,11 +388,21 @@ function validateReconciliation(reconciliation, attempt) {
   return problems;
 }
 
-/** Typed refusal: machine-readable, never a blind dispatch, never an overwrite. */
+/** Typed refusal: machine-readable, never a blind dispatch, never an overwrite.
+ *
+ * Defect-2 closure (2026-09-27): every gate refusal explicitly types
+ * itself as NOT an authorization refusal (authorization_refusal: false,
+ * refusal_source: 'dispatch-gate'). Only the identity-policy fence and
+ * the CapabilityAuthority denial carry authorization_refusal: true, so a
+ * consumer can never confuse a gate hold with a denied authorization.
+ */
 function gateRefusal({ reason, idempotency_key, execution, tenant_id, reconciliation }) {
   return {
     outcome: OUTCOME.DENIED,
     reason,
+    // Dispatch-gate refusals are not authorization refusals.
+    authorization_refusal: false,
+    refusal_source: 'dispatch-gate',
     // This call dispatched nothing: no external effect is possible from it.
     effect_state: EFFECT_STATE.NONE,
     execution,
@@ -318,6 +427,22 @@ function appendRefusal(evidenceDir, { idempotency_key, execution, reason, reconc
  * or {allowed:false, idempotency_key, refusal}.
  */
 function reconcileGate({ evidenceDir, execution, input, tenant_id, capability, reconciliation }) {
+  // Defect-4: the gate's read-decide-append is atomic under the
+  // cross-process index lock. Reentrant: dispatchExecution holds the
+  // same lock across gate+reservation, in which case this is a no-op.
+  return withIndexLock(evidenceDir, () =>
+    reconcileGateLocked({ evidenceDir, execution, input, tenant_id, capability, reconciliation }));
+}
+
+/**
+ * (b)+(c) The reconcile gate. Runs BEFORE any transport invocation.
+ * Returns {allowed:true, idempotency_key, reconciliationAccepted, reconcilesAttempt}
+ * or {allowed:false, idempotency_key, refusal}.
+ *
+ * Must run under withIndexLock (see reconcileGate wrapper): the read,
+ * the decision, and the refusal/reservation appends are one atomic unit.
+ */
+function reconcileGateLocked({ evidenceDir, execution, input, tenant_id, capability, reconciliation }) {
   const idempotency_key = idempotencyKeyFor({ execution, input, tenant_id, capability });
   const read = readIndexRecords(evidenceDir, idempotency_key);
   if (!read.ok) {
@@ -427,9 +552,12 @@ function escalatedReturn(reason, { summary, execution, tenant_id, artifactPath, 
   };
 }
 
-/** Append the concluded-attempt line to the idempotency index. */
+/** Append the concluded-attempt line to the idempotency index.
+ * Defect-4: under the cross-process index lock so a concurrent reader
+ * never observes a torn interleave between the dispatched line and the
+ * outcome line. */
 function recordAttemptOutcome(evidenceDir, gate, execution, result, artifactPath) {
-  appendIndexLine(evidenceDir, {
+  withIndexLock(evidenceDir, () => appendIndexLine(evidenceDir, {
     type: 'attempt', phase: 'outcome',
     idempotency_key: gate.idempotency_key,
     executionId: execution.executionId, attempt: execution.attempt,
@@ -439,7 +567,7 @@ function recordAttemptOutcome(evidenceDir, gate, execution, result, artifactPath
     effect_state: result.effect_state || null,
     effect_may_have_occurred: result.effect_may_have_occurred === true,
     artifact: artifactPath || null,
-  });
+  }));
   return result;
 }
 
@@ -636,21 +764,40 @@ async function dispatchExecution(opts) {
   }
 
   // 1. Identity fence: 5..10 explicitly denied, fail closed.
+  // Defect-2 closure (2026-09-27): an identity-policy denial is an
+  // AUTHORIZATION refusal, typed explicitly so it can never be confused
+  // with a dispatch-gate refusal (duplicate_attempt,
+  // reconciliation_required) or an execution failure. The mapping is
+  // additive: outcome 'denied' and effect_state are unchanged.
   if (DENIED_IDENTITY_IDS.has(agentId)) {
     return {
       outcome: OUTCOME.DENIED,
       reason: 'identity_5..10 are DENIED (Nolan 2026-09-25). Use identities 1-4 only.',
       execution,
       agentId,
+      authorization_refusal: true,
+      refusal_source: 'identity-policy',
       // Nothing was invoked: no external effect is possible.
       effect_state: EFFECT_STATE.NONE,
     };
   }
 
   // 2. AUTHORIZE (fail-closed; vendored proven adapter).
+  // Defect-2 closure (2026-09-27): a CapabilityAuthority denial is an
+  // AUTHORIZATION refusal, typed explicitly (refusal_source +
+  // authority_reason). Additive: outcome 'denied' is unchanged.
   const auth = vendor.authorizeWorkOrder({ agentId, capability, namespace, constraints });
   if (!auth.granted) {
-    return { outcome: OUTCOME.DENIED, reason: auth.reason || 'authorization denied', execution, agentId, effect_state: EFFECT_STATE.NONE };
+    return {
+      outcome: OUTCOME.DENIED,
+      reason: auth.reason || 'authorization denied',
+      execution,
+      agentId,
+      authorization_refusal: true,
+      refusal_source: 'capability-authority',
+      authority_reason: auth.reason || 'authorization denied',
+      effect_state: EFFECT_STATE.NONE,
+    };
   }
 
   // 2b. TENANT threading (lane B handoff, additive): resolve the authoritative
@@ -663,79 +810,96 @@ async function dispatchExecution(opts) {
   // unreconciled-unknown retries with typed refusals. Never a blind second
   // dispatch, never an artifact overwrite.
   const artifactName = `result-${execution.executionId}-a${execution.attempt}.json`;
-  const gate = reconcileGate({ evidenceDir, execution, input, tenant_id, capability, reconciliation });
-  if (!gate.allowed) return gate.refusal;
-  // Defense in depth: even if the index was lost or tampered with, an
-  // existing artifact for this attempt is evidence that must never be
-  // overwritten. Refuse instead of clobbering.
-  if (fs.existsSync(path.join(evidenceDir, artifactName))) {
-    const reconciliationInfo = {
-      required: false,
-      duplicate: true,
-      prior_attempt: execution.attempt,
-      prior_artifact: path.join(evidenceDir, artifactName),
-      note: 'artifact already exists for this attempt (index disagreement: fail closed, never overwrite)',
-    };
-    const refusal = gateRefusal({ reason: 'artifact_exists', idempotency_key: gate.idempotency_key, execution, tenant_id, reconciliation: reconciliationInfo });
-    appendRefusal(evidenceDir, { idempotency_key: gate.idempotency_key, execution, reason: 'artifact_exists', reconciliation: reconciliationInfo });
-    return refusal;
-  }
+  // Defect-4 closure (2026-09-27): the gate read, the artifact-exists
+  // check, work-order issuance, and the reconciliation/dispatched
+  // appends form ONE atomic reservation under the cross-process index
+  // lock. Two dispatchers can no longer both pass the read/check
+  // boundary before either records its reservation. The lock is
+  // released BEFORE the transport is invoked: a running worker never
+  // blocks unrelated keys, and a death mid-transport still leaves the
+  // honest dispatched-without-outcome record (read as uncertain, fail
+  // closed). reconcileGate's own withIndexLock call is reentrant here.
+  const reserved = withIndexLock(evidenceDir, () => {
+    const g = reconcileGate({ evidenceDir, execution, input, tenant_id, capability, reconciliation });
+    if (!g.allowed) return { refusal: g.refusal };
+    // Defense in depth: even if the index was lost or tampered with, an
+    // existing artifact for this attempt is evidence that must never be
+    // overwritten. Refuse instead of clobbering.
+    if (fs.existsSync(path.join(evidenceDir, artifactName))) {
+      const reconciliationInfo = {
+        required: false,
+        duplicate: true,
+        prior_attempt: execution.attempt,
+        prior_artifact: path.join(evidenceDir, artifactName),
+        note: 'artifact already exists for this attempt (index disagreement: fail closed, never overwrite)',
+      };
+      const refusal = gateRefusal({ reason: 'artifact_exists', idempotency_key: g.idempotency_key, execution, tenant_id, reconciliation: reconciliationInfo });
+      appendRefusal(evidenceDir, { idempotency_key: g.idempotency_key, execution, reason: 'artifact_exists', reconciliation: reconciliationInfo });
+      return { refusal };
+    }
 
-  // 3. ISSUE (deterministic work_order_id = sha256('workorder:' + taskId)[0:16]
-  //    — same (executionId, attempt) re-issues the same work order).
-  //    result_path is PING-owned: the artifact the adapter writes below.
-  //    The worker never writes here directly.
-  fs.mkdirSync(evidenceDir, { recursive: true });
-  const taskId = `${execution.executionId}:attempt-${execution.attempt}`;
-  const deadline = new Date(Date.now() + deadlineMs).toISOString();
-  const workOrder = vendor.issueWorkOrder({
-    agentId, capability, namespace, taskId,
-    missionId: `mission-control:${execution.missionId}:${execution.runId}`,
-    correlationId: execution.runId,
-    contextPackId: contextPackId || `orca-context-${execution.executionId}`,
-    input, constraints,
-    resultPath: path.join(evidenceDir, artifactName),
-    deadline,
-    causationId: null,
-    attempt: 1,
-  });
-
-  const prompt = buildWorkerPrompt(workOrder, taskBrief, tenant_id);
-
-  // 4. DISPATCH to the real headless agent.
-  // Resolve the invoker BEFORE recording anything: an unknown transport is
-  // a programming error and must throw before the index sees this attempt.
-  const invokeTransport = transportFn
-    ? (p, t) => transportFn(p, t)
-    : transport === 'hermes'
-      ? (p, t) => dispatchHermes(p, t)
-      : null;
-  if (!invokeTransport) {
-    throw new Error(`unknown transport: ${transport} (only 'hermes' is proven)`);
-  }
-  // The reconciliation record (when one was required and accepted) and the
-  // dispatched-phase index line land BEFORE the transport is invoked: a
-  // process death between invocation and the outcome line still leaves an
-  // honest dispatched-without-outcome record (read as uncertain, fail closed).
-  if (gate.reconciliationAccepted) {
-    appendIndexLine(evidenceDir, {
-      type: 'reconciliation',
-      idempotency_key: gate.idempotency_key,
-      reconciles_attempt: gate.reconcilesAttempt,
-      authorizes_attempt: execution.attempt,
-      checked: reconciliation.checked,
-      found: reconciliation.found,
-      decidedBy: reconciliation.decidedBy,
-      decided_at: reconciliation.decidedAt || isoNow(),
+    // 3. ISSUE (deterministic work_order_id = sha256('workorder:' + taskId)[0:16]
+    //    — same (executionId, attempt) re-issues the same work order).
+    //    result_path is PING-owned: the artifact the adapter writes below.
+    //    The worker never writes here directly.
+    fs.mkdirSync(evidenceDir, { recursive: true });
+    const taskId = `${execution.executionId}:attempt-${execution.attempt}`;
+    const deadline = new Date(Date.now() + deadlineMs).toISOString();
+    const workOrder = vendor.issueWorkOrder({
+      agentId, capability, namespace, taskId,
+      missionId: `mission-control:${execution.missionId}:${execution.runId}`,
+      correlationId: execution.runId,
+      contextPackId: contextPackId || `orca-context-${execution.executionId}`,
+      input, constraints,
+      resultPath: path.join(evidenceDir, artifactName),
+      deadline,
+      causationId: null,
+      attempt: 1,
     });
-  }
-  appendIndexLine(evidenceDir, {
-    type: 'attempt', phase: 'dispatched',
-    idempotency_key: gate.idempotency_key,
-    executionId: execution.executionId, attempt: execution.attempt,
-    work_order_id: workOrder.work_order_id,
-    capability, tenant_id,
+
+    const prompt = buildWorkerPrompt(workOrder, taskBrief, tenant_id);
+
+    // Resolve the invoker BEFORE recording anything: an unknown transport is
+    // a programming error and must throw before the index sees this attempt.
+    const invokeTransport = transportFn
+      ? (p, t) => transportFn(p, t)
+      : transport === 'hermes'
+        ? (p, t) => dispatchHermes(p, t)
+        : null;
+    if (!invokeTransport) {
+      throw new Error(`unknown transport: ${transport} (only 'hermes' is proven)`);
+    }
+    // The reconciliation record (when one was required and accepted) and the
+    // dispatched-phase index line land BEFORE the transport is invoked: a
+    // process death between invocation and the outcome line still leaves an
+    // honest dispatched-without-outcome record (read as uncertain, fail closed).
+    if (g.reconciliationAccepted) {
+      appendIndexLine(evidenceDir, {
+        type: 'reconciliation',
+        idempotency_key: g.idempotency_key,
+        reconciles_attempt: g.reconcilesAttempt,
+        authorizes_attempt: execution.attempt,
+        checked: reconciliation.checked,
+        found: reconciliation.found,
+        decidedBy: reconciliation.decidedBy,
+        decided_at: reconciliation.decidedAt || isoNow(),
+      });
+    }
+    appendIndexLine(evidenceDir, {
+      type: 'attempt', phase: 'dispatched',
+      idempotency_key: g.idempotency_key,
+      executionId: execution.executionId, attempt: execution.attempt,
+      work_order_id: workOrder.work_order_id,
+      capability, tenant_id,
+    });
+    return { gate: g, workOrder, prompt, invokeTransport };
   });
+  if (reserved.refusal) return reserved.refusal;
+  const { gate, workOrder, prompt, invokeTransport } = reserved;
+
+  // 4. DISPATCH to the real headless agent. The index lock is released:
+  // the reservation is recorded, so a concurrent dispatcher for the same
+  // key now sees dispatched-without-outcome (uncertain, fail closed).
   const disp = invokeTransport(prompt, timeoutMs);
 
   const artifactBase = {
@@ -927,9 +1091,13 @@ module.exports = {
   DENIED_IDENTITY_IDS,
   TENANT_ID_RE,
   IDEMPOTENCY_INDEX,
+  INDEX_LOCKFILE,
   resolveTenantId,
   idempotencyKeyFor,
   reconcileGate,
+  withIndexLock,
+  acquireIndexLock,
+  releaseIndexLock,
   dispatchExecution,
   buildWorkerPrompt,
   extractEnvelope,

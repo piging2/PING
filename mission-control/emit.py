@@ -67,6 +67,15 @@ MC_EVENT_TYPES = {
     # subject. PAYLOAD_REDACTED marks content replaced behind a reference.
     # Additive only: no existing caller is affected.
     "DATA_ERASURE_COMPLETED", "PAYLOAD_REDACTED",
+    # MissionIntent front-door lifecycle events (2026-09-27,
+    # mc/sprint-integration-2026-09-27; hardened on mc/frontdoor-hardening
+    # @ ddd60eb and mc/tenant-hardening @ 38c7ad0). MC_LANE_UNKNOWN is the
+    # unknown-outcome terminal (H5b); MC_REVOKED / REVOKED_AFTER_DISPATCH
+    # are the revocation lifecycle (H7); MC_WORK_ORDER_ISSUED is the
+    # authority-produced issuance record terminals chain to. Additive only:
+    # no existing caller is affected.
+    "MC_LANE_UNKNOWN", "MC_REVOKED", "REVOKED_AFTER_DISPATCH",
+    "MC_WORK_ORDER_ISSUED",
 }
 
 # The pass-health subset, for the pass-oriented helpers.
