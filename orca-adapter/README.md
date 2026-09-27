@@ -44,6 +44,19 @@ UNKNOWN is a distributed-systems state, not an error code. The adapter:
 
 Reconcile-vs-retry on UNKNOWN is owned by the CALLER (WorkerRuntime / Mission Control), never this adapter.
 
+## Reconcile gate (S5 RETRY-AFTER-UNKNOWN closure)
+
+The adapter never blindly re-dispatches. Before any transport invocation, `dispatchExecution` enforces:
+
+- **Idempotency key** — `idempotencyKeyFor({execution, input, tenant_id, capability})`: sha256 over canonical intent bytes (task identity + inputs hash + tenant + capability). Same intent -> same key; the attempt number is deliberately excluded so a retry resolves to the same key.
+- **Prior-outcome lookup** — append-only `idempotency-index.jsonl` in the evidenceDir. If the latest prior attempt for the key is uncertain (outcome unknown/escalated, contract `status:'unknown'`, `effect_state` `effect_unknown`, or dispatched-but-never-concluded), a new attempt is REFUSED with a typed refusal (`reconciliation_required`) unless the caller supplies `opts.reconciliation = { checked, found, decidedBy }`, which is validated and persisted. Only then may a NEW `execution.attempt` proceed.
+- **Duplicate attempts** — same key + same attempt string is always refused (`duplicate_attempt`): the attempt already has its evidence. A pre-write `existsSync` guard makes never-overwrite hold even if the index is lost.
+- **Unknown-outcome signal (front-door H5b contract)** — every UNKNOWN outcome the adapter emits carries `{status:'unknown', summary, effect_may_have_occurred}`; the front door maps it to UNKNOWN/HOLD. The gate keys its prior-outcome lookup on the same signal.
+- **Contract envelope on every post-dispatch outcome** — completed/failed returns also carry top-level `status` ('completed'/'failed', the worker's verified verdict) and a string `summary`, so the front door's executor-result validator accepts the adapter's envelope without synthesis. Denials (`outcome:'denied'`, pre-invocation refusals incl. gate refusals) intentionally carry no `status`: there is no 'denied' in the front door's executor-status enum; the future wiring lane maps a denied return to an authorization-style refusal, never through the executor-result validator.
+- **1a** artifact and API return agree on the outcome label (`escalated` + `honestOutcome:'unknown'` on protocol failures). **1b** every unknown-path return carries `reconcileOwnedBy:'caller'` explicitly. **1c** the spawn signal (`SIGKILL`/...) is captured into the artifact evidence (transport `signal` field, else extracted from error text, else explicit null with provenance). **F1** ssh/scp diagnostics are no longer discarded by `bin/prompt-hermes.sh`; the adapter captures transport stderr into the artifact.
+
+Refusals are `outcome:'denied'` with `effect_state:'effect_none'` (the refused call dispatched nothing) and a machine-readable `reconciliation` block. The adapter never reconciles and never retries by itself.
+
 ## Identity containment
 
 Copilot identities 1-4 only. `identity_5..10` are DENIED twice: the vendored adapter denies unknown agents fail-closed, and `adapter.js` names the DENIED set explicitly. Broker containment (`pig-fb/copilot-broker/src/broker.js`: AUTHORIZED_IDENTITY_IDS=1..4) stays fail-closed; this adapter never touches the broker.
@@ -75,8 +88,9 @@ const result = await dispatchExecution({
 
 ## Tests
 
-- `test/adapter-selftest.js` — 25 synthetic checks (no external effects): identity fence, fail-closed auth, envelope extraction, UNKNOWN propagation (timeout / protocol failure / emission rejected), verified completed/failed paths, determinism, no-event-on-invalid. `node test/adapter-selftest.js`.
-- `test/tenant-threading-selftest.js` — 19 synthetic checks: tenant resolve/derive/core, mismatch fail-closed (no transport invoked), malformed rejection, tenant_id threaded into result + artifact, prompt line. `node test/tenant-threading-selftest.js`.
+- `test/adapter-selftest.js` — 43 synthetic checks (no external effects): identity fence, fail-closed auth, envelope extraction, UNKNOWN propagation (timeout / protocol failure / emission rejected), verified completed/failed paths, determinism, no-event-on-invalid, reconcile-gate duplicate refusal + never-overwrite. `node test/adapter-selftest.js`.
+- `test/reconcile-gate-selftest.js` — 40 hostile checks mirroring the P4 S5 scenario: idempotency-key stability, 3x retry of an unknown intent -> exactly 1 transport invocation, attempt-1 artifact byte-identical after refused retries, reconciliation record unlocks exactly one NEW attempt as a NEW file, invalid/absent reconciliation refused (transport never runs), each unknown needs its own reconciliation, contract signal on all unknown paths, contract envelope on completed/failed, 1a/1b/1c, worker-reported unknown, corrupt-index fail-closed. `node test/reconcile-gate-selftest.js`.
+- `test/tenant-threading-selftest.js` — 18 synthetic checks: tenant resolve/derive/core, mismatch fail-closed (no transport invoked), malformed rejection, tenant_id threaded into result + artifact, prompt line. `node test/tenant-threading-selftest.js`.
 - `test/live-smoke.js` — ONE real dispatch to Hermes with a synthetic read-only prompt (no event runtime injected). 2026-09-26: PASS, `work_order_id=58f29ce0d7cf2a51`, `result_id=964f180161f88ded1df7e5805943f6b0de8f6c249924024d2a43b4a65506df6a`, artifact `evidence/result-smoke-e1-a1.json`.
 
 ## Vendor provenance (do not edit)

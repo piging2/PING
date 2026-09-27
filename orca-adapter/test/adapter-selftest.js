@@ -152,12 +152,24 @@ const fakeEventRuntime = {
   check('bad echo -> escalated', r11.outcome === OUTCOME.ESCALATED, JSON.stringify(r11));
   check('bad echo: no canonical event', fakeEventRuntime.calls.length === 0);
 
-  // 12. Deterministic work order idempotency: same (executionId, attempt) -> same work_order_id.
+  // 12. Reconcile gate: same (executionId, attempt) re-dispatch is REFUSED as
+  //     a duplicate — never a blind second dispatch, never an artifact
+  //     overwrite (S5 closure). work_order_id derivation itself stays
+  //     deterministic (same identity -> same idempotency key).
   const r12a = await adapter.dispatchExecution({ ...BASE_OPTS,
     execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' }, transportFn: fakeCompletedTransport() });
+  check('first dispatch proceeds', r12a.outcome === OUTCOME.COMPLETED && typeof r12a.work_order_id === 'string' && r12a.work_order_id.length === 16, JSON.stringify(r12a).slice(0, 200));
+  const art12Before = fs.readFileSync(r12a.artifactPath, 'utf8');
+  let r12bTransportRan = false;
   const r12b = await adapter.dispatchExecution({ ...BASE_OPTS,
-    execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' }, transportFn: fakeCompletedTransport() });
-  check('work_order_id idempotent', r12a.work_order_id === r12b.work_order_id && typeof r12a.work_order_id === 'string' && r12a.work_order_id.length === 16);
+    execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' },
+    transportFn: () => { r12bTransportRan = true; throw new Error('must not run'); } });
+  check('same-attempt retry refused as duplicate', r12b.outcome === OUTCOME.DENIED && r12b.reason === 'duplicate_attempt' && !r12bTransportRan, JSON.stringify(r12b).slice(0, 300));
+  check('duplicate retry never overwrites the artifact', fs.readFileSync(r12a.artifactPath, 'utf8') === art12Before);
+  check('idempotency key deterministic across attempts',
+    adapter.idempotencyKeyFor({ execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' }, input: BASE_OPTS.input, tenant_id: null, capability: 'text.summarize' }) ===
+    adapter.idempotencyKeyFor({ execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '2' }, input: BASE_OPTS.input, tenant_id: null, capability: 'text.summarize' }) &&
+    r12b.idempotency_key === adapter.idempotencyKeyFor({ execution: { missionId: 'm-1', runId: 'r-1', executionId: 'e-8', attempt: '1' }, input: BASE_OPTS.input, tenant_id: null, capability: 'text.summarize' }));
 
   // 13. outcomes.js: terminalOutcome refuses to label UNKNOWN as terminal.
   let threw = false;
