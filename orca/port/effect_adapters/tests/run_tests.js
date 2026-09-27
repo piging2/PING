@@ -80,6 +80,38 @@ test('assertProbeEvidence: placeholder success without evidence is no-evidence',
   assert.equal(core.assertProbeEvidence(null), false);
 });
 
+test('assertProbeEvidence stays outcome-agnostic (F-06 contract pin)', () => {
+  // The evidence check answers "is there real evidence?" only. It is NOT a
+  // success predicate: an inconclusive probe with evidence fields still
+  // returns true here. Success decisions must use assertProbeSuccess.
+  assert.equal(core.assertProbeEvidence({ outcome: 'inconclusive', evidence: { timeoutMs: 30000, timeoutObserved: true } }), true);
+});
+
+test('assertProbeSuccess: inconclusive with evidence is not success (F-06)', () => {
+  assert.equal(core.assertProbeSuccess({ outcome: 'inconclusive', evidence: { timeoutMs: 30000, timeoutObserved: true } }), false);
+  assert.equal(core.assertProbeSuccess({ outcome: 'not-delivered', evidence: { hitCount: 0, query: 'q' } }), false);
+});
+
+test('assertProbeSuccess: delivered with evidence is success', () => {
+  assert.equal(core.assertProbeSuccess({ outcome: 'delivered', evidence: { messageId: 'abc' } }), true);
+});
+
+test('assertProbeSuccess: missing outcome fails closed', () => {
+  // The class_08/class_05c call shape ({evidence} with no outcome field)
+  // can never read as a successful probe.
+  assert.equal(core.assertProbeSuccess({ evidence: { messageId: 'abc' } }), false);
+  assert.equal(core.assertProbeSuccess(null), false);
+});
+
+test('assertProbeSuccess: delivered without evidence is not success', () => {
+  assert.equal(core.assertProbeSuccess({ outcome: 'delivered', evidence: {} }), false);
+});
+
+test('assertProbeSuccess: custom allowlist honored', () => {
+  assert.equal(core.assertProbeSuccess({ outcome: 'not-delivered', evidence: { hitCount: 0 } }, ['not-delivered']), true);
+  assert.equal(core.assertProbeSuccess({ outcome: 'delivered', evidence: { messageId: 'x' } }, ['not-delivered']), false);
+});
+
 test('probeWithTimeout: timeout is an observation, never an effect outcome', async () => {
   const r = await core.probeWithTimeout({
     opKey: 'k',

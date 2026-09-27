@@ -213,6 +213,26 @@ function assertProbeEvidence(probeResult) {
 }
 
 /**
+ * PORT LAW 3b (F-06 coordinated contract, 2026-09-27): evidence presence
+ * is not success. assertProbeEvidence() answers "is there real evidence?"
+ * only; it is outcome-agnostic by design and MUST NOT be used as a
+ * delivered/success predicate (an inconclusive probe with evidence fields
+ * is still inconclusive). Success decisions use this function: true only
+ * when the probe carries real evidence AND its outcome is explicitly in
+ * the allowed set (default ['delivered']). An absent or unlisted outcome
+ * fails closed to false — an outcome-less result can never read as a
+ * successful probe.
+ */
+function assertProbeSuccess(probeResult, allowedOutcomes) {
+  const allowed = Array.isArray(allowedOutcomes) && allowedOutcomes.length > 0
+    ? allowedOutcomes
+    : ['delivered'];
+  if (!probeResult || typeof probeResult !== 'object') return false;
+  if (!allowed.includes(probeResult.outcome)) return false;
+  return assertProbeEvidence(probeResult);
+}
+
+/**
  * PORT LAW 1: timeout is an observation, never an effect outcome.
  * Runs probeFn with a wall-clock budget. On timeout, resolves to an
  * INCONCLUSIVE probe with observation 'probe-timeout' and evidence
@@ -573,6 +593,7 @@ function createCore(opts) {
     deriveAttemptKey,
     makeProbeResult,
     assertProbeEvidence,
+    assertProbeSuccess,
     probeWithTimeout,
     assertClassContract,
     evaluatePredicate,
