@@ -125,11 +125,11 @@ FAILURE_CLASSES = (
     "RATE_LIMIT", "TEMPORARY_FAILURE", "TERMINAL_FAILURE",
 )
 
-# Cap table snapshot 2026-09-26. The cron bodies remain authoritative until
+# Cap table snapshot 2026-09-27. The cron bodies remain authoritative until
 # sequenced to read this table; until then this is the snapshot the engine
 # and the panel use for cap accounting.
 CAPS_SNAPSHOT = {
-    "instagram": {"like": 50, "comment": 12},
+    "instagram": {"like": 55, "comment": 15},
     "facebook": {"like": 75, "comment": 20},
     "threads": {"like": 45, "comment": 12},
     "tiktok": {"like": 60, "comment": 20},
