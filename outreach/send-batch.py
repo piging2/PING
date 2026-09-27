@@ -136,6 +136,11 @@ def eligibility_gate(path, to):
 def verify_in_sent(to_addr, subject, window="newer_than:2h"):
     q = f'in:sent to:{to_addr} {window}'
     r = cli("gmail", "+triage", "--query", q, "--max", "5", "--format", "json")
+    combined = (r.stdout or "") + (r.stderr or "")
+    # Clean zero-hit is a verdict, not a parse failure: reuse the same
+    # unambiguous marker gmail_sent_count relies on (verified 2026-09-22).
+    if "No messages found matching query" in combined:
+        return False, "not-found (0 sent-to-address hits)"
     try:
         data = json.loads(r.stdout)
     except Exception:
@@ -143,7 +148,14 @@ def verify_in_sent(to_addr, subject, window="newer_than:2h"):
     items = data.get("messages") or data.get("items") or []
     for m in items:
         subj = (m.get("subject") or "").lower()
-        if subject.lower().split(",")[0] in subj or subj in subject.lower():
+        # F-04 fix 2026-09-27: exact full-subject equality (case-insensitive).
+        # The old fuzzy substring match (first comma-chunk in either direction)
+        # could false-verify a failed send against an earlier same-subject-prefix
+        # message inside the 2h window, recording SENT+VERIFIED with the wrong
+        # message id. +send transmits the draft subject verbatim and parse_draft
+        # strips it, so exact equality is the correct receipt check. A genuine
+        # send still verifies; anything else fails closed to UNVERIFIED.
+        if subj == subject.lower():
             return True, m.get("id", "?")
     return False, f"not-found ({len(items)} sent-to-address hits)"
 
