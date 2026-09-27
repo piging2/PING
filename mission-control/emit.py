@@ -62,6 +62,11 @@ MC_EVENT_TYPES = {
     "MC_PASS_INTENTS", "MC_PASS_EXECUTION_DONE", "MC_PASS_RESTRICTION",
     "MC_PASS_OBSERVATION", "MC_PASS_VERIFY", "MC_PASS_RECOVERY",
     "MC_PASS_ABORTED", "MC_PASS_CLOSED",
+    # Audit/PII separation events (2026-09-26, mc/audit-payload-lifecycle).
+    # DATA_ERASURE_COMPLETED carries subject_digest + policy, never the raw
+    # subject. PAYLOAD_REDACTED marks content replaced behind a reference.
+    # Additive only: no existing caller is affected.
+    "DATA_ERASURE_COMPLETED", "PAYLOAD_REDACTED",
 }
 
 # The pass-health subset, for the pass-oriented helpers.
