@@ -625,10 +625,21 @@ function buildWorkerPrompt(workOrder, taskBrief, tenantId) {
     'Treat every constraint above as binding. If the task seems to require violating a constraint, report status "failed" with an explanation in "error" instead. Never perform the violating action.',
     '',
     `Your capability task (${workOrder.capability}):`,
-    taskBrief,
+    // P0-SECRET-01: the brief gets the string-level redaction so raw secrets
+    // never enter the model context, the tmp prompt file, or
+    // hermes-prompt.txt on the Pig (which PERSISTS). The whole assembled
+    // prompt is deliberately NOT redacted: the echo fields above must
+    // survive verbatim, and structural redaction already protects the input.
+    redactWorkerText(taskBrief),
     '',
     'Input data (use ONLY this data; do not invent facts):',
-    JSON.stringify(workOrder.input),
+    // P0-SECRET-01: the input is STRUCTURALLY redacted BEFORE it enters the
+    // prompt. Prevention beats redaction: this prompt is written to a tmp
+    // file and scp'd to the Pig's hermes-prompt.txt where it persists
+    // unredacted, so output-only redaction is not enough. Capabilities that
+    // genuinely need live credentials must take a broker reference (future
+    // backlog), never raw input secrets.
+    JSON.stringify(redactEnvelope(workOrder.input)),
     '',
     'Remember: output ONLY the JSON object.',
   ].join('\n');
@@ -660,6 +671,445 @@ function extractEnvelope(stdout) {
     }
   }
   return { ok: false, reason: 'unbalanced JSON in worker stdout' };
+}
+
+/**
+ * Q-P0-05 F1 (Mission N), P0-SECRET-01 hardening (2026-09-28): secret-class
+ * redaction for worker-derived strings, envelopes, and the worker PROMPT.
+ *
+ * SUPPORTED BOUNDARY (exact — not universal secret detection):
+ *  REACTS (value replaced by [REDACTED:<CLASS>], structure preserved):
+ *   - PEM private-key blocks (whole block -> one marker).
+ *   - Credentialed connection strings (userinfo redacted, scheme+host
+ *     kept): a DB-scheme rule for the known DB schemes (postgres, mysql,
+ *     mariadb, mongodb, redis, amqp -> [REDACTED:DATABASE URL]), then a
+ *     GENERAL rule for ANY scheme (https, ftp, ... -> [REDACTED:URL]).
+ *     The claim is "credentialed connection-string userinfo redacts",
+ *     whatever the scheme. Userinfo is the authority segment before the
+ *     first `/` (never crosses `/`, so https://example.com/path?a=b@c is
+ *     untouched). A (?!\[REDACTED:) guard after the scheme stops the
+ *     general rule double-processing the DB rule's output. FAIL CLOSED:
+ *     userinfo redacts with OR without a colon (https://user@host redacts
+ *     `user` too) — an @ before the first / always means credentials.
+ *   - `Bearer` / `Basic` scheme credentials of ANY length, quoted or bare:
+ *     the whole scheme+value is dropped to [REDACTED:AUTHORIZATION] so a
+ *     short credential (Bearer abc123) cannot fall through to a key rule.
+ *   - Unambiguous secret keys (password, api_key, secret, private_key,
+ *     *_token, authorization, cookie, session_token, credentials,
+ *     database_url, aws_secret_access_key, ...) followed by a value,
+ *     colon/equals/space delimited (a newline is crossed only when the next
+ *     line is not a new `key:` pair — round 3, Defect 2, so
+ *     `password:\napi_key: <v>` leaves password alone and the next line
+ *     redacts under its own key), JSON-quoted, log-escaped-quoted
+ *     (\"...\"), bare, or bracketed (`["..."]` consumed whole): the ENTIRE
+ *     value subtree is secret-bearing —
+ *     every non-null leaf (string, number, boolean, array/object elements)
+ *     redacts; object/array shape and keys are preserved; `null` stays
+ *     `null` (absence of a value is not a secret).
+ *     (aws_access_key_id is NOT a key: it is covered by the AKIA
+ *     strong-shape rule; adding it as a key would double-cover the same
+ *     value.) The text-level value tokenizer is escape-aware
+ *     (`\"password\": \"secret\"` closes on the escaped quotes) and eats a
+ *     partial-quote hostile tail (`password: "abc"def"` is consumed whole —
+ *     no raw fragment survives either hostile). Quote re-emission keeps
+ *     the quote char but normalizes the escape (\"v\" -> "v"); deliberate.
+ *   - Bare strong value shapes with no key: JWT, sk-/sk-proj-, ghp_, xox[bpa]-,
+ *     AKIA.
+ *   - `token` / `session_id`: ONLY secret-shaped values (>=16 chars, token
+ *     charset, a letter plus a digit/symbol). Messy values gate on the
+ *     UNION of the peeled inner candidate AND the whole raw value
+ *     (round 4, Defect 1: the tail is part of the consumed hostile value —
+ *     `"short"<secret>`, `'short'<secret>`, `[short]<secret>`, and
+ *     `"a" "<secret>"` redact the WHOLE consumed value when a 16+ char
+ *     secret-shaped run sits anywhere in the tail, even behind an
+ *     innocuous head). Intentional fail-closed shaping: `"gpt-4"junk`
+ *     still survives whole (no 16+ secret-shaped run). ACCEPTED
+ *     FALSE POSITIVE (fail closed): order-id / version-string shapes
+ *     under `token`/`session_id` (e.g. "order-2026-09-28-abcdef") redact
+ *     whole — indistinguishable from secrets at this layer.
+ *  SURVIVES BY DESIGN (left untouched):
+ *   - UUIDs (correlation ids) under `token`/`session_id` (but NOT under
+ *     unambiguous keys: `password: <uuid>` redacts by key alone).
+ *   - 32/64-char hex digests (MD5/SHA-256 integrity references) under
+ *     `token`/`session_id` (again: redacted by key under unambiguous keys).
+ *   - Counts (pure numbers, e.g. {token: 1500}), model names (gpt-4), short
+ *     reference ids (sess_abc123), bare `session` keys, `null`.
+ *   - Values already carrying [REDACTED:...] are never re-processed:
+ *     redact(redact(x)) === redact(x).
+ *  PREVENTION SEAM (proven boundary): buildWorkerPrompt embeds
+ *   redactEnvelope(input) and redactWorkerText(taskBrief). The proven
+ *   guarantee is exact: no secret WITHIN THE SUPPORTED BOUNDARY
+ *   (secret-key context at any depth, or strong shape anywhere) placed in
+ *   workOrder.input or taskBrief appears in the prompt output. It is NOT
+ *   "no secret of any kind" — see OUT-OF-SCOPE.
+ *  KNOWN FALSE POSITIVES (documented, accepted): prose `reset your password
+ *   soon` redacts the word after `password`; prose `bearer of <word>` /
+ *   `basic <word>` collapses to [REDACTED:AUTHORIZATION].
+ *  OUT-OF-SCOPE (by construction, not by bug): a shapeless secret under an
+ *   innocent key ({"notes": ["<random-string>"]}) is indistinguishable from
+ *   a legitimate business string — no redactor can detect it without a
+ *   secret-key context or a strong shape, and any weaker gate would mass-
+ *   false-positive on business data (Mission C reference discipline). The
+ *   architectural mitigation is SECRET REFERENCE -> BROKER: capabilities
+ *   that genuinely need live credentials take a broker reference, never raw
+ *   input secrets (future backlog — NOT built here).
+ *   - Double-escaped \\\"password\\\": \\\"<v>\\\" (literal
+ *     backslash-backslash-quote in the text): the value tokenizer's quote
+ *     alternatives anchor on single backslashes, so a doubled backslash
+ *     before the quote is outside the claimed boundary (task-anticipated).
+ *     Strong-shaped values in such text are still caught by the shape
+ *     rules.
+ *   - `the PASSWORD is <v>` prose: eats `is` per the documented prose FP;
+ *     the shapeless secret then survives (no key context) — out of scope
+ *     by construction.
+ *   - `:\n=` (newline INSIDE a key delimiter run, e.g. `password:\n= <v>`):
+ *     remains out of scope — nobody writes it and the delimiter-run guard
+ *     stays simple (round 4, Defect 2).
+ *
+ * The redactor replaces secret-class VALUES with a typed marker
+ * ([REDACTED:<CLASS>]) and preserves structure: keys, delimiters, JSON
+ * shape, and every non-secret value pass through untouched.
+ */
+function looksSecretValue(v) {
+  if (typeof v !== 'string' || v.length < 16) return false;
+  if (!/^[A-Za-z0-9_\-+/=.~]+$/.test(v)) return false; // token charset, no spaces
+  if (/^\d+$/.test(v)) return false;                    // pure numbers (counts)
+  if (!/[A-Za-z]/.test(v)) return false;                // needs a letter
+  if (!/[\d_\-+/=.~]/.test(v)) return false;            // needs a digit or symbol
+  // UUID-shaped values are correlation ids, not secrets: a UUID under a
+  // `token` or `session_id` key must survive (the doc's "digests survive"
+  // promise), while unambiguous keys (password, api_key, ...) still redact
+  // a UUID by key alone.
+  if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v)) return false;
+  // Hex digests (MD5 32-char / SHA-256 64-char) are integrity references,
+  // not bearer material: the module doc promises digests survive, so they
+  // pass through the `token`/`session_id` shape gate. Only applies here;
+  // unambiguous keys (password, api_key, ...) still redact a digest by key
+  // alone (see redactEnvelopeValue / rule 3).
+  if (/^[0-9a-fA-F]{32}$/.test(v) || /^[0-9a-fA-F]{64}$/.test(v)) return false;
+  return true;
+}
+
+/**
+ * Round 3, Defect 1: peel the INNER candidate (quoted and de-escaped;
+ * bracketed; else the whole value). Round 4, Defect 1: the actual gate is
+ * secretValueHit(raw) — the UNION of secretShapedAnywhere on the peeled
+ * candidate AND on the whole raw value, so a secret riding in the consumed
+ * tail behind an innocuous head ("short"<secret>) still fails closed.
+ * The helper below implements the peel; the gate sits in secretValueHit.
+ */
+function secretCandidate(val) {
+  let m = /^\\?(["'])((?:[^"\\]|\\.)*)\\?\1/.exec(val);
+  if (m) return m[2].replace(/\\(.)/g, '$1');
+  m = /^\[([^\]]*)\]/.exec(val);
+  if (m) return m[1];
+  return val;
+}
+function secretShapedAnywhere(s) {
+  if (looksSecretValue(s)) return true;
+  const runs = s.match(/[A-Za-z0-9_\-+/=.~]{16,}/g) || [];
+  return runs.some(looksSecretValue);
+}
+
+/**
+ * Round 4, Defect 1: the round-3 gate only peeled the INNER candidate, so a
+ * secret riding in the consumed TAIL after an innocuous head failed OPEN:
+ * `token: "short"<20ch-secret>`, `token: 'short'<20ch-secret>`,
+ * `token: [short]<20ch-secret>`, `token: "a" "<20ch-secret>"` all survived
+ * byte-identical. The tail is part of the consumed hostile value, so a 16+
+ * secret-shaped run ANYWHERE in it is fail-closed shaping: gate the UNION
+ * of (peeled inner candidate) and (whole raw value). One helper, used by
+ * BOTH the text-path rules 4/4b and the envelope gated branch (round 4,
+ * Defect 3), so text and envelope agree on every input.
+ */
+function secretValueHit(raw) {
+  return secretShapedAnywhere(secretCandidate(raw)) || secretShapedAnywhere(raw);
+}
+
+// [CLASS, key words] — keys that are unambiguous: any value they carry is
+// treated as the secret, whatever its shape. `token` alone stays OUT of this
+// table: it is shape-gated (see looksSecretValue) so token counts, model
+// names, and digests survive.
+const SECRET_KEY_CLASSES = [
+  ['PASSWORD', ['password', 'passwd', 'pwd', 'db_password', 'dbpassword']],
+  ['API KEY', ['api_key', 'apikey', 'x-api-key', 'api-secret', 'apisecret']],
+  ['SECRET', ['secret', 'secret_key', 'client_secret', 'aws_secret_access_key']],
+  ['PRIVATE KEY', ['private_key', 'privatekey']],
+  ['TOKEN', ['access_token', 'auth_token', 'api_token', 'bearer_token', 'refresh_token']],
+  ['AUTHORIZATION', ['authorization']],
+  ['COOKIE', ['cookie', 'set-cookie', 'set_cookie']],
+  ['SESSION', ['session_token', 'sessiontoken']],
+  ['CREDENTIAL', ['credential', 'credentials']],
+  ['DATABASE URL', ['database_url', 'db_url', 'connection_string', 'dsn']],
+];
+
+const SECRET_KEY_CLASS_MAP = new Map();
+for (const [cls, keys] of SECRET_KEY_CLASSES) {
+  for (const k of keys) SECRET_KEY_CLASS_MAP.set(k.toLowerCase(), cls);
+}
+function classForKey(key) {
+  return (typeof key === 'string' && SECRET_KEY_CLASS_MAP.get(key.toLowerCase())) || null;
+}
+
+/**
+ * Shared secret-value tokenizer (P0-SECRET-01 round 2, LEAK 2): ONE value
+ * alternative used by rule 3 (unambiguous keys), rule 4 (`token`) and rule
+ * 4b (`session_id`). Order matters:
+ *  1. double-quoted, escape-aware, with messy-tail consumption:
+ *     `\\?"(?:[^"\\]|\\.)*\\?"` then `[^\s,;}\]]*` eats a partial-quote
+ *     hostile tail — `\"abc\"` (log-escaped JSON) closes on the escaped
+ *     quotes, and `"abc"def"` is consumed whole. No raw fragment survives
+ *     either hostile.
+ *  2. single-quoted equivalent.
+ *  3. bracketed `[...]` (consumed whole).
+ *  4. bare `[^\s,;}{"\]]+`.
+ * Quote re-emission: each replacement detects an optional-backslash +
+ * quote prefix (/^\\?(["'])/) and re-emits that quote char around the
+ * marker; the escape itself is normalized away (\"v\" -> "v") — deliberate
+ * and documented.
+ */
+/**
+ * Shared delimiter for the secret-key rules 3, 4, 4b (P0-SECRET-01 round 3,
+ * Defect 2): `key [: = or whitespace] value`. A newline is consumable ONLY
+ * when the next line does NOT begin a new `key:` pair, so
+ * `password:\napi_key: <secret>` does not eat the next line's key as
+ * password's value: the next line's secret redacts independently under its
+ * own key. First alternative: colon/equals with optional spaces/tabs, or a
+ * newline continuation when it is not a new kv pair. Second alternative:
+ * bare whitespace (spaces, tabs, or a non-kv newline continuation).
+ *
+ * Round 4, Defect 2: the single `[:=]` is a delimiter RUN
+ * `[:=](?:[ \t]*[:=])*` — additional `[:=]` chars may follow separated by
+ * horizontal spaces only, so `password:=<v>`, `password:= <v>`,
+ * `password: = <v>`, `password = = <v>` all consume the full run and redact
+ * the value whole. A newline INSIDE the delimiter run (`:\n=`) remains out
+ * of scope: nobody writes it and the guard stays simple.
+ *
+ * CRLF (round 4, boundary gap): the consumable newline class is
+ * `(?:\r\n|\n)` everywhere, so `password:\r\n<secret>` continuation
+ * redacts while `password:\r\napi_key: <v>` leaves `password:` untouched
+ * (the kv-lookahead still blocks) and `api_key:` redacts independently.
+ */
+const SECRET_DELIM =
+  '(?:[ \\t]|(?:\\r\\n|\\n)(?![A-Za-z][A-Za-z0-9_.-]*[ \\t]*:))*[:=](?:[ \\t]*[:=])*(?:[ \\t]|(?:\\r\\n|\\n)(?![A-Za-z][A-Za-z0-9_.-]*[ \\t]*:))*' +
+  '|(?:[ \\t]+|(?:\\r\\n|\\n)(?![A-Za-z][A-Za-z0-9_.-]*[ \\t]*:)[ \\t]*)';
+
+/**
+ * Round 4, Defect 1 (tokenizer half): the tail consumer must also cover
+ * bracketed values (`[short]<secret>` — the bracket alternative had no
+ * tail eater, so the secret after `]` was never even consumed) and
+ * space-separated chained quoted segments (`"a" "<secret>"` — the old
+ * tail stopped at the space, leaving the secret outside the match). The
+ * chained continuation only crosses spaces into ANOTHER quoted segment,
+ * so prose after a quoted value (`token: "gpt-4" and more words`) still
+ * terminates the value and the survive controls hold.
+ */
+const SECRET_VALUE_TAIL =
+  '(?:[ \\t]*"(?:[^"\\\\]|\\\\.)*"|[ \\t]*\'(?:[^\'\\\\]|\\\\.)*\'|[^\\s,;}\\]])*';
+
+const SECRET_VALUE_ALT =
+  '\\\\?"(?:[^"\\\\]|\\\\.)*\\\\?"' + SECRET_VALUE_TAIL +
+  "|\\\\?'(?:[^'\\\\]|\\\\.)*\\\\?'" + SECRET_VALUE_TAIL +
+  '|\\[[^\\]]*\\]' + SECRET_VALUE_TAIL +
+  '|[^\\s,;}{"\\]]+';
+
+/**
+ * Idempotence guard (round 4, Defect 2): values already carrying a marker
+ * are never re-processed. It sits AFTER the delimiter, so it must also
+ * block the backtrack splits where the delimiter shrinks (`:=` -> `:`,
+ * ` =` -> ` `) and orphaned delimiter chars/spaces would become the
+ * "value": the skip class `(?:[ \t]|[:=]|\r\n|\n)*` looks THROUGH any mix
+ * of spaces, delimiter chars, and newlines for the already-redacted
+ * marker, so a second pass over `password:=[REDACTED:PASSWORD]`,
+ * `password = = [REDACTED:PASSWORD]`, or `password:=\r\n[REDACTED:PASSWORD]`
+ * finds no match at any parse. A first-pass input with a marker already
+ * present is already-redacted input: leaving it alone IS idempotence.
+ */
+const SECRET_NOT_REDACTED_YET = '(?!(?:[ \\t]|[:=]|\\r\\n|\\n)*\\[REDACTED:)';
+
+function redactWorkerText(text) {
+  if (typeof text !== 'string' || text.length === 0) return text;
+  let out = text;
+  // 1. PEM private-key blocks (whole block -> one marker).
+  out = out.replace(
+    /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g,
+    '[REDACTED:PRIVATE KEY]');
+  // 2. Credentialed connection strings: keep scheme + host, redact userinfo.
+  out = out.replace(
+    /\b((?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis(?:s)?|amqp):\/\/)[^@\s"'<>,;}\]]*@/gi,
+    '$1[REDACTED:DATABASE URL]@');
+  // 2a. General credentialed-URL rule (P0-SECRET-01 round 2, LEAK 1): the
+  // DB rule above is scheme-allowlisted (postgres/mysql/...); ANY other
+  // scheme with userinfo (https://user:pw@host/, ftp://user:pw@host/)
+  // survived it, so the "credentialed connection-string userinfo redacts"
+  // claim was broader than the code. This rule covers every scheme:
+  // userinfo is the authority segment before the first `/` (the class can
+  // never cross `/`, so https://example.com/path?a=b@c is safe). The
+  // (?!\[REDACTED:) guard after the scheme stops double-processing the DB
+  // rule's output. FAIL CLOSED: userinfo redacts with or without a colon
+  // (https://user@host redacts `user` too).
+  out = out.replace(
+    /\b([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)(?!\[REDACTED:)([^\/\s"'<>?#]+)@/gi,
+    '$1[REDACTED:URL]@');
+  // 2b. Authorization schemes: `Bearer <token>` / `Basic <cred>` — 1+ chars
+  // INCLUDING quoted values ("…", '…'), so short creds (Bearer abc123,
+  // Basic dXNl) cannot fall through to rule 3, which would match only the
+  // scheme word and leave the credential behind. The value class includes
+  // `:` (round 3, Defect 3) so colon credentials (`Basic user:pass`) are
+  // consumed whole instead of leaking the password fragment. The whole
+  // scheme+value is dropped to [REDACTED:AUTHORIZATION]; nothing of the
+  // credential survives. The idempotence guard keeps an already-redacted
+  // marker intact.
+  out = out.replace(
+    /\b(Bearer|Basic)\s+(?!\[REDACTED:)("[^"]*"|'[^']*'|[A-Za-z0-9_\-~+/=.:]+)/gi,
+    '[REDACTED:AUTHORIZATION]');
+  // 3. Unambiguous secret keys: key [: = or bare whitespace] value ->
+  //    key delim [REDACTED:CLASS]. Bare whitespace is accepted (same as rule
+  //    4) so space-delimited `password <value>` / `session_token <value>` in
+  //    error strings redact. The delimiter is the shared SECRET_DELIM
+  //    (round 3, Defect 2): a newline is crossed only when the next line is
+  //    not a new `key:` pair, so `password:\napi_key: <v>` leaves password
+  //    alone and the next line's secret redacts under its own key.
+  //    Keys may be JSON-quoted ("api_key": "...");
+  //    quotes and the delimiter are preserved; pre-redacted values are
+  //    skipped via the lookahead (idempotence). Bracketed values
+  //    (`password: ["hunter2"]`, `api_key: ['k1','k2']`) are consumed whole
+  //    (P0-SECRET-01 CLASS B, text level): the bare alternative would stop
+  //    at the opening quote and leave the element behind. The value is the
+  //    shared SECRET_VALUE_ALT tokenizer (round 2, LEAK 2): log-escaped
+  //    (\"...\") and partial-quote (\"abc\"def\") hostiles are consumed
+  //    whole; the quote char is re-emitted around the marker with the
+  //    escape normalized away. The key's own quote groups are escape-aware
+  //    too ((\\?['"]?)): in log-escaped JSON the key arrives as
+  //    \"password\", so a bare (['"]?) would stop at the backslash and the
+  //    whole rule would miss. The \b guards still reject word-internal
+  //    hits (C:\passwords\... has no boundary after `password`).
+  for (const [cls, keys] of SECRET_KEY_CLASSES) {
+    const re = new RegExp(
+      '(\\\\?[\'"]?)\\b(' + keys.join('|') + ')\\b(\\\\?[\'"]?)(' + SECRET_DELIM + ')' + SECRET_NOT_REDACTED_YET + '(' + SECRET_VALUE_ALT + ')',
+      'gi');
+    out = out.replace(re, (m, q1, key, q2, delim, val) => {
+      const vqm = /^\\?(["'])/.exec(val);
+      const vq = vqm ? vqm[1] : '';
+      return q1 + key + q2 + delim + vq + '[REDACTED:' + cls + ']' + vq;
+    });
+  }
+  // 4. Ambiguous `token`: redact only secret-shaped values (JSON-quoted keys
+  //    included). Shares SECRET_VALUE_ALT (round 2, LEAK 2) and SECRET_DELIM
+  //    (round 3, Defect 2). Round 3, Defect 1: messy values gate on the
+  //    INNER candidate (secretCandidate: quoted/de-escaped, bracketed, or
+  //    whole), fail-closed via secretShapedAnywhere — `token: "abc"junk`,
+  //    `token: 'abc'junk`, `token: [abc]` and `"abc-with-,}-inside"` redact
+  //    the whole consumed value when the inner payload is secret-shaped or
+  //    contains a 16+ secret-shaped run; `token: "gpt-4"junk` still
+  //    survives whole (no such run).
+  out = out.replace(
+    new RegExp("(\\\\?['\"]?)\\b(token)\\b(\\\\?['\"]?)(" + SECRET_DELIM + ")" + SECRET_NOT_REDACTED_YET + "(" + SECRET_VALUE_ALT + ')', 'gi'),
+    (m, q1, key, q2, delim, val) => {
+      if (!secretValueHit(val)) return m;
+      const vqm = /^\\?(["'])/.exec(val);
+      const vq = vqm ? vqm[1] : '';
+      return q1 + key + q2 + delim + vq + '[REDACTED:TOKEN]' + vq;
+    });
+  // 4b. `session_id`: shape-gated (NOT blanket-exempt, NOT unambiguous):
+  //    a session id is bearer-equivalent in cookie/session systems, so it
+  //    redacts exactly when the value looks secret-class (high entropy,
+  //    >=16 chars, token charset); short/low-entropy reference ids like
+  //    sess_abc123 survive for correlation. UUID-shaped values survive
+  //    (see looksSecretValue). Shares SECRET_VALUE_ALT (round 2, LEAK 2)
+  //    and SECRET_DELIM (round 3, Defect 2); messy values gate on the
+  //    INNER candidate, fail-closed (round 3, Defect 1) — same shaping as
+  //    rule 4, marker [REDACTED:SESSION].
+  out = out.replace(
+    new RegExp("(\\\\?['\"]?)\\b(session_id)\\b(\\\\?['\"]?)(" + SECRET_DELIM + ")" + SECRET_NOT_REDACTED_YET + "(" + SECRET_VALUE_ALT + ')', 'gi'),
+    (m, q1, key, q2, delim, val) => {
+      if (!secretValueHit(val)) return m;
+      const vqm = /^\\?(["'])/.exec(val);
+      const vq = vqm ? vqm[1] : '';
+      return q1 + key + q2 + delim + vq + '[REDACTED:SESSION]' + vq;
+    });
+  // 5. Bare strong value shapes (no key needed): JWT, known token prefixes.
+  out = out.replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[REDACTED:TOKEN]');
+  // sk- charset includes `-`: real OpenAI project keys are sk-proj-...,
+  // and hyphens pass through this charset in the wild. Case-insensitive
+  // (Mission N3 FIX-1): falsifier evidence shows Sk-/SK- variants leaking;
+  // the neighboring Bearer/Basic rule already uses /gi.
+  out = out.replace(/\bsk-[A-Za-z0-9-]{20,}/gi, '[REDACTED:TOKEN]');
+  // ghp_ (GitHub classic PAT), xox[bpa]- (Slack), AKIA (AWS) stay
+  // case-SENSITIVE on purpose: those prefixes are fixed-case by spec
+  // (GitHub/Slack prefixes always lowercase; AKIA always uppercase), so
+  // case-folding would only add false positives. JWT `eyJ` above stays
+  // case-sensitive for the same reason: the base64url "eyJ" prefix is a
+  // constant in the JWT spec.
+  out = out.replace(/\bghp_[A-Za-z0-9]{20,}/g, '[REDACTED:TOKEN]');
+  out = out.replace(/\bxox[bpa]-[A-Za-z0-9-]{10,}/g, '[REDACTED:TOKEN]');
+  out = out.replace(/\bAKIA[0-9A-Z]{16}\b/g, '[REDACTED:CREDENTIAL]');
+  return out;
+}
+
+/** Deep redaction of a parsed envelope: keys and shape preserved, every
+ * string value passed through redactWorkerText.
+ *
+ * Key context is INHERITED through recursion (P0-SECRET-01 fix), so a
+ * secret never survives by hiding in a nested array/object/non-string leaf:
+ *  - An unambiguous secret-class key (classForKey hit, e.g. `password`,
+ *    `api_key`, `credentials`): the ENTIRE subtree is secret-bearing. Every
+ *    non-null leaf (string, number, boolean) becomes [REDACTED:<CLASS>];
+ *    `null` stays `null` (absence of a value is not a secret); object/array
+ *    shape and every key are preserved.
+ *  - `token` / `session_id` keys: SHAPE-GATED context. String leaves redact
+ *    only when secretValueHit(leaf) (the round-4 unified gate, same as the
+ *    text path — secret-shaped anywhere in the leaf, tail included);
+ *    a UUID, a 32/64-char hex digest, or a short/low-entropy reference id
+ *    under them survives, e.g. {token: 1500}, {token: "gpt-4"},
+ *    {session_id: "sess_abc123"}); numbers, booleans and null pass through
+ *    untouched.
+ *  - Values already carrying a [REDACTED:...] marker are never re-processed
+ *    (idempotent: redact(redact(x)) === redact(x)).
+ */
+function redactEnvelopeValue(key, val, ctx) {
+  // ctx: null | { mode: 'full', cls } | { mode: 'gated', cls }. A key that
+  // opens a secret context keeps it for its whole subtree (full wins over
+  // gated for nested keys: {"password": {"token": 1500}} is all PASSWORD).
+  if (!ctx && typeof key === 'string') {
+    const cls = classForKey(key);
+    if (cls) ctx = { mode: 'full', cls };
+    else if (key.toLowerCase() === 'token' || key.toLowerCase() === 'session_id') {
+      ctx = { mode: 'gated', cls: key.toLowerCase() === 'session_id' ? 'SESSION' : 'TOKEN' };
+    }
+  }
+  if (typeof val === 'string' && val.length > 0 && val.startsWith('[REDACTED:')) return val;
+  if (!ctx) return redactEnvelope(val);
+  if (val === null) return null; // absence of a value is not a secret
+  if (typeof val === 'string') {
+    if (ctx.mode === 'full') return '[REDACTED:' + ctx.cls + ']';
+    // Round 4, Defect 3: the unified gate — secretValueHit(String(leaf)),
+    // the same helper the text-path rules 4/4b use, so text and envelope
+    // agree on every input ({"token": "<20ch-secret>\"junk"} and
+    // {"token": "<20ch-secret> extra junk"} redact here too). Plain
+    // looksSecretValue(leaf) diverged from the text path on messy values.
+    return secretValueHit(String(val)) ? '[REDACTED:' + ctx.cls + ']' : redactWorkerText(val);
+  }
+  if (typeof val === 'number' || typeof val === 'boolean') {
+    return ctx.mode === 'full' ? '[REDACTED:' + ctx.cls + ']' : val;
+  }
+  if (Array.isArray(val)) return val.map((el) => redactEnvelopeValue(key, el, ctx));
+  if (typeof val === 'object') {
+    const out = {};
+    for (const k of Object.keys(val)) out[k] = redactEnvelopeValue(k, val[k], ctx);
+    return out;
+  }
+  return val;
+}
+function redactEnvelope(obj) {
+  if (typeof obj === 'string') return redactWorkerText(obj);
+  if (Array.isArray(obj)) return obj.map((el) => redactEnvelopeValue(undefined, el, null));
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const k of Object.keys(obj)) out[k] = redactEnvelopeValue(k, obj[k], null);
+    return out;
+  }
+  return obj;
 }
 
 /**
@@ -902,6 +1352,15 @@ async function dispatchExecution(opts) {
   // key now sees dispatched-without-outcome (uncertain, fail closed).
   const disp = invokeTransport(prompt, timeoutMs);
 
+  // Q-P0-05 F1 (Mission N): redact secret-class values at the worker-output
+  // boundary. The ORIGINAL stdout still feeds extractEnvelope below (verbatim
+  // balanced-brace scan + JSON parse); every artifact save and the canonical
+  // emission use these redacted copies, so no persist/emit path can bypass
+  // the redaction function. Verification (exact-echo contract) runs on the
+  // original envelope; the recorded/emitted envelope is the redacted copy.
+  const redactedStderr = redactWorkerText(disp.stderr);
+  const redactedStdoutTail = redactWorkerText(disp.stdout || '').slice(-2000);
+
   const artifactBase = {
     adapter: ADAPTER_VERSION,
     execution,
@@ -916,7 +1375,7 @@ async function dispatchExecution(opts) {
     // null — its provenance is recorded alongside.
     ...extractSignal(disp),
     transportError: disp.error,
-    stderr: disp.stderr,
+    stderr: redactedStderr,
     // DEFECT-2: every persisted artifact carries the external-effect state.
     // Every artifact-saved path below is non-denied (something may have run),
     // so the base is effect_unknown; the step-8 terminal artifact keeps it
@@ -933,7 +1392,7 @@ async function dispatchExecution(opts) {
       reason: 'dispatcher_timeout',
       ...unknownSignal('dispatcher timed out waiting for the worker; the worker may still be running', true),
       note: 'No worker output captured. The worker may still be running or its output may be lost. Reconcile-vs-retry is the caller\'s decision.',
-      stdoutTail: (disp.stdout || '').slice(-2000),
+      stdoutTail: redactedStdoutTail,
     });
     return recordAttemptOutcome(evidenceDir, gate, execution,
       unknownReturn('dispatcher_timeout', {
@@ -944,6 +1403,10 @@ async function dispatchExecution(opts) {
 
   // 6. EXTRACT the result envelope from worker stdout.
   const ext = extractEnvelope(disp.stdout);
+  // Q-P0-05 F1: the redacted envelope copy. Verification (step 7) runs on
+  // the ORIGINAL envelope (exact-echo contract); every artifact save and
+  // the canonical emission below use this copy.
+  const safeEnvelope = ext.ok ? redactEnvelope(ext.envelope) : null;
   if (!ext.ok) {
     const artifactPath = saveArtifact(evidenceDir, artifactName, {
       ...artifactBase,
@@ -956,7 +1419,7 @@ async function dispatchExecution(opts) {
       ...unknownSignal('worker output was not a parseable result envelope; no trustworthy worker report', true),
       extraction: ext,
       note: 'No parseable envelope. Per the proven contract this is non-retryable and can NEVER reach canonical event authority.',
-      stdoutTail: (disp.stdout || '').slice(-2000),
+      stdoutTail: redactedStdoutTail,
     });
     return recordAttemptOutcome(evidenceDir, gate, execution,
       escalatedReturn('worker_protocol_failure', {
@@ -973,8 +1436,10 @@ async function dispatchExecution(opts) {
   // is protocol evolution owned by the front-door H5b lane; the adapter
   // only classifies honestly what it receives.)
   if (ext.envelope && ext.envelope.status === 'unknown') {
-    const wSummary = typeof ext.envelope.summary === 'string' && ext.envelope.summary.trim()
-      ? ext.envelope.summary.trim().slice(0, 500)
+    // Q-P0-05 F1: the worker's summary is worker-derived; the artifact and
+    // the returned outcome carry the redacted copy.
+    const wSummary = typeof safeEnvelope.summary === 'string' && safeEnvelope.summary.trim()
+      ? safeEnvelope.summary.trim().slice(0, 500)
       : 'worker reported unknown outcome without a summary';
     const wEffectMay = ext.envelope.effect_may_have_occurred !== false; // conservative default
     const artifactPath = saveArtifact(evidenceDir, artifactName, {
@@ -982,9 +1447,9 @@ async function dispatchExecution(opts) {
       outcome: OUTCOME.UNKNOWN,
       reason: 'worker_reported_unknown',
       ...unknownSignal(`worker reported unknown: ${wSummary}`, wEffectMay),
-      envelope: ext.envelope,
+      envelope: safeEnvelope,
       note: 'The worker used the explicit unknown channel (effect performed, outcome unconfirmed). Reconcile-vs-retry is the caller\'s decision.',
-      stdoutTail: (disp.stdout || '').slice(-2000),
+      stdoutTail: redactedStdoutTail,
     });
     return recordAttemptOutcome(evidenceDir, gate, execution,
       unknownReturn('worker_reported_unknown', {
@@ -1006,7 +1471,7 @@ async function dispatchExecution(opts) {
       reason: 'envelope_verification_failed',
       ...unknownSignal('worker envelope failed verification; no trustworthy worker report', true),
       verification,
-      envelope: ext.envelope,
+      envelope: safeEnvelope,
       note: 'Invalid envelope is non-retryable and can NEVER reach canonical event authority.',
     });
     return recordAttemptOutcome(evidenceDir, gate, execution,
@@ -1023,7 +1488,7 @@ async function dispatchExecution(opts) {
   // a claim, not verification, O5); never clean success.
   let record = null;
   if (eventRuntime) {
-    record = await vendor.recordVerifiedResult({ eventRuntime, result: ext.envelope, workOrder, invokedAgentId: agentId, verifiedAt, effectState: EFFECT_STATE.UNKNOWN });
+    record = await vendor.recordVerifiedResult({ eventRuntime, result: safeEnvelope, workOrder, invokedAgentId: agentId, verifiedAt, effectState: EFFECT_STATE.UNKNOWN });
     if (!record.valid) {
       // Emission rejected: the row stays unrecorded; the caller retries on
       // the normal path. This is the Lane-J-proven fail-closed behavior.
@@ -1033,7 +1498,7 @@ async function dispatchExecution(opts) {
         reason: 'canonical_emission_rejected',
         ...unknownSignal('worker reported a verified outcome but the event plane rejected the record; no terminal event exists', true),
         verification,
-        envelope: ext.envelope,
+        envelope: safeEnvelope,
         note: 'Worker reported a verified outcome but the event plane rejected the record. No terminal event exists. Caller retries.',
       });
       return recordAttemptOutcome(evidenceDir, gate, execution,
@@ -1055,7 +1520,7 @@ async function dispatchExecution(opts) {
     event_type: record ? record.event_type : null,
     event_id: record ? record.event_id : null,
     recorded: !!record,
-    envelope: ext.envelope,
+    envelope: safeEnvelope,
   });
 
   return recordAttemptOutcome(evidenceDir, gate, execution, {
@@ -1074,7 +1539,7 @@ async function dispatchExecution(opts) {
     status: ext.envelope.status,
     summary: ext.envelope.status === 'completed'
       ? `worker completed work order ${workOrder.work_order_id} (result ${verification.result_id})`
-      : `worker reported failure for work order ${workOrder.work_order_id}: ${String(ext.envelope.error || 'no error detail').slice(0, 200)}`,
+      : `worker reported failure for work order ${workOrder.work_order_id}: ${String(safeEnvelope.error || 'no error detail').slice(0, 200)}`,
     execution,
     tenant_id,
     work_order_id: workOrder.work_order_id,
@@ -1101,6 +1566,8 @@ module.exports = {
   dispatchExecution,
   buildWorkerPrompt,
   extractEnvelope,
+  redactWorkerText,
+  redactEnvelope,
   dispatchHermes,
   validateExecution,
 };
