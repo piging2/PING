@@ -136,3 +136,10 @@ Next coordinator actions: (1) parent-delegated browser proofs for L3; (2) mornin
   - /home/nolan/projects/ping: clean, HEAD ed3ff708 (Writer B fix). Only pre-existing untracked .next residue.
   - /home/nolan/projects/ping-fyd-converged: clean, HEAD b9a0201a (cherry-picked fix onto served branch).
 - Open work unit (not yet committable): served-tree rebuild + :3100 restart + /build/ping-fyd verification → ledger 02.
+
+## 2026-09-29 ~09:50 MDT — ledger 02 closed: first MVP arrow green
+- Writer B edge fix PROVEN end-to-end: defect re-verified on b38973fb (9 red/2 green, not 8 red), fix ed3ff708, 11/11 dogfood green on both branches (coordinator re-ran).
+- Runtime identity resolved: :3100 serves /home/nolan/projects/ping-fyd-converged (fyd/convergence-2026-09-28), not /home/nolan/projects/ping. Cherry-picked fix -> b9a0201a, rebuilt, sanctioned restart, /build/ping-fyd HTTP 200 x3, 0 BindingVerificationError.
+- EVIDENCE -> PROCESSOR: red -> GREEN. First arrow closed under PING-MVP regime.
+- Ledger 02 written to hidden_files/integration-ledger-20260929-02.md (binary format).
+- Open for next interval: audit's second defect (source completeness/BI acquisition, finish-order 6) or Writer A tenant/identity; two-branch convergence decision; CRX items still blocked on security containment (owner decision pending).
