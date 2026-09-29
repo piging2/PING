@@ -90,7 +90,7 @@ DELETE / DEFER only.
 
 | | |
 |---|---|
-| EXISTING | `mission_control_knowledge_apis.py`; `MISSION_CONTROL_CONSTITUTIONAL_CAPABILITIES.md`; sandbox `tenant-os/marketing-mission-control` (reference only). |
+| EXISTING | `mission_control_knowledge_apis.py` (Flask app, dated 2026-06-23: `/knowledge/search`, `/related`, `/lineage`, `/research`, `/documents` via Constitutional Search → Qdrant → PostgreSQL); `MISSION_CONTROL_CONSTITUTIONAL_CAPABILITIES.md`; sandbox `tenant-os/marketing-mission-control` (reference only). |
 | CALLERS / TESTS | Not enumerated in this pass. |
 | GAP | The order's UX questions (WHAT IS RUNNING? WHAT FAILED? WHAT REQUIRES HUMAN DECISION? ...) are not yet answered by a projection. |
 | ACTION | **STRENGTHEN** as projection only — this is already Interval 09's P0 (see MEMORY.md §3h). Never an authority. |
@@ -139,13 +139,19 @@ question is answered: there is one real owner and two unreached names.
 
 ## Identity — known debt
 
-Competing implementations found: `runtime/authorities/identity_authority.py`,
-`ping-runtime/authorities/identity_authority.js`,
+Competing implementations found (8, not 4 as first written):
+`runtime/constitutional/src/identity-authority.ts` (+ test),
+`runtime/authorities/identity_authority.py`,
+`runtime/kernel/identity/identity-authority.ts`,
 `runtime/kernel/authorities/identity_authority.js`,
-`runtime/constitutional/src/identity-authority.ts`
-(plus `runtime_identity_authority.js`, `replay_identity_authority.js` present
-but not on the traced path, per Interval 08). **ACTION: MERGE/CONVERGE** —
-recorded debt, out of this interval's scope unless it blocks H1/H3.
+`runtime/kernel/authorities/replay_identity_authority.js`,
+`runtime/kernel/authorities/runtime_identity_authority.js`,
+`ping-runtime/authorities/identity_authority.js`,
+`ping-runtime/authorities/workflow_identity_authority.js`
+(plus a dormant classification record
+`ping-runtime/orchestration/dormant_classifications/runtime_constitutional_dist_identity-authority.json`).
+**ACTION: MERGE/CONVERGE** — recorded debt, out of this interval's scope
+unless it blocks H1/H3.
 
 ## License gate
 
