@@ -31,9 +31,6 @@ import {
   BROKER_STATE,
   DEADLINES,
   FIXED_CONSTRAINTS,
-  IDEMPOTENCY_KEY_DEFAULT,
-  IDEMPOTENCY_KEY_RE,
-  MISSION_TERMINAL_STATUSES,
   NAMESPACE_RE,
   OLLAMA_MODEL,
   OLLAMA_URL,
@@ -43,7 +40,6 @@ import {
   SliceAgent,
   adapterCall,
   appendDispatchEvent,
-  findPriorMission,
   loadProfiles,
   mintEventId,
   nowIso,
@@ -59,7 +55,6 @@ interface DispatchBody {
   agent?: unknown;
   capability?: unknown;
   tenant?: unknown;
-  idempotency_key?: unknown;
 }
 
 function bad(status: number, error: string, detail?: string) {
@@ -241,71 +236,6 @@ export async function POST(req: Request) {
   }
   if (!capability) return bad(400, 'bad_capability', 'capability is required.');
 
-  // Fail-closed idempotency-key validation (before any event or side
-  // effect). Absent/null -> deterministic default so byte-identical
-  // retries derive the same missionId and collide. Supplied but malformed
-  // (empty, >128 chars, outside [A-Za-z0-9._-]) -> 400, never defaulted.
-  let idempotencyKey = IDEMPOTENCY_KEY_DEFAULT;
-  const rawKey = body.idempotency_key;
-  if (rawKey !== undefined && rawKey !== null) {
-    if (typeof rawKey !== 'string' || !IDEMPOTENCY_KEY_RE.test(rawKey)) {
-      return bad(400, 'bad_idempotency_key', 'idempotency_key must be a string of 1..128 chars matching [A-Za-z0-9._-].');
-    }
-    idempotencyKey = rawKey;
-  }
-
-  // ---- Identity set (deterministic ids) ----
-  // P0 idempotency: missionId derives from the idempotency key, NEVER from
-  // the clock. Byte-identical retries (double-click, concurrent identical
-  // POSTs) mint the same id, so the journal lookup below catches them.
-  const promptDigest = sha256hex(prompt);
-  const missionId = 'mc-m-' + sha256hex(['mission', agent, tenant, capability, promptDigest, idempotencyKey].join('|')).slice(0, 12);
-  const runId = `${missionId}-r1`;
-  const executionId = `${missionId}-x1`;
-  const taskId = `${missionId}:task:1`;
-  const correlationId = missionId;
-  const contextPackId = `mc-ctx-${missionId}`;
-  const namespace = `tenant::${tenant}`;
-  if (!NAMESPACE_RE.test(namespace)) return bad(400, 'bad_namespace', namespace);
-  const deadlineS = DEADLINES[agent as SliceAgent];
-  const deadline = new Date(Date.now() + deadlineS * 1000).toISOString();
-  const resultPath = `/home/nolan/workspace/mission-control/artifacts/${missionId}/result.json`;
-
-  // ---- Idempotency: lookup-before-mint (no new authority, no new store) ----
-  // Runs BEFORE any adapter call: a duplicate POST never touches the
-  // adapter, emits nothing, publishes nothing. If the aggregate already has
-  // a terminal event (SUCCEEDED/FAILED/DENIED) the original record is
-  // returned with duplicate_suppressed:true. If the original is in-flight
-  // (CREATED/QUEUED/RUNNING/UNKNOWN, no terminal) the duplicate is refused
-  // with 409 HOLD: the outcome is unknown and must never be re-dispatched
-  // blindly.
-  const prior = findPriorMission(missionId);
-  if (prior !== null) {
-    if (MISSION_TERMINAL_STATUSES.has(prior.status)) {
-      const denied = prior.status === 'DENIED';
-      return Response.json({
-        ok: !denied,
-        status: prior.status,
-        duplicate_suppressed: true,
-        mission_id: missionId,
-        run_id: prior.run_id,
-        execution_id: prior.execution_id,
-        work_order_id: prior.work_order_id,
-        result: prior.result,
-        reconciliation_state: prior.reconciliation_state,
-      }, { status: denied ? 403 : 200 });
-    }
-    return Response.json({
-      ok: false,
-      status: 'HOLD',
-      mission_id: missionId,
-      run_id: prior.run_id,
-      execution_id: prior.execution_id,
-      reconciliation_state: prior.reconciliation_state,
-      reason: 'previous dispatch for this mission is in-flight (no terminal event); refusing duplicate dispatch',
-    }, { status: 409 });
-  }
-
   let profiles: Record<string, AgentProfile>;
   try {
     profiles = loadProfiles();
@@ -319,6 +249,21 @@ export async function POST(req: Request) {
   if (!profile.allowedCapabilities.includes(capability)) {
     return bad(403, 'capability_denied', `capability '${capability}' not allowed for agent '${agent}'.`);
   }
+
+  // ---- Identity set (deterministic ids) ----
+  const ts = nowIso();
+  const promptDigest = sha256hex(prompt);
+  const missionId = 'mc-m-' + sha256hex(['mission', agent, tenant, capability, promptDigest, ts].join('|')).slice(0, 12);
+  const runId = `${missionId}-r1`;
+  const executionId = `${missionId}-x1`;
+  const taskId = `${missionId}:task:1`;
+  const correlationId = missionId;
+  const contextPackId = `mc-ctx-${missionId}`;
+  const namespace = `tenant::${tenant}`;
+  if (!NAMESPACE_RE.test(namespace)) return bad(400, 'bad_namespace', namespace);
+  const deadlineS = DEADLINES[agent as SliceAgent];
+  const deadline = new Date(Date.now() + deadlineS * 1000).toISOString();
+  const resultPath = `/home/nolan/workspace/mission-control/artifacts/${missionId}/result.json`;
 
   const emit = (type: string, summary: string, data: Record<string, unknown> = {}) =>
     appendDispatchEvent(type, missionId, summary, {
@@ -372,14 +317,14 @@ export async function POST(req: Request) {
   });
 
   // ---- Artifacts: prompt, work order, context (evidence the agent receives) ----
-  publishArtifact(missionId, 'prompt', 'prompt.txt', prompt, tenant);
-  publishArtifact(missionId, 'work-order', 'workorder.json', JSON.stringify(workOrder, null, 2), tenant);
+  publishArtifact(missionId, 'prompt', 'prompt.txt', prompt);
+  publishArtifact(missionId, 'work-order', 'workorder.json', JSON.stringify(workOrder, null, 2));
   publishArtifact(missionId, 'context', 'context.json', JSON.stringify({
     context_pack_id: contextPackId, mission_id: missionId, run_id: runId,
     execution_id: executionId, agent, tenant, capability, namespace,
     constraints: FIXED_CONSTRAINTS, deadline, deadline_seconds: deadlineS,
     prompt_digest: promptDigest, principal: 'mission-control-dispatch',
-  }, null, 2), tenant);
+  }, null, 2));
 
   // ---- Execute via the agent's proven transport ----
   let outcome: AgentOutcome;
@@ -453,7 +398,7 @@ export async function POST(req: Request) {
   publishArtifact(missionId, 'result', 'result.json', JSON.stringify({
     ...resultEnvelope, verified_at: verifiedAt, result_id: verification.result_id,
     mission_id: missionId, run_id: runId, execution_id: executionId,
-  }, null, 2), tenant);
+  }, null, 2));
 
   if (resultEnvelope.status === 'completed') {
     const outputDigest = sha256hex(outcome.output || '');

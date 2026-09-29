@@ -90,13 +90,20 @@ const AGENT_PROFILES = {
     // Proven: /mnt/c/Users/nolan/.codex/bin/wsl/<id>/codex (ELF, v0.154.0-alpha.6.2)
     // with CODEX_HOME=/mnt/c/Users/nolan/.codex, flags:
     //   exec --ignore-user-config -s read-only --ephemeral --skip-git-repo-check
-    // BLOCKED_EXTERNAL as of 2026-09-16 20:18 MDT: ChatGPT plan usage limit hit;
-    // API error says retry at 2026-09-17 12:01 AM. Do not retry before then.
+    // DORMANT per owner 2026-09-28 ~15:35 MDT (refines the ~15:20 PERMANENTLY
+    // BLOCKED order): operationally unavailable, NOT philosophically dead.
+    // AVAILABLE? NO. REQUIRED? NO. CURRENT ROI? NO. ACTION? HOLD.
+    // Zero build work: no auth plumbing, no resurrection effort, no FYD/PING
+    // dependence on it. Quota recovery does NOT re-enable.
+    // Re-entry only if BOTH hold: (1) owner-supplied OpenAI/Gemini credentials
+    // make it available cheaply, AND (2) it wins a measured benchmark against
+    // existing workers on capability, cost, latency, reliability, or unique
+    // task coverage. No speculative integration.
     invocation: 'codex exec --ignore-user-config -s read-only --ephemeral --skip-git-repo-check -C <dir> <prompt>',
     allowedCapabilities: ['fixture.read', 'text.transform', 'text.summarize'],
     maxConstraints: { read_only: true, no_writes: true, no_network: true },
-    blockedExternal: { reason: 'ChatGPT plan usage exhausted (observed 2026-09-16).', blockedUntil: '2026-09-17T06:01:00Z' },
-    notes: 'Hard OS-level read-only sandbox. Preferred when quota available.',
+    blockedExternal: { reason: 'DORMANT per owner 2026-09-28: operationally unavailable (ChatGPT plan not renewed), not philosophically dead. ACTION=HOLD. Zero build work. Re-enable only if owner credentials make it cheap AND it wins a measured benchmark vs existing workers (capability/cost/latency/reliability/unique coverage).' },
+    notes: 'Hard OS-level read-only sandbox. DORMANT: earns its place through evidence, not assumption.',
   },
   opencode: {
     transport: null,

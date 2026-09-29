@@ -139,29 +139,6 @@ const DISPATCH_EVENT_TYPES = new Set([
   'MC_RUN_UNKNOWN',
 ]);
 
-/**
- * P0 front-door idempotency (2026-09-27): client-supplied idempotency key.
- * Format mirrors the Python front door's fail-closed key validation
- * (mission_intent.py `_RE_IDEMPOTENCY_KEY`); TS slice uses [A-Za-z0-9._-].
- * When the caller supplies no key, IDEMPOTENCY_KEY_DEFAULT keeps the
- * derived missionId deterministic so byte-identical retries collide.
- */
-export const IDEMPOTENCY_KEY_RE = /^[A-Za-z0-9._-]{1,128}$/;
-export const IDEMPOTENCY_KEY_DEFAULT = 'default';
-
-/**
- * Terminal mission statuses for idempotency lookup. A duplicate POST that
- * lands on one of these returns the original record with
- * duplicate_suppressed:true and emits ZERO new events. UNKNOWN is NOT
- * terminal here: it means reconciliation is in progress, so a duplicate
- * POST on an UNKNOWN mission returns 409 HOLD and never re-dispatches.
- */
-export const MISSION_TERMINAL_STATUSES: Set<MissionStatus> = new Set([
-  'SUCCEEDED',
-  'FAILED',
-  'DENIED',
-]);
-
 export function sha256hex(s: string): string {
   return createHash('sha256').update(s, 'utf8').digest('hex');
 }
@@ -401,24 +378,6 @@ export function projectMissions(events: JournalEvent[]): MissionRecord[] {
   return [...byId.values()].sort((a, b) => (b.started_at || '').localeCompare(a.started_at || ''));
 }
 
-/**
- * P0 front-door idempotency (2026-09-27): lookup-before-mint.
- *
- * Projects only the aggregate `mc:mission:<missionId>` and returns its
- * record, or null when the journal holds nothing for this mission id.
- * The caller decides terminal vs in-flight via MISSION_TERMINAL_STATUSES.
- * Read-only: never appends, never mints.
- */
-export function findPriorMission(missionId: string): MissionRecord | null {
-  const agg = `mc:mission:${missionId}`;
-  const relevant = loadJournalEvents().filter(
-    (e) => e.aggregate_id === agg && DISPATCH_EVENT_TYPES.has(e.event_type),
-  );
-  if (relevant.length === 0) return null;
-  const projected = projectMissions(relevant);
-  return projected.find((m) => m.mission_id === missionId) ?? null;
-}
-
 export function writeArtifact(missionId: string, name: string, content: string): { path: string; sha256: string } {
   const dir = join(ARTIFACT_ROOT, missionId);
   mkdirSync(dir, { recursive: true });
@@ -432,14 +391,12 @@ export function publishArtifact(
   kind: string,
   name: string,
   content: string,
-  tenant: string,
 ): { path: string; sha256: string } {
   const { path, sha256 } = writeArtifact(missionId, name, content);
   appendDispatchEvent('MC_ARTIFACT_PUBLISHED', missionId, `${kind} published: ${name}`, {
     kind,
     path,
     sha256,
-    tenant,
   });
   return { path, sha256 };
 }

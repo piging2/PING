@@ -23,7 +23,28 @@
 - Fix: launch with `headless: false` plus `"--headless=new"` in args (plus `--window-size=W,H`); screenshots then work while tap/touch/mobile emulation still function. Chrome CLI `--headless=new --screenshot=` also works for static captures without interaction.
 - Also: `npm init -y` now defaults package.json to `"type": "module"`, so `require()` scripts must use a `.cjs` extension; and avoid `$$` inside bash heredocs (PID expansion), prefer `.cjs` files with `page.locator()` over `$$`.
 
+## Pig WMI worker-launch quoting (2026-09-26, learned in FB unfollow batch)
+- run_unfollow.sh / run_pass.sh build a remote PowerShell snippet in an UNQUOTED bash heredoc (`<<EOF` inside `$( )`) and send it via `powershell -EncodedCommand`. In that heredoc, `\"` survives as `\"` to PowerShell, and PowerShell (whose escape char is the backtick, not backslash) rejects it with "Missing ')' in method call" -> worker_launch_failed. Fix: plain `"` in the file (the `\$` escapes for PowerShell variables are unaffected and still required). Verified: `\"` fails deterministically on the Pig, `"` launches (WMI PID returned, full batch ran).
+- Do NOT add backtick-quoted text inside that heredoc (e.g. in comments): an unquoted heredoc performs command substitution, so backticks execute and an unbalanced `"` inside them breaks bash parsing of the whole script ("unexpected EOF while looking for matching"). Keep heredoc comments backtick-free.
+- Same one-line fix applied to run_pass.sh (identical latent line) on 2026-09-26; both pass `bash -n`.
+
 ## Multi-stream lanes: serialize commits on a shared branch (2026-09-24, PING waves)
 - Two commit-sweep incidents in one wave (FL-20260924-206/207): concurrent streams on the shared lane branch swept each other's staged files. Rule for future waves: per-stream worktrees OR strictly serialized commits. Never bare `git commit`; always `git status` first, explicit pathspecs, commit only your stream's files.
 - Treat single-shot bridge listings as suspect without corroboration; re-verify deadness claims redundantly (a phantom bridge output was caught this wave by redundant verification).
 - Reaper-vs-HOLD design gap (open, needs Nolan): after a HOLD record, mission leaves _processing, lease expires, reapExpiredLeases resets to created and re-dispatches ~60s later. That is an automatic retry of an unknown-outcome mission. Do not deploy the stuck-running watchdog until the design word lands.
+
+## C:/Windows/Temp is volatile for Pig-side wrappers (2026-09-26, X follow pass)
+- x-follow-run.ps1 vanished from C:/Windows/Temp between the 05:14 and 09:14 passes (Temp cleanup or reboot), causing the follow batch's first attempt to log bogus rc=0 with "The argument ... does not exist" — no follow performed. Same volatility class as the 2026-09-25 Hermes Temp loss. Other x-*.ps1 wrappers (like/comment/discover) survived this time; loss is per-file, not all-or-nothing.
+- Lesson: treat a missing-wrapper error as an infra incident, not a pass failure: kill the driver, reconstruct from the family pattern (NODE_PATH + portable node + driver JS path), scp it back, and verify with a no-arg invocation (expect the driver's usage exit code) before re-running. Keep a local reconstruction source; consider persisting Pig-side wrapper copies under ~/workspace/pig-fb/ so rebuilds are copies, not reconstructions.
+- The reconstructed x-follow-run.ps1 adds explicit `exit $LASTEXITCODE` (fixes the 2026-09-15 exit-code swallowing bug for this wrapper) and a bounded 10-min wait on the x-engage.lock one-driver lock. Reconstruction source: /tmp/x-follow-run.ps1 (ephemeral).
+
+## Pig SSH hang recovery (2026-09-27, Mission I)
+- A pigwsl SSH attempt hung 4 minutes with no output; kill + retry with `BatchMode=yes` connected instantly. If an SSH invocation hangs silently (no banner, no error), do not wait: kill it and retry with `-o BatchMode=yes`. Consider making BatchMode=yes the default for non-interactive Pig probes.
+
+## Pig node path rules (2026-09-28, outreach round 156)
+- Run the portable Windows node as `/mnt/c/Users/nolan/.local/share/pigi/node-v22.23.2-win-x64/node.exe` but pass the SCRIPT path as a `C:/Users/...` Windows-style path. Windows node mangles a `/mnt/c/...` script arg by prepending `C:\` (module-not-found); a `C:/...` script path resolves fine. Keep single-quoted inner args inside the `wsl -- bash -c "<cmd>"` wrapper (CMD-safe), and stage message files Pig-side (stdin-fed ssh + byte-count verify) before send scripts read them.
+
+## Pig SSH quoting for redirects inside bash -c (2026-09-29, L1-ACQ)
+- Two working forms, do not mix them. Form 1 (documented 2026-09-24): inner command in SINGLE quotes, CMD-escaped operators: `ssh pigwsl 'wsl -- bash -c '"'"'echo x ^>^> /tmp/f'"'"''` — CMD sees the operators (single quotes mean nothing to CMD) so `^>`/`^|`/`^&^&` are required.
+- Form 2 (verified 2026-09-29): outer ssh command in single quotes, inner `bash -c` in DOUBLE quotes: `ssh pigwsl 'wsl -- bash -c "echo x >> /tmp/f"'` — CMD honors double quotes for redirection, so `>>`, `|`, `&&` pass through to bash UNESCAPED. Caret-escaping inside the double quotes produces literal `^` garbage in bash.
+- Mixing (caret escapes inside double quotes) silently corrupts: chunks landed as `<base64tail> ^` fragments. For base64-chunk file transfer, Form 2 with `>>` unescaped plus a byte-count verify after `base64 -d` is the proven pattern (see ~/workspace/l1-acq/pig-push.sh).

@@ -8,7 +8,18 @@ Usage: emit-observation.py <brief_id> <observation_text> [aggregate_id] [--force
 Resolves the Bearer token from the gateway container env at runtime (never
 stored), POSTs {event_type, aggregate_id, aggregate_type, event_data} to
 http://127.0.0.1:8080/events on the Pig via SSH. Prints the event_id or an
-error. Exit 0 only on success.
+error.
+
+Exit codes: 0 = emitted and acknowledged; 2 = refused by a gate (unverified,
+duplicate, wrong domain, bad drill input); 3 = accepted and DURABLY SPOOLED
+but delivery failed (transport down): the work is safe in
+tandem/event-spool.jsonl, ship it later with event-spool.py ship.
+
+Durable spool (2026-09-27): the observation is fsync-spooled BEFORE any
+network POST (ACCEPTED -> DURABLY SPOOLED), then delivered
+(DELIVERY_PENDING -> DELIVERED -> ACKNOWLEDGED). Transport availability is
+not work truth: a POST failure exits 3 with the payload durably spooled
+instead of losing it.
 
 Duplicate-emission guard: the sha256 of the observation text is recorded on
 the sidecar's accepted_by_ping transition. A second invocation with the same
@@ -25,12 +36,14 @@ outreach-engine step-7 distillation contract: brief_id learn-<sweep-id>
 (generalizable campaign learnings; never prospect rows). Controlled --drill
 emissions bypass the gate by design; --force does not.
 
-Crash-boundary recovery (2026-09-14): if the process died after the gateway
-accepted the POST but before the sidecar transition was written, the sidecar
-guard cannot see the emission. _require_verified() therefore also probes
-ping_events directly by observation hash; on a hit it heals the sidecar with
-the true event_id and refuses as a duplicate. If the probe itself is
-unreachable, emission fails closed rather than risk a duplicate.
+Crash-boundary recovery (2026-09-14; moved to delivery time 2026-09-27): if
+the process died after the gateway accepted the POST but before the sidecar
+transition was written, the sidecar guard cannot see the emission. The
+spooler's probe-before-POST (_find_event_in_ping, called by ship_one)
+detects the orphaned event by observation hash; on a hit it acknowledges
+without re-POSTing and heals the sidecar with the true event_id. If the
+probe itself is unreachable, the item holds DELIVERY_PENDING and no POST
+is made: UNKNOWN must reconcile before retry.
 
 Controlled drills (2026-09-14, after the reconstructed-text drill incident):
 a production observation may be replayed only from exact canonical bytes
@@ -125,8 +138,9 @@ def _find_event_in_ping(obs_hash):
     process died after the gateway accepted the POST but before
     _mark_accepted() wrote the sidecar transition, the sidecar duplicate
     guard cannot see the emission and a retry would double-emit. This probe
-    lets _require_verified() detect the orphaned event, heal the sidecar,
-    and refuse the duplicate instead of creating a second row.
+    runs at delivery time (spooler probe-before-POST): on a hit the item
+    is acknowledged without re-POSTing and the sidecar is healed with the
+    true event_id.
 
     Returns the event_id if found, None if not found, or 'UNCHECKABLE' if
     the Pig/probe is unreachable (caller must fail closed).
@@ -203,9 +217,9 @@ def _find_event_in_ping(obs_hash):
         return 'UNCHECKABLE'
 
 
-def _require_verified(brief_id, obs_hash, force=False, ledger_path=LEDGER_PATH, intel_dir=META_INTEL_DIR,
+def _require_verified_local(brief_id, obs_hash, force=False, ledger_path=LEDGER_PATH, intel_dir=META_INTEL_DIR,
                       drill_ctx=None):
-    """Fail-closed precondition for the VERIFIED -> ACCEPTED_BY_PING sequence.
+    """Fail-closed LOCAL precondition for the VERIFIED -> ACCEPTED_BY_PING sequence.
 
     Resolves the newest runs.jsonl line with matching brief_id and outcome ok
     (same resolution _mark_accepted uses) and refuses, before any network
@@ -217,6 +231,13 @@ def _require_verified(brief_id, obs_hash, force=False, ledger_path=LEDGER_PATH, 
     the sidecar dict on success. drill_ctx, when given, is
     (brief, obs_hash, namespace, identity) and is recorded in drill.log on
     every refusal so a drill's terminal state is truthful.
+
+    Deliberately LOCAL ONLY (no network): the remote duplicate probe
+    (_find_event_in_ping) is NOT a spool precondition. A verified
+    observation must be durably spooled even when the Pig is unreachable;
+    duplicate reconciliation happens at delivery time via the spooler's
+    probe-before-POST, where an UNCHECKABLE probe holds the item
+    DELIVERY_PENDING instead of risking a duplicate POST.
     """
     def _refuse(msg, result):
         print(msg, file=sys.stderr)
@@ -258,27 +279,16 @@ def _require_verified(brief_id, obs_hash, force=False, ledger_path=LEDGER_PATH, 
                 _refuse(f"refusing: this exact observation was already emitted as "
                         f"event {t.get('event_id')!r}; duplicate emission blocked "
                         f"(use --force to override)", 'duplicate_sidecar')
-        # Crash-boundary recovery: the sidecar guard above cannot see an
-        # emission whose POST succeeded but whose _mark_accepted() never ran
-        # (process died in between). Probe ping_events directly by observation
-        # hash. If found, heal the sidecar with the true event_id and refuse
-        # as a duplicate instead of double-emitting.
-        found = _find_event_in_ping(obs_hash)
-        if found and found != 'UNCHECKABLE':
-            try:
-                _mark_accepted(brief_id, found, obs_hash, ledger_path)
-            except Exception:
-                pass
-            _refuse(f"refusing: this exact observation already exists in ping_events "
-                    f"as event {found!r} (sidecar transition healed); duplicate "
-                    f"emission blocked (use --force to override)", 'duplicate_healed')
-        # If the probe itself is uncheckable, fail closed: do not POST when we
-        # cannot rule out a prior orphaned emission.
-        if found == 'UNCHECKABLE':
-            _refuse(f"refusing: cannot probe ping_events for prior emission of this "
-                    f"observation (Pig unreachable); failing closed, nothing will "
-                    f"be emitted (use --force to override)", 'probe_uncheckable')
     return p
+
+
+# Crash-boundary duplicate reconciliation lives in the spooler's
+# probe-before-POST (event-spool.py _deliver_one), not in the local gate:
+# _find_event_in_ping is called at delivery time, where a hit heals the
+# sidecar via _mark_accepted and acknowledges without re-POSTing, and an
+# UNCHECKABLE probe holds the item DELIVERY_PENDING. The local gate above
+# must stay network-free so verified work can be spooled while the Pig is
+# unreachable.
 
 
 def _drill_log(brief, identity, obs_hash, namespace, result, note):
@@ -455,7 +465,7 @@ def _mark_accepted(brief_id, event_id, obs_hash, ledger_path=None):
     appends {state:"accepted_by_ping", at, by, event_id, observation_sha256}
     to the sidecar's transitions (idempotent on event_id), and flips legacy
     ping_ingestion pending->ingested. The observation hash is what the
-    duplicate-emission guard in _require_verified matches on. The ledger is
+    duplicate-emission guard in _require_verified_local matches on. The ledger is
     never modified. Never raises.
     """
     target = _newest_ok_run(brief_id, ledger_path or LEDGER_PATH)
@@ -482,6 +492,64 @@ def _mark_accepted(brief_id, event_id, obs_hash, ledger_path=None):
     tmp = p + '.tmp'
     json.dump(d, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
     os.replace(tmp, p)
+
+
+class ObservationTransportError(RuntimeError):
+    """The gateway POST failed: transport down or refused. The observation
+    is NOT lost (it sits durably spooled); retry via event-spool.py ship."""
+
+
+def deliver_observation(body):
+    """POST body to http://127.0.0.1:8080/events on the Pig via SSH.
+
+    Returns the remote event_id. Raises ObservationTransportError when the
+    transport fails, so the caller can spool-and-retry instead of losing
+    the accepted work. Prints the raw gateway response (callers and logs
+    read the event_id from stdout).
+    """
+    ps = (
+        "$t = docker exec ping-gateway printenv MUSE_LEVEL_1_KEY\n"
+        "$json = [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String('"
+        + base64.b64encode(json.dumps(body).encode()).decode() + "'))\n"
+        "$wc = New-Object Net.WebClient; $wc.Proxy = $null\n"
+        "$wc.Headers['Authorization'] = 'Bearer ' + $t.Trim()\n"
+        "$wc.Headers['Content-Type'] = 'application/json'\n"
+        "try { $wc.UploadString('http://127.0.0.1:8080/events','POST',$json) }"
+        " catch { Write-Output ('POST-ERR ' + $_.Exception.Message); exit 1 }"
+    )
+    enc = base64.b64encode(ps.encode('utf-16-le')).decode()
+    cmd = ['ssh', '-i', '/home/hatch/.ssh/id_ed25519', '-o', 'BatchMode=yes',
+           '-o', 'ConnectTimeout=25', '-o', 'UserKnownHostsFile=/home/hatch/workspace/pig/known_hosts',
+           '-o', 'ProxyCommand=nc -X connect -x hatch-egress-proxy:3130 %h %p',
+           'muse-ssh@100.79.154.43',
+           'powershell', '-NoProfile', '-EncodedCommand', enc]
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    out = (r.stdout or '') + (r.stderr or '')
+    print(out.strip()[:500])
+    ok = r.returncode == 0 and 'POST-ERR' not in out and 'event_id' in out
+    if not ok:
+        raise ObservationTransportError(
+            'gateway POST failed (rc=%s): %s' % (r.returncode, out.strip()[:200]))
+    m = re.search(r'"event_id"\s*:\s*"([^"]+)"', out)
+    if not m:
+        raise ObservationTransportError(
+            'gateway POST returned no event_id: %s' % out.strip()[:200])
+    return m.group(1)
+
+
+# Public alias: the spool's crash-recovery probe adapter.
+find_event_in_ping = _find_event_in_ping
+
+
+def _load_spool():
+    """Load tandem/event-spool.py (dash in filename: importlib, not import)."""
+    import importlib.util
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'event-spool.py')
+    spec = importlib.util.spec_from_file_location('event_spool', p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -533,12 +601,15 @@ def main(argv=None):
     # not a PING-authorized acquisition brief (learn-<sweep-id>).
     _require_ping_domain(brief, drill)
 
-    # Fail-closed precondition: VERIFIED -> ACCEPTED_BY_PING. Refuses (exit 2)
-    # before any network POST when the newest ok run's sidecar has no
-    # 'verified' transition, so unverified research can never be promoted.
-    # Also refuses when this exact observation text was already emitted
-    # (duplicate-emission guard), unless --force.
-    _require_verified(brief, obs_hash, force,
+    # Fail-closed LOCAL precondition: VERIFIED -> ACCEPTED_BY_PING. Refuses
+    # (exit 2) when the newest ok run's sidecar has no 'verified'
+    # transition, so unverified research can never be promoted. Also
+    # refuses when this exact observation text was already emitted
+    # (duplicate-emission guard), unless --force. This gate is
+    # deliberately network-free: the remote duplicate probe is NOT a
+    # precondition for spooling, so a verified observation is durably
+    # spooled even when the Pig is unreachable.
+    _require_verified_local(brief, obs_hash, force,
                       drill_ctx=(brief, obs_hash, drill_namespace, identity) if drill else None)
 
     body = {
@@ -557,40 +628,82 @@ def main(argv=None):
     }
     if drill and drill_namespace:
         body['event_data']['drill'] = drill_tag
-    ps = (
-        "$t = docker exec ping-gateway printenv MUSE_LEVEL_1_KEY\n"
-        "$json = [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String('"
-        + base64.b64encode(json.dumps(body).encode()).decode() + "'))\n"
-        "$wc = New-Object Net.WebClient; $wc.Proxy = $null\n"
-        "$wc.Headers['Authorization'] = 'Bearer ' + $t.Trim()\n"
-        "$wc.Headers['Content-Type'] = 'application/json'\n"
-        "try { $wc.UploadString('http://127.0.0.1:8080/events','POST',$json) }"
-        " catch { Write-Output ('POST-ERR ' + $_.Exception.Message); exit 1 }"
+
+    # Durable spool (2026-09-27): accepted work must survive loss of
+    # Tailscale, SSH, gateway, and Pig connectivity. The local gates above
+    # authorized this observation; it is now ACCEPTED -> DURABLY SPOOLED
+    # (fsync'd) BEFORE any network POST, so a transport failure can no
+    # longer lose it. Duplicate reconciliation happens at delivery time:
+    # ship_one probes ping_events by observation hash before every POST;
+    # a hit acknowledges without re-POSTing (healing the sidecar), an
+    # UNCHECKABLE probe holds the item DELIVERY_PENDING without POSTing.
+    # Exit 3 = accepted and durably spooled, delivery pending (retry with
+    # event-spool.py ship); exit 0 = emitted and acknowledged. The
+    # local duplicate guard (_require_verified_local, above) still
+    # refuses re-emission of the same observation text recorded on the
+    # sidecar, and the spooler's idempotency_key reuse means a retried
+    # observation can never double-spool or double-emit.
+    spool = _load_spool()
+    spool_id = spool.spool(
+        body,
+        event_type='OBSERVATION_CREATED',
+        aggregate_id=agg,
+        aggregate_type='drill_pass' if drill and drill_namespace else 'research_pass',
+        idempotency_key=obs_hash,
     )
-    enc = base64.b64encode(ps.encode('utf-16-le')).decode()
-    cmd = ['ssh', '-i', '/home/hatch/.ssh/id_ed25519', '-o', 'BatchMode=yes',
-           '-o', 'ConnectTimeout=25', '-o', 'UserKnownHostsFile=/home/hatch/workspace/pig/known_hosts',
-           '-o', 'ProxyCommand=nc -X connect -x hatch-egress-proxy:3130 %h %p',
-           'muse-ssh@100.79.154.43',
-           'powershell', '-NoProfile', '-EncodedCommand', enc]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-    out = (r.stdout or '') + (r.stderr or '')
-    print(out.strip()[:500])
-    ok = r.returncode == 0 and 'POST-ERR' not in out and 'event_id' in out
-    if ok:
-        # Success: record the accepted_by_ping knowledge state on the newest
-        # ok run's sidecar. Wrapped so it can never fail or mask the emission.
+
+    def _deliver(payload):
         try:
-            m = re.search(r'"event_id"\s*:\s*"([^"]+)"', out)
-            if m:
-                _mark_accepted(brief, m.group(1), obs_hash)
+            return deliver_observation(payload)
+        except ObservationTransportError as e:
+            raise spool.TransportError(str(e))
+
+    def _probe(key):
+        # Three outcomes, never collapsed: event_id | None | 'UNCHECKABLE'.
+        try:
+            return find_event_in_ping(key)
+        except Exception:
+            return spool.PROBE_UNCHECKABLE
+
+    def _on_probe_hit(item, event_id):
+        # Orphaned emission (POST succeeded, process died before the
+        # sidecar write): heal the sidecar with the true event_id.
+        try:
+            _mark_accepted(brief, event_id, obs_hash)
         except Exception:
             pass
+
+    rec = spool.ship_one(spool_id, _deliver, _probe,
+                         on_probe_hit=_on_probe_hit)
+    if rec['state'] == 'ACKNOWLEDGED':
+        # Success (fresh POST, or probe-hit recovery of an orphaned
+        # emission): record the accepted_by_ping knowledge state on the
+        # newest ok run's sidecar. Idempotent on event_id; wrapped so it
+        # can never fail or mask the emission.
+        try:
+            _mark_accepted(brief, rec['remote_event_id'], obs_hash)
+        except Exception:
+            pass
+        if rec.get('recovered_via_probe'):
+            print('STATE=RECOVERED spool_id=%s observation already emitted '
+                  'as event %s (orphaned POST healed; no duplicate emission)'
+                  % (spool_id, rec['remote_event_id']))
+        if drill:
+            _drill_log(brief, identity, obs_hash, drill_namespace,
+                       'emitted', 'aggregate=%s' % agg)
+        return 0
+    # Not acknowledged: delivery pending (transport down, probe
+    # uncheckable, or dead-lettered). The work is durably spooled.
+    print('STATE=SPOOLED_PENDING spool_id=%s observation_sha256=%s '
+          'state=%s error=%s'
+          % (spool_id, obs_hash, rec['state'], rec.get('error')))
+    print('The observation is durably spooled; delivery will be retried '
+          'with: python3 ~/workspace/tandem/event-spool.py ship')
     if drill:
         _drill_log(brief, identity, obs_hash, drill_namespace,
-                   'emitted' if ok else 'post_failed',
-                   f'aggregate={agg}')
-    return 0 if ok else 1
+                   'spooled_pending',
+                   'aggregate=%s state=%s' % (agg, rec['state']))
+    return 3
 
 
 if __name__ == '__main__':
