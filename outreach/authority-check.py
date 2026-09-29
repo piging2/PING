@@ -108,6 +108,24 @@ META_PROSE_RE = re.compile(
 # clauses are stripped.
 HELD_RE = re.compile(r"\bheld\b", re.IGNORECASE)
 LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
+# Bare "on hold" restriction-state detection (interval 09, Nolan's directive).
+# The affirmative list catches "held"/"owner hold" but bare "on hold"
+# ("deployment is on hold") was a false negative: the gate looked green while
+# the prose expressed a restriction. Rule: restriction STATE, not vocabulary.
+# Fires only when "on hold"/"on-hold" is governed by a state verb asserting a
+# current restriction (is/are/remains/stays/put/placed/currently/still).
+# Meta-prose ABOUT holds (reporting, documenting, testing) is stripped below
+# like other negated clauses. A naive \bon[ -]?hold\b substring would
+# recreate the false-positive class just eliminated, so the state verb is
+# required.
+ON_HOLD_STATE_RE = re.compile(
+    r"\b(?:is|are|was|were|remains?|stay(?:s|ed|ing)?|put|placed?|"
+    r"currently|still)\b[^.;\n]{0,30}?\bon[ -]?hold\b",
+    re.IGNORECASE)
+ON_HOLD_META_RE = re.compile(
+    r"\b(?:report|duration|documentation|describes?|test|fixture|"
+    r"verif(?:y|ies|ication)|handling)\b",
+    re.IGNORECASE)
 RESTRICTION_TERM_RE = re.compile(
     r"restriction|restrictions|block|blocks|blocked|checkpoint|checkpoints|"
     r"warning|warnings|rate[- ]limits?|signals?|action[- ]blocks?|"
@@ -133,6 +151,16 @@ def strip_negated_clauses(line):
         # RESTRICTION_TERM_RE hit because 'held' lives only in AFFIRMATIVE_RES.
         if HELD_RE.search(clause) and LOCK_MECHANICS_RE.search(clause):
             continue
+        # Bare "on hold" restriction state ("deployment is on hold"). Strip
+        # only meta-prose about holds (reporting/documenting/testing) or a
+        # negated/lifted hold; a genuine state claim is kept for the
+        # affirmative scan. The state-verb requirement in ON_HOLD_STATE_RE is
+        # what keeps "report on hold duration" from ever reaching here.
+        if ON_HOLD_STATE_RE.search(clause) and (
+                ON_HOLD_META_RE.search(clause)
+                or NEGATOR_RE.search(clause)
+                or LIFT_RE.search(clause)):
+            continue
         if RESTRICTION_TERM_RE.search(clause) and (
                 NEGATOR_RE.search(clause) or LIFT_RE.search(clause)
                 or (PRECAUTIONARY_RE.search(clause)
@@ -149,6 +177,7 @@ AFFIRMATIVE_RES = [
     re.compile(r"\bstand-?down\b", re.I),
     re.compile(r"\bowner[- ]hold\b", re.I),
     re.compile(r"\bheld\b", re.I),
+    ON_HOLD_STATE_RE,
     re.compile(r"restriction signal", re.I),
     re.compile(r"\baction[- ]block\b", re.I),
     re.compile(r"\bcheckpoint\b", re.I),
