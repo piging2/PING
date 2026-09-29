@@ -1,0 +1,127 @@
+{
+ "description": "Canonical machine-readable external-action authority state for every scheduled external-action surface. Read by ~/workspace/outreach/authority-check.py before ANY external action (likes, comments, follows, DMs, emails, form submits). OWNER/OPERATOR WRITE ONLY: no scheduled worker, cron body, or agent run may write this file; only a new explicit owner decision changes a status. A schedule is NOT authorization. A stale note is NOT authorization. A cleared platform timer is NOT authorization.",
+ "re_enable_procedure": "Only the owner/operator may change a status. The procedure is: (1) owner records the new explicit decision in the platform tripwire review entry where one exists (tiktok-like-recovery.py record-review), (2) owner or operator edits this file's surface status/reason/set_by/set_at, (3) the next scheduled pass runs authority-check.py which re-consumes everything. Workers never write this file and never infer resumption from a cleared banner, timer, or schedule.",
+ "restrictions": [
+  {
+   "cleared": false,
+   "clears_via": "recorded review in tiktok-like-recovery-state.json reviews (prose or a timer expiring does not clear it)",
+   "kind": "comment",
+   "signal": "platform 'temporarily blocked from commenting' banner (~96h), first observed pass 92 on 2026-09-28 ~15:43 MDT; re-hit in pass 97 after a stand-down violation",
+   "state": "active-stand-down",
+   "surface": "tiktok"
+  },
+  {
+   "cleared": false,
+   "clears_via": "recorded REVIEW_ALLOW review in tiktok-like-recovery-state.json reviews",
+   "kind": "like",
+   "signal": "tripwire BLOCKED (tiktok-like-recovery-state.json status; durable_like_cap 0)",
+   "state": "active",
+   "surface": "tiktok"
+  }
+ ],
+ "schema_version": 1,
+ "statuses": {
+  "ACTIVE": "external action allowed, subject to tripwires, guards, and ledgers",
+  "HELD": "zero external action until an explicit owner decision re-authorizes; overrides schedules, stale notes, and cleared platform timers",
+  "SUPPRESSED": "zero external action; stronger than HELD, typically platform-driven"
+ },
+ "surfaces": {
+  "facebook": {
+   "capability": {
+    "authorized": true,
+    "notes": null,
+    "window": null
+   },
+   "reason": "Standing ramp volumes authorized; no holds, no restrictions recorded.",
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "Nolan Geske (2026-09-29 05:06 MDT 90h GO binding state; entry seeded by gate fix, no new owner decision)",
+   "standing_volume": "75 likes + 20 comments per pass, 2h cadence (no-scale-back: retry, never lower)",
+   "status": "ACTIVE"
+  },
+  "instagram": {
+   "capability": {
+    "authorized": false,
+    "notes": "Cloud browser-task surface unauthenticated: 8 consecutive AUTH_FAILURE passes (2026-09-28/29); saved-login restore returns login form; pass 160 hit an authenticator-app 2FA wall after password-accepted (no code entered per standing rules). Zero external action on the cloud route until the session is verified live. Pig ig-profile Chrome session VERIFIED LOGGED IN as nolanpigi 2026-09-29 07:42 MDT (read-only CDP DOM check: no login form, home nav present); instagram-cli Phase P healthy.",
+    "window": null,
+    "set_by": "Pigi (operator correction)",
+    "set_at": "2026-09-29T13:44:00Z",
+    "note": "CORRECTION 2026-09-29 ~07:44 MDT: Nolan's 05:24 'it is already logged in' referred to the Pig session, NOT the cloud browser-task surface. Passes 162 (05:25) and 163 (07:22) verified the cloud surface still logged out AFTER that statement. Prior 'Session restored' reconciliation was misattributed and is superseded. Capability re-enables only after a live verification of the route being used (owner/operator sets capability.authorized=true)."
+   },
+   "reason": "Hold lifted by owner 2026-09-29 ~05:13 MDT (\"open insta\"). 2FA login wall still stands: the cloud browser-task surface is logged out (pass 160, 2026-09-29). Capability NOT authorized while the session is unauthenticated; no credential entry, no waiting on 2FA codes. Owner session restore re-enables capability (owner/operator sets capability.authorized=true after verifying the session).",
+   "set_at": "2026-09-29T11:13:00Z",
+   "set_by": "Nolan Geske (2026-09-29 ~05:13 MDT 'open insta'; entry seeded by gate fix)",
+   "standing_volume": "50 likes + 12 comments per pass at resume, 2h cadence",
+   "status": "ACTIVE",
+   "tail_scan_from_line": 3032,
+   "reconciliation": {
+    "at": "2026-09-29T13:44:00Z",
+    "decided_by": "Pigi (operator correction; owner/operator may override)",
+    "decision": "Cloud browser-task surface session NOT restored: passes 162 and 163 verified logged-out after Nolan's 05:24 statement, which referred to the Pig session. The 11:24Z 'Session restored' reconciliation is superseded as misattributed. capability.authorized=false until a live verification of the active route. Pig session verified logged in 07:42 MDT.",
+    "supersedes_log_lines_through": 3032
+   }
+  },
+  "outreach-engine": {
+   "capability": {
+    "authorized": true,
+    "notes": null,
+    "window": null
+   },
+   "reason": "STOP CUSTOMER PURSUIT (2026-09-28 ~15:44 MDT, Nolan binding) vs an enabled outreach schedule is an authority contradiction. Fail closed. No round 161 until canonical structured state resolves the contradiction.",
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "Nolan Geske",
+   "standing_volume": "N/A while held (engine cron currently enabled:false)",
+   "status": "HELD"
+  },
+  "threads": {
+   "capability": {
+    "authorized": true,
+    "notes": null,
+    "window": null
+   },
+   "reason": "Standing ramp volumes authorized; no holds, no restrictions recorded.",
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "Nolan Geske (2026-09-29 05:06 MDT 90h GO binding state; entry seeded by gate fix, no new owner decision)",
+   "standing_volume": "45 likes + 12 comments per pass, 2h cadence",
+   "status": "ACTIVE"
+  },
+  "tiktok": {
+   "capability": {
+    "authorized": true,
+    "notes": null,
+    "window": null
+   },
+   "reason": "Owner hold 2026-09-29 (90h GO): 0 likes, 0 comments. Do NOT auto-resume when the comment-restriction banner expires; a cleared platform timer is NOT authorization. Leave the accidental @jgoldieseo comment (video 7627594389467991310) in place; do not create a second external side effect to clean up the first. Resumption requires a new explicit owner decision recorded in the tiktok-like-recovery tripwire reviews.",
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "Nolan Geske",
+   "standing_volume": "5 likes + 2 comments per pass at resume (2026-09-28 corrected ramp), 2h cadence, weekly +5/+3 ramp",
+   "status": "HELD"
+  },
+  "x": {
+   "capability": {
+    "authorized": true,
+    "notes": null,
+    "window": null
+   },
+   "reason": "Standing ramp volumes authorized; no holds, no restrictions recorded.",
+   "set_at": "2026-09-29T19:25:00Z",
+   "set_by": "Nolan Geske (2026-09-29 ~11:22 MDT explicit 'do whatever you think and rerun it now')",
+   "standing_volume": "5 follows + 3 comments + 10 likes per pass, 2h cadence",
+   "status": "ACTIVE",
+   "tail_scan_from_line": 977,
+   "reconciliation": {
+    "at": "2026-09-29T17:25:00Z",
+    "decided_by": "Nolan Geske (explicit owner decision 2026-09-29 ~11:22 MDT: 'DO WHATEVER YOU THINK AND RERUN IT NOW')",
+    "decision": "The log-tail 'rate-limit' markers in x-engagement.md (lines ~925/~930 from the 06:58 and 07:14 MDT passes, re-quoted in the 09:14 and 11:14 MDT pass sections) are the operator's own precautionary pacing prose ('risking rate-limit flags on @GeskeNolan'), NOT a platform restriction. Both passes explicitly recorded no platform restriction/checkpoint/action-block/login signal; tripwire_restriction is null. These markers are classified as pacing prose. No real restriction has been observed on the X surface.",
+    "supersedes_log_lines_through": 956
+   },
+   "reconciliation_2": {
+    "at": "2026-09-29T19:25:00Z",
+    "decided_by": "Pigi (operator) under standing 2026-09-21 operator reconciliation procedure and Nolan Geske's 2026-09-29 ~11:22 MDT explicit directive ('do whatever you think and rerun it now') covering this false-positive class on the x surface",
+    "decision": "The two 19:15Z conflict markers are the operator's own log prose, NOT a platform restriction. (1) 'rate-limit' inside the 11:23 MDT pass sentence describing the prior reconciliation ('log-tail rate-limit markers classified as the operator's own pacing prose') -- prose about a reconciliation. (2) 'held' inside 'the follow driver held the one-driver X Chrome lock' and 'Gate held clean' -- one-driver browser-lock mechanics / gate-clean prose, not an account hold. AUTHORITY.json x stays ACTIVE, tripwire_restriction null, no platform restriction/checkpoint/action-block/login signal observed. Carve-out in authority-check.py widened narrowly to cover both phrasings (meta-prose about log markers; held+lock/driver/held-clean); sanity-tested: both flagged lines now pass, real markers (rate limit hit, rate-limit warning, account held, temporarily blocked, checkpoint, action block, owner hold) still fire.",
+    "supersedes_log_lines_through": 977
+   }
+  }
+ },
+ "updated_at": "2026-09-29T13:44:00Z",
+ "updated_by": "Pigi (operator correction of instagram session attribution)"
+}
