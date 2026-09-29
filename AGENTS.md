@@ -48,3 +48,6 @@
 - Two working forms, do not mix them. Form 1 (documented 2026-09-24): inner command in SINGLE quotes, CMD-escaped operators: `ssh pigwsl 'wsl -- bash -c '"'"'echo x ^>^> /tmp/f'"'"''` — CMD sees the operators (single quotes mean nothing to CMD) so `^>`/`^|`/`^&^&` are required.
 - Form 2 (verified 2026-09-29): outer ssh command in single quotes, inner `bash -c` in DOUBLE quotes: `ssh pigwsl 'wsl -- bash -c "echo x >> /tmp/f"'` — CMD honors double quotes for redirection, so `>>`, `|`, `&&` pass through to bash UNESCAPED. Caret-escaping inside the double quotes produces literal `^` garbage in bash.
 - Mixing (caret escapes inside double quotes) silently corrupts: chunks landed as `<base64tail> ^` fragments. For base64-chunk file transfer, Form 2 with `>>` unescaped plus a byte-count verify after `base64 -d` is the proven pattern (see ~/workspace/l1-acq/pig-push.sh).
+
+## Pig WSL access helper (2026-09-29, convergence interval 4, battle-tested by all writers)
+- Use `~/workspace/bin/pigwsl-exec '<bash command>'` for Pig WSL access from this sandbox. It routes through the tailnet egress proxy as nolan@100.79.154.43 into Pig WSL. The muse-ssh Windows shell has no WSL distros and no /home/nolan — do not try to reach WSL through muse-ssh. The helper resolved the prior coordinators' access confusion; all three writers in interval 4 used it successfully.
