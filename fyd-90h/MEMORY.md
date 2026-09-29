@@ -24,7 +24,12 @@ infrastructure, no new authority.
 If no new reached capability enters the product this interval, the honest
 ledger answer is: NO SUBSTANTIATED INTEGRATION PROGRESS THIS PERIOD.
 
-This interval is Nolan's and the assistant's alone. No coordinator.
+This interval is Nolan's and the assistant's, with coordinator use at Nolan's
+explicit direction. (Corrected 2026-09-29: the earlier "No coordinator" line
+was wrong. Nolan explicitly instructed "send a coordinator" with the Interval
+09 order; the first coordinator was mistakenly cancelled before producing
+results. Interval 09 is the learning interval; Interval 07/08 remain
+regression invariants, not synonyms for Interval 09.)
 
 ## 2. What Interval 08 actually established (evidence, not claims)
 
