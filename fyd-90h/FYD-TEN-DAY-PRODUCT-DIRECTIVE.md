@@ -867,3 +867,13 @@ Upstash, AWS, whatever. Give them everything. A bounded research pass is
 dispatched to produce the concrete thesis: per-provider free-tier limits,
 recommended per-tenant bootstrapping architecture, what "on behalf of
 clients" can and cannot mean under provider ToS, and the cost-ceiling math.
+
+---
+
+## Amendment 2026-09-29 ~11:48 MDT (Nolan): single exploratory tenant
+
+Scope cut, binding: right now, focus on PING as the exploratory tenant. The
+"run TWO tenants" proof is deferred; the second tenant does not start until
+the PING exploratory tenant proves the loop. PING is the first test tenant
+with all possible capabilities, per the standing TenantOS/Orca/Mission
+Control direction. Everything else in this directive stands.
