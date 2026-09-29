@@ -185,6 +185,30 @@ Search only in response to a named falsification question. No 60-keyword
 inventory. No architecture census. Search breadth expands only when evidence
 requires it.
 
+## TIMEOUT HARDENING — MINIMAL, INTELLIGENT, DEPENDENCY-AWARE
+
+Nolan, 2026-09-29: for all timeout problems, make minimal intelligent
+improvements with retry dependency.
+
+Known instance: the X pass probe (x-probe-discover.sh) timed out after 3120s
+because the follow driver held the single X browser lock for most of the probe
+window; the comment/like leg then fail-closed with no candidates.
+
+Rules:
+- Minimal: fix the smallest defect that removes the timeout class. Prefer
+  sequencing and scoping changes over new machinery.
+- Retry only with declared dependencies: a retry must name what it waits on
+  (lock release, probe completion, consumer switch). Never retry a step whose
+  dependency is still held or UNKNOWN.
+- Read-only probes are exempt from execution locks where safe, or they run
+  before the lock-holding batch. Probe-before-follow becomes the pass order.
+- Bounded retries with backoff; no unbounded loops.
+- No blind redispatch of ambiguous consequential effects: a timed-out effect
+  whose outcome is unknown goes UNKNOWN -> OBSERVE -> RECONCILE, never
+  automatic resend.
+- Record each timeout fix as: SITE / ROOT CAUSE / MINIMAL CHANGE / RETRY
+  DEPENDENCY DECLARED / VERIFICATION.
+
 ## INTERVAL 08 LEDGER — must answer
 
 1. INCIDENT: Are the exposed credentials revoked? Does independent
