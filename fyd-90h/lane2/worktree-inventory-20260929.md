@@ -190,3 +190,96 @@ phase1/approval-door-2026-09-28, wip side-visual-identity-.
 Next-interval candidates: ws2/int-w3/w4/w5 divergence review; copilot arrow-family consolidation review;
 tenanos-wave/integration (now the canonical tenanos unit) harvest candidacy — all need lane-owner or
 falsification-queue input before any harvest/reach claim.
+
+---
+
+# Interval 3 — 2026-09-29 ~10:52-11:30 MDT (Lane 2 sweep: final 26 dispositioned)
+
+Method this interval: fresh state scan (zero tracked modifications in all 26; untracked was
+node_modules only), pairwise served-tip comparison (served tip fetched as temporary ref
+refs/sweep/served-20260929 -> c02b9ecca3863b2194f784ef9fe7389d3642006c, ref removed after),
+semantic file-blob comparison vs served, secret-filename + secret-content scan of all 26 tips,
+correction-arrow harvestability review per CEO-ORDER-LEDGER04-CORRECTION.md. No branch pointers
+deleted. All 26 worktrees retired (clean, committed, no live processes); all 26 branch refs retained.
+
+## Secret scan (all 26 tips)
+- Filename scan (token.json, .env, .env.base, credentials, *.pem, id_rsa, *.key, secrets.json): ALL 26 CLEAN.
+- Content scan (private keys, AKIA, ghp_, xoxb-, sk-live) on unique-vs-served added files: one hit on
+  copilot/arrow1-claims-gate:task.result.jsonl, verified FALSE POSITIVE (base64-encoded Copilot reasoning
+  substring "AKIaE1Xyn6Z91QZoOUKb", not a credential).
+- lane/l-secret-broker: 4 files scanned, no secret material (custody pattern only, no values).
+- SECRET-BLOCKED: 0. COLLISION: 0 (copper-v2 remains BLOCKED-COLLISION, untouched, not in the 26).
+
+## Key findings
+- phase1/approval-door-2026-09-28 @ af7d2688: 18 files under src/fyd/approval/ (types, proposal digest
+  binding, gate with exact-digest verification + terminal-first semantics, queue, journal, UI). Reuses
+  the EXISTING served seam src/fyd/object/owner-events.ts (confirmed present on served). This is 70-80%
+  of the OWNER CORRECTION unit (correction half; regen-survival half not included). HARVESTABLE, receiving
+  unit Writer A, boundary: correction arrow OWNER CORRECTION. Duplication risks flagged: served
+  customize/route.ts approve/clear and Group A mc-approval machinery (different layers; integration
+  decision belongs to Writer A per the CEO order's FYD-CURRENT/HARVESTABLE/DUPLICATION-RISK classification).
+- lane/l-secret-broker @ f7ea9990: byte-identical to trackc WIP bank Group B donor b38973fb
+  (secret-broker.ts blob d573de6bf2dc8803e8ad25baff5c29d04fe64d3a). SUPERSEDED-ABSORBED, not independently harvested.
+- fyd/write-boundary-idempotency @ 3fa8a703: unique adds are src/fyd/customize/consequence.ts + 2 tests
+  (consequence tiers LOW/MEDIUM/HIGH/CRITICAL for owner-approved presentation changes). Liftable micro-helper
+  for Writer A's owner-correction UX; not 70-90% of a unit.
+- Served already has: src/fyd/object/owner-events.ts, src/fyd/customize/owner-command-compiler.ts,
+  WHY THIS (4 files). Served does NOT have: src/fyd/approval/, src/fyd/customize/consequence.ts.
+
+## 26-row disposition table (13 fields)
+
+| WORKTREE | BRANCH | HEAD | DIRTY? | UNTRACKED? | OWNER | PURPOSE | UNIQUE COMMITS | UNIQUE DIRTY VALUE | SECRET RISK | REACHED? | HARVESTABLE? | DISPOSITION |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| /home/nolan/build-edge-port | wip/wave4-ledger-20260929/build-edge-port- | 8faf96d0 | no | none | wave4-ledger-sweep | Q-J-07 owner-NL intent compiler | 5 | owner-command-compiler.ts, intent.ts, owner-proposal.ts (wave-era variants) | none found | No | No | SUPERSEDED (served has newer owner-command-compiler.ts) |
+| /home/nolan/build-idem | fyd/write-boundary-idempotency | 3fa8a703 | no | none | fyd-builder-lane | Write-boundary idempotency | 1 | src/fyd/customize/consequence.ts + 2 tests (unique vs served) | none found | No | No | REFERENCE (consequence.ts liftable for Writer A UX) |
+| /home/nolan/build-template1 | fyd/template-001-hpp-clone | e4819ce8 | no | none | fyd-builder-lane | Tradesman/HPP template clone | 17 | Old HPP template + media; HPP is a harness per product law | none found | No | No | REFERENCE (engineering harness) |
+| /home/nolan/fyd-dehpp-merge-proof | wip/wave4-ledger-20260929/fyd-dehpp-merge-proof- | 7375cb1f | no | node_modules 38B (deleted) | wave4-ledger-sweep | DEHPP merge proof | 1 | 18-file delta, duplicate of fyd-dehpp | none found | No | No | REFERENCE (duplicate; fyd-dehpp canonical) |
+| /home/nolan/fyd-dehpp-wt | fyd-dehpp | eb28d3aa | no | node_modules 38B (deleted) | fyd-builder-lane | DEHPP data-plane parameterization | 1 | 18-file delta; canonical DEHPP branch | none found | No | No | REFERENCE (canonical DEHPP) |
+| /home/nolan/fyd-preview-wt | wip/wave4-ledger-20260929/fyd-preview-wt- | 95598244 | no | none | wave4-ledger-sweep | FYD preview | 1 | Minimal delta; falsification evidence | none found | No | No | REFERENCE |
+| /home/nolan/lane7-sites | wip/wave4-ledger-20260929/lane7-sites- | d57d7c58 | no | node_modules 38B (deleted) | wave4-ledger-sweep | Lane 7 sites | 1 | 0 unique files vs served (sites converged) | none found | No | No | SUPERSEDED (by served sites) |
+| /home/nolan/projects/ping-ask-loop | ask-loop/fyd-ask-behavior | 1f6d54f4 | no | node_modules 38B (deleted) | UNKNOWN-OWNER | Ask loop behavior | 1 | ask-loop-gaps.test.ts (conflict-status, holiday refusal) | none found | No | No | SUPERSEDED (by served Ask; gaps test in retained branch) |
+| /home/nolan/projects/ping-bcq-substrate | lane/bcq-connector-substrate | 0ebabf94 | no | none | lane-owner | BCQ connector substrate | 1 | 10 connector-kit files | none found | No | No | REFERENCE |
+| /home/nolan/projects/ping-constitutional | constitutional-convergence-v2 | 260c369c | no | none | UNKNOWN-OWNER | Constitutional convergence | 3 | 12 files (site-ID guard, object source, readers, media) | none found | No | No | REFERENCE |
+| /home/nolan/projects/ping-fyd-deploy | fyd-deploy | ade4ee50 | no | node_modules 38B (deleted) | UNKNOWN-OWNER | FYD deploy | 1 | Deploy manifest + middleware | none found | No | No | REFERENCE |
+| /home/nolan/projects/ping-int-w3 | ws2/int-w3 | b2a9f7b6 | no | none | UNKNOWN-OWNER | W3 TOCTOU per-hop pinning | 1 | 2 toctou test files; Option A pending owner decision | none found | No | No | REFERENCE (pending owner decision) |
+| /home/nolan/projects/ping-int-w4 | ws2/int-w4 | 5c604dc1 | no | none | UNKNOWN-OWNER | W4 dependency-index seeding | 1 | 3 files; coordinator: seeding owned by generator lane | none found | No | No | SUPERSEDED (by seeding-ownership decision) |
+| /home/nolan/projects/ping-int-w5 | ws2/int-w5 | 68e49b64 | no | none | UNKNOWN-OWNER | W5 ProjectionReader seam | 1 | 5 files; clean semantic unit | none found | No | No | REFERENCE |
+| /home/nolan/projects/ping-lane-l-broker | lane/l-secret-broker | f7ea9990 | no | node_modules 38B (deleted) | lane-owner | Secret broker (Lane L) | 1 | 4 files; byte-identical to trackc Group B donor b38973fb | none found | No | No | SUPERSEDED-ABSORBED (Writer-B Group B queue) |
+| /home/nolan/projects/ping-wave-security-104-105 | tenanos-wave/P-20260923-104-105-security | 1df0f98c | no | none | tenanos-wave | Security hardening | 2 | 5 security files | none found | No | No | REFERENCE |
+| /home/nolan/projects/ping-worktrees/contextpack-2026-09-28 | decision-fabric/contextpack-wire-2026-09-28 | 9a555021 | no | node_modules 38B (deleted) | UNKNOWN-OWNER | Contextpack wire | 1 | mc-context-pack.ts + test; dead for served Ask per L2 | none found | No | No | REFERENCE |
+| /home/nolan/worktrees/arrow1-gate | copilot/arrow1-claims-gate | 4bab96c0 | no | none | copilot-worker | Claims gate | 1 | task.done + task.result.jsonl; falsification evidence | none found | No | No | REFERENCE (falsification evidence) |
+| /home/nolan/worktrees/arrow1-hostile | copilot/arrow1-hostile-proof | ba94089c | no | none | copilot-worker | Hostile proof | 1 | task.done + task.result.jsonl; falsification evidence | none found | No | No | REFERENCE (falsification evidence) |
+| /home/nolan/worktrees/arrow6-sitepatch | copilot/arrow6-sitepatch | 30dc6ede | no | node_modules 38B (deleted) | copilot-worker | Sitepatch | 2 | task.done + task.result.jsonl; falsification evidence | none found | No | No | REFERENCE (falsification evidence) |
+| /home/nolan/worktrees/authority-ux | copilot/authority-ux | 0970f71b | no | none | copilot-worker | Authority UX | 1 | task.done + task.result.jsonl; falsification evidence | none found | No | No | REFERENCE (falsification evidence) |
+| /home/nolan/worktrees/l1-acq-contract | l1-acq/q-j-04-contract | dd2024b3 | no | node_modules 38B (deleted) | lane-1 | Q-J-04 contract | 1 | Q-J-04-CONTRACT.md + test (12 pass, 4 intentional fail) | none found | No | No | REFERENCE |
+| /home/nolan/worktrees/l2-benchmark | copilot/l2-benchmark | 2430df8a | no | none | copilot-worker | Benchmark | 1 | task.done + task.result.jsonl; falsification evidence | none found | No | No | REFERENCE (falsification evidence) |
+| /home/nolan/worktrees/lane-e-ask | wip/wave4-ledger-20260929/lane-e-ask- | d427b929 | no | node_modules 38B (deleted) | wave4-ledger-sweep | Lane E Ask | 1 | 0 unique files vs served (Ask green) | none found | No | No | SUPERSEDED (by served Ask FYD) |
+| /home/nolan/worktrees/phase1-approval-door | phase1/approval-door-2026-09-28 | af7d2688 | no | node_modules 38B (deleted) | phase-1 lane | Owner approval door | 12 | 18 files src/fyd/approval/; terminal-first, exact-digest, reuses served owner-events.ts; 70-80% of OWNER CORRECTION | none found | No | Yes (Writer A, correction-arrow OWNER CORRECTION) | REFERENCE (HARVESTABLE; parked for Writer A) |
+| /home/nolan/worktrees/side-visual-identity | wip/wave4-ledger-20260929/side-visual-identity- | 6f4be6ba | no | node_modules 38B (deleted) | wave4-ledger-sweep | Visual identity | 1 | PING visual/media + object-visual components | none found | No | No | REFERENCE (visual harness) |
+
+## Actions this interval
+- PROVEN-DISPOSABLE deleted: 12x node_modules dirs (explicit rm -rf per path, 38 bytes each, 456 bytes total;
+  reproducibility: package.json/lockfiles committed, `npm ci` reproduces; zero tracked modifications in all trees).
+  Paths: /home/nolan/worktrees/arrow6-sitepatch, l1-acq-contract, lane-e-ask, phase1-approval-door,
+  side-visual-identity, /home/nolan/fyd-dehpp-merge-proof, fyd-dehpp-wt, lane7-sites,
+  /home/nolan/projects/ping-ask-loop, ping-fyd-deploy, ping-lane-l-broker,
+  /home/nolan/projects/ping-worktrees/contextpack-2026-09-28 (each + /node_modules).
+- SAFE-REMOVE-WORKTREE executed: all 26 checkouts (clean, committed, no live processes; `git worktree remove`
+  without --force; all 26 branch refs retained and verified present after removal).
+- NOT TOUCHED (per standing orders): /home/nolan/projects/ping-fyd-converged, /home/nolan/projects/ping-fyd-harvest-wt,
+  /home/nolan/worktrees/copper-v2 (BLOCKED-COLLISION).
+- Temporary comparison ref refs/sweep/served-20260929 removed after use.
+- Commits in Pig repos: none required (zero stranded uncommitted implementation; all trees clean).
+
+## Ledger metrics — interval 3 (before → after)
+- WORKTREES TOTAL (sweep-owned): 26 → 0
+- STRANDED VALUABLE IMPLEMENTATION REMAINING: **26 → 0**
+  (all 26 dispositioned: 20 REFERENCE parked with branch refs retained, 6 SUPERSEDED with absorbing
+  line/decision named; 1 HARVESTABLE flagged for Writer A. No undispositioned valuable implementation remains
+  in this sweep's scope.)
+- HARVESTED: 0 (no reached boundary advanced; correction arrow is the frontier, not a reached boundary;
+  phase1-approval-door flagged HARVESTABLE for Writer A, integration decision is Writer A's per CEO order)
+- ACTIVE-WIP: 0 | PROVEN-DISPOSABLE: 12 paths (456 bytes) | COLLISION: 0 | SECRET-BLOCKED: 0
+- Remaining worktrees in repo (not sweep-owned, untouched): main (Track-C), ping-parallel (codex),
+  ping-fyd-converged (served, Writer A), ping-fyd-harvest-wt, ping-wave2-ownerloop, ping-ws4-converge,
+  copper-v2 (BLOCKED-COLLISION), fyd-family-converge.
