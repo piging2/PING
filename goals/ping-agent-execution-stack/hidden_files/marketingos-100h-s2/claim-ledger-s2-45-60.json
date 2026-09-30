@@ -1,0 +1,392 @@
+{
+  "claims": [
+    {
+      "claim": "Across the 34 surveyed CRM/agentic systems, zero reach continuity-A: deterministic replay of a decision from an immutable event plane. The best in field is grade B (genuine timelines/audit logs on mutable current-state storage).",
+      "claim_id": "CLS2-01",
+      "counterevidence": "Falsifier F1: any one surveyed vendor demonstrating deterministic replay of a decision from an immutable event plane kills this claim; republish the scoreboard. Falsifier F3: a production CRM shipping continuity-A kills outright. Falsifier F4: a CRM rebuilding its core state machine on an event-sourced core the way Temporal rebuilds workflows kills the claim. Falsifier F2 (dependency, unresolved here): the 99h convergence lane's Attio/Clay/Apollo/HubSpot archaeology may surface event-sourced internals in an in-category system; internals-only narrows the claim, shipped product behavior kills it. Conjunction caveat (L6 review): the definition's two conjuncts are individually occupied elsewhere (Temporal for replay, immudb for tamper-evidence); the claim is that no surveyed in-category system combines both, and the demand for the combined standard is unobserved (the survey does not establish market size that would pay for continuity-A).",
+      "evidence_grade": "independent",
+      "independent_support": "Per-claim evidence grades documented in the survey report; the survey itself is documented primary research; this session's re-verification (CLS2-04 through CLS2-06) independently confirmed the grade-B inventory.",
+      "maximum_defensible_wording": "As of 2026-09-30, across the 34 CRM/agentic systems surveyed, zero systems meet the continuity-A definition (deterministic replay of a decision from an immutable event plane). The claim is survey-bounded, not universal; grades are the survey's own, bounded by vendor-described claims where independence was unavailable.",
+      "primary_source": "research_notes/crm-agentic-harvest-20260930/report.md section 5 scoreboard and sections 2-4 per-system continuity reasoning",
+      "public_wording": "We surveyed 34 CRM and agentic systems for one behavior: can they replay a past decision deterministically from an immutable event plane? Zero could. Everyone ships audit logging; nobody ships replay.",
+      "scope": "34 systems surveyed 2026-09-30 (modern CRMs, agentic sales, agentic marketing, business OSes); does not establish market size that would pay for continuity-A",
+      "support_set": [
+        "survey report.md section 5",
+        "survey report.md sections 2-4",
+        "S-4"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Temporal proves deterministic replay is engineerable in workflow infrastructure: Event History is the complete ordered log of everything that happened in a workflow; workers re-run workflow code against recorded events instead of restoring snapshots; non-determinism is policed mechanically (Date.now(), Math.random(), direct network calls banned; replay-safe APIs return recorded values); the WorkflowReplayer replays a workflow against a recorded history to verify code changes stay deterministic.",
+      "claim_id": "CLS2-02",
+      "counterevidence": "Falsifier F4 (kills the C1 slot, not this precedent): a CRM rebuilding its core state machine on an event-sourced core the way Temporal rebuilds workflows. The objection that Temporal's domain is workflow orchestration, not CRM/agent decisions, bounds scope rather than refuting the precedent. Retention limits and absent tamper-evidence bound what the replay plane can promise. The narrowed two-layer standard of C1 is literally Temporal's documented agent architecture (LLM calls as Activities, recorded results returned during replay), which reduces the novelty to category non-adoption, not a missing primitive.",
+      "evidence_grade": "vendor-described",
+      "independent_support": "None independent this session. Temporal's own documentation plus the open-source Swift SDK (the source is the vendor's own repo/docs).",
+      "maximum_defensible_wording": "Per Temporal's own documentation, Event History provides replay of workflow execution: workers re-run code against recorded events and non-determinism is policed mechanically. This is the closest existing engineering to the thesis's standard, in the workflow-infrastructure domain. It is not independently tested here; histories have retention limits and no cryptographic tamper-evidence. It shows the primitive is described and shipped in another domain; it does not show CRM/agent adoption.",
+      "primary_source": "docs.temporal.io/encyclopedia/event-history; apple/swift-temporal-sdk WorkflowReplayer documentation",
+      "public_wording": "Deterministic replay already exists in workflow infrastructure. Temporal workers do not restore snapshots; they re-run code against recorded events. The primitive is real. The CRM category has simply not adopted it.",
+      "scope": "workflow orchestration only; supports the thesis that the standard is engineerable, not that it is adopted in CRM/agentic systems Bounds verified by the L6 review: Temporal histories have retention limits and carry no cryptographic tamper-evidence.",
+      "support_set": [
+        "Temporal event-history docs",
+        "Swift SDK WorkflowReplayer docs"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "The operative standard is defined as: deterministic derivations (scores, projections, transitions) replayable from a pinned immutable event plane. Bit-identical replay of LLM-agent generation is explicitly excluded as the wrong standard. Agent generation itself gets the Fin-grade honest standard: replay-the-artifact as proof of fix.",
+      "claim_id": "CLS2-03",
+      "counterevidence": "The L6 steelman (bit-identical replay is a strawman for agentic systems) reshaped this definition; it is recorded as the narrowing that produced this wording, not as a refutation. If deterministic generation replay ever becomes the relevant buyer demand, this definition would need revision.",
+      "evidence_grade": "independent",
+      "independent_support": "The definition is our own methodological commitment, adopted after the adversarial review in DEEP-RESEARCH-C1-REPLAYABLE-EVIDENCE.md section 5.",
+      "maximum_defensible_wording": "The standard C1 argues for is deterministic derivations (scores, projections, transitions) replayable from a pinned immutable event plane. It does not require bit-identical replay of LLM-agent generation; that reading is explicitly disclaimed.",
+      "primary_source": "DEEP-RESEARCH-C1-REPLAYABLE-EVIDENCE.md section 3 (the narrowed claim) and section 5 (adversarial answer)",
+      "public_wording": "We are not asking for bit-identical replay of an AI's generation. The standard is narrower: deterministic derivations, scores, projections, transitions, replayable from a pinned immutable event plane. The replay question is about the deterministic layer around the agent, not the agent's own output.",
+      "scope": "the C1 piece's own product standard; does not bind any vendor",
+      "support_set": [
+        "C1 evidence doc section 3",
+        "C1 evidence doc section 5"
+      ],
+      "time_bound": "adopted 2026-09-30",
+      "type": "DEFINITIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Intercom Fin's debugger skill traces every internal reasoning step, finds the root cause, proposes a rewrite, back-tests the change against the original conversation, and suggests a production monitor. It is the category's only production example of replay-as-proof (artifact-level regression).",
+      "claim_id": "CLS2-04",
+      "counterevidence": "None this session. If another surveyed vendor demonstrates shipped back-test-style replay-as-proof, update the 'only production example' wording.",
+      "evidence_grade": "vendor-described",
+      "independent_support": "No independent test this session. Corroborated (not independently replicated) by a DevRev competitive piece and myaskai operational detail.",
+      "maximum_defensible_wording": "A VentureBeat interview describes Fin Operator's debugger: traces internal reasoning steps, finds the root cause, proposes a rewrite, back-tests the change against the original conversation, and suggests a production monitor. Corroborated by two additional sources, none of which independently tested it. The category's only described production example of replay-as-proof.",
+      "primary_source": "VentureBeat interview on Fin Operator's debugger skill",
+      "public_wording": "Intercom's Fin has a debugger that replays the original conversation after a fix to prove the fix works. As far as our survey can establish, it is the only production example of replay-as-proof in the category.",
+      "scope": "Intercom's product, described in a VentureBeat interview and corroborated by two third-party sources. Not independently tested end-to-end this session.",
+      "support_set": [
+        "VentureBeat interview",
+        "DevRev competitive piece",
+        "myaskai operational detail"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Asana's task stories are lossy: the web app consolidates multiple changes by one user to one data element within a 24-hour period into only the last change, and the API returns only the same stream as the web app (the API team has no separate story stream).",
+      "claim_id": "CLS2-05",
+      "counterevidence": "None this session. If Asana ships an immutable event stream distinct from the web-app story stream, regrade.",
+      "evidence_grade": "independent",
+      "independent_support": "Corroborated by two additional Asana forum threads (41521, 22045); Phil Seeman is a recognized Asana API community authority.",
+      "maximum_defensible_wording": "Per Phil Seeman's canonical forum explanation, the Asana web app performs story 'consolidation': multiple changes by one user to a data element within 24 hours, with no other users changing it in between, get consolidated so only the last change is reported; the API team has no separate story stream, so the API returns only what the web app shows. The B (lossy) grade stands, independently sourced.",
+      "primary_source": "forum.asana.com/t/is-there-a-truthful-audit-trail/55127 (Phil Seeman canonical explanation)",
+      "public_wording": "Asana's activity stories are lossy. Multiple changes to the same field within a day get consolidated into the last one, and the API sees only the same consolidated stream as the web app.",
+      "scope": "Asana task stories; consolidation behavior as described on the forum",
+      "support_set": [
+        "Asana forum thread 55127",
+        "Asana forum threads 41521, 22045"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Linear signs every create/update/remove webhook event with HMAC-SHA256 over the raw body, hex-encoded, verified against a signing secret in the Linear-Signature header. The survey's assessment stands: a signed derived stream, not an immutable source.",
+      "claim_id": "CLS2-06",
+      "counterevidence": "None this session. If Linear ships an immutable event plane (not just signed webhooks), regrade.",
+      "evidence_grade": "independent",
+      "independent_support": "Three independent sources (hookdeck/webhook-skills, gen-intelligence, webhooks-cc) agree on the mechanism.",
+      "maximum_defensible_wording": "Linear's webhook mechanism is confirmed: Linear-Signature header, HMAC-SHA256 over the raw body, hex-encoded, verified against a signing secret. This is a signed derived stream for create/update/remove events, not an immutable event source. The survey's assessment stands.",
+      "primary_source": "hookdeck/webhook-skills; gen-intelligence; webhooks-cc",
+      "public_wording": "Linear's webhooks are cryptographically signed for every create, update, and remove event. That is real integrity on a derived stream, and it is still not an immutable event plane.",
+      "scope": "Linear webhook delivery mechanism; mechanism confirmed, immutability not claimed",
+      "support_set": [
+        "hookdeck/webhook-skills",
+        "gen-intelligence",
+        "webhooks-cc"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "immudb 1.11 (released 2026-05-05) added immutable audit logging with PostgreSQL compatibility. This is tamper-evidence of a data plane, not deterministic replay of a decision plane, and immudb is infrastructure, not a CRM/agentic system, so it is out of the survey's category.",
+      "claim_id": "CLS2-07",
+      "counterevidence": "Falsifier F5 (weaker falsifier): if immudb-class infrastructure gains decision-replay semantics and a surveyed vendor adopts it as its decision plane, narrow or kill depending on shipped behavior. Does not fire while immudb offers tamper-evidence only.",
+      "evidence_grade": "vendor-described",
+      "independent_support": "Syndicated coverage (opensourceforu, StorageNewsletter) reports the same release facts; no independent verification of the feature this session.",
+      "maximum_defensible_wording": "Per vendor press (syndicated), immudb 1.11 added immutable audit logging (who/what/when recorded tamper-proof) with PostgreSQL compatibility. That is tamper-evidence of a data plane, not deterministic replay of a decision plane. immudb is infrastructure for builders, not a CRM/agentic system, and is out of category for the survey claim.",
+      "primary_source": "immudb 1.11 vendor press release (Business Wire, syndicated)",
+      "public_wording": "immudb's immutable audit logging proves tamper-evidence is a solved primitive. But tamper-evidence of a data plane is not replay of a decision plane, and immudb is infrastructure, not a CRM.",
+      "scope": "immudb 1.11 release facts; out of category for the continuity-A survey",
+      "support_set": [
+        "immudb 1.11 press (vendor)",
+        "opensourceforu syndication",
+        "StorageNewsletter"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Amazon QLDB is dead: end of support July 31, 2025 (announced July 18, 2024); existing ledgers went read-only and were then deleted; AWS points customers at Aurora PostgreSQL with pgaudit; Microsoft points at Azure SQL ledger. One of the three named counterevidence candidates in OPPORTUNITIES-S2-30-45 is eliminated outright.",
+      "claim_id": "CLS2-08",
+      "counterevidence": "None. A discontinued ledger service cannot re-enter the category; remove QLDB from any harvest list.",
+      "evidence_grade": "independent",
+      "independent_support": "Multiple third-party sources agree on the end-of-support date and migration guidance (GitHub skill repos chrishuffman5/awscliskills, devinwatson/claudemax; Microsoft Tech Community; TutorialsDojo).",
+      "maximum_defensible_wording": "Amazon QLDB reached end of support on July 31, 2025 (announced July 18, 2024). Existing ledgers went read-only and were deleted. AWS directs customers to Aurora PostgreSQL with pgaudit; Microsoft directs to Azure SQL ledger. The QLDB counterevidence candidate is eliminated.",
+      "primary_source": "AWS end-of-support announcement; chrishuffman5/awscliskills; devinwatson/claudemax; Microsoft Tech Community; TutorialsDojo",
+      "public_wording": "Amazon QLDB, the most ledger-like database in the category, reached end of support in July 2025. Its ledgers went read-only, then were deleted.",
+      "scope": "Amazon QLDB service status; eliminates it as a counterevidence candidate",
+      "support_set": [
+        "AWS EOS announcement",
+        "chrishuffman5/awscliskills",
+        "devinwatson/claudemax",
+        "Microsoft Tech Community",
+        "TutorialsDojo"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "EventStoreDB lives on as KurrentDB (rebranded 2025, v25.0), an event-native database that is current. It is infrastructure for builders, not a CRM, and offers no deterministic replay of decisions; it is out of category for the survey claim.",
+      "claim_id": "CLS2-09",
+      "counterevidence": "Falsifier F5 (weaker falsifier): if KurrentDB-class infrastructure gains decision-replay semantics and a surveyed vendor adopts it as its decision plane, narrow or kill depending on shipped behavior. Does not fire while KurrentDB ships event-native storage only.",
+      "evidence_grade": "vendor-described",
+      "independent_support": "None independent this session; the rebrand is documented in the project's own repository.",
+      "maximum_defensible_wording": "Per the project's own repository, EventStoreDB was rebranded as KurrentDB in 2025 (v25.0) and is current. It is an event-native database, infrastructure for builders, not a CRM; neither it nor immudb offers deterministic replay of decisions. Out of category for the survey claim.",
+      "primary_source": "kurrent-io/kurrentdb (rebrand to v25.0)",
+      "public_wording": "EventStoreDB, now KurrentDB, is alive and current. It is event-native infrastructure, not a CRM, and it does not replay decisions.",
+      "scope": "KurrentDB/EventStoreDB status and category; out of category for the continuity-A survey",
+      "support_set": [
+        "kurrent-io/kurrentdb"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "HubSpot's July 2026 terms change (effective July 1, 2026) would have pooled customers' business-card-level contact data into a shared enrichment dataset, opt-out; after four days of public backlash, CPTO Duncan Lennox posted 'We made a mistake' (LinkedIn, July 5) and pulled the change completely. This is evidence for the pain the C1 thesis addresses: trust failures about unaccountable data derivation.",
+      "claim_id": "CLS2-10",
+      "counterevidence": "None as pain evidence. HubSpot has since moved fast on agents (Agent CLI public beta June 23, 2026; Agent Hub/Builder public beta July 23, 2026; Fall 2026 Spotlight agent rebuild September 16, 2026); agents are not replay, and do not convert this pain evidence into a continuity claim.",
+      "evidence_grade": "independent",
+      "independent_support": "Five third-party outlets report the reversal (ppc.land, mi-3.com.au, onlinesalesguidetip.com, cmswire, martech.org).",
+      "maximum_defensible_wording": "Effective July 1, 2026, HubSpot's terms would have pooled customers' business-card-level contact data into a shared enrichment dataset on an opt-out basis. After four days of public backlash, CPTO Duncan Lennox posted 'We made a mistake' on LinkedIn on July 5 and pulled the change completely. The survey's 'trust failures' section is corroborated; this is evidence for the pain the thesis addresses, not a continuity-A claim.",
+      "primary_source": "Duncan Lennox LinkedIn post July 5, 2026; ppc.land; mi-3.com.au; onlinesalesguidetip.com; cmswire; martech.org",
+      "public_wording": "In July 2026 HubSpot tried to pool customer contact data into a shared enrichment dataset, then reversed it completely four days later after public backlash. The trust failure was precisely about unaccountable data derivation. That is the pain a replayable derivation chain answers.",
+      "scope": "the July 2026 terms incident only; HubSpot's later agent moves are agent surface, not continuity behavior",
+      "support_set": [
+        "Lennox LinkedIn July 5 2026",
+        "ppc.land",
+        "mi-3.com.au",
+        "onlinesalesguidetip.com",
+        "cmswire",
+        "martech.org"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Martin Fowler's established guidance on event sourcing: capture all changes as a sequence of events; rebuild state by re-running the log; audit trail and reconstruction 'come for free'. The pattern's costs are equally established: eventual consistency, event schema evolution (history is never rewritten, so old events must stay readable forever), and more moving parts. Apply it where the benefits justify the cost, not as a blanket mandate.",
+      "claim_id": "CLS2-11",
+      "counterevidence": "None. The cost argument belongs in the standard's own documentation, not as a refutation; it is the reason the unoccupied slot is a genuine differentiator rather than a free lunch.",
+      "evidence_grade": "independent",
+      "independent_support": "Long-standing primary source; cited as common knowledge attributed to its author.",
+      "maximum_defensible_wording": "Fowler's formulation of event sourcing (capture changes as an event sequence, rebuild state by re-running the log, audit trail comes free) and its costs (eventual consistency, permanent schema evolution burden, more moving parts) are established. His guidance: apply where benefits justify the cost. The cost caveat is real and is part of the standard, not a refutation of it.",
+      "primary_source": "martinfowler.com/eaaDev/EventSourcing.html",
+      "public_wording": "Event sourcing is textbook architecture, not a new invention, and its costs are textbook too: eventual consistency, event schemas you must read forever, more moving parts. The honest version of the standard carries the cost caveat with it.",
+      "scope": "Fowler's published guidance; the costs frame any immutability/replay standard honestly",
+      "support_set": [
+        "martinfowler.com/eaaDev/EventSourcing.html"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "GDPR Article 17 erasure versus append-only history is a direct legal contradiction; the accepted reconciliation is crypto-shredding (per-subject data-encryption keys, key destroyed on erasure), treated as a pragmatic near-equivalent to erasure in EDPB Guidelines 02/2025 (adopted 2026-04-08). Immutability carries a real legal engineering cost, which is one reason CRMs avoid it.",
+      "claim_id": "CLS2-12",
+      "counterevidence": "None this session. The contradiction is acknowledged in the thesis's own design; crypto-shredding is engineerable but unshipped in the surveyed category.",
+      "evidence_grade": "independent",
+      "independent_support": "Third-party engineering writeups (handbook-academy engineering handbook, fractonicmind/ternarylogic) plus adversarial review in trilamsr/regatta#548.",
+      "maximum_defensible_wording": "GDPR Article 17 erasure directly contradicts append-only history. The accepted reconciliation is crypto-shredding: per-subject data-encryption keys, key destroyed on erasure, treated as a pragmatic near-equivalent to erasure in EDPB Guidelines 02/2025 adopted 2026-04-08. Immutability therefore carries a real legal engineering cost, one reason CRMs avoid it.",
+      "primary_source": "GDPR Article 17; EDPB Guidelines 02/2025 (adopted 2026-04-08); handbook-academy engineering handbook; fractonicmind/ternarylogic; trilamsr/regatta#548",
+      "public_wording": "Append-only history collides directly with GDPR erasure law. The accepted engineering answer is crypto-shredding: encrypt per subject, destroy the key on erasure. It is real, it costs engineering effort, and it is one more reason the category avoids immutability.",
+      "scope": "the legal-engineering tension only; does not claim any surveyed vendor ships crypto-shredding",
+      "support_set": [
+        "GDPR Art 17",
+        "EDPB Guidelines 02/2025",
+        "handbook-academy engineering handbook",
+        "fractonicmind/ternarylogic",
+        "trilamsr/regatta#548"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Our own trigger seal (mission 8924ebeeb4094c37, U2 thesis E, verdict SCOPED) binds only non-owner non-superuser roles: U2-C1 through C7 were CONFIRMED on a disposable PG 15 instance where triggers were recreated verbatim from the Oracle capture; superusers bypass via session_replication_role=replica (U2-C5 verbatim post-trial row 'bypassed'); the table owner can DROP TRIGGER (U2-C6 CONFIRMED).",
+      "claim_id": "CLS2-13",
+      "counterevidence": "Open questions carried: U3 (PG17 parity: U2 trials ran on PG 15, no direct PG-17 trial), U4/U6 (Oracle pooler and table owner unknown), U5 (disk writes unmapped). These bound the claim, they do not un-confirm the trials.",
+      "evidence_grade": "independent",
+      "independent_support": "9 knowledge nodes / 8 edges in namespace marketingos::s2-block0-15 with correlation_id 8924ebeeb4094c37; journal mission row carries the SCOPED verdict.",
+      "maximum_defensible_wording": "U2 mission 8924ebeeb4094c37 CONFIRMED U2-C1..C7 and verdict thesis E SCOPED on a disposable PG 15 instance with triggers recreated verbatim from the Oracle capture: the append-only triggers bind exactly the non-owner, non-superuser role class; superusers bypass via session_replication_role=replica; the table owner can DROP TRIGGER. Open: PG17 parity, Oracle pooler/table owner, disk-write extent.",
+      "primary_source": "BLOCK-S2-0-15-U2-REPORT.md per-claim verbatim trial output; journal mission row 8924ebeeb4094c37 result {verdict: SCOPED}",
+      "public_wording": "Our own append-only trigger seal binds exactly one role class: non-owner, non-superuser. We ran the trials. Superusers bypass it; the table owner can drop it. That is what SCOPED means.",
+      "scope": "the trigger/function text on the disposable PG 15 instance, not the Oracle table owner (U4/U6 open) and not pooler/disk-write behavior (U4/U5 open)",
+      "support_set": [
+        "BLOCK-S2-0-15-U2-REPORT.md",
+        "journal mission row 8924ebeeb4094c37",
+        "knowledge nodes marketingos::s2-block0-15"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "EXPERIMENTAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "The production app role (ping) is a superuser and sits outside the seal (signal S-2, sprint-1 C8): the production journal's append-only guarantee holds via app discipline, never via the database.",
+      "claim_id": "CLS2-14",
+      "counterevidence": "None. Whether the app actually behaves with the needed discipline is unverified (gateway code unread this lane); that is carried as an open question, not as confirmation or refutation.",
+      "evidence_grade": "independent",
+      "independent_support": "Sprint-1 C8 read-only inspection (role ping on ping-core-01 is a superuser) combined with CLS2-13's class-bound result.",
+      "maximum_defensible_wording": "Combined with sprint-1 C8 (deployed Oracle app role ping is a superuser) and the class-bound seal (CLS2-13), the production journal's append-only guarantee holds via app discipline, never via the database. The app's actual behavior is unverified and must not be asserted.",
+      "primary_source": "S-2 (signal, SIGNALS-S2-15-30.md); sprint-1 C8 (claim-ledger-40-60.json CL-10)",
+      "public_wording": "Our own production database role is a superuser, which sits outside the seal. In production, our journal's append-only guarantee holds by app discipline, not by the database. We say that out loud.",
+      "scope": "Pig journal as of 2026-09-30; app behavior unverified and out of scope for assertion",
+      "support_set": [
+        "S-2",
+        "sprint-1 C8 (CL-10)",
+        "CLS2-13"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "INFERENTIAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "This piece argues FOR the standard, not that we have met it. The 34-system scoreboard reports zero grade A; our own system does not claim grade A either. What we can honestly claim: append-only events as observed in the journal reads of 2026-09-30 (production app behavior unverified per CLS2-14), causality wiring (per S-7), and a class-bound trigger seal, each scoped to the roles they bind.",
+      "claim_id": "CLS2-15",
+      "counterevidence": "Falsifier F1/F3 applied symmetrically: if our journal is later shown to lack even the claimed append-only/causality properties, this self-scoping claim must be narrowed further. The honesty is the point; the standard would mean nothing if we exempted ourselves.",
+      "evidence_grade": "independent",
+      "independent_support": "S-7 (causality wiring observable in the journal); CLS2-13/CLS2-14 (seal and role scoping).",
+      "maximum_defensible_wording": "The C1 piece argues for the continuity-A standard without claiming to have met it: zero grade A across the survey, and our own system claims no grade A. Honest claim set: append-only events observed in the journal (2026-09-30 reads), causality wiring, class-bound trigger seal, each scoped to the roles they bind. Deterministic replay demonstrated end-to-end in our journal is not claimed; pinned replay proof is follow-up work (E-1).",
+      "primary_source": "DEEP-RESEARCH-C1-REPLAYABLE-EVIDENCE.md section 7 (S-2 reckoning)",
+      "public_wording": "We are arguing for the standard, not claiming we have met it. The same scoreboard that gives the industry zero grade A gives us no grade A either. What we do claim: append-only events, wired causality, a class-bound trigger seal. Nothing more.",
+      "scope": "the C1 piece's own epistemic boundary; our journal as of 2026-09-30",
+      "support_set": [
+        "C1 evidence doc section 7",
+        "S-7",
+        "CLS2-13",
+        "CLS2-14"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "METHODOLOGICAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Audit trails answer 'what changed.' Replay answers 'can you prove this decision would be made again, identically, from the same evidence.' Everyone ships audit logging; nobody in the survey ships replay. The second question is the unoccupied slot, and it is the question buyers ask after a trust failure.",
+      "claim_id": "CLS2-16",
+      "counterevidence": "The L6 steelman counters that audit logs plus per-decision reasoning artifacts get 90% of accountability at 10% of the cost; recorded as failing where decisions are contested (compliance, disputes, audits), which is where the standard matters. If contested-decision buyers demonstrably accept audit-plus-reasoning as sufficient, this claim weakens.",
+      "evidence_grade": "independent",
+      "independent_support": "The convergence map from the survey (report.md) notes the audit-logging pattern across vendors; the pain link is supported by CLS2-10 (HubSpot July 2026).",
+      "maximum_defensible_wording": "The survey's convergence pattern: every surveyed system ships audit logging (answers 'what changed'); none ships deterministic replay (answers 'can you prove this decision would be made again, identically, from the same evidence'). The second question is the unoccupied slot and the one buyers ask after a trust failure.",
+      "primary_source": "survey convergence map (report.md); C1 evidence doc section 2",
+      "public_wording": "Your audit log is not evidence. Audit logs answer 'what changed.' Replay answers 'prove this decision would be made again, identically, from the same evidence.' Everyone ships the first. Nobody in our survey ships the second.",
+      "scope": "the survey's convergence pattern; buyer-trust link bounded by the HubSpot pain evidence",
+      "support_set": [
+        "survey report.md convergence map",
+        "CLS2-01",
+        "CLS2-10"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "INFERENTIAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "Common Room's mandatory entity binding is claimed only in its official docs; this session's search drowned in noise (Common Room was acquired by Zoom in July 2026; docs may have moved). It stays at vendor-described, unreplicated this session, pending doc recovery. The survey's B (lossy) grade for it is kept at vendor-described.",
+      "claim_id": "CLS2-17",
+      "counterevidence": "None. Recovery of the official docs would restore the claim to vendor-described-with-documentation; independent confirmation would promote it.",
+      "evidence_grade": "unreplicated",
+      "independent_support": "none",
+      "maximum_defensible_wording": "Common Room mandatory entity binding is documented only in official docs; this session's search could not recover or corroborate it (noise; July 2026 acquisition by Zoom may have moved docs). Marked unreplicated this session; the survey grade stays at vendor-described pending doc recovery.",
+      "primary_source": "survey report.md (vendor-described claim); this session's failed search",
+      "public_wording": "We could not independently re-verify Common Room's mandatory entity binding this session, so we keep it at vendor-described, not confirmed.",
+      "scope": "Common Room mandatory entity binding only; does not affect independently re-verified grade-Bs",
+      "support_set": [
+        "survey report.md vendor-described claim"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "UNCLEAR"
+    },
+    {
+      "claim": "A 'CRM built on event sourcing' search returned only hobby and OSS repos (jtiemann/crm, 5queezer/nexus-crm design doc, a Laravel CRM). No production CRM claims event sourcing as its architecture. This negative result is itself a finding.",
+      "claim_id": "CLS2-18",
+      "counterevidence": "Falsifier F4: a CRM rebuilding its core state machine on an event-sourced core kills this alongside CLS2-01. Falsifier F2: the 99h convergence lane's archaeology may surface event-sourced internals; internals-only narrows (architecture claim vs product claim), shipped product behavior kills.",
+      "evidence_grade": "independent",
+      "independent_support": "The survey's per-system architecture review corroborates the absence independently of the search.",
+      "maximum_defensible_wording": "A 'CRM built on event sourcing' search returned only hobby and OSS repos; no production CRM claims event sourcing as its architecture. This is a search-bounded negative result, corroborated by the survey's per-system architecture review.",
+      "primary_source": "this session's search results (jtiemann/crm, 5queezer/nexus-crm, Laravel CRM)",
+      "public_wording": "Search for a production CRM built on event sourcing and you find hobby projects and design docs. No production CRM claims event sourcing as its architecture.",
+      "scope": "search-bounded negative result, 2026-09-30; corroborated by the survey's architecture review",
+      "support_set": [
+        "search results this session",
+        "survey report.md architecture review"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "claim": "6sense's 'every score ships with reasoning' remains vendor-described, unchanged from the survey. Audit logs plus per-decision reasoning artifacts are the category's current ceiling alongside lossy audit trails.",
+      "claim_id": "CLS2-19",
+      "counterevidence": "Independent confirmation of the reasoning-artifact mechanism would promote the grade; a falsifier is not yet identified.",
+      "evidence_grade": "vendor-described",
+      "independent_support": "none",
+      "maximum_defensible_wording": "6sense's claim that every score ships with reasoning is vendor-described, unchanged from the survey. It stands as the category's vendor-described accountability ceiling alongside lossy audit trails, not as independently confirmed evidence.",
+      "primary_source": "survey report.md (vendor-described claim, unchanged)",
+      "public_wording": "The best accountability story in the category that we cannot independently verify is 6sense's: every score ships with its reasoning. Vendor-described, not confirmed.",
+      "scope": "6sense reasoning-artifact claim only; never converted into independent",
+      "support_set": [
+        "survey report.md vendor-described claim"
+      ],
+      "time_bound": "as of 2026-09-30",
+      "type": "OBSERVATIONAL",
+      "verdict": "UNCLEAR"
+    },
+    {
+      "claim_id": "CLS2-20",
+      "claim": "Microsoft D365 Copilot Cowork's draft actions are shown before they execute (propose-don't-act), graded C in the survey. This is described only in Microsoft's engineering blog; it was not independently tested and was unreplicated this session.",
+      "type": "OBSERVATIONAL",
+      "support_set": [
+        "research_notes/crm-agentic-harvest-20260930/report.md",
+        "Microsoft engineering blog (vendor)"
+      ],
+      "primary_source": "Microsoft engineering blog (vendor-described)",
+      "independent_support": "None this session.",
+      "evidence_grade": "vendor-described",
+      "verdict": "CONFIRMED",
+      "scope": "As described by the vendor. Propose-don't-act is a UI sequencing choice, not replay; it does not reach continuity-A.",
+      "time_bound": "As of 2026-09-30.",
+      "counterevidence": "Vendor could ship different behavior; not tested.",
+      "public_wording": "Microsoft's Copilot Cowork drafts actions before they execute. That is Microsoft describing its own product; it is a proposed-then-executed sequence, not replay from an immutable plane.",
+      "maximum_defensible_wording": "Microsoft describes D365 Copilot Cowork as showing draft actions before execution. Vendor-described only; unreplicated this session. It does not reach continuity-A."
+    }
+  ],
+  "evidence_map_source": "DEEP-RESEARCH-C1-REPLAYABLE-EVIDENCE.md (2026-09-30); OPPORTUNITIES-S2-30-45.md (C1 scoring, claim risk); SIGNALS-S2-15-30.md (S-2, S-4 support sets)",
+  "exclusion_list": "vendor acquisition speculation (R-C9 pattern: Common Room->Zoom, Warmly->HubSpot, Qualified->Salesforce effects treated as risk, not signal); HubSpot agent launches (Agent CLI/Agent Hub/Builder, Spotlight rebuild) as continuity claims; immudb/KurrentDB as in-category systems; bit-identical LLM-generation replay as the operative standard; our journal as grade A",
+  "headline": {
+    "candidates": {
+      "H1": "Your audit log is not evidence: 34 CRM/agentic systems, zero replayable histories",
+      "H2": "We surveyed 34 systems for deterministic replay. Zero shipped it, and we do not claim it either.",
+      "H3": "The missing continuity primitive: audit logs answer what changed; replay answers prove it"
+    },
+    "constraint": "Never slot a stronger headline than the evidence map supports. All three headlines are survey-bounded and carry the self-scoping (CLS2-15). H1 was the picked title in OPPORTUNITIES-S2-30-45.",
+    "status": "PARAMETERIZED - parent picks pending"
+  },
+  "ledger": "marketingos-100h-s2 block 45-60 claim ledger (opportunity C1, deep research 2026-09-30)",
+  "trials": "U2 mission 8924ebeeb4094c37 (disposable PG 15, 2026-09-30, triggers recreated verbatim from Oracle capture); Oracle read-only inspection only, zero write attempts; survey re-verification reads this session"
+}
