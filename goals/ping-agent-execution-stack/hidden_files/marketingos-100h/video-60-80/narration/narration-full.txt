@@ -1,0 +1,35 @@
+=== S01 ===
+What does Postgres read-only actually seal? We sealed our audit journal with a role setting, and then we checked what that setting really does. Here is exactly what we found.
+
+=== S02 ===
+We sealed our journal with a role setting: default transaction read only, turned on. In a fresh session, we tried an insert. The database answered: cannot execute INSERT in a read-only transaction. That part is real. We verified it on a disposable database before we trusted it.
+
+=== S03 ===
+Then we tried lifting it. Set default transaction read only to off, in the same session: the insert succeeds. Start an explicit read-write transaction: the insert succeeds. The setting bends the moment the session asks it to.
+
+=== S04 ===
+The parameter's context is user-set, which means any role can change it for its own session. That is documented behavior, not just our trial. The documentation says the parameter controls the default read-only status of each new transaction. The word default was doing the load-bearing work the whole time. What we had was a session default, not a privilege boundary.
+
+=== S05 ===
+This is the uncomfortable part. Our own retirement document said the setting binds even superusers. We tested that too. A superuser in a fresh session is bound by the default: the insert fails. Then the superuser runs SET and lifts it at will. We ran both trials. So the document's statement, as a claim about Postgres itself, was wrong.
+
+=== S06 ===
+Fairness requires the other half. The document framed its claim as scoped to our application's connection pattern. The author's understanding was that the app never issues SET or START TRANSACTION. We have not verified that in the gateway code. That link is unverified, and we are saying so. The difference between the doc assumed the app behaves this way, and we verified the app behaves this way, is exactly the kind of gap this piece is about. If you set this parameter and tell yourself you have sealed the database, check what you actually have.
+
+=== S07 ===
+What actually stopped writes in our trials? Revoke insert, update, delete, and truncate on the table, from a non-superuser role. That blocked every write we attempted, including inside an explicitly requested read-write transaction. Permission checks are enforced at the privilege layer. The read-only default is enforced at the transaction layer, and the session controls its own transaction layer. That is the demonstrated contrast. Not a recommendation from the manual: a contrast we ran on one rig. The setting is a default the role can lift. The revocation is a boundary the role cannot cross.
+
+=== S08 ===
+Now the scope limit, stated plainly, because it is the most important sentence in this piece. This holds for non-superuser roles only. Superusers bypass permission checks. That is documented Postgres behavior. We did not trial it; we are citing the docs. Which means revoke cannot bind a superuser. And our own journal role is a superuser.
+
+=== S09 ===
+So here is the honest description of our own seal, in the exact terms our evidence supports. The session default is verified present in the role settings, and active in a fresh session. The application discipline it depends on is unverified. We have not read the gateway code. The append-only triggers on the journal are verified present. We have not tested whether they actually block update and delete. That is not a privilege boundary. We are not claiming our journal is unsealed, and we are not claiming it is sealed. We are claiming exactly what we verified, and naming what we did not.
+
+=== S10 ===
+Two precision beats. First: the read-only boundary is narrower than it sounds, in both directions. Create temp table inside a read-only transaction fails. We tried it. But insert and copy from, on a temp table that already exists, succeed. The exemption is D M L on existing temp tables, not D D L. A secondary source we read overstated this as a general temp-table exemption. The trials corrected it to the narrower truth.
+
+=== S11 ===
+Second: some things we expected to be blocked were not. Advisory locks, and listen-notify, work fine inside read-only transactions. Next value on a sequence is blocked. The rule is precise, and the precision is the point. Do not generalize from the name read-only. Test each operation class.
+
+=== S12 ===
+What we did not verify. Whether our gateway code ever issues SET or START TRANSACTION. Whether the append-only triggers actually block writes. They were inspected read-only, never tested. Our trials ran on Postgres 16. The journal runs 17. The docs indicate parity. We did not trial it. We did not inspect any pooler or proxy between the gateway and the database. We did not map the full extent of what can be written to disk under read-only, beyond the operations we tested. The next mission is already queued: test the triggers on a disposable database. No writes against the journal. That stays out of scope. We thought we had sealed our journal with a setting. The evidence said we had a default, an unverified assumption, and untested triggers. Here is the boundary that actually holds, for roles that are not superusers: revoke.
