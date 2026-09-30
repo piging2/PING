@@ -35,7 +35,7 @@ Technical builders, senior developers, technical founders, infrastructure/AI eng
 PING core interrogation (25 hostile questions) runs in parallel under its own coordinator. Its verdicts are evidence when they land; the sprint does not block on them. Where ownership is unclear, the sprint uses only what the interrogation or direct tracing has proven.
 
 ## Block reports
-- 0–20: PENDING
+- 0–20: COMPLETE 2026-09-30 ~15:05 MDT. Mission `93a79e48accd23e3` (INTELLIGENCE_RESEARCH, completed): "What does PostgreSQL read-only actually seal?" 8 claims (7 CONFIRMED, 1 REFUTED-as-worded with refinement), 2 contradictions recorded, 5 unresolved questions. Residue in ping_missions/ping_events/knowledge_nodes/edges only. Report: `hidden_files/marketingos-100h/BLOCK-0-20-REPORT.md`. Commits: 28c38d1 (brief, pre-research), 2089879 (drivers + report).
 - 20–40: PENDING
 - 40–60: PENDING
 - 60–80: PENDING
