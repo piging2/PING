@@ -9,6 +9,9 @@ A schedule is NOT authorization. A stale note is NOT authorization.
 A cleared platform timer is NOT authorization.
 
 This gate consumes, in order:
+  0. holds.json (THE machine-readable hold state; prose in engagement-md
+     headers NEVER constitutes a hold). An active hold for the surface ->
+     DENIED. Missing/unreadable/invalid -> FAIL-CLOSED deny.
   1. AUTHORITY.json (owner/operator-write-only; workers never write it).
      Missing/unreadable/invalid -> FAIL-CLOSED deny.
   2. The surface's status: HELD/SUPPRESSED -> deny; unknown surface -> fail-closed.
@@ -34,7 +37,8 @@ Exit codes: 0 AUTHORIZED. 1 DENIED (hold/tripwire/capability). 2 CONFLICT
 unreadable, invalid). Exactly one verdict line is printed either way.
 
 Environment overrides (for tests only):
-  AUTHORITY_JSON_PATH, AUTHORITY_CONFLICTS_DIR, OUTREACH_ROOT.
+  AUTHORITY_JSON_PATH, AUTHORITY_CONFLICTS_DIR, OUTREACH_ROOT,
+  HOLDS_JSON_PATH.
 """
 
 import json
@@ -110,6 +114,26 @@ META_PROSE_RE = re.compile(
 # clauses are stripped.
 HELD_RE = re.compile(r"\bheld\b", re.IGNORECASE)
 LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
+# Surface-name tokens for cross-surface attribution (fb pass 165,
+# 2026-09-30 ~11:33 MDT: the clause "IG engagement HELD per 90h GO"
+# false-conflicted surface=facebook -- the HELD was scoped to Instagram,
+# and the same note explicitly allowed facebook). A hold/restriction marker
+# explicitly scoped to a DIFFERENT surface must not block the surface being
+# checked. Kept fail-safe: a marker with no surface token, or one naming
+# the checked surface (even alongside others), still fires.
+# X matches uppercase only: lowercase x is ordinary prose.
+_SURFACE_TOKEN_SRC = {
+    "tiktok": [(r"\btiktok\b", True)],
+    "instagram": [(r"\big\b", True), (r"\binstagram\b", True)],
+    "facebook": [(r"\bfacebook\b", True), (r"\bfb\b", True)],
+    "threads": [(r"\bthreads\b", True)],
+    "x": [(r"(?<![A-Za-z])X(?![A-Za-z])", False)],
+    "outreach-engine": [(r"\boutreach[- ]engine\b", True)],
+}
+SURFACE_TOKENS = {
+    s: [re.compile(p, re.IGNORECASE if ci else 0) for p, ci in toks]
+    for s, toks in _SURFACE_TOKEN_SRC.items()
+}
 # Bare "on hold" restriction-state detection (interval 09, Nolan's directive).
 # The affirmative list catches "held"/"owner hold" but bare "on hold"
 # ("deployment is on hold") was a false negative: the gate looked green while
@@ -173,7 +197,7 @@ def on_hold_deliberated(clause):
     return bool(ON_HOLD_PLACEMENT_VERB_RE.match(m.group(0)))
 
 
-def strip_negated_clauses(line):
+def strip_negated_clauses(line, surface=None):
     """Remove clauses whose restriction terms are negated, lifted, or merely
     precautionary pacing prose.
 
@@ -182,6 +206,11 @@ def strip_negated_clauses(line):
     "risking rate-limit flags, so we skipped" -> precautionary, not an event.
     A clause without a negation/lift/precaution word is kept verbatim for the
     affirmative scan that follows.
+
+    surface: when given, also strip clauses whose affirmative marker is
+    explicitly scoped to a DIFFERENT surface ("IG engagement HELD" while
+    checking facebook). Only strips when the clause names another surface
+    and does NOT name the checked surface; ambiguous clauses still fire.
     """
     kept = []
     for clause in re.split(r"[.;\n]", line):
@@ -210,6 +239,19 @@ def strip_negated_clauses(line):
                 or (RATE_LIMIT_RE.search(clause)
                     and META_PROSE_RE.search(clause))):
             continue
+        # Cross-surface attribution: a hold/restriction marker explicitly
+        # scoped to a different surface is not a hold on the checked
+        # surface. Strip only when the clause names another surface and does
+        # not name the checked surface; anything ambiguous still fires.
+        if surface in SURFACE_TOKENS and any(
+                rx.search(clause) for rx in AFFIRMATIVE_RES):
+            self_hit = any(rx.search(clause)
+                           for rx in SURFACE_TOKENS[surface])
+            other_hit = any(rx.search(clause)
+                            for s, toks in SURFACE_TOKENS.items()
+                            if s != surface for rx in toks)
+            if other_hit and not self_hit:
+                continue
         kept.append(clause)
     return " ".join(kept)
 
@@ -273,7 +315,8 @@ PASS_SECTION_RE = re.compile(r"^#{2,3}\s+(Pass\b|\d{4}-\d{2}-\d{2})",
                              re.IGNORECASE)
 
 
-def tail_affirmative_markers(log_path, from_line=0, newest_first=False):
+def tail_affirmative_markers(log_path, from_line=0, newest_first=False,
+                             surface=None):
     """Scan the log tail for affirmative hold/restriction markers.
 
     Negation/lift clauses are stripped first, so routine lines like
@@ -286,6 +329,7 @@ def tail_affirmative_markers(log_path, from_line=0, newest_first=False):
     first so the scanned "recent tail" is actually recent. Without this the
     scan reads the oldest passes and a fresh restriction would go
     undetected: fail-open on the safety gate (2026-09-29).
+    surface: passed through for cross-surface marker attribution.
     """
     try:
         with open(log_path, "r", encoding="utf-8") as f:
@@ -309,7 +353,7 @@ def tail_affirmative_markers(log_path, from_line=0, newest_first=False):
     recent = lines[-TAIL_LINES:]
     hits = []
     for ln in recent:
-        stripped = strip_negated_clauses(ln)
+        stripped = strip_negated_clauses(ln, surface)
         for rx in AFFIRMATIVE_RES:
             m = rx.search(stripped)
             if m:
@@ -357,6 +401,27 @@ def main(argv):
     conflicts_dir = os.environ.get(
         "AUTHORITY_CONFLICTS_DIR",
         os.path.join(outreach_root, "authority-conflicts"))
+    holds_path = os.environ.get(
+        "HOLDS_JSON_PATH", os.path.join(outreach_root, "holds.json"))
+
+    # 0. Executable hold state: missing/unreadable/invalid = fail closed.
+    #    An active hold here denies the pass at BOTH build time (the cron
+    #    body runs this gate before discovery/job build) and dispatch time
+    #    (run_*_pass.sh runs this gate before anything reaches the Pig).
+    try:
+        holds_state = load_json(holds_path)
+        hold_entry = holds_state["holds"][surface]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return verdict(3, surface,
+                       f"holds.json missing/unreadable/invalid: {e}; "
+                       "fail closed")
+
+    if hold_entry.get("held"):
+        return verdict(
+            1, surface,
+            f"HELD (holds.json): {hold_entry.get('reason', 'no reason')} "
+            f"(set_by={hold_entry.get('set_by')} "
+            f"set_at={hold_entry.get('set_at')} ref={hold_entry.get('ref')})")
 
     # 1. Canonical state: missing/unreadable/invalid = fail closed.
     try:
@@ -408,7 +473,8 @@ def main(argv):
         from_line = entry.get("tail_scan_from_line") or 0
         log_markers = tail_affirmative_markers(
             os.path.join(outreach_root, log_name), from_line,
-            newest_first=(surface in LOG_ORDER_NEWEST_FIRST)) or []
+            newest_first=(surface in LOG_ORDER_NEWEST_FIRST),
+            surface=surface) or []
         if log_markers:
             path = write_conflict_report(conflicts_dir, surface, entry,
                                          tripwire_note, log_markers)

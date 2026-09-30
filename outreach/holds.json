@@ -1,0 +1,50 @@
+{
+ "description": "THE machine-readable hold state for every scheduled external-action surface (likes, comments, follows, DMs, emails, form submits). authority-check.py reads this FIRST (step 0), before AUTHORITY.json, tripwires, and the log tail. An active hold here denies the pass at BOTH build time (cron body runs authority-check.py before discovery/job build) and dispatch time (run_*_pass.sh runs authority-check.py before anything reaches the Pig). Prose in the engagement-md headers NEVER creates or clears a hold: it is documentation only. This file is the hold mechanism. Writers: set-hold.py with --by owner (explicit Nolan binding order, ref recorded) or --by tripwire (platform flag: checkpoint/warning/action block/restriction, evidence ref recorded). No scheduled worker, cron body, or agent run may set or clear a hold on its own initiative. Nolan's 2026-09-30 ~16:05 standing rule: NEVER freeze engagement on prose/policy grounds; scale back ONLY on a platform flag. A failed pass is retried until the objective is met; a hold is the only thing that stops a surface, and it lives here.",
+ "holds": {
+  "facebook": {
+   "held": false,
+   "set_at": "2026-09-30T22:05:00Z",
+   "set_by": "owner",
+   "reason": "Nolan binding order 2026-09-30 ~16:05 MDT: resume engagement. Supersedes the 2026-09-30 ~14:07 freeze (which failed mechanically: it was prose in the md header that neither the cron body nor run_pass.sh read). Standing rule: never freeze on prose/policy grounds; scale back only on a platform flag.",
+   "ref": "~/workspace/outreach/facebook-engagement.md RESUMED header"
+  },
+  "instagram": {
+   "held": false,
+   "reason": "Hold lifted by owner 2026-09-29 ~05:13 MDT. Capability gate in AUTHORITY.json governs the session state (cloud route logged out; capability.authorized=false).",
+   "ref": "AUTHORITY.json surfaces.instagram",
+   "set_at": "2026-09-29T11:13:00Z",
+   "set_by": "owner"
+  },
+  "outreach-engine": {
+   "held": true,
+   "reason": "Outreach engine cron disabled (enabled:false); engine is not running. Re-enable only on Nolan's explicit word.",
+   "ref": "cron ping-social-outreach-engine enabled:false",
+   "set_at": "2026-09-25T00:00:00Z",
+   "set_by": "owner"
+  },
+  "threads": {
+   "held": false,
+   "reason": "No hold recorded. Standing authorized volumes apply.",
+   "ref": null,
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "owner"
+  },
+  "tiktok": {
+   "held": true,
+   "reason": "Platform restriction banner observed; tripwire tiktok-like-recovery-state.json status BLOCKED (durable_like_cap 0); cron disabled 2026-09-29. Stays held until the flag clears, not on a timer (Nolan's 2026-09-30 ~16:05 order).",
+   "ref": "tiktok-like-recovery-state.json + AUTHORITY.json restrictions",
+   "set_at": "2026-09-29T00:00:00Z",
+   "set_by": "tripwire"
+  },
+  "x": {
+   "held": false,
+   "reason": "No hold recorded. Standing authorized volumes apply.",
+   "ref": null,
+   "set_at": "2026-09-29T11:06:00Z",
+   "set_by": "owner"
+  }
+ },
+ "schema_version": 1,
+ "updated_at": "2026-09-30T22:25:00Z",
+ "updated_by": "Pigi (operator; 2026-09-30 ~16:25 MDT executable-policy-gate installation; holds seeded from recorded truth, no new owner decision)"
+}
