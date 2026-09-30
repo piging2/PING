@@ -23,7 +23,14 @@ FAILURE_CLASSES = frozenset({
 
 def load_journal(path):
     """Read journal rows from a JSONL file. Malformed lines are skipped
-    (they are not journal facts); the skip count is returned."""
+    (they are not journal facts); the skip count is returned.
+
+    CANONICAL EVENT READ PATH (2026-09-29): Mission Control reads events
+    from the append-only JSONL journal file (MC_JOURNAL_FILE). This
+    function is the shared reader. fyd-journal-gateway serves the same
+    file over HTTP for external consumers; it is a serving projection,
+    not a second read authority. There is exactly one live event-read
+    authority in this tree: the journal file."""
     rows, skipped = [], 0
     with open(path, encoding="utf-8") as f:
         for line in f:
