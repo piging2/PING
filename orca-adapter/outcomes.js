@@ -123,4 +123,50 @@ function effectHold(record, reason) {
   };
 }
 
-module.exports = { OUTCOME, EFFECT_STATE, unknownOutcome, terminalOutcome, effectHold, isEffectState };
+/**
+ * EFFECT-LEDGER PROMOTION (2026-09-30): the typed derivation of a FAILED
+ * terminal outcome from a post-effect definitive throw. The caller appends
+ * a promotion record via effect_ledger.js (append-only, evidence cited) and
+ * derives the verdict HERE, inside the existing outcome path.
+ *
+ * Discipline (FINISH doctrine): effect_unknown -> FAILED happens ONLY on
+ * definitive failure evidence presented by the caller; this function only
+ * CITES that evidence, it never manufactures it. Proven pre-effect throws
+ * (no effect possible) go FAILED through terminalOutcome directly; a
+ * post-effect throw with UNKNOWN effect state must go HOLD/reconcile and
+ * can never reach this function.
+ */
+function failedFromEffectPromotion(record, promotion) {
+  if (!record || typeof record !== 'object' || !promotion || typeof promotion !== 'object') {
+    throw new Error('failedFromEffectPromotion: record and promotion required');
+  }
+  if (promotion.kind !== 'effect_promotion') {
+    throw new Error(`failedFromEffectPromotion: refusing to derive FAILED from a non-promotion record (kind='${promotion.kind}')`);
+  }
+  if (promotion.effect_id !== record.effect_id) {
+    throw new Error('failedFromEffectPromotion: promotion.effect_id does not match the effect record (evidence cites a different effect)');
+  }
+  if (!Array.isArray(promotion.failure_evidence_refs) || promotion.failure_evidence_refs.length === 0) {
+    throw new Error('failedFromEffectPromotion: refusing to derive FAILED without cited failure evidence refs');
+  }
+  const out = terminalOutcome(OUTCOME.FAILED, { effect_state: record.effect_state });
+  return {
+    ...out,
+    // Contract envelope: the executor result carries an explicit status +
+    // summary, so the front door's validator accepts it without synthesis.
+    status: 'failed',
+    summary: `effect ${record.effect_id} promoted to FAILED on definitive failure evidence (${promotion.evidence_class}): ${promotion.failure}`,
+    // The promotion is cited, not buried: the caller can audit exactly
+    // which evidence caused the verdict.
+    effect_promotion: {
+      effect_id: promotion.effect_id,
+      evidence_class: promotion.evidence_class,
+      evidence_refs: promotion.failure_evidence_refs.map((r) => ({ ...r })),
+      cause: promotion.cause,
+      promoted_at: promotion.promoted_at,
+    },
+    reconcileOwnedBy: 'caller',
+  };
+}
+
+module.exports = { OUTCOME, EFFECT_STATE, unknownOutcome, terminalOutcome, effectHold, isEffectState, failedFromEffectPromotion };
