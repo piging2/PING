@@ -10,9 +10,10 @@ import { useCallback, useEffect, useState } from "react";
  * WHAT CAN I DO? WHAT REQUIRES APPROVAL? WHAT ACTUALLY HAPPENED?
  *
  * Real-data views: /api/mc/today, /api/mc/agents, /api/mc/graph,
- * /api/mc/object, /api/mc/search, /api/mc/trace-forward, plus a read-only
+ * /api/mc/object, /api/mc/search, /api/mc/trace-forward,
+ * /api/mc/crm?view=companies|people|leads|opportunities, plus a read-only
  * GET /api/mc/approvals lookup (served :3100 tree; this staging app is not
- * served, so lookup may be unreachable here and says so honestly).
+ * served, so lookups may be unreachable here and say so honestly).
  * Sections without a live source render an honest UNKNOWN empty state.
  */
 
@@ -188,6 +189,113 @@ function EmptyState({ lane, owner }: { lane: string; owner: string }) {
   );
 }
 
+/* ============ CRM view helpers (block 10-20) ============ */
+
+/**
+ * CRM contract notes (GET /api/mc/crm?view=..., served :3100 tree, added by
+ * the parallel CRM-harvest writer):
+ * - envelope: { ok, view, items, unknown, reason }
+ * - companies: one item per business (siteId, name, schema, location,
+ *   services, provenanceKind, graphDigest), projected from FYD tenant graphs
+ * - leads: one item per lead; each field is either a bare value or
+ *   { value, truth }; evidence carries a journal event ref plus graph
+ *   object refs
+ * - people / opportunities: { items: [], unknown: true, reason } (honest
+ *   UNKNOWN, never placeholder rows)
+ * Decoders below accept every plausible encoding of that contract and stay
+ * UNKNOWN (never invented) where the API supplies nothing.
+ */
+const TRUTH_LIST = Object.keys(TRUTH_STYLE) as Truth[];
+
+function asTruth(x: unknown): Truth {
+  return typeof x === "string" && (TRUTH_LIST as string[]).includes(x)
+    ? (x as Truth)
+    : "UNKNOWN";
+}
+
+function fmtVal(v: unknown): string {
+  if (v === null || v === undefined) return "(not returned)";
+  if (Array.isArray(v)) return v.length ? v.map((x) => fmtVal(x)).join(", ") : "(none)";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+type FieldView = { text: string; truth: Truth };
+
+function fieldView(
+  item: Record<string, unknown>,
+  keys: string[],
+  truths?: Record<string, unknown>
+): FieldView {
+  for (const k of keys) {
+    const raw = item[k];
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw === "object" && !Array.isArray(raw)) {
+      const r = raw as Record<string, unknown>;
+      if (r.value === undefined && r.truth === undefined) continue;
+      return {
+        text:
+          r.value === undefined || r.value === null ? "(not returned)" : fmtVal(r.value),
+        truth: asTruth(r.truth ?? (truths ? truths[k] : undefined)),
+      };
+    }
+    return {
+      text: fmtVal(raw),
+      truth: asTruth(truths ? truths[k] : undefined),
+    };
+  }
+  return { text: "(not returned)", truth: "UNKNOWN" };
+}
+
+function evidenceRefs(raw: unknown): {
+  journal: string;
+  objects: string;
+  truth: Truth;
+} {
+  const truth =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? asTruth((raw as Record<string, unknown>).truth)
+      : "UNKNOWN";
+  if (raw === null || raw === undefined)
+    return { journal: "(not returned)", objects: "(not returned)", truth };
+  if (typeof raw === "string") return { journal: raw, objects: "(not returned)", truth };
+  if (Array.isArray(raw))
+    return { journal: "(not returned)", objects: fmtVal(raw), truth };
+  const r = raw as Record<string, unknown>;
+  const journalRaw =
+    r.journalEvent ?? r.journalEventRef ?? r.eventId ?? r.event ?? r.value;
+  const objectsRaw =
+    r.graphObjects ?? r.graphObjectRefs ?? r.objects ?? r.objectRefs ?? r.refs;
+  return {
+    journal:
+      journalRaw === undefined || journalRaw === null
+        ? "(not returned)"
+        : fmtVal(journalRaw),
+    objects:
+      objectsRaw === undefined || objectsRaw === null
+        ? "(not returned)"
+        : fmtVal(objectsRaw),
+    truth,
+  };
+}
+
+function crmItems(data: Record<string, unknown>): Record<string, unknown>[] {
+  const items = data.items;
+  if (!Array.isArray(items)) return [];
+  return items.filter((x) => x !== null && typeof x === "object") as Record<
+    string,
+    unknown
+  >[];
+}
+
+function crmReason(data: Record<string, unknown>): string {
+  return String(
+    data.reason ??
+      data.unknownReason ??
+      "no person records are projected yet; this view stays UNKNOWN rather than showing placeholder rows"
+  );
+}
+
 const NAV: {
   id: string;
   label: string;
@@ -325,6 +433,10 @@ export default function MissionControlPage() {
   const [answer, setAnswer] = useState<Record<string, unknown> | null>(null);
   const [proposalId, setProposalId] = useState("");
   const [proposal, setProposal] = useState<Record<string, unknown> | null>(null);
+  const [crmCompanies, setCrmCompanies] = useState<Record<string, unknown> | null>(null);
+  const [crmPeople, setCrmPeople] = useState<Record<string, unknown> | null>(null);
+  const [crmLeads, setCrmLeads] = useState<Record<string, unknown> | null>(null);
+  const [crmOpps, setCrmOpps] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetch("/api/mc/today", { cache: "no-store" })
@@ -335,6 +447,22 @@ export default function MissionControlPage() {
       .then((r) => r.json())
       .then(setAgents)
       .catch(() => setAgents({ ok: false, status: "DEGRADED" }));
+    fetch("/api/mc/crm?view=companies", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setCrmCompanies)
+      .catch(() => setCrmCompanies({ ok: false, error: "projection unreachable" }));
+    fetch("/api/mc/crm?view=people", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setCrmPeople)
+      .catch(() => setCrmPeople({ ok: false, error: "projection unreachable" }));
+    fetch("/api/mc/crm?view=leads", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setCrmLeads)
+      .catch(() => setCrmLeads({ ok: false, error: "projection unreachable" }));
+    fetch("/api/mc/crm?view=opportunities", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setCrmOpps)
+      .catch(() => setCrmOpps({ ok: false, error: "projection unreachable" }));
   }, []);
 
   const loadGraph = useCallback(() => {
@@ -909,10 +1037,150 @@ export default function MissionControlPage() {
         )}
 
         {/* ============ CRM ============ */}
-        {section === "crm" && (
+        {view === "crm/companies" && (
+          <>
+            {!crmCompanies && <p>Loading companies...</p>}
+            {crmCompanies && crmCompanies.ok === false && (
+              <CrmFetchError title="Companies" data={crmCompanies} />
+            )}
+            {crmCompanies && crmCompanies.ok !== false && (
+              <>
+                <Card
+                  title="Companies"
+                  health="PROVEN"
+                  prov={{
+                    source:
+                      "GET /api/mc/crm?view=companies (read-only projection of the FYD tenant graphs)",
+                    owner: "FYD tenant graph (PING), projected by the CRM harvest lane",
+                    truth: "DERIVED",
+                    canDo: "inspect each business record below",
+                    approval: "no writes from this view",
+                    happened: `${crmItems(crmCompanies).length} businesses were projected from the FYD tenant graphs`,
+                  }}
+                >
+                  <p>
+                    {crmItems(crmCompanies).length} businesses projected from the
+                    FYD tenant graphs. One card per business below.
+                  </p>
+                </Card>
+                {crmItems(crmCompanies).map((c, i) => (
+                  <CompanyCard key={String(c.siteId ?? c.name ?? i)} c={c} />
+                ))}
+                {crmItems(crmCompanies).length === 0 && (
+                  <p style={{ color: "#9a97b5" }}>
+                    The projection returned zero companies. Nothing is invented
+                    in their place.
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {view === "crm/people" && (
+          <>
+            {!crmPeople && <p>Loading people...</p>}
+            {crmPeople && crmPeople.ok === false && (
+              <CrmFetchError title="People" data={crmPeople} />
+            )}
+            {crmPeople && crmPeople.ok !== false && (
+              <Card
+                title="People"
+                health="PROTOTYPE"
+                prov={{
+                  source:
+                    "GET /api/mc/crm?view=people (the API reports this view honestly UNKNOWN)",
+                  owner: "PING object graph (block 10-20 CRM harvest lane)",
+                  truth: "UNKNOWN",
+                  canDo: "nothing yet (this shell is a read-only projection)",
+                  approval: "wiring person records belongs to the CRM harvest lane",
+                  happened: crmReason(crmPeople),
+                }}
+              >
+                <p style={{ color: "#9a97b5", margin: 0 }}>{crmReason(crmPeople)}</p>
+              </Card>
+            )}
+          </>
+        )}
+
+        {view === "crm/leads" && (
+          <>
+            {!crmLeads && <p>Loading leads...</p>}
+            {crmLeads && crmLeads.ok === false && (
+              <CrmFetchError title="Leads" data={crmLeads} />
+            )}
+            {crmLeads && crmLeads.ok !== false && (
+              <>
+                <Card
+                  title="Leads"
+                  health="PROVEN"
+                  prov={{
+                    source:
+                      "GET /api/mc/crm?view=leads (journal visitor-intent events projected onto the FYD tenant graphs)",
+                    owner: "PING journal plus FYD tenant graph, projected by the CRM harvest lane",
+                    truth: "DERIVED",
+                    canDo: "inspect each lead card and its evidence refs",
+                    approval:
+                      "contacting a lead needs owner authority; NEW leads show owner review with contact withheld",
+                    happened: `${crmItems(crmLeads).length} leads were projected from visitor-intent events`,
+                  }}
+                >
+                  <p>
+                    {crmItems(crmLeads).length} leads projected. Every field
+                    carries its own truth badge. NEW leads are owner review
+                    only: contact is withheld until owner approval.
+                  </p>
+                </Card>
+                {crmItems(crmLeads).map((lead, i) => (
+                  <LeadCard key={String(lead.id ?? i)} lead={lead} index={i} />
+                ))}
+                {crmItems(crmLeads).length === 0 && (
+                  <p style={{ color: "#9a97b5" }}>
+                    The projection returned zero leads. Nothing is invented in
+                    their place.
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {view === "crm/opportunities" && (
+          <>
+            {!crmOpps && <p>Loading opportunities...</p>}
+            {crmOpps && crmOpps.ok === false && (
+              <CrmFetchError title="Opportunities" data={crmOpps} />
+            )}
+            {crmOpps && crmOpps.ok !== false && (
+              <Card
+                title="Opportunities"
+                health="PROTOTYPE"
+                prov={{
+                  source:
+                    "GET /api/mc/crm?view=opportunities (the API reports this view honestly UNKNOWN)",
+                  owner: "PING object graph (block 10-20 CRM harvest lane)",
+                  truth: "UNKNOWN",
+                  canDo: "nothing yet (this shell is a read-only projection)",
+                  approval: "wiring opportunity records belongs to the CRM harvest lane",
+                  happened: crmReason(crmOpps),
+                }}
+              >
+                <p style={{ color: "#9a97b5", margin: 0 }}>{crmReason(crmOpps)}</p>
+              </Card>
+            )}
+          </>
+        )}
+
+        {view === "crm/conversations" && (
           <EmptyState
-            lane={`CRM: ${item}`}
-            owner="PING object graph (block 10-20 CRM harvest lane)"
+            lane="Conversations"
+            owner="PING object graph (block 10-20 CRM harvest lane; no conversation projection wired)"
+          />
+        )}
+        {view === "crm/activities" && (
+          <EmptyState
+            lane="Activities"
+            owner="PING object graph (block 10-20 CRM harvest lane; no activity projection wired)"
           />
         )}
 
@@ -1457,6 +1725,168 @@ export default function MissionControlPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function CrmFetchError({
+  title,
+  data,
+}: {
+  title: string;
+  data: Record<string, unknown>;
+}) {
+  return (
+    <Card
+      title={title}
+      health="DEGRADED"
+      prov={{
+        source: "GET /api/mc/crm (fetch from this shell)",
+        owner: "CRM harvest lane",
+        truth: "UNKNOWN",
+        canDo: "nothing (the projection did not answer)",
+        approval: "check the served :3100 tree",
+        happened: `fetch failed: ${String(data.error ?? "unreachable")}`,
+      }}
+    >
+      <p style={{ color: "#9a97b5", margin: 0 }}>
+        The CRM projection did not answer from this shell:{" "}
+        {String(data.error ?? "unreachable")}. Nothing is invented in its place.
+      </p>
+    </Card>
+  );
+}
+
+const COMPANY_ROWS: { keys: string[]; label: string }[] = [
+  { keys: ["siteId"], label: "Site ID" },
+  { keys: ["name"], label: "Name" },
+  { keys: ["schema"], label: "Schema" },
+  { keys: ["location"], label: "Location" },
+  { keys: ["services"], label: "Services" },
+  { keys: ["provenanceKind", "provenance"], label: "Provenance kind" },
+  { keys: ["graphDigest", "digest"], label: "Graph digest" },
+];
+
+function CompanyCard({ c }: { c: Record<string, unknown> }) {
+  // DERIVED is the file's standing badge for a composed graph projection
+  // (see FYD / Objects); the API projects tenant graphs, so the same applies
+  // unless the item claims otherwise.
+  const truth = asTruth(c.truth ?? "DERIVED");
+  return (
+    <Card
+      title={String(c.name ?? c.siteId ?? "company")}
+      health="PROVEN"
+      prov={{
+        source: "GET /api/mc/crm?view=companies (read-only projection of the FYD tenant graphs)",
+        owner: "FYD tenant graph (PING), projected by the CRM harvest lane",
+        truth,
+        canDo: "inspect the business record",
+        approval: "no writes from this view",
+        happened: `company projected from tenant graph ${String(c.siteId ?? "?")}`,
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "180px 1fr",
+          gap: 4,
+          fontSize: 12,
+        }}
+      >
+        {COMPANY_ROWS.map((r) => (
+          <div key={r.label} style={{ display: "contents" }}>
+            <div style={{ color: "#9a97b5", fontWeight: 600 }}>{r.label}</div>
+            <div style={{ wordBreak: "break-word" }}>
+              {fieldView(c, r.keys).text}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function LeadCard({ lead, index }: { lead: Record<string, unknown>; index: number }) {
+  const truths =
+    (lead.fieldTruth as Record<string, unknown> | undefined) ??
+    (lead.truths as Record<string, unknown> | undefined) ??
+    {};
+  const get = (keys: string[]) => fieldView(lead, keys, truths);
+  const who = get(["who"]);
+  const what = get(["what", "whatTheyWant"]);
+  const fydNode = get(["fydNode", "whichFydNode", "node"]);
+  const service = get(["service", "whichService"]);
+  const when = get(["when"]);
+  const source = get(["source"]);
+  const status = get(["status"]);
+  const nextAction = get(["nextAction"]);
+  const ev = evidenceRefs(lead.evidence);
+  const isNew = status.text.trim().toUpperCase() === "NEW";
+  const nextText = isNew
+    ? `Owner review: contact withheld until owner approval.${
+        nextAction.text !== "(not returned)" ? ` ${nextAction.text}` : ""
+      }`
+    : nextAction.text;
+
+  const rows: { label: string; text: string; truth: Truth }[] = [
+    { label: "WHO", ...who },
+    { label: "WHAT THEY WANT", ...what },
+    { label: "WHICH FYD NODE", ...fydNode },
+    { label: "WHICH SERVICE", ...service },
+    { label: "WHEN", ...when },
+    { label: "SOURCE", ...source },
+    { label: "STATUS", ...status },
+  ];
+
+  return (
+    <Card
+      title={`Lead ${String(lead.id ?? index + 1)}`}
+      health="PROVEN"
+      prov={{
+        source:
+          "GET /api/mc/crm?view=leads (journal visitor-intent events projected onto the FYD tenant graphs)",
+        owner: "PING journal plus FYD tenant graph, projected by the CRM harvest lane",
+        truth: "DERIVED",
+        canDo: "inspect the lead fields and evidence refs",
+        approval:
+          "contacting this lead needs owner authority; NEW leads show owner review with contact withheld",
+        happened: `lead projected from visitor-intent events (${isNew ? "NEW, awaiting owner review" : "status " + status.text})`,
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "180px 1fr",
+          gap: 4,
+          fontSize: 12,
+        }}
+      >
+        {rows.map((r) => (
+          <div key={r.label} style={{ display: "contents" }}>
+            <div style={{ color: "#9a97b5", fontWeight: 600 }}>
+              {r.label} <TruthBadge t={r.truth} />
+            </div>
+            <div style={{ wordBreak: "break-word" }}>{r.text}</div>
+          </div>
+        ))}
+        <div style={{ display: "contents" }}>
+          <div style={{ color: "#9a97b5", fontWeight: 600 }}>
+            EVIDENCE <TruthBadge t={ev.truth} />
+          </div>
+          <div style={{ wordBreak: "break-word" }}>
+            <div>Journal event: {ev.journal}</div>
+            <div>Graph objects: {ev.objects}</div>
+          </div>
+        </div>
+        <div style={{ display: "contents" }}>
+          <div style={{ color: "#9a97b5", fontWeight: 600 }}>
+            NEXT ACTION <TruthBadge t={nextAction.truth} />
+          </div>
+          <div style={{ wordBreak: "break-word", fontWeight: isNew ? 700 : 400 }}>
+            {nextText}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
