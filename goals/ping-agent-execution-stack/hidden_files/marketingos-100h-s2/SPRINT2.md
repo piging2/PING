@@ -20,6 +20,14 @@ harvest is not integration.
 - [ ] 95–100 ADVERSARIAL CERTIFICATION: separate falsifier answers the nine questions; sprint not closed otherwise.
 
 ## Block reports
-- 0–15: IN PROGRESS (launched 2026-09-30 ~15:20 MDT). Inventory + baseline
-  recorded in `BLOCK-S2-0-15-BASELINE.md`. U2 mission (append-only triggers
-  on disposable PG) brief committed pre-research (ff6fca5); worker running.
+- 0–15: COMPLETE (2026-09-30 ~15:30 MDT). Inventory + baseline in
+  `BLOCK-S2-0-15-BASELINE.md`. U2 mission (append-only triggers on disposable
+  PG): brief committed pre-research (ff6fca5); mission `8924ebeeb4094c37`
+  completed, all 7 claims CONFIRMED, thesis E verdict **SCOPED** (report
+  `BLOCK-S2-0-15-U2-REPORT.md`, commit 3cd0bcf). Disposable DB and roles
+  dropped, verified gone. Oracle untouched beyond the read-only capture.
+  Key finding: triggers bind non-owner, non-superuser roles only; the Oracle
+  app role `ping` is a superuser (sprint-1 C8), so the production session
+  sits outside the seal — it holds via app discipline, not the database.
+  Open into 15–30: U1 (gateway code, deployment-convergence lane), U3 (PG17
+  parity), U4 (pooler), U5 (disk writes), U6 (Oracle table owner unknown).
