@@ -1,4 +1,4 @@
-# BLOCK 20–40 REPORT — EDITORIAL JUDGMENT (2026-09-30 ~16:00 MDT)
+# BLOCK 20–40 REPORT — EDITORIAL JUDGMENT (2026-09-30 ~14:40 MDT)
 
 Method committed pre-attack: commit f7c27eb (BLOCK-20-40-ATTACK-PLAN.md + editorial/rank_20_40.py).
 Attack plan is the brief; this report is the outcome. Nothing below reshapes the plan.
