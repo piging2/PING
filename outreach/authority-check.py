@@ -76,10 +76,12 @@ LOG_ORDER_NEWEST_FIRST = {"threads"}
 # on the threads and x tails (2026-09-29).
 NEGATOR_RE = re.compile(r"\b(no|none|without|never|zero|0)\b", re.IGNORECASE)
 # A clause that LIFTS a restriction ("hold lifted", "restriction cleared",
-# "session restored") is not an affirmative hold marker either. Without this,
-# a historical line like "owner HOLD lifted mid-morning" false-conflicts.
+# "session restored", "hold removed") is not an affirmative hold marker
+# either. Without this, a historical line like "owner HOLD lifted
+# mid-morning" false-conflicts.
 LIFT_RE = re.compile(
-    r"\b(lifted|cleared|resolved|restored|resumed|reopened|re-enabled)\b",
+    r"\b(lifted|cleared|resolved|restored|resumed|reopened|re-enabled|"
+    r"removed)\b",
     re.IGNORECASE)
 # Precautionary pacing prose ("risking rate-limit flags") describes the
 # operator's decision to SKIP engagement to avoid a restriction, not a
@@ -126,12 +128,49 @@ ON_HOLD_META_RE = re.compile(
     r"\b(?:report|duration|documentation|describes?|test|fixture|"
     r"verif(?:y|ies|ication)|handling)\b",
     re.IGNORECASE)
+# Deliberation ABOUT a hold ("discussing whether to put the campaign on
+# hold", "should we put the campaign on hold", "proposal: put the campaign
+# on hold") is not a hold in force: the hold is being considered, not
+# imposed. Without this carve-out the "put"/"placed" placement verbs in
+# ON_HOLD_STATE_RE fire on proposal prose and the gate denies on zero real
+# signal (interval 09 blind spot). Kept narrow on purpose:
+#   - "whether" before the state verb always marks a question about the
+#     state, never an assertion ("whether the campaign is on hold").
+#   - other deliberation verbs only neutralize the placement verbs
+#     put/placed, the verbs proposals use. An adjunct like "after
+#     discussing, the campaign is on hold" still asserts a current hold via
+#     "is" and keeps firing. A bare recommendation ("we should put the
+#     campaign on hold") stays fail-closed: intent is not discussion.
+ON_HOLD_DISCUSS_RE = re.compile(
+    r"\b(?:whether|discuss(?:ed|ing|es|ion)?|consider(?:ed|ing|s|ation)?|"
+    r"propos(?:e[sd]?|al|ing)|debat(?:e[sd]?|ing)|talk(?:ed|ing|s)? about|"
+    r"think(?:ing)? about|maybe|should we)\b",
+    re.IGNORECASE)
+ON_HOLD_PLACEMENT_VERB_RE = re.compile(r"put|placed?", re.IGNORECASE)
 RESTRICTION_TERM_RE = re.compile(
     r"restriction|restrictions|block|blocks|blocked|checkpoint|checkpoints|"
     r"warning|warnings|rate[- ]limits?|signals?|action[- ]blocks?|"
     r"stand-?down|owner[- ]hold|temporarily blocked|"
     r"verification (challenge|nudge)",
     re.IGNORECASE)
+
+
+def on_hold_deliberated(clause):
+    """True when the clause's 'on hold' match is deliberation, not state.
+
+    See ON_HOLD_DISCUSS_RE for the narrowing rules. The deliberation marker
+    must precede the state verb: "the campaign is on hold, whether we like
+    it or not" asserts a hold first and keeps firing.
+    """
+    m = ON_HOLD_STATE_RE.search(clause)
+    if not m:
+        return False
+    dm = ON_HOLD_DISCUSS_RE.search(clause[:m.start()])
+    if not dm:
+        return False
+    if dm.group(0).lower() == "whether":
+        return True
+    return bool(ON_HOLD_PLACEMENT_VERB_RE.match(m.group(0)))
 
 
 def strip_negated_clauses(line):
@@ -152,14 +191,17 @@ def strip_negated_clauses(line):
         if HELD_RE.search(clause) and LOCK_MECHANICS_RE.search(clause):
             continue
         # Bare "on hold" restriction state ("deployment is on hold"). Strip
-        # only meta-prose about holds (reporting/documenting/testing) or a
-        # negated/lifted hold; a genuine state claim is kept for the
-        # affirmative scan. The state-verb requirement in ON_HOLD_STATE_RE is
-        # what keeps "report on hold duration" from ever reaching here.
+        # only meta-prose about holds (reporting/documenting/testing),
+        # deliberation about a hold ("discussing whether to put the campaign
+        # on hold"), or a negated/lifted hold; a genuine state claim is kept
+        # for the affirmative scan. The state-verb requirement in
+        # ON_HOLD_STATE_RE is what keeps "report on hold duration" from ever
+        # reaching here.
         if ON_HOLD_STATE_RE.search(clause) and (
                 ON_HOLD_META_RE.search(clause)
                 or NEGATOR_RE.search(clause)
-                or LIFT_RE.search(clause)):
+                or LIFT_RE.search(clause)
+                or on_hold_deliberated(clause)):
             continue
         if RESTRICTION_TERM_RE.search(clause) and (
                 NEGATOR_RE.search(clause) or LIFT_RE.search(clause)

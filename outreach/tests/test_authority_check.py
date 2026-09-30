@@ -1,0 +1,359 @@
+#!/usr/bin/env python3
+"""Deterministic tests for ~/workspace/outreach/authority-check.py.
+
+Fail-closed gate tests. Every test runs the gate in a throwaway OUTREACH_ROOT
+(via the AUTHORITY_JSON_PATH / AUTHORITY_CONFLICTS_DIR / OUTREACH_ROOT env
+seams) so no test touches real state. Run: python3 test_authority_check.py
+"""
+
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+GATE = os.path.expanduser("~/workspace/outreach/authority-check.py")
+
+
+def make_authority(surfaces):
+    """surfaces: {name: status} -> AUTHORITY.json dict."""
+    doc = {"schema_version": 1, "surfaces": {}}
+    for name, status in surfaces.items():
+        doc["surfaces"][name] = {
+            "status": status,
+            "reason": f"test reason for {name}",
+            "set_by": "test",
+            "set_at": "2026-09-29T11:06:00Z",
+            "capability": {"authorized": True, "notes": None, "window": None},
+        }
+    return doc
+
+
+class GateTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = self.tmp.name
+        self.auth_path = os.path.join(self.root, "AUTHORITY.json")
+        self.conflicts = os.path.join(self.root, "authority-conflicts")
+        self.env = dict(os.environ, OUTREACH_ROOT=self.root,
+                        AUTHORITY_JSON_PATH=self.auth_path,
+                        AUTHORITY_CONFLICTS_DIR=self.conflicts)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write_authority(self, surfaces):
+        with open(self.auth_path, "w", encoding="utf-8") as f:
+            json.dump(make_authority(surfaces), f)
+
+    def write_file(self, name, text):
+        p = os.path.join(self.root, name)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(text)
+        return p
+
+    def run_gate(self, surface):
+        return subprocess.run([sys.executable, GATE, surface],
+                              capture_output=True, text=True, env=self.env)
+
+    def conflict_reports(self):
+        if not os.path.isdir(self.conflicts):
+            return []
+        return sorted(os.listdir(self.conflicts))
+
+    # ---- required behaviors ----
+
+    def test_held_flag_denies(self):
+        self.write_authority({"tiktok": "HELD"})
+        r = self.run_gate("tiktok")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("AUTHORITY-DENY", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_suppressed_flag_denies(self):
+        self.write_authority({"instagram": "SUPPRESSED"})
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 1, r.stdout)
+
+    def test_active_tiktok_tripwire_blocked_denies(self):
+        self.write_authority({"tiktok": "ACTIVE"})
+        self.write_file("tiktok-like-recovery-state.json", json.dumps({
+            "status": "BLOCKED", "durable_like_cap": 0,
+            "reviews": [{"pass_id": "tiktok-20260929-owner-hold",
+                         "decision": "hold"}]}))
+        r = self.run_gate("tiktok")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+        reports = self.conflict_reports()
+        self.assertEqual(len(reports), 1)
+        with open(os.path.join(self.conflicts, reports[0])) as fh:
+            rep = json.load(fh)
+        self.assertEqual(rep["surface"], "tiktok")
+        self.assertIn("reconciliation_required", rep)
+
+    def test_cleared_timer_without_owner_decision_still_denies(self):
+        # A cleared platform timer is NOT authorization: tripwire CLEAR but
+        # the latest recorded review is still "hold" -> deny + conflict.
+        self.write_authority({"tiktok": "ACTIVE"})
+        self.write_file("tiktok-like-recovery-state.json", json.dumps({
+            "status": "CLEAR", "durable_like_cap": 0,
+            "reviews": [{"pass_id": "tiktok-20260929-owner-hold",
+                         "decision": "hold"}]}))
+        r = self.run_gate("tiktok")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertEqual(len(self.conflict_reports()), 1)
+
+    def test_tiktok_tripwire_fully_clear_allows(self):
+        self.write_authority({"tiktok": "ACTIVE"})
+        self.write_file("tiktok-like-recovery-state.json", json.dumps({
+            "status": "CLEAR", "durable_like_cap": 5,
+            "reviews": [{"pass_id": "tiktok-20260929-owner-allow",
+                         "decision": "allow"}]}))
+        r = self.run_gate("tiktok")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+
+    def test_missing_authority_json_denies_fail_closed(self):
+        # do not write AUTHORITY.json at all
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn("AUTHORITY-FAIL-CLOSED", r.stdout)
+
+    def test_invalid_authority_json_denies_fail_closed(self):
+        self.write_file("AUTHORITY.json", "{not json")
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 3, r.stdout)
+
+    def test_unknown_surface_denies_fail_closed(self):
+        self.write_authority({"facebook": "ACTIVE"})
+        r = self.run_gate("nope")
+        self.assertEqual(r.returncode, 3, r.stdout)
+
+    def test_unknown_status_denies_fail_closed(self):
+        self.write_authority({"facebook": "MAYBE"})
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 3, r.stdout)
+
+    def test_active_vs_unresolved_restriction_conflict(self):
+        self.write_authority({"facebook": "ACTIVE"})
+        self.write_file("facebook-engagement.md",
+                        "pass 200\n- Result: 3 likes landed.\n"
+                        "- Anomalies: temporarily blocked from liking.\n")
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+        reports = self.conflict_reports()
+        self.assertEqual(len(reports), 1)
+        with open(os.path.join(self.conflicts, reports[0])) as fh:
+            rep = json.load(fh)
+        self.assertTrue(rep["log_tail_markers"])
+        self.assertIn("reconciliation_required", rep)
+
+    def test_clean_active_surface_allows(self):
+        self.write_authority({"facebook": "ACTIVE"})
+        self.write_file("facebook-engagement.md",
+                        "pass 200\n- Result: 3 likes landed.\n"
+                        "- Anomalies: none. No blocks, checkpoints, or "
+                        "warnings.\n")
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_negated_enumerations_never_conflict(self):
+        # Regression: "No action block, checkpoint, or rate warning." and
+        # "No restriction/checkpoint/action-block/login signal." must not
+        # count as restriction events (false conflicts seen on threads/x).
+        self.write_authority({"threads": "ACTIVE", "x": "ACTIVE"})
+        negated = ("- Anomalies: none. No action block, checkpoint, or rate "
+                   "warning.\n"
+                   "- Caps ok. No restriction/checkpoint/action-block/login "
+                   "signal.\n"
+                   "- No 2FA challenge, no checkpoint, no password field.\n")
+        self.write_file("threads-engagement.md", "pass 141\n" + negated)
+        self.write_file("x-engagement.md", "pass 90\n" + negated)
+        for surface in ("threads", "x"):
+            r = self.run_gate(surface)
+            self.assertEqual(r.returncode, 0,
+                             f"{surface}: {r.stdout}")
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_capability_unauthorized_denies(self):
+        doc = make_authority({"facebook": "ACTIVE"})
+        doc["surfaces"]["facebook"]["capability"] = {
+            "authorized": False, "notes": "session revoked", "window": None}
+        with open(self.auth_path, "w", encoding="utf-8") as f:
+            json.dump(doc, f)
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("AUTHORITY-DENY", r.stdout)
+
+    def test_outreach_engine_held_denies(self):
+        self.write_authority({"outreach-engine": "HELD"})
+        r = self.run_gate("outreach-engine")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("AUTHORITY-DENY", r.stdout)
+
+    def test_instagram_hold_lift_session_unauth_denies_via_capability(self):
+        # Owner lifted the hold (ACTIVE) but the 2FA session is still down:
+        # the capability layer denies (exit 1), not the stale log prose.
+        doc = make_authority({"instagram": "ACTIVE"})
+        doc["surfaces"]["instagram"]["capability"] = {
+            "authorized": False,
+            "notes": "Session unauthenticated: 2FA login wall.",
+            "window": None}
+        with open(self.auth_path, "w", encoding="utf-8") as f:
+            json.dump(doc, f)
+        self.write_file("instagram-engagement.md",
+                        "pass 160\n- CLASSIFICATION: OWNER_HOLD. 0 likes.\n"
+                        "- OWNER ORDER: INSTAGRAM HELD. Do not request, "
+                        "retrieve, automate, or enter 2FA credentials.\n")
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("AUTHORITY-DENY", r.stdout)
+        self.assertNotIn("CONFLICT", r.stdout)
+        self.assertIn("capability not authorized", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_instagram_session_restored_allows(self):
+        # Once the owner restores the session (capability authorized=true)
+        # and the log tail is clean, the lifted hold means ALLOW.
+        self.write_authority({"instagram": "ACTIVE"})
+        self.write_file("instagram-engagement.md",
+                        "pass 162\n- Result: 4 likes landed.\n"
+                        "- Anomalies: none. No action block, checkpoint, "
+                        "or rate warning.\n")
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+
+    def test_lift_clause_never_conflicts(self):
+        # "owner HOLD lifted" is history of a lift, not an imposed hold.
+        self.write_authority({"instagram": "ACTIVE"})
+        self.write_file("instagram-engagement.md",
+                        "## pass 161\n"
+                        "- CONTEXT: owner HOLD lifted mid-morning per owner "
+                        "order; resume passes.\n"
+                        "- Result: session restored, 2 likes landed.\n")
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_tail_scan_from_line_supersedes_stale_markers(self):
+        # Stale hold markers that predate a recorded owner reconciliation
+        # (tail_scan_from_line) must not conflict. Control first: without
+        # the reconciliation pointer the same log conflicts.
+        stale = ("## pass 160\n- INSTAGRAM HELD by owner order.\n"
+                 "## pass 161\n- HALTED BY OWNER HOLD.\n")
+        self.write_authority({"instagram": "ACTIVE"})
+        self.write_file("instagram-engagement.md", stale)
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("CONFLICT", r.stdout)
+
+        doc = json.load(open(self.auth_path, encoding="utf-8"))
+        doc["surfaces"]["instagram"]["tail_scan_from_line"] = 4
+        doc["surfaces"]["instagram"]["reconciliation"] = {
+            "at": "2026-09-29T11:24:00Z", "decided_by": "test",
+            "decision": "stale markers superseded"}
+        json.dump(doc, open(self.auth_path, "w", encoding="utf-8"))
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+
+    def test_new_marker_after_reconciliation_still_conflicts(self):
+        # The reconciliation pointer must not blind the gate to NEW holds
+        # appended after it.
+        self.write_authority({"instagram": "ACTIVE"})
+        self.write_file("instagram-engagement.md",
+                        "## pass 160\n- INSTAGRAM HELD by owner order.\n")
+        doc = json.load(open(self.auth_path, encoding="utf-8"))
+        doc["surfaces"]["instagram"]["tail_scan_from_line"] = 2
+        json.dump(doc, open(self.auth_path, "w", encoding="utf-8"))
+        with open(os.path.join(self.root, "instagram-engagement.md"),
+                  "a", encoding="utf-8") as f:
+            f.write("## pass 163\n- Temporarily blocked by platform.\n")
+        r = self.run_gate("instagram")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("CONFLICT", r.stdout)
+
+
+    # ---- bare "on hold" blind-spot closure (interval 09) ----
+    # The gate must deny an asserted hold state but allow discussion of a
+    # hold, historical/lifted holds, and test/log prose that merely mentions
+    # holds, without returning to naive substring matching.
+
+    def gate_verdict_for_log_line(self, surface, line):
+        self.write_authority({surface: "ACTIVE"})
+        self.write_file(f"{surface}-engagement.md",
+                        f"## pass 90\n- Note: {line}\n")
+        return self.run_gate(surface)
+
+    def test_on_hold_actual_state_denies(self):
+        for line in ("the campaign is on hold",
+                     "deployment is on hold",
+                     "the campaign remains on hold"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_on_hold_discussion_allows(self):
+        for line in ("discussing whether to put the campaign on hold",
+                     "should we put the campaign on hold",
+                     "proposal: put the campaign on hold",
+                     "deciding whether the campaign is on hold"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_on_hold_lifted_history_allows(self):
+        for line in ("the hold was removed yesterday",
+                     "owner hold lifted mid-morning",
+                     "the campaign was put on hold, then the hold was "
+                     "removed"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_on_hold_test_and_log_prose_allows(self):
+        for line in ("test: on hold handling in the gate",
+                     'log tail "on hold" markers classified as pacing prose'):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_on_hold_assertion_after_discussion_adjunct_still_denies(self):
+        # Narrowing guard: deliberation vocabulary must not hide a real
+        # asserted hold, and a bare recommendation stays fail-closed.
+        for line in ("after discussing, the campaign is on hold",
+                     "the campaign is on hold, whether we like it or not",
+                     "we should put the campaign on hold"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_prior_false_positive_fixes_hold(self):
+        # Regression lock for the interval-08 carve-outs: lock mechanics,
+        # precautionary pacing prose, and gate meta-prose stay ALLOW while
+        # real restriction events still fire.
+        for line in ("the follow driver held the one-driver X Chrome lock",
+                     "gate held clean on the x pass",
+                     "risking rate-limit flags, so we skipped the pass",
+                     'log-tail "rate-limit" markers classified as pacing '
+                     "prose"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0, f"{line}: {r.stdout}")
+        self.assertEqual(self.conflict_reports(), [])
+        for line in ("rate limit hit on the x pass",
+                     "temporarily blocked from liking"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
