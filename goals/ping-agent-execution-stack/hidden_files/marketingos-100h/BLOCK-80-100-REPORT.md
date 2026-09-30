@@ -29,7 +29,13 @@ Inputs: SPRINT.md; all block reports 0–20 through 60–80; claim-ledger-40-60.
 
 ## 3. Adversarial certification
 
-Separate falsifier pass with its own record: `BLOCK-80-100-FALSIFIER-REPORT.md` (committed). The sprint is not closed unless that report is committed. [status appended after certification]
+Separate falsifier pass with its own record: `BLOCK-80-100-FALSIFIER-REPORT.md` (committed as `c3c2b53`). Verdict: CERTIFIED WITH FINDINGS.
+
+Findings and fixes (2026-09-30, before close):
+- F1: LEARNING-RECORD-SCHEMA.md claimed a `marketingos::learnings` namespace + LEARNING_RECORDED events that do not exist. Fixed: schema doc corrected to describe reality (block namespace `marketingos::block80-100`, trail = mission OBSERVATION_CREATED/CLAIM_CREATED events).
+- F2: learning_id drift — knowledge_nodes carried `LR-20260930-0N` while learning-records.json canonical is `LR-20260930-00N`. Fixed: targeted metadata UPDATE on the 6 nodes (mission `2d530e04dfab7f1a`); all 6 now canonical. No history rewritten.
+
+The sprint is closed on the committed falsifier report plus these fixes.
 
 ## 4. Readiness for the next sprint
 

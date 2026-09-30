@@ -3,8 +3,13 @@
 A LearningRecord is the canonical unit of "what MarketingOS learned." It is a
 plain data record, not a new store, not an authority. Records live in
 `learning-records.json` (machine-readable) and are mirrored into
-knowledge_nodes (`node_type = 'learning'`, namespace `marketingos::learnings`)
-plus a ping_events LEARNING_RECORDED event for the trail.
+knowledge_nodes (`node_type = 'learning'`, in the originating block's
+namespace — e.g. `marketingos::block80-100` for this sprint's records); the
+journal trail is the block mission's OBSERVATION_CREATED / CLAIM_CREATED
+events correlated by mission id. There is no LEARNING_RECORDED event type and
+no `marketingos::learnings` namespace — an earlier draft of this doc claimed
+both; corrected 2026-09-30 per falsifier finding F1. Future sprints mirror
+their records into their own block namespace.
 
 ## The boundary law
 
