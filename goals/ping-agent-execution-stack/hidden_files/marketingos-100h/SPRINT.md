@@ -34,6 +34,44 @@ Technical builders, senior developers, technical founders, infrastructure/AI eng
 ## Parallel program
 PING core interrogation (25 hostile questions) runs in parallel under its own coordinator. Its verdicts are evidence when they land; the sprint does not block on them. Where ownership is unclear, the sprint uses only what the interrogation or direct tracing has proven.
 
+## Next sprint plan (ACCEPTED, not yet executing)
+
+Nolan's binding directive 2026-09-30 ~14:36 MDT, filed verbatim at
+`~/workspace/goals/ping-agent-execution-stack/files/MARKETINGOS-PLAN-NEXT-100-HOURS-2026-09-30.md`.
+
+Lane ruling: FYD/product thread = product; this lane = MarketingOS /
+technical marketing intelligence. This lane does not implement FYD's
+backlog; it consumes FYD/PING/Pig engineering reality as source material.
+
+Sequencing decision (lane owner): the current sprint (14:18 plan) continues
+to hour 100 on its own plan — block 0-20 has real journal residue and the
+directive says not to steal writers from the current loop. This compounding
+plan is the ACCEPTED plan for the NEXT MarketingOS 100-hour sprint and keeps
+being refined in parallel without diverting current-loop writers.
+
+Next-sprint shape: 0-15 OBSERVABILITY+BASELINE / 15-30 SIGNAL+AUDIENCE /
+30-45 OPPORTUNITY+RESEARCH / 45-60 EVIDENCE PACKAGE+CONTENT COMPILER /
+60-70 APPROVAL+DISTRIBUTION / 70-85 OBSERVATION+EXPERIMENT / 85-95 LEARNING /
+95-100 ADVERSARIAL CERTIFICATION. Hour-100 demo: one real question through
+the full chain with drill-down CLAIM -> SUPPORT SET -> EVIDENCE -> SOURCE ->
+VERDICT and PROPOSAL -> AUTHORIZATION -> ATTEMPT -> RESULT -> EFFECT ->
+VERIFICATION -> OUTCOME. Doctrine: novelty detector, claim ledger,
+overclaim compiler, three content layers, WE WERE WRONG family,
+demonstration ladder, L6 hostile review, information-gain scoring,
+thesis/evidence package as canonical object, depth metrics (ATTENTION /
+INTELLECTUAL ENGAGEMENT / INTENT / AUTHORITY / BUSINESS), audience by
+questions, comments as sensor network, content decay, causally modest
+experiments, playbook rules with decay/scope. Reporting: observations
+ingested / claims verified-refuted-unclear / audience knowledge /
+opportunities rejected-advanced / artifacts with claim lineage / approvals /
+distributions verified / outcome windows closed / learnings promoted /
+playbook changes / next questions / first broken loop edge / WHAT DID
+MARKETINGOS KNOW AT THE END THAT IT DID NOT KNOW AT THE START.
+
+Repo caveat (binding): piging2/fyd still 404, FYD remote state UNVERIFIED;
+Pig forensic is fresher than GitHub for local implementation; local /
+worktree / deployed truth remain separate.
+
 ## Block reports
 - 0–20: COMPLETE 2026-09-30 ~15:05 MDT. Mission `93a79e48accd23e3` (INTELLIGENCE_RESEARCH, completed): "What does PostgreSQL read-only actually seal?" 8 claims (7 CONFIRMED, 1 REFUTED-as-worded with refinement), 2 contradictions recorded, 5 unresolved questions. Residue in ping_missions/ping_events/knowledge_nodes/edges only. Report: `hidden_files/marketingos-100h/BLOCK-0-20-REPORT.md`. Commits: 28c38d1 (brief, pre-research), 2089879 (drivers + report).
 - 20–40: COMPLETE 2026-09-30 ~14:40 MDT. Mission `0a04c41899fefb2a` (EXPERIMENT_RUN, completed, verdict SUPPORTED): editorial judgment over the 8 block 0-20 findings. Deterministic ranking projection (editorial/rank_20_40.py, fixture SHA256 1b7f1e68…; C2=44, C6=44, C7=42, C3=40, C5=34, C4=28, C1=24, C8=20; scores recommend, never authorize). 5 competing theses attacked from K1/K2/U1–U5/steelman (attack plan committed pre-attack as f7c27eb): 14 attacks, 10 landed. 4 theses killed/demoted as headlines (A merged, B→beat, C scoped to non-superusers after the superuser wrinkle landed hard, D→K2 honesty anchor); E INCONCLUSIVE → next research mission (test the append-only triggers, U2). Surviving thesis for Nolan's judgment: "default_transaction_read_only is a session default, not a privilege boundary. REVOKE is the boundary, for non-superuser roles. Superusers cannot be privilege-bound at all, and our own journal runs as one." 7 non-claims (N1–N7) + 11-entry evidence map feed the 40–60 claim ledger. Residue: ping_missions/ping_events (2 obs + 6 claims)/knowledge_nodes 10/edges 16, namespace marketingos::block20-40. Incidents I1–I3 recorded in report (verdict-vocab scope, silent complete() no-op, ping_events correlation in metadata). Report: `hidden_files/marketingos-100h/BLOCK-20-40-REPORT.md`. Commits: f7c27eb (method pre-attack), 7e7e6f1 (report + drivers).
