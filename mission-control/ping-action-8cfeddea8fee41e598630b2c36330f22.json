@@ -1,0 +1,104 @@
+{
+ "as_of": "2026-09-30T00:02:34Z",
+ "honesty": {
+  "mocked_fields": 0,
+  "question_count": 8,
+  "unknown_count": 0
+ },
+ "intent_id": "8cfeddea8fee41e598630b2c36330f22",
+ "projection": "mission-control/ping-action-screen",
+ "screen": {
+  "attempt": {
+   "answer": {
+    "dispatched_at": "2026-09-29T17:30:41.502287+00:00",
+    "pass_id": "fb-20260929-173026",
+    "stage": "EXECUTION"
+   },
+   "question": "What attempt ran?",
+   "source": "ledger execution record (ATTEMPT)"
+  },
+  "authorized": {
+   "answer": {
+    "decision": "allowed",
+    "evidence": "intent recorded post-filter in pass fb-20260929-173026; dispatch to worker recorded (execution record present: True)",
+    "mechanism": "engagement-guard.py cmd_filter + refuse, run pre-dispatch in the pass pipeline; write-intents only sees guard-passed jobs",
+    "per_action_receipt": "absent: pipeline-attested, not per-action-receipted"
+   },
+   "question": "What was authorized?",
+   "source": "ledger AUTHORIZATION block: pipeline-attested, not per-action-receipted"
+  },
+  "intent_id": "8cfeddea8fee41e598630b2c36330f22",
+  "learned": {
+   "answer": {
+    "reason": "no candidate-learning records in ledger; latest outcome note: outcome window open; re-observe for replies/inquiries. No learning proposed: n=1 no-signal is not sample support.",
+    "status": "none proposed"
+   },
+   "question": "What does PING think it learned?",
+   "source": "ledger candidate-learning records (empty)"
+  },
+  "outcome_known": {
+   "answer": [
+    {
+     "evidence": "facebook-cli comments read 2026-09-29T18:45Z: 1 comment on post (ours), 0 replies; observation 55 min after RESULT",
+     "note": "outcome window open; re-observe for replies/inquiries. No learning proposed: n=1 no-signal is not sample support.",
+     "observed_at": "2026-09-29T18:45:01+00:00",
+     "outcome_class": "NO_SIGNAL"
+    }
+   ],
+   "question": "What outcome is currently known?",
+   "source": "ledger outcome records (observations, not verdicts)"
+  },
+  "remains_unknown": {
+   "answer": [
+    "whether the action later draws replies or inquiries (outcome window honestly open as of 2026-09-29T18:45:01+00:00)",
+    "a per-action authorization receipt (authorization is pipeline-attested, not per-action-receipted)",
+    "world state after 2026-09-29T18:45:01+00:00 (no later independent observation)"
+   ],
+   "question": "What remains unknown?",
+   "source": "derived from explicit gaps in the ledger records above"
+  },
+  "verified": {
+   "answer": [
+    {
+     "effect_summary": "independent read shows 1 comment on post; text matches worker-reported comment (halloween/expert-mode quip); 0 replies at observation time",
+     "evidence_ref": "https://facebook.com/groups/2646836605529865/permalink/4997700947110074/",
+     "observed_at": "2026-09-29T18:45:01+00:00",
+     "observer": "facebook-cli post comments read (independent read-only session)",
+     "verdict": "EFFECT_CONFIRMED"
+    }
+   ],
+   "question": "What did independent observation verify?",
+   "source": "ledger effect_verification records: observer channel differs from worker evidence"
+  },
+  "wanted": {
+   "answer": {
+    "account": "Roofing B: Self-Hope Family Re-Store Halloween (comment)",
+    "action": "comment",
+    "pass_id": "fb-20260929-173026",
+    "planned_at": "2026-09-29T17:30:32.053288+00:00",
+    "platform": "facebook",
+    "target": "https://facebook.com/groups/2646836605529865/permalink/4997700947110074/"
+   },
+   "question": "What did PING want?",
+   "source": "ledger intent record (ACTION_INTENT_DURABLE)"
+  },
+  "worker_report": {
+   "answer": {
+    "distinction": "RESULT is not EFFECT: ok=true is the worker's claim about what it did, not an independent observation of the world",
+    "evidence": "engage.js worker result",
+    "note": "comment text visible",
+    "ok": true,
+    "reported_at": "2026-09-29T17:50:49.876765+00:00",
+    "terminal": "EXECUTED"
+   },
+   "question": "What did the worker report?",
+   "source": "ledger observation record: the worker's claim, not effect"
+  }
+ },
+ "source": {
+  "command": "action-intent-ledger.py trace --intent-id 8cfeddea8fee41e598630b2c36330f22",
+  "ledger": "/home/hatch/workspace/outreach/action-intent-ledger.jsonl",
+  "note": "projection only; the action-intent ledger remains the sole authority",
+  "trace_sha256": "a5f0ba9fc67a19a46cd6777d2dd7844c42cf07d27ff6a9c89428d56cbb14287b"
+ }
+}
