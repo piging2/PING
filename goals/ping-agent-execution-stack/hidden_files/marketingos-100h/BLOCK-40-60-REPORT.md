@@ -60,8 +60,10 @@ NARROWING APPLIED FROM L6: (a) contribution framed as demonstrated contrast + se
 
 ## 6. Mission + journal record
 
-- Mission `<id>` (CONTENT_PRODUCTION, existing vocabulary; design = script brief + accuracy/overclaim/L6 methodology in payload; outcome = script + ledger + this report in result; verdict SUPPORTED). Completed 2026-09-30.
-- Residue: ping_missions (design + outcome); ping_events (3 OBSERVATION_CREATED + claims, correlated by metadata->>'correlation_id'); knowledge_nodes/edges, namespace marketingos::block40-60 (script node, ledger node, accuracy-pass node, overclaim node, L6 node, learning; edges: ledger/accuracy/overclaim/L6 -> script supports/bounds/attacks).
+- Mission `f73a98dcc6bae44c` (EXPERIMENT_RUN, existing vocabulary — CONTENT_PRODUCTION is not in mission_labels.js on the Pig (grep -c = 0) and the directive forbids new vocabulary; design = script brief + pass methodology in payload; outcome = script + ledger + this report in result; verdict SUPPORTED). Completed 2026-09-30 ~14:52 MDT.
+- Residue: ping_missions (design + outcome); ping_events (3 OBSERVATION_CREATED + 5 CLAIM_CREATED, correlated by metadata->>'correlation_id'); knowledge_nodes 6 + knowledge_edges 5, namespace marketingos::block40-60 (script, ledger, accuracy-pass, overclaim, L6, learning; edges: ledger->script supports, accuracy->script bounds, overclaim->script clears, l6->script attacks, script->learning supports).
+- Driver: `drivers/mkos-driver-d.cjs` (workspace commit follows). Transfer note: scp to the Pig lands on the Windows side (C:\tmp); copy to WSL /tmp before running. No single-shot base64 transfer (cmd.exe 8191-char limit).
+- Incidents: none. The I1–I3 lessons from 20–40 held (CLAIM_VERDICTS only; assign→start→complete with row readback; correlation in metadata).
 - NOT created: no new authorities, stores, writers, subsystems. No Oracle state touched. Qdrant untouched (not genuinely needed; the ledger file + journal residue suffice). U2 trigger-testing NOT run in this block (task constraint); recorded as the next research mission.
 
 ## 7. Readiness for 60–80 (video compiler path)
