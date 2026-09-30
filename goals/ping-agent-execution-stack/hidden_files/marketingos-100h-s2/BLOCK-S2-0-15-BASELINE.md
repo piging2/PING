@@ -7,7 +7,7 @@ All sources real. No demo data. Inventory driver:
 
 | source | state | evidence grade |
 |--------|-------|----------------|
-| Pig journal (`ping_runtime`, PG 15.18, `ping-postgres` container) | live, reachable via `~/workspace/bin/pigwsl-exec` | primary (direct read) |
+| Pig journal (`ping_runtime`, PG 15.18, live) | live, reachable via `~/workspace/bin/pigwsl-exec` | primary (direct read) |
 | Oracle journal (`crx_runtime`, PG 17, read-only role `ping`) | live, read-only; inspected via `~/workspace/pig-fb/oracle-ssh.sh -s` | primary (direct read, catalog only) |
 | Qdrant (`ping-qdrant` :6333) | live; collections: `constitutional_documents`, `constitutional_memory`, `knowledge` | primary (direct read) |
 | Repo (`~/workspace`, branch `orca/effect-ledger-2026-09-30`) | sprint-1 artifacts present; sprint-2 dir `hidden_files/marketingos-100h-s2/` | primary (direct read) |

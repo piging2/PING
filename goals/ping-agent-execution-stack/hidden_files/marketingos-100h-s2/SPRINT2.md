@@ -31,3 +31,15 @@ harvest is not integration.
   sits outside the seal — it holds via app discipline, not the database.
   Open into 15–30: U1 (gateway code, deployment-convergence lane), U3 (PG17
   parity), U4 (pooler), U5 (disk writes), U6 (Oracle table owner unknown).
+- 15–30: COMPLETE (2026-09-30 ~15:40 MDT). Verdict-metadata gap closed:
+  read-only projection query (`verdict-projection.sql`; verdicts live in
+  `payload->'claim'->>'verdict'`, 39/106 events; no history mutated, no
+  schema state added) — commit 7273ac7. 8 evidence-backed signals + 4
+  explicit rejections (`SIGNALS-S2-15-30.md`, commit 059b582); S-4 (unoccupied
+  continuity-A slot) is the differentiation anchor for 30–45. Cluster A
+  (the Operator, n=1, fully observed) + Cluster B (external technical
+  audience: honest UNKNOWN across all five dimensions) —
+  `AUDIENCE-S2-15-30.md`, commit ccf4f0e. Baseline corrected (journal host is
+  brain-postgres). Report: `hidden_files/marketingos-100h-s2/BLOCK-S2-15-30-REPORT.md`.
+  Watch: 25 CLAIM_GENERATE missions stuck in `created` (PING-core territory,
+  flagged to parent). U1/U3/U4/U5/U6 carried UNKNOWN.
