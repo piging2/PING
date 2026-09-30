@@ -87,3 +87,24 @@ OPEN: U1 (gateway code inspection — deployment-convergence lane owns it), U2 (
 FIRST BROKEN LOOP EDGE: DISTRIBUTION → METRICS → OUTCOME → LEARNING has never carried a real signal. The loop produces review-ready artifacts but has never learned from reality. The first authorized distribution is the next proof gate.
 
 NEXT SPRINT INHERITS: the closed learning loop (records + playbook + intake, all with decay), the falsifier's nine answers, the U2 research mission, the review-ready video (headline slot pending), and the compounding plan at `files/MARKETINGOS-PLAN-NEXT-100-HOURS-2026-09-30.md`.
+
+## Sprint 2 launched (2026-09-30 ~15:16 MDT, Nolan's order: keep going)
+
+Sprint 1 closed certified (hour-100). Nolan: keep going, the hour blocks are
+budgets; the lane keeps producing; days of backlog remain.
+
+Nolan's video verdict (binding): he does not like the sprint-1 video. The
+45–60 compiler block will plan around a real video-generator integration,
+not the PIL-frame reconstruction approach. We keep content ideas, scripts,
+and judgment; the integration makes it aesthetically pleasing.
+
+Sprint 2 executes the accepted compounding plan
+(files/MARKETINGOS-PLAN-NEXT-100-HOURS-2026-09-30.md) from 0–15:
+observability + baseline + first INTELLIGENCE_RESEARCH mission (prime: U2
+append-only triggers on disposable PG). Coordinator active.
+
+Parallel research track: video-generator integrations survey
+(research_notes/video-generator-integrations-20260930/) — APIs graded on
+programmatic control, aesthetic ceiling for technical content, claim control
+(verbatim narration/text, no paraphrase), cost, integration effort,
+provenance. Feeds the 45–60 compiler plan.
