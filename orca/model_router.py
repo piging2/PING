@@ -210,3 +210,18 @@ def probe_note(model_id: str) -> str:
         f"Treat 429 / provider unavailable / timeout / model removed / "
         f"tool-call incompatibility as ordinary routing events, not mission failures."
     )
+
+
+# Added by ORCA mission orca-mission-20261002-161857
+def parse_model_id(model_id: str) -> dict:
+    if "/" not in model_id:
+        raise ValueError("Invalid model ID format")
+    parts = model_id.split("/", 1)
+    provider = parts[0]
+    rest = parts[1]
+    if ":" in rest:
+        model, variant = rest.split(":", 1)
+    else:
+        model = rest
+        variant = None
+    return {"provider": provider, "model": model, "variant": variant}
