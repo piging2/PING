@@ -1,0 +1,33 @@
+{
+  "blocked_operations": [],
+  "blocked_since": null,
+  "canary_required": false,
+  "capability": "instagram-browser-automation",
+  "consecutive_failures": 0,
+  "consecutive_failures_source": "reset 2026-09-29: prior count belonged to the resolved 2026-09-16/17 wedge incident",
+  "last_probe": "2026-09-29T13:42:00Z",
+  "last_recovery": {
+    "note": "Chain passed: CDP ok, login gate ok, enumerate ok, dry-run ok, one canary like verified. No mass operation performed. First scheduled run opens with a verified canary.",
+    "run": "see action-truth.jsonl"
+  },
+  "next_probe": null,
+  "probe_policy": "BLOCKED -> lightweight read-only CDP probe at most every 6h, invoked by the existing engagement passes at their capability gate (no separate probe scheduler) -> evidence-backed success -> ig-recovery-test.sh unlock (exclusive writer). Probe never restarts/kills the ig-profile Chrome.",
+  "probe_result": "AVAILABLE_CDP_RESPONSIVE_SESSION_LOGGED_IN",
+  "reason": "AVAILABLE",
+  "reason_detail": "No current block. Prior BROWSER_WEDGE (2026-09-16/17) recovered 2026-09-19; session verified logged in 2026-09-29 07:42 MDT.",
+  "recovery_gate": "ig-recovery-test.sh must pass the full chain (authenticate -> reach target surface -> enumerate -> verify enumeration -> dry-run -> execute ONE canary action -> verify) before status may return to AVAILABLE. The recovery test is the ONLY writer allowed to flip BLOCKED to AVAILABLE. No mass operation immediately after recovery: the first scheduled run opens with a verified canary (canary_required=true is set by the recovery test on unlock).",
+  "status": "AVAILABLE",
+  "unblocked_at": "2026-09-19T13:13:01+00:00",
+  "updated_at": "2026-09-29T13:44:00Z",
+  "updated_by": "Pigi (operator cleanup of stale post-recovery fields; status and recovery_gate untouched)",
+  "history": [
+    {
+      "incident": "BROWSER_WEDGE 2026-09-16/17",
+      "detail": "CDP :9226 websocket accept path hung; 7 engagement passes (37,40,41,42,43,45,46) + 2026-09-17 unfollow batch failed. Recovered 2026-09-19T13:13:01Z via full-chain recovery test (CDP ok, login gate ok, enumerate ok, dry-run ok, one canary like verified)."
+    },
+    {
+      "verified": "2026-09-29T13:42:00Z",
+      "detail": "Read-only CDP check: :9226 responsive (Chrome 153), instagram.com tab open, DOM shows logged in as nolanpigi (no login form, home nav present)."
+    }
+  ]
+}

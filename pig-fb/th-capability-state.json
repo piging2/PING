@@ -1,0 +1,18 @@
+{
+ "blocked_operations": [],
+ "blocked_since": "2026-09-16T23:05:00-06:00",
+ "canary_required": false,
+ "capability": "threads-browser-automation",
+ "consecutive_failures": 0,
+ "consecutive_failures_source": "reset 2026-09-20 ~09:52 MDT: cookie-identity 429 root cause fixed; threads.com loads HTTP 200 cookie-less in the ig-profile Chrome",
+ "last_probe": "2026-09-20T15:52:00Z",
+ "next_probe": "2026-09-20T21:52:00Z",
+ "probe_policy": "READY_AWAITING_LOGIN -> read-only CDP auth-marker probe at most every 6h via the engagement pass capability gate until Nolan logs back in; then ig-recovery-test.sh unlock (exclusive writer). Probe never restarts/kills the ig-profile Chrome.",
+ "probe_result": "SITE_FIXED_SESSION_LOST",
+ "reason": "login gate fixed; session verified logged in; canary action landed",
+ "reason_detail": "2026-09-27: the READY_AWAITING_LOGIN state was an artifact of th-restore.js only detecting profile links / Create button, which the current threads.com DOM no longer exposes. Feed-chrome detection added; SHA256-verified deploy; gate reports already_logged_in; Phase B canary (1 like, @mcuban) landed with no anomaly. The 2026-09-20 COOKIE_IDENTITY_RATE_LIMITED_BY_META_EDGE episode is closed.",
+ "recovery_gate": "Nolan logs into threads.com in the ig-profile Chrome; then ig-recovery-test.sh must pass the full chain before status may return to AVAILABLE. The recovery test is the ONLY writer allowed to flip READY_AWAITING_LOGIN to AVAILABLE.",
+ "status": "AVAILABLE",
+ "updated_at": "2026-09-27T13:42:09Z",
+ "updated_by": "canary recovery pass 123 (th-20260927-133749): th-restore.js login gate fixed 2026-09-27 (feed-chrome detection), gate now reports already_logged_in, 1 like landed clean with 0 guard violations; stale 2026-09-20 READY_AWAITING_LOGIN story retired"
+}

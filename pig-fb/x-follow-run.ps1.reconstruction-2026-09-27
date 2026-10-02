@@ -1,0 +1,17 @@
+# x-follow-run.ps1: wrapper for the X follow driver (x-follow.js).
+# RECONSTRUCTED 2026-09-26 ~10:05 MDT: the original was lost in a
+# C:/Windows/Temp cleanup (same volatility class as the 2026-09-25 Hermes
+# Temp loss). Rebuilt from the x-like-run.ps1 / x-comment-run.ps1 family
+# pattern plus the x-follow-batch.sh contract (rc=3 = restriction halt).
+# Honors the one-driver lock: waits (bounded 10 min) while x-engage.lock
+# is held by a like/comment run before driving the X Chrome.
+# Exit codes are propagated explicitly (exit $LASTEXITCODE): the 2026-09-15
+# x-like-run.ps1 bug (powershell swallowing the driver exit code, always
+# exiting 0) would have silently disabled the batch's rc=3 halt.
+$lock = 'C:/Windows/Temp/x-engage.lock'
+$deadline = (Get-Date).AddMinutes(10)
+while ((Test-Path $lock) -and ((Get-Date) -lt $deadline)) { Start-Sleep -Seconds 15 }
+$env:NODE_PATH = 'C:/Users/nolan/.local/share/pigi/fb-engage/node_modules'
+& 'C:/Users/nolan/.local/share/pigi/node-v22.23.2-win-x64/node.exe' 'C:/Users/nolan/.local/share/pigi/x-tools/x-follow.js' $args
+exit $LASTEXITCODE
+
