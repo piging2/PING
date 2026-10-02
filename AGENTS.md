@@ -51,3 +51,13 @@
 
 ## Pig WSL access helper (2026-09-29, convergence interval 4, battle-tested by all writers)
 - Use `~/workspace/bin/pigwsl-exec '<bash command>'` for Pig WSL access from this sandbox. It routes through the tailnet egress proxy as nolan@100.79.154.43 into Pig WSL. The muse-ssh Windows shell has no WSL distros and no /home/nolan — do not try to reach WSL through muse-ssh. The helper resolved the prior coordinators' access confusion; all three writers in interval 4 used it successfully.
+
+## pigwsl-exec does not propagate kills to the Pig (2026-09-30, INTELLIGENCE_RESEARCH P0)
+- Killing (or Ctrl-C / process.kill on) the LOCAL pigwsl-exec wrapper does NOT stop the remote command on the Pig: the ssh session dies but the remote process keeps running. Two concurrent `docker build`s raced on the same image tag this way (the "killed" build finished last and retagged with stale context). When the remote side must actually stop, kill it remotely: `pigwsl-exec 'pkill -f "<pattern>"'` and verify with `ps` before relaunching.
+- Related: never run two mutating remote commands against the same target concurrently (same tag, same container name); the second `docker run` fails with a name conflict while the first sits in `Created` state — `docker rm` the dead one before retrying.
+
+## Pig egress-proxy scp flakiness fallback (2026-10-01, IG pass 189)
+- pig-ssh.sh's pig_scp (via `nc -X connect -x hatch-egress-proxy:3130`) can fail repeatedly with "nc: proxy read: Broken pipe" while pigwsl-exec still works. Do not hammer scp: stage files Pig-ward with pig-put (watch for sha MISMATCH on larger files; if the chunk loop truncates, rebuild the file on the Pig from an already-present source via on-Pig python instead) and launch remote processes via pigwsl-exec + powershell.exe, mimicking the run_* script's remote command. run_ig_pass.sh later succeeded through its own channel, so retry the script first before falling back.
+
+## pig-put base64 chunk rules (2026-09-30, INTELLIGENCE_RESEARCH P0)
+- `~/workspace/bin/pig-put` stages local files onto the Pig via base64 chunks through pigwsl-exec. Chunk size must stay <= ~4000 chars per chunk or the Pig rejects with "command line is too long". `fold` omits the trailing newline on the final partial line, so a plain `while read` loop drops the last chunk — use `while IFS= read -r chunk || [ -n "$chunk" ]`. `mkdir -p` the destination dir first for new paths. Always sha256-verify after transfer (the helper prints both hashes).

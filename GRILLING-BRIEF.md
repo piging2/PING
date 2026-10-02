@@ -74,6 +74,8 @@ Do not manufacture decisions just to populate the Grill.
 
 ### DEPLOY-PROV-001: accept candidate-3c5d280dd as the honest live baseline, then stop :8081 to restore single-writer?
 
+> **RESOLVED 2026-09-22 (hygiene note 2026-10-01):** Nolan decided and the decision was executed 2026-09-22 ~10:05 MDT (Nolan: "do oracle nowwwwww"): 3c5d280dd accepted as the honest live baseline (provenance gap recorded honestly; 84486f056 retained in docker as rollback); ping-gateway-candidate (:8081) stopped (BASELINE-FREEZE-2026-09-23.md confirms: finished 2026-09-22T16:04:06Z, exit 137); :8080 /health 200, :8081 connection refused; canonical_events 0 rows so no dual-writer damage; single-writer restored. The ACTIVE-QUESTION text below is the pre-decision state, kept for history. Record: ~/workspace/oracle-migration/ORACLE-STATUS-2026-09-22.md. Also see BACKLOG_PING.md NOW-6 / dep-provenance-gap / dep-single-writer-restore (marked resolved 2026-10-01).
+
 QUESTION: Accept ping-gateway:candidate-3c5d280dd as the honest live baseline (recording the undocumented promotion), and stop :8081 to restore single-writer operation?
 
 WHY IT MATTERS: Since ~2026-09-21 12:03-12:05 UTC both Oracle gateway containers (:8080 and :8081) run candidate-3c5d280dd, healthy, zero restarts, both attached to the same database. The certified image was candidate-84486f056 (ORACLE_RUNTIME_PROVEN, ORACLE_RESTART_PROVEN, rollback anchor 8400deecf2a9). No record in the current context explains the promotion of 3c5d280dd to :8080, and the deployment registry has zero rows. Two gateways against one database violates the desired single-writer posture (latent dual-writer risk).
@@ -483,7 +485,7 @@ QUESTION: For this promotion, is "source SHA → image digest → deployed conta
 
 WHY IT MATTERS: The decision makes the chain "source SHA → image digest → deployed container → behavioral gate test" the evidence standard for every security-sensitive promotion. That standard is only as strong as its weakest link. If the image is built by an unrecorded manual docker build, the digest does not bind to the source SHA; the provenance record is then "we wrote down what we believe we built," and a future image could again ship without the gate while the paperwork looks clean.
 
-WHAT EVIDENCE SAYS: The candidate source SHA fffe99f7a was independently reproduced from a clean checkout, but that reproduced the SOURCE, not the IMAGE build. DEPLOY-PROV-001 (still active above) shows the failure mode is real: candidate-3c5d280dd reached :8080 with zero deployment-registry rows and no documented promotion. The pattern is provenance gaps at the image layer, not the git layer.
+WHAT EVIDENCE SAYS: The candidate source SHA fffe99f7a was independently reproduced from a clean checkout, but that reproduced the SOURCE, not the IMAGE build. DEPLOY-PROV-001 (resolved 2026-09-22; the pre-decision state shows the failure mode is real): candidate-3c5d280dd reached :8080 with zero deployment-registry rows and no documented promotion. The pattern is provenance gaps at the image layer, not the git layer.
 
 CONTRADICTION / TRADEOFF: (a) Invest in reproducible builds (pinned base, recorded build command, digest comparison across two builds): real provenance, real work, slows future promotions slightly. (b) Accept behavioral proof as the mechanism: the gate test is what actually catches a bad image, and it is cheaper; but the SHA→digest link stays a claim. (c) Hybrid: record the exact build invocation plus base image digest this time, defer full reproducibility.
 
