@@ -12,9 +12,9 @@
  * and no payload exfiltration beyond the path.
  */
 
-export const MAX_DEPTH = 64;
+const MAX_DEPTH = 64;
 
-export class DomainError extends Error {
+class DomainError extends Error {
   constructor(code, path, detail) {
     super(`[${code}] at ${path || '$'}: ${detail}`);
     this.name = 'DomainError';
@@ -38,7 +38,7 @@ const isPlainObject = (v) => {
  * - -0 is normalized to 0 (RFC 8785 Appendix B: identical bytes BY SPEC).
  * - Everything outside the domain throws DomainError.
  */
-export function validateCanonicalValue(value, opts = {}) {
+function validateCanonicalValue(value, opts = {}) {
   const maxDepth = opts.maxDepth ?? MAX_DEPTH;
   const ancestors = new Set();
 
@@ -101,3 +101,5 @@ export function validateCanonicalValue(value, opts = {}) {
 
   return walk(value, '$', 0);
 }
+
+module.exports = { MAX_DEPTH, DomainError, validateCanonicalValue };
