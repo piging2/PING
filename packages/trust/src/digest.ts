@@ -11,9 +11,13 @@
  *   1. CANONICALIZE the value to canonical JSON:
  *      - objects: keys sorted by UTF-16 code-unit order (the default
  *        String < sort), applied recursively; no whitespace anywhere;
- *        separators are exactly `,` and `:`.
+ *        separators are exactly `,` and `:`. Keys are NFC-normalized
+ *        before sorting/serialization (see UNICODE CONTRACT below);
+ *        canonically-equivalent keys are the same logical key.
  *      - arrays: element order preserved (array order is semantic).
- *      - strings: JSON.stringify escaping.
+ *      - strings: NFC-normalized, then JSON.stringify escaping.
+ *        Canonically-equivalent strings (NFC vs NFD) serialize
+ *        identically.
  *      - numbers/booleans: JSON.stringify (NaN and Infinity become null,
  *        -0 becomes 0 — JSON semantics, pinned).
  *      - null and undefined become the literal `null`. NOTE: an object key
@@ -24,6 +28,22 @@
  *        serialization hooks.
  *   2. ENCODE the canonical string as UTF-8 bytes.
  *   3. SHA-256 over those bytes, hex-encoded lowercase.
+ *
+ * UNICODE CONTRACT (2026-10-02, FYD backend decision item 3 / order C):
+ * every string entering canonical JSON — string values AND object keys —
+ * is normalized to Unicode NFC before serialization. Canonically-equivalent
+ * strings (e.g. "café" as U+00E9 vs "cafe" + U+0301) therefore digest
+ * identically; no lane needs its own normalization, and none may invent a
+ * different one. Raw bytes are NEVER normalized: sha256Hex over a
+ * Uint8Array hashes the exact bytes, so raw evidence content digests stay
+ * byte-verifiable. NFC is deliberately conservative: it does NOT strip
+ * zero-width characters, does NOT decompose compatibility characters
+ * (U+FB01 ﬁ stays ﬁ), and does NOT fold case — byte distinctions that
+ * remain after NFC are semantically meaningful and stay distinct.
+ * Compatibility: NFC is idempotent, and every string in committed repo
+ * history (fixtures, manifests, tests) is already NFC, so no persisted
+ * ID changes. Do not "fix" this by normalizing evidence bytes; normalize
+ * semantic identity strings, which is what this canonicalizer covers.
  *
  * Shell reproduction recipe for any recorded digest:
  *   canonical=<canonical JSON per step 1, exact bytes>
@@ -131,17 +151,18 @@ export function sha256Hex(input: string | Uint8Array): string {
  * Canonical JSON: recursively sorted object keys, no whitespace, UTF-8.
  * Verbatim formulation of the sha256-canonical-json-v1 canonicalizer
  * (previously defined in lib/ping/ask-composer.ts; the single definition
- * now lives here).
+ * now lives here), plus the UNICODE CONTRACT: all strings (values and
+ * keys) are NFC-normalized before serialization.
  */
 export function canonicalize(value: unknown): string {
   if (value === null || value === undefined) return "null";
-  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "string") return JSON.stringify(value.normalize("NFC"));
   if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
   if (typeof value === "object") {
     const rec = value as Record<string, unknown>;
     const keys = Object.keys(rec).sort();
-    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalize(rec[k])}`).join(",")}}`;
+    return `{${keys.map((k) => `${JSON.stringify(k.normalize("NFC"))}:${canonicalize(rec[k])}`).join(",")}}`;
   }
   return "null";
 }
