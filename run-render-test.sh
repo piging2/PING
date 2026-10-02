@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && npx jest --config src/fyd/components/jest.config.cjs src/fyd/components/__tests__/render.test.ts > /mnt/c/Users/nolan/transfer/jest-render.log 2>&1; echo "JEST_EXIT=$?" >> /mnt/c/Users/nolan/transfer/jest-render.log

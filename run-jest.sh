@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && npx jest --config src/fyd/object/jest.config.cjs src/fyd/object/__tests__/why-this-steps.test.ts > /mnt/c/Users/nolan/transfer/jest-whythis.log 2>&1; echo "JEST_EXIT=$?" >> /mnt/c/Users/nolan/transfer/jest-whythis.log
