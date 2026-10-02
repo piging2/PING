@@ -208,6 +208,19 @@ export interface ApplyOptions {
    * Absent, graph drift is invisible to the package (legacy behavior).
    */
   graph?: import("../../sitespec/src/types").ObjectGraph;
+  /**
+   * The host's live authorization check, invoked at effect time. A
+   * capability that was valid when the approval was granted may have
+   * been revoked before the effect runs (capability TOCTOU): when this
+   * callback is supplied and returns false, the apply is refused. A
+   * throwing callback is converted to a refusal, never propagated.
+   * Absent, the package trusts the sealed approval record (the host
+   * attests to the approver's authority when it calls approve).
+   */
+  authorizeApproval?: (
+    approval: ProposalApproval,
+    proposal: PatchProposal,
+  ) => boolean;
 }
 
 /**
@@ -258,6 +271,36 @@ export function applyProposal(
         "Approval gate: refusing to apply proposal " + proposal.id + " with status '" +
         proposal.status + "'. Only explicitly approved proposals apply.",
     };
+  }
+  if (opts.authorizeApproval) {
+    // Capability TOCTOU: the approver's authority is re-evaluated at
+    // effect time, not trusted from approval time. A revoked (or
+    // unreachable) authorizer refuses the effect; the refusal never
+    // throws past the caller.
+    let authorized = false;
+    let authorizerError: unknown = null;
+    try {
+      authorized = opts.authorizeApproval(proposal.approval, proposal);
+    } catch (e) {
+      authorizerError = e;
+    }
+    if (!authorized) {
+      return {
+        ok: false,
+        reason:
+          "Authorization gate: the live authorization check refused the " +
+          "apply of proposal " + proposal.id +
+          " (the approver's capability may have been revoked after " +
+          "approval)" +
+          (authorizerError
+            ? "; authorizer error: " +
+              (authorizerError instanceof Error
+                ? authorizerError.message
+                : String(authorizerError))
+            : "") +
+          ".",
+      };
+    }
   }
   if (recomputedId(proposal) !== proposal.id) {
     return {
