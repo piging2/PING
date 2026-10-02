@@ -71,6 +71,8 @@ export const REACT_RENDERER_VERSION = "piging2-react-renderer@1";
  */
 export interface RenderOptions {
   logoMarks?: Record<string, LogoMarkId>;
+  /** Per-mark real image URLs (owner-supplied logo art). Defaults live in marks.tsx. */
+  markImageUrls?: Partial<Record<LogoMarkId, string>>;
 }
 
 /** Non-empty trimmed text, or null. Missing data renders nothing. */
@@ -194,9 +196,10 @@ interface SectionProps {
   section: SemanticSectionModel;
   objects: PublicObjectFacts[];
   logoMarks?: Record<string, LogoMarkId>;
+  markImageUrls?: Partial<Record<LogoMarkId, string>>;
 }
 
-function HeroSection({ section, objects, logoMarks }: SectionProps) {
+function HeroSection({ section, objects, logoMarks, markImageUrls }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const website = safeWebsiteUrl(o);
@@ -212,6 +215,7 @@ function HeroSection({ section, objects, logoMarks }: SectionProps) {
           objectId={o.id}
           title={o.title}
           overrides={logoMarks}
+          imageUrls={markImageUrls}
         />
         <h1>{o.title}</h1>
         {text(o.description) ? <p>{o.description}</p> : null}
@@ -564,7 +568,7 @@ export function renderSectionModel(
   const objects = section.objectIds
     .map((id) => facts[id])
     .filter((o): o is PublicObjectFacts => !!o);
-  const props: SectionProps = { section, objects, logoMarks: options?.logoMarks };
+  const props: SectionProps = { section, objects, logoMarks: options?.logoMarks, markImageUrls: options?.markImageUrls };
   switch (section.component) {
     case "Hero":
       return <HeroSection key={section.id} {...props} />;
@@ -630,7 +634,7 @@ export function renderPageModel(
  *   public projection by the caller)
  * @param pageSlug which page to render; defaults to the first page.
  *   Unknown slugs throw: failing closed beats rendering the wrong page.
- * @param options presentation config (logo mark overrides). The semantic
+ * @param options presentation config (logo mark overrides + mark image URLs). The semantic
  *   model never names a mark; the adapter resolves it.
  */
 export function renderModelToStaticHtml(

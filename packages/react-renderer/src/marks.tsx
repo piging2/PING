@@ -137,19 +137,59 @@ export function resolveLogoMark(
 }
 
 /**
- * The business logo mark: irregular border + trade mark SVG.
- * data-logo-mark carries the mark id for tests and future styling.
+ * Real image assets for marks, when the owner supplies one.
+ * Nolan 2026-10-02: Happy Place's tape-measure mark is the real
+ * hand-drawn logo (transparent irregular-cutout webp from the owner's
+ * original), not the geometric SVG placeholder. The cutout's own edge
+ * IS the irregular border (no circles, no badge box). Caller-overridable
+ * via imageUrls; the semantic model never names images.
+ */
+export const DEFAULT_MARK_IMAGE_URLS: Partial<Record<LogoMarkId, string>> = {
+  "tape-measure": "assets/marks/happy-place-tape-measure.webp",
+};
+
+/** Resolve a mark's image URL: explicit caller mapping first, then default. */
+export function resolveMarkImage(
+  markId: LogoMarkId,
+  imageUrls?: Partial<Record<LogoMarkId, string>>,
+): string | null {
+  if (imageUrls && markId in imageUrls) return imageUrls[markId] ?? null;
+  return DEFAULT_MARK_IMAGE_URLS[markId] ?? null;
+}
+
+/**
+ * The business logo mark: the owner's real image when one is registered
+ * for the mark (irregular cutout, no border box), otherwise the
+ * irregular-border SVG trade mark. data-logo-mark carries the mark id
+ * for tests and future styling.
  */
 export function BusinessLogoMark({
   objectId,
   title,
   overrides,
+  imageUrls,
 }: {
   objectId: string;
   title: string;
   overrides?: Record<string, LogoMarkId>;
+  imageUrls?: Partial<Record<LogoMarkId, string>>;
 }) {
   const markId = resolveLogoMark(objectId, overrides);
+  const imgSrc = resolveMarkImage(markId, imageUrls);
+  if (imgSrc) {
+    return (
+      <span data-logo-mark={markId} role="img" aria-label={`${title} logo`}>
+        <img
+          className="fyd-logo-mark-img"
+          data-logo-mark-img={markId}
+          src={imgSrc}
+          alt={`${title} logo`}
+          width={96}
+          height={96}
+        />
+      </span>
+    );
+  }
   const Mark = MARK_COMPONENTS[markId];
   return (
     <span data-logo-mark={markId} role="img" aria-label={`${title} logo`}>
@@ -184,11 +224,25 @@ export const LOGO_OVERLAY_CSS = `
   background: #0a0a0a;
 }
 .fyd-logo-overlay[open] [data-logo-overlay-backdrop] { display: flex; }
-.fyd-logo-overlay [data-logo-overlay-backdrop] svg[data-logo-overlay-mark] {
+.fyd-logo-overlay [data-logo-overlay-backdrop] svg[data-logo-overlay-mark],
+.fyd-logo-overlay [data-logo-overlay-backdrop] img[data-logo-overlay-mark] {
   width: min(60vmin, 480px);
   height: auto;
   color: #fff;
 }
+/* Nolan 2026-10-02: the logo mark rocks on hover. Pure CSS, zero JS. */
+@keyframes fyd-logo-rock {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-9deg); }
+  50% { transform: rotate(7deg); }
+  75% { transform: rotate(-4deg); }
+}
+.fyd-logo-overlay > summary:hover .fyd-logo-mark-img,
+.fyd-logo-overlay > summary:hover [data-logo-border="irregular"] {
+  animation: fyd-logo-rock 0.6s ease-in-out;
+  transform-origin: 50% 80%;
+}
+.fyd-logo-mark-img { display: inline-block; }
 `;
 
 /**
@@ -204,19 +258,29 @@ export function BusinessLogoOverlay({
   objectId,
   title,
   overrides,
+  imageUrls,
 }: {
   objectId: string;
   title: string;
   overrides?: Record<string, LogoMarkId>;
+  imageUrls?: Partial<Record<LogoMarkId, string>>;
 }) {
   const markId = resolveLogoMark(objectId, overrides);
+  const imgSrc = resolveMarkImage(markId, imageUrls);
   const Mark = MARK_COMPONENTS[markId];
   return (
     <details className="fyd-logo-overlay" data-logo-overlay data-logo-mark={markId}>
       <summary data-logo-overlay-trigger aria-label={`Open ${title} immersive view`}>
-        <BusinessLogoMark objectId={objectId} title={title} overrides={overrides} />
+        <BusinessLogoMark objectId={objectId} title={title} overrides={overrides} imageUrls={imageUrls} />
       </summary>
       <div data-logo-overlay-backdrop aria-hidden="true">
+        {imgSrc ? (
+          <img
+            data-logo-overlay-mark
+            src={imgSrc}
+            alt={`${title} logo large`}
+          />
+        ) : (
         <svg
           viewBox="0 0 100 100"
           data-logo-overlay-mark
@@ -231,6 +295,7 @@ export function BusinessLogoOverlay({
           />
           <Mark />
         </svg>
+        )}
         <svg
           viewBox="0 0 600 120"
           data-logo-overlay-text

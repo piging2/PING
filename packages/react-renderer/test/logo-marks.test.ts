@@ -31,6 +31,7 @@ import {
   BusinessLogoOverlay,
   LOGO_OVERLAY_CSS,
   resolveLogoMark,
+  resolveMarkImage,
 } from "../src/marks";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -78,11 +79,33 @@ describe("logo mark rendering", () => {
     }
   });
   test("mark carries data-logo-mark and irregular border hooks", () => {
-    const html = renderToStaticMarkup(
+    // SVG marks (pipe-wrench, generic) keep the hand-authored irregular
+    // border. The tape-measure mark is the owner's real webp: its own
+    // irregular cutout edge IS the border, so it renders an <img> with
+    // no border wrapper and no black badge box.
+    const svgHtml = renderToStaticMarkup(
+      BusinessLogoMark({ objectId: COPPERSMITH_ID, title: "Coppersmith" }),
+    );
+    expect(svgHtml).toContain('data-logo-mark="pipe-wrench"');
+    expect(svgHtml).toContain('data-logo-border="irregular"');
+    const imgHtml = renderToStaticMarkup(
       BusinessLogoMark({ objectId: HPP_ID, title: "Happy Place" }),
     );
-    expect(html).toContain('data-logo-mark="tape-measure"');
-    expect(html).toContain('data-logo-border="irregular"');
+    expect(imgHtml).toContain('data-logo-mark="tape-measure"');
+    expect(imgHtml).toContain('data-logo-mark-img="tape-measure"');
+    expect(imgHtml).toContain('src="assets/marks/happy-place-tape-measure.webp"');
+    expect(imgHtml).not.toContain('data-logo-border=');
+  });
+  test("tape-measure image URL is caller-overridable, SVG marks unaffected", () => {
+    const html = renderToStaticMarkup(
+      BusinessLogoMark({
+        objectId: HPP_ID,
+        title: "Happy Place",
+        imageUrls: { "tape-measure": "/custom/hpp.webp" },
+      }),
+    );
+    expect(html).toContain('src="/custom/hpp.webp"');
+    expect(resolveMarkImage("pipe-wrench")).toBeNull();
   });
   test("mark is an accessible image with a label", () => {
     const html = renderToStaticMarkup(
@@ -118,17 +141,27 @@ describe("logo overlay", () => {
     expect(LOGO_OVERLAY_CSS).toContain("position: fixed");
     expect(LOGO_OVERLAY_CSS).toContain("inset:");
   });
+  test("overlay CSS carries the rock-on-hover animation (pure CSS, zero JS)", () => {
+    expect(LOGO_OVERLAY_CSS).toContain("@keyframes fyd-logo-rock");
+    expect(LOGO_OVERLAY_CSS).toContain("summary:hover");
+    expect(LOGO_OVERLAY_CSS).toContain(".fyd-logo-mark-img");
+  });
 });
 
 describe("logo marks in the real business renders", () => {
   const hpp = build(HAPPY_PLACE_GRAPH);
   const cop = build(COPPERSMITH_GRAPH);
 
-  test("HPP home page carries the tape-measure mark and overlay", () => {
+  test("HPP home page carries the tape-measure webp mark and overlay", () => {
     const html = renderModelToStaticHtml(hpp.model, hpp.facts);
     expect(html).toContain('data-logo-mark="tape-measure"');
     expect(html).toContain("data-logo-overlay");
-    expect(html).toContain('data-logo-border="irregular"');
+    expect(html).toContain('src="assets/marks/happy-place-tape-measure.webp"');
+    // the webp is an irregular cutout: the mark element has no border
+    // wrapper and no badge box (the <style> block legitimately names the
+    // selector for SVG marks, so strip it before asserting on markup)
+    const markup = html.replace(/<style>[\s\S]*?<\/style>/, "");
+    expect(markup).not.toContain('data-logo-border="irregular"');
   });
   test("Coppersmith home page carries the pipe-wrench mark and overlay", () => {
     const html = renderModelToStaticHtml(cop.model, cop.facts);
