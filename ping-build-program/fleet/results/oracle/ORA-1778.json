@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-1778",
+  "verdict": "ADAPT",
+  "summary": "[dump digest before and after migration matches] Executed sandbox-local on sqlite3 WAL (engine stand-in for postgres:17-alpine): up-then-down migration preserved all 500 rows, dump digest matched before/after, zero orphan schema objects (sqlite_autoindex is internal, not orphan). Engine-specific postgres behaviors (concurrent DDL locks, pgbench) need staging.: 'enum value extension pattern on scratch postgres'.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/schema-drift-evidence.json",
+    "fleet/work/fleet-ora-2/sandbox/schema-evolution-designs.md"
+  ],
+  "confidence": 0.8,
+  "followup": "On staging postgres:17-alpine: repeat the up-then-down with pg_dump digest comparison; run index add/drop under pgbench -c 8."
+}

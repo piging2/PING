@@ -1,0 +1,2328 @@
+{
+  "lab": "renames-redirects",
+  "worker": "fleet-acq-1",
+  "parser": "rnm-1.0.0",
+  "generated_at": "2026-09-24T05:07:08.638Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-rnm-50",
+      "mission": "ACQ-2001",
+      "title": "no chain redirect",
+      "threat": "URLs differ, no chain: redirect, hop count unclaimed.",
+      "fixture_sha256": "e62df930a32803eea250b680818f0ff7fa33692c5cf7ce1735dc3d5ad4b4e8d3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_final_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_redirect_count",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-51",
+      "mission": "ACQ-2002",
+      "title": "status beats marker",
+      "threat": "Check order: status (3) precedes marker scan (7).",
+      "fixture_sha256": "7ef657abf1ee260bf552e3fba717107f6ebb119cc3efdadd656d47b5c610ecb5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-status"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-52",
+      "mission": "ACQ-2003",
+      "title": "title cap beats marker",
+      "threat": "Check order: title caps (5) precede marker scan (7).",
+      "fixture_sha256": "e9eac71a504830fcaed4c775d86a00329dfbff9d61a24e4fd59946fb4af0f7dd",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-title"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-53",
+      "mission": "ACQ-2004",
+      "title": "canonical beats marker",
+      "threat": "Check order: canonical (6) precedes marker scan (7).",
+      "fixture_sha256": "3c011812c89a8e67091610d7d5e0042340681f4545c64b82a0936edfc6e2bc66",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-canonical"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-54",
+      "mission": "ACQ-2005",
+      "title": "url beats marker",
+      "threat": "Check order: URL validation (2) precedes marker scan (7).",
+      "fixture_sha256": "c0f8b1fa826162b849693cd56b86cead7f70603054f0310d442a29e81cf9e800",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-requested-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-55",
+      "mission": "ACQ-2006",
+      "title": "chain beats marker",
+      "threat": "Check order: chain shape (4) precedes marker scan (7).",
+      "fixture_sha256": "a07a744282907f3e5b41b2741db13898968b8c1de74d6df6ff1a13e7258201c9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-redirect-chain"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-56",
+      "mission": "ACQ-2007",
+      "title": "nul beats marker",
+      "threat": "Check order: NUL check (2) precedes marker scan (7).",
+      "fixture_sha256": "066e9b4cf12c48f991205e95c287c4bc8f5b7357085b93c896255dab9ebebf35",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "control-char"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-57",
+      "mission": "ACQ-2008",
+      "title": "chain-final mismatch",
+      "threat": "First hop equals requested but last must equal final.",
+      "fixture_sha256": "66f05c9fb4d407a7444409d60df39416cc5c63159548ed1142948799e055ed79",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "chain-final-mismatch"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-58",
+      "mission": "ACQ-2009",
+      "title": "chain entry extra fields",
+      "threat": "Extra entry fields are ignored.",
+      "fixture_sha256": "7a0e2c786ecac46aaedb37e8db49ae42e59a6e3f6c3ac033a8ada14f89a52cc2",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_redirect_count",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-59",
+      "mission": "ACQ-2010",
+      "title": "status 599",
+      "threat": "Boundary: 599 is accepted.",
+      "fixture_sha256": "c1a757f1461bca3989b3cdc6e32b744e02e379bf741a64748aa6100fe587c0a4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_status",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-60",
+      "mission": "ACQ-2011",
+      "title": "idn host",
+      "threat": "Unicode hosts are valid observations.",
+      "fixture_sha256": "f2aea55c3470a79d4aea60dd15614bb64a7b62c55b1d734c133ea22a97a79b37",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-61",
+      "mission": "ACQ-2012",
+      "title": "trailing dot host",
+      "threat": "Trailing-dot hosts are valid observations.",
+      "fixture_sha256": "4d87babcefecc100ff2d598a45a59b2c6ce03a3371311759c76e299ffb14c357",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-62",
+      "mission": "ACQ-2013",
+      "title": "uppercase scheme",
+      "threat": "No scheme normalization: raw strings compared literally.",
+      "fixture_sha256": "dd2eb5d1e6b5b79a1523db3029fd942fc884e2044a9be4488b76c87e3eafb2d8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_redirect_count",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-63",
+      "mission": "ACQ-2014",
+      "title": "previous only",
+      "threat": "Rename needs both titles: direct.",
+      "fixture_sha256": "29dcf8b0ffd662dd6bbe17380cfad553ec1bbda89c6e19dd1291225f3c189c87",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-64",
+      "mission": "ACQ-2015",
+      "title": "title only",
+      "threat": "Title without previous: direct, title claimed.",
+      "fixture_sha256": "5faec8e3fd51e75667e1c7919a64214f6326a186869775fd38d0d3d4992e9ff5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-65",
+      "mission": "ACQ-2016",
+      "title": "empty title",
+      "threat": "Empty titles are rejected.",
+      "fixture_sha256": "e7b6d56bb67ad80eb97e678afe432cc47dec0d58e5dd7122e81a00193092e845",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-title"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-66",
+      "mission": "ACQ-2017",
+      "title": "numeric title",
+      "threat": "Titles must be strings.",
+      "fixture_sha256": "02e6045f337fc33936e60a8b884e89998732b62f97450f847075890b09fd2366",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-title"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-67",
+      "mission": "ACQ-2018",
+      "title": "marker in previous",
+      "threat": "previous_title is scanned.",
+      "fixture_sha256": "aaa0ab783405ff56f34fdb436070450c8aff1fbd6b213f05d32aa381515c163c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:rename-redirect-input:active-content",
+          "ok": true,
+          "detail": "previous_title"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-68",
+      "mission": "ACQ-2019",
+      "title": "canonical case differs",
+      "threat": "Literal compare: canonical case difference stays unadopted.",
+      "fixture_sha256": "1789b0cde056b9d1ab7984c35e4a2aee77c4d95647cdd0dc1a6da0912e112b4c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_canonical",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-69",
+      "mission": "ACQ-2020",
+      "title": "fragment differs",
+      "threat": "Fragments matter: literal compare.",
+      "fixture_sha256": "abf4a5b507d2277af39dfe726b398359521d3ec63c9d48616330537d346c8655",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_final_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-70",
+      "mission": "ACQ-2021",
+      "title": "user info url",
+      "threat": "Userinfo URLs are valid observations.",
+      "fixture_sha256": "8e5cb26a9fd50b5362f3799b14fcc4bf80efe34eddfd44cade48525a62627b18",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-71",
+      "mission": "ACQ-2022",
+      "title": "redirect cross scheme chain",
+      "threat": "Multi-hop mixed statuses.",
+      "fixture_sha256": "eadc09528030fc8c0102bf87c47636f7b657bde06f4694e257cdae4590b0f6c6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_redirect_count",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-72",
+      "mission": "ACQ-2023",
+      "title": "chain duplicate urls",
+      "threat": "Repeated hop URLs are recorded literally.",
+      "fixture_sha256": "311425b962e3c211533e4a4298d6f46a1358506ed8dffba32c72229b22284126",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_redirect_count",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-73",
+      "mission": "ACQ-2024",
+      "title": "chain entry numeric status",
+      "threat": "Chain statuses must be integers.",
+      "fixture_sha256": "b8b44cbafa712c7f1d68e5203e074d705133b6d964be5611a8860c30c1888ab8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-chain-entry"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-74",
+      "mission": "ACQ-2025",
+      "title": "chain entry missing url",
+      "threat": "Chain entries need URLs.",
+      "fixture_sha256": "86412068c8db3b41ed93008cce51d7b59517a0f704efda4bf719967a46f54b84",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-chain-entry"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-75",
+      "mission": "ACQ-2026",
+      "title": "long chain urls",
+      "threat": "Cap-boundary URLs inside a chain.",
+      "fixture_sha256": "923437c3cc228bcba78090a940f978c66654ccf6f2daa93252d2c45c2eb94d65",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_redirect_count",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-76",
+      "mission": "ACQ-2027",
+      "title": "chain url over cap",
+      "threat": "Chain URLs respect the 2000 cap.",
+      "fixture_sha256": "f2d2eed2aabcc9bdbbb28c3ca6aaf84d4b0802366b67806521b16a47341df8f2",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-final-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-77",
+      "mission": "ACQ-2028",
+      "title": "onerror in chain",
+      "threat": "Chain URL markers quarantine.",
+      "fixture_sha256": "2ae5ebcb80a39b67f536ba93b528d4b7b28a5444996b731fab253c1f49f098b5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:rename-redirect-input:active-content",
+          "ok": true,
+          "detail": "redirect_chain[0].url"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-78",
+      "mission": "ACQ-2029",
+      "title": "php in title",
+      "threat": "PHP markers fire.",
+      "fixture_sha256": "ec7af1b15eb5e96afc3f043b0a3160fe88c6bdc7e562031db3c3e7cfbd8ac788",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:rename-redirect-input:active-content",
+          "ok": true,
+          "detail": "title"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-79",
+      "mission": "ACQ-2030",
+      "title": "split marker",
+      "threat": "Split markers are not markers.",
+      "fixture_sha256": "5ceb9bb33384a196f849c05098f5381805c755bec982f4e0504286faa1e96025",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-80",
+      "mission": "ACQ-2031",
+      "title": "whitespace title rename",
+      "threat": "Whitespace differences rename: no trimming.",
+      "fixture_sha256": "6887885f57b066c0f3fd6cb07d28be352f559d36c72ac69cb6c5a93d0b3c855b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-81",
+      "mission": "ACQ-2032",
+      "title": "case rename",
+      "threat": "Case differences rename: no case folding.",
+      "fixture_sha256": "b0f61215a12b1b2159d121e4715275381fdc2203b492ac216bb5a823be9d7b66",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-82",
+      "mission": "ACQ-2033",
+      "title": "unicode rename",
+      "threat": "Unicode title change is a rename.",
+      "fixture_sha256": "83f74d041b856471c9008d68199dc53bfe7271a3ee3aeeb321a4d2e409d772a8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-83",
+      "mission": "ACQ-2034",
+      "title": "long titles rename",
+      "threat": "Cap-boundary titles can rename.",
+      "fixture_sha256": "095fecbe9c5baba738b0efb1e44c932bccfa4a37d3f3611ab29dd7b8c3566e6f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-84",
+      "mission": "ACQ-2035",
+      "title": "emoji titles",
+      "threat": "Emoji titles are literal.",
+      "fixture_sha256": "dba7fc48116a0efc6256ddbb85565d090847979b92478dc2081f14c9beeb1d31",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-85",
+      "mission": "ACQ-2036",
+      "title": "kitchen sink rename",
+      "threat": "Full rename observation.",
+      "fixture_sha256": "b8935b021f10a1819c8c30b0404e3d25721beaf180052de730a32be52899739b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_canonical",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-86",
+      "mission": "ACQ-2037",
+      "title": "kitchen sink quarantine",
+      "threat": "Markers beat rename classification.",
+      "fixture_sha256": "bacd045517922ea4b51ffbbb7356df078a1a19fc9784cafe9d9f945551e311d4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:rename-redirect-input:active-content",
+          "ok": true,
+          "detail": "title"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-87",
+      "mission": "ACQ-2038",
+      "title": "kitchen sink redirect",
+      "threat": "Full redirect with canonical unadopted.",
+      "fixture_sha256": "8520790780af1c789d91323180c8eadc80bff050a8164719d43ddef243d9af02",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_final_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_redirect_count",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_status",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_canonical",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "6 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-88",
+      "mission": "ACQ-2039",
+      "title": "status 200 direct",
+      "threat": "Plain 200 direct fetch.",
+      "fixture_sha256": "7fc548ad6ff6912f3942446fd6e1d12c97c2264127c1b3606f175b2b34dd6c7c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_requested_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-89",
+      "mission": "ACQ-2040",
+      "title": "status 500 direct",
+      "threat": "Server errors are observed, not interpreted.",
+      "fixture_sha256": "bef0faa0754951dd21ef50ecb98877ada5a2c17d31c44270a48273d9d2bb6035",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_status",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-90",
+      "mission": "ACQ-2041",
+      "title": "float status",
+      "threat": "Status must be an integer.",
+      "fixture_sha256": "9b0c1885b5038788b2ad4678036e8c33a077f137336d5e56febb8321910e1b9c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-status"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-91",
+      "mission": "ACQ-2042",
+      "title": "null status",
+      "threat": "Status is required.",
+      "fixture_sha256": "d965f4ac0fdaecb14e77229c23d9b63b67efb26e20d1c3f1a64b8c8e29b073da",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-status"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-92",
+      "mission": "ACQ-2043",
+      "title": "canonical over cap",
+      "threat": "Canonical respects the URL cap.",
+      "fixture_sha256": "709e34f9bf9b4104f26f2f9bca7d3fc27abd833c580c20a747d2e746d44ecf4f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-canonical"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-93",
+      "mission": "ACQ-2044",
+      "title": "canonical at cap",
+      "threat": "Boundary: 2000-char canonical accepted, unadopted.",
+      "fixture_sha256": "c7814a7387dd5c2fa251404b582299b20829d56ac112aab5fa60dcc658867535",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rnm_canonical",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-94",
+      "mission": "ACQ-2045",
+      "title": "nul in canonical",
+      "threat": "NUL in canonical is rejected.",
+      "fixture_sha256": "0e92e9d30c4cb1ed9bd341fec452dcfabca8354fed832e5f3ec7f7b30feaf64b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "control-char"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-95",
+      "mission": "ACQ-2046",
+      "title": "chain nul",
+      "threat": "NUL in chain URLs is rejected.",
+      "fixture_sha256": "fe25ae4b6ee8dc725e2e990f05b05f4c17d9fc2a4406b522312edbf65bace3be",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "control-char"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-96",
+      "mission": "ACQ-2047",
+      "title": "final agree",
+      "threat": "Closing accept: single-hop redirect.",
+      "fixture_sha256": "e3c6f5a745dad79aff217fbdadc1e5dd9d15a6e71ead0641f5b5eebe2b3ff6ef",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rnm_final_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-97",
+      "mission": "ACQ-2048",
+      "title": "final rename",
+      "threat": "Closing rename.",
+      "fixture_sha256": "9b03d72636ef40b5d85fdaafa5dadb602d07cd64727e56de7a51ef35c517ad97",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rnm-98",
+      "mission": "ACQ-2049",
+      "title": "final typed failure",
+      "threat": "Closing typed failure: bad final URL.",
+      "fixture_sha256": "2eb2a44e58aff43505f9fe9e7998454e8a312c3ef48d8dff0013f3f6d0e8c47a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-final-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rnm-99",
+      "mission": "ACQ-2050",
+      "title": "final quarantine",
+      "threat": "Closing quarantine: marker in canonical.",
+      "fixture_sha256": "3ade6b7666497dda44f892d11ea2896dc33414bfb68ac0d8e7671fbfd8fde143",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rnm_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:rename-redirect-input:active-content",
+          "ok": true,
+          "detail": "canonical"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

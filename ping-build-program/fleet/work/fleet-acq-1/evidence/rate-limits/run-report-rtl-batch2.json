@@ -1,0 +1,2368 @@
+{
+  "lab": "rate-limits",
+  "worker": "fleet-acq-1",
+  "parser": "rtl-1.0.0",
+  "generated_at": "2026-09-24T04:46:29.817Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-rtl-50",
+      "mission": "ACQ-2401",
+      "title": "429 no signals",
+      "threat": "Bare 429 is rate-limited.",
+      "fixture_sha256": "98348b76ef7ce3d47a7f5ccdbf1790779fc362554e97943566e78df420c5f3db",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-51",
+      "mission": "ACQ-2402",
+      "title": "429 both signals",
+      "threat": "Both signals are claimed.",
+      "fixture_sha256": "47d0a139c348cc74d452801a4c85b5befdda3fc99b480d41d8cb47b37c33dc49",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-52",
+      "mission": "ACQ-2403",
+      "title": "503 retry zero",
+      "threat": "503 with retry_after_seconds=0 is rate-limited.",
+      "fixture_sha256": "864e0c2e526efe46caae8995f563546281f5f57c9945e23e3f689a67b7d885e0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-53",
+      "mission": "ACQ-2404",
+      "title": "503 remaining zero",
+      "threat": "503 with rate_limit_remaining=0 is rate-limited.",
+      "fixture_sha256": "ae0006b36aec08137e0533f8d7eb4e02b087376b9ba5bf6dc223e97d27754413",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-54",
+      "mission": "ACQ-2405",
+      "title": "503 neither",
+      "threat": "503 with no signals is error.",
+      "fixture_sha256": "2adaed95012d89fb5aa4a9d4626cb80f9362f2444aa9dc805b5d0c693959ab20",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-55",
+      "mission": "ACQ-2406",
+      "title": "status 100",
+      "threat": "Boundary: 100 is a valid status.",
+      "fixture_sha256": "f73888e2ffc6ec9e3673936ae193ffcdff306fdb799121ef78117977cdfb9161",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-56",
+      "mission": "ACQ-2407",
+      "title": "status 599",
+      "threat": "Boundary: 599 is a valid status.",
+      "fixture_sha256": "d4667a4a2c53a0567c36811beba138902b851413afbe72c709036bbb7339fb27",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-57",
+      "mission": "ACQ-2408",
+      "title": "status 201",
+      "threat": "201 is not ok content.",
+      "fixture_sha256": "cd0b848518a3b9fb64c4ed8b9cfd6137bb362f1c55cc7fbadbfce26ad203ac67",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-58",
+      "mission": "ACQ-2409",
+      "title": "status 204",
+      "threat": "204 is not ok content.",
+      "fixture_sha256": "7fbb1e21ca9f396fdbdbbd84171a7ff3293ce893523787992546ccdc013a06d3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-59",
+      "mission": "ACQ-2410",
+      "title": "200 with signals",
+      "threat": "Signals on 200 are claimed, body hashed.",
+      "fixture_sha256": "0d56c1e15b699dcb04d56974f718557565ed8f34172044d1ed3c0bffdcd4d5ad",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-60",
+      "mission": "ACQ-2411",
+      "title": "retry beats remaining",
+      "threat": "Check order: retry_after (4) before remaining (5).",
+      "fixture_sha256": "a1acccc5f5ef75624e0af554d19b6507bdf3ebe0e7bf5a6e7d5334df9b4b94fd",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-retry-after"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-61",
+      "mission": "ACQ-2412",
+      "title": "remaining beats body",
+      "threat": "Check order: remaining (5) before body (6).",
+      "fixture_sha256": "47f34a4cce7a47754e7a598d322aee91d0b28e7c9d6692be32d7b9efa5cbf6d7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-rate-limit-remaining"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-62",
+      "mission": "ACQ-2413",
+      "title": "body beats marker",
+      "threat": "Check order: body validity (6) before marker scan (7).",
+      "fixture_sha256": "411d7d87b6ccf886f58b4381a27c76549e4b43680782691494c7466a00918dfa",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-body"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-63",
+      "mission": "ACQ-2414",
+      "title": "nul beats marker",
+      "threat": "Check order: NUL (6) before marker scan (7).",
+      "fixture_sha256": "825a098783dde329f21bd234f494dc5d12ed315ed5aa5f833dfa02369082d33c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-body"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-64",
+      "mission": "ACQ-2415",
+      "title": "marker beats classification",
+      "threat": "Check order: markers (7) before classification (8).",
+      "fixture_sha256": "809b9bd38387a5878d241d70efaa6561c6a7105ea207f3198c1f0de9cc7f600b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:fetch-outcome:active-content",
+          "ok": true,
+          "detail": "input.body"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-65",
+      "mission": "ACQ-2416",
+      "title": "hash stable",
+      "threat": "Same body, same hash.",
+      "fixture_sha256": "f167741fa2b8048a7ee19123942521513869eca63f8a1f217aa90b63b1d45a03",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-66",
+      "mission": "ACQ-2417",
+      "title": "hash differs",
+      "threat": "One byte changes the hash.",
+      "fixture_sha256": "17d4d083afa98ff0b8a924efc32761f061b2777d228e0eac6dc31ac942339dda",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-67",
+      "mission": "ACQ-2418",
+      "title": "unicode body",
+      "threat": "Unicode bodies hash.",
+      "fixture_sha256": "e4c1151348e03e99292e380cac52b06afeb4de5b916588ecded189de736ed8c6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-68",
+      "mission": "ACQ-2419",
+      "title": "null body",
+      "threat": "Explicit null body is treated as absent.",
+      "fixture_sha256": "79d3555fed799711f80a68ad9eb253aac82f831565a00fd12ba0128134ad9eb3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-69",
+      "mission": "ACQ-2420",
+      "title": "object body",
+      "threat": "Objects are not bodies.",
+      "fixture_sha256": "d37644d88ec47aad4dc302ead3a194a05edbc3594b9d3ed70e6bd45873a62a9c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-body"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-70",
+      "mission": "ACQ-2421",
+      "title": "array input",
+      "threat": "Arrays are not observations.",
+      "fixture_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-71",
+      "mission": "ACQ-2422",
+      "title": "null input",
+      "threat": "Null is not an observation.",
+      "fixture_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-72",
+      "mission": "ACQ-2423",
+      "title": "url ftp",
+      "threat": "Only HTTP(S) is accepted.",
+      "fixture_sha256": "a4eec4fb5205fbecc9c004c72dabe5d612ebe5300d1a3a35e0a66ad12a3a5981",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-73",
+      "mission": "ACQ-2424",
+      "title": "url ctl",
+      "threat": "Control chars in URLs are rejected.",
+      "fixture_sha256": "13796c3a59970907a07c9d9bc47dab9246eab272805592f72e7f481f729d8367",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "control-char"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-74",
+      "mission": "ACQ-2425",
+      "title": "remaining large",
+      "threat": "Large remaining counts are valid.",
+      "fixture_sha256": "49753b3ffa095c891525e5f9b0ef4c9097cadaaf27ac0039c094a4c4caba8367",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-75",
+      "mission": "ACQ-2426",
+      "title": "retry small float",
+      "threat": "Tiny fractional retry-after is valid.",
+      "fixture_sha256": "3c65e33750165687278fdd3fac3ea71722cfe2b7b2e675e49329ed567ccdf156",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-76",
+      "mission": "ACQ-2427",
+      "title": "429 retry null",
+      "threat": "Null retry-after is rejected.",
+      "fixture_sha256": "8aeba1ace2c335a736b18f4219c9c755f88720428a8bc973679de4049a4f5515",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-retry-after"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-77",
+      "mission": "ACQ-2428",
+      "title": "429 remaining null",
+      "threat": "Null remaining is rejected.",
+      "fixture_sha256": "eea6313a19bfe3345804d5f44d684ed89cbe85bd6fff45cc69737806eece4ae5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-rate-limit-remaining"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-78",
+      "mission": "ACQ-2429",
+      "title": "onload 200",
+      "threat": "onload quarantines on 200.",
+      "fixture_sha256": "97f3d7abec7689031777b9ea447553932d97691a6d806e0aaa227f21641fdff9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:fetch-outcome:active-content",
+          "ok": true,
+          "detail": "input.body"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-79",
+      "mission": "ACQ-2430",
+      "title": "php 429",
+      "threat": "PHP markers quarantine on 429.",
+      "fixture_sha256": "3ea618114127e0cf8278cdbedb9c6faf8e82c7f196d0f41fc2cf28183fda531d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:fetch-outcome:active-content",
+          "ok": true,
+          "detail": "input.body"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-80",
+      "mission": "ACQ-2431",
+      "title": "benign 200",
+      "threat": "Benign HTML hashes without quarantine.",
+      "fixture_sha256": "0d8d28e4f64c2b58ec398457b0451e600d4b17d663436d07cc8a666a8843b2fc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-81",
+      "mission": "ACQ-2432",
+      "title": "split marker",
+      "threat": "Split markers are not markers.",
+      "fixture_sha256": "7ea572db5bdd3966ce210d8b7124d9433a234c747a144f6d9c9f53c56fc7290c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-82",
+      "mission": "ACQ-2433",
+      "title": "kitchen 429",
+      "threat": "Full 429 observation with both signals.",
+      "fixture_sha256": "474184d8d3c2ecb748b8de2e657d498a6ec3104db3a7945270ec57c2ed681843",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-83",
+      "mission": "ACQ-2434",
+      "title": "kitchen 503",
+      "threat": "Full 503 rate-limited observation.",
+      "fixture_sha256": "5c78760879ede949c2f493c1e07918ff6284d5b6e761209ebab43f4b3c333c01",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-84",
+      "mission": "ACQ-2435",
+      "title": "kitchen 200",
+      "threat": "Full 200 observation.",
+      "fixture_sha256": "b3002a9ae10bb2663e805631fba9a903d2f27552d73a5b7394dc1cac66190d18",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-85",
+      "mission": "ACQ-2436",
+      "title": "kitchen error",
+      "threat": "Full 500 observation.",
+      "fixture_sha256": "fcaa89522d35f6f4614d27839d89442cc176c015fafe79c6d2c6f9625ff5cee7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-86",
+      "mission": "ACQ-2437",
+      "title": "provenance depth",
+      "threat": "Every claim carries provenance.",
+      "fixture_sha256": "f4b1fd5e1f2f14bd1db3df55cbbfc78454247f464fa80fe9df8077be6e931fa3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "provenance-depth:rtl_verdict",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_page_url",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_verdict",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_page_url",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "provenance-depth:rtl_rate_limit_remaining",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-87",
+      "mission": "ACQ-2438",
+      "title": "no guess hash",
+      "threat": "429 never yields a body hash.",
+      "fixture_sha256": "a97415e51a62d45e8552daae0ade9de9c2b4bea825bd8b6aca5337fdd2b59fa6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-88",
+      "mission": "ACQ-2439",
+      "title": "url claim",
+      "threat": "Page URL is claimed.",
+      "fixture_sha256": "448df8d6372b4edf8b81939adb32d5b06f9f80b580e622ee97ab6a60219dc766",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_page_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-89",
+      "mission": "ACQ-2440",
+      "title": "extra fields ignored",
+      "threat": "Unknown input fields are ignored.",
+      "fixture_sha256": "a0b95780bfa6413df53e303b8f9ae7eece266b36c2247b900a9e8f5006658a87",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-90",
+      "mission": "ACQ-2441",
+      "title": "final accept",
+      "threat": "Closing accept: 200.",
+      "fixture_sha256": "c0f336443470e9ff852c70c9cdfa29af54a8c3fa3923a33de5b2cea73756e192",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_body_sha256",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-91",
+      "mission": "ACQ-2442",
+      "title": "final rate-limited",
+      "threat": "Closing rate-limited.",
+      "fixture_sha256": "b45e585d12a4bdea23fbf820e46b8fc76730491e12708d5e829438dd2d319ebd",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:rtl_retry_after_seconds",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-92",
+      "mission": "ACQ-2443",
+      "title": "final error",
+      "threat": "Closing error: 502.",
+      "fixture_sha256": "07fa0cc9d22690606bbf78fc486d4c08134e3f32ddbcd360f0da0825a91350ff",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:rtl_body_sha256",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-93",
+      "mission": "ACQ-2444",
+      "title": "final quarantine",
+      "threat": "Closing quarantine.",
+      "fixture_sha256": "5b0c03f3bd3ad4e2a8dd23c1cee1e74a1add256707b8a761a71dc39774b5538f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:rtl_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:fetch-outcome:active-content",
+          "ok": true,
+          "detail": "input.body"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-rtl-94",
+      "mission": "ACQ-2445",
+      "title": "final status failure",
+      "threat": "Closing typed failure: bad status.",
+      "fixture_sha256": "f58cca4bcf73e1f25d8b823dd5aaf7623ee8490464fc9009d6cd6caf28562ebe",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-status"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-95",
+      "mission": "ACQ-2446",
+      "title": "final retry failure",
+      "threat": "Closing typed failure: bad retry-after.",
+      "fixture_sha256": "19ab19968062dd60b4bfd95b0cd45f39a1ee9ba0fa1e191ba2a199f07777db57",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-retry-after"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-96",
+      "mission": "ACQ-2447",
+      "title": "final remaining failure",
+      "threat": "Closing typed failure: bad remaining.",
+      "fixture_sha256": "dbc07ea50d07f03a4e9c69e23f04bdf9f58e5ad0c0a7d632ff079db47b3bfb1f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-rate-limit-remaining"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-97",
+      "mission": "ACQ-2448",
+      "title": "final body failure",
+      "threat": "Closing typed failure: bad body.",
+      "fixture_sha256": "2d5dab208d6c5dbf433c8647473a355c4d34962a31eddff14c7595e260118608",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-body"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-98",
+      "mission": "ACQ-2449",
+      "title": "final url failure",
+      "threat": "Closing typed failure: bad URL.",
+      "fixture_sha256": "b725f34a0484c74beb331225a0923f195c543165468516f54ba2c868b1e1a29b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-rtl-99",
+      "mission": "ACQ-2450",
+      "title": "final shape failure",
+      "threat": "Closing typed failure: non-object.",
+      "fixture_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0210",
+ "verdict": "REJECTED",
+ "summary": "BEFORE incremental_sort: 0.222ms; AFTER bisect-insertion into sorted list vs full resort for 200 new of 20k: 0.705ms. Delta +217.0%. 0.22ms to 0.70ms (+217%): bisect-insertion into a list is O(n) memmove per insert; full Timsort resort wins.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench5.py",
+  "fleet/work/fleet-be-1/bench5b.py",
+  "fleet/work/fleet-be-1/bench5_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.2224,
+  "after_ms": 0.705,
+  "metric": "incremental_sort",
+  "change": "bisect-insertion into sorted list vs full resort for 200 new of 20k",
+  "case": 209
+ }
+}

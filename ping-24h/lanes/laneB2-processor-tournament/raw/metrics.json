@@ -1,0 +1,415 @@
+{
+ "contracts": {
+  "classifyReview/v1": {
+   "n_cases": 10,
+   "baseline": {
+    "judged": 10,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 0.053,
+     "p95": 2.648
+    }
+   },
+   "jev": {
+    "n_sampled": 6,
+    "n_scored": 6,
+    "agreement_at_0.5": {
+     "agree": 6,
+     "n": 6,
+     "pct": 100.0
+    },
+    "brier": 0.0423,
+    "fp": 0,
+    "fn": 0,
+    "disagreements": [],
+    "latency_ms": {
+     "p50": 398.6,
+     "p95": 525.4
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 9,
+    "n": 10,
+    "pct": 90.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "MODERATE-HIGH: abusive/spam review auto-pathed as positive; reputational risk",
+   "fn_cost": "LOW: moderator labor",
+   "stability": {
+    "CR-01": {
+     "n": 10,
+     "mean": 0.933,
+     "min": 0.93,
+     "max": 0.94,
+     "range": 0.01
+    }
+   }
+  },
+  "engagementGuard/v1": {
+   "n_cases": 10,
+   "baseline": {
+    "judged": 9,
+    "abstained": 1,
+    "abstention_typed": true,
+    "latency_ms": {
+     "p50": 0.074,
+     "p95": 4.615
+    }
+   },
+   "jev": {
+    "n_sampled": 6,
+    "n_scored": 6,
+    "agreement_at_0.5": {
+     "agree": 1,
+     "n": 6,
+     "pct": 16.7
+    },
+    "brier": 0.4312,
+    "fp": 5,
+    "fn": 0,
+    "disagreements": [
+     [
+      "EG-01",
+      "FP",
+      0.72,
+      "ALREADY_ENGAGED"
+     ],
+     [
+      "EG-02",
+      "FP",
+      0.65,
+      "ALREADY_ENGAGED"
+     ],
+     [
+      "EG-03",
+      "FP",
+      0.75,
+      "ALREADY_ENGAGED"
+     ],
+     [
+      "EG-04",
+      "FP",
+      0.74,
+      "ALREADY_ENGAGED"
+     ],
+     [
+      "EG-05",
+      "FP",
+      0.71,
+      "ALREADY_ENGAGED"
+     ]
+    ],
+    "latency_ms": {
+     "p50": 382.6,
+     "p95": 627.0
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 10,
+    "n": 10,
+    "pct": 100.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "MODERATE: false ELIGIBLE re-engages an already-engaged post (platform spam risk)",
+   "fn_cost": "LOW: false drop loses one engagement opportunity",
+   "stability": {
+    "EG-06": {
+     "n": 5,
+     "mean": 0.818,
+     "min": 0.81,
+     "max": 0.83,
+     "range": 0.02
+    }
+   },
+   "jev_fair": {
+    "n": 6,
+    "agree_at_0.5": 6,
+    "brier": 0.0006,
+    "note": "same 6 cases re-run with the decisive per-case ledger-membership fact in state; main-run envelope carried only counts/digests (evidence asymmetry)"
+   }
+  },
+  "grantsForViewer/v1": {
+   "n_cases": 6,
+   "baseline": {
+    "judged": 6,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 0.003,
+     "p95": 0.085
+    }
+   },
+   "jev": {
+    "n_sampled": 4,
+    "n_scored": 4,
+    "agreement_at_0.5": {
+     "agree": 4,
+     "n": 4,
+     "pct": 100.0
+    },
+    "brier": 0.0948,
+    "fp": 0,
+    "fn": 0,
+    "disagreements": [],
+    "latency_ms": {
+     "p50": 471.2,
+     "p95": 503.3
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 6,
+    "n": 6,
+    "pct": 100.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "LOW: false maintain-bundle offers propose actions; owner still approves exact digest",
+   "fn_cost": "LOW: degraded UX",
+   "stability": {
+    "GV-01": {
+     "n": 5,
+     "mean": 0.87,
+     "min": 0.86,
+     "max": 0.88,
+     "range": 0.02
+    }
+   }
+  },
+  "grill20Composition/v1": {
+   "n_cases": 25,
+   "baseline": {
+    "judged": 25,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 0.01,
+     "p95": 0.01
+    }
+   },
+   "jev": {
+    "n_sampled": 6,
+    "n_scored": 6,
+    "agreement_at_0.5": {
+     "agree": 6,
+     "n": 6,
+     "pct": 100.0
+    },
+    "brier": 0.0045,
+    "fp": 0,
+    "fn": 0,
+    "disagreements": [],
+    "latency_ms": {
+     "p50": 396.2,
+     "p95": 516.1
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 25,
+    "n": 25,
+    "pct": 100.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "HIGH: false decide = autonomous action crossing owner authority",
+   "fn_cost": "LOW-MODERATE: false escalate interrupts the owner",
+   "stability": {}
+  },
+  "mc.authorize_work_order/v1": {
+   "n_cases": 13,
+   "baseline": {
+    "judged": 13,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 0.012,
+     "p95": 0.233
+    }
+   },
+   "jev": {
+    "n_sampled": 8,
+    "n_scored": 8,
+    "agreement_at_0.5": {
+     "agree": 7,
+     "n": 8,
+     "pct": 87.5
+    },
+    "brier": 0.1162,
+    "fp": 0,
+    "fn": 1,
+    "disagreements": [
+     [
+      "AW-01",
+      "FN",
+      0.36,
+      "GRANT"
+     ]
+    ],
+    "latency_ms": {
+     "p50": 488.5,
+     "p95": 803.8
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 13,
+    "n": 13,
+    "pct": 100.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "HIGH: false GRANT can issue a work order to an unauthorized/unavailable agent (C4, possible external effect; reversible via HOLD/reconcile)",
+   "fn_cost": "LOW-MODERATE: false DENY stalls a mission; operator retries",
+   "stability": {
+    "AW-01": {
+     "n": 10,
+     "mean": 0.366,
+     "min": 0.35,
+     "max": 0.38,
+     "range": 0.03
+    }
+   }
+  },
+  "planActions/v1": {
+   "n_cases": 8,
+   "baseline": {
+    "judged": 8,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 0.018,
+     "p95": 0.309
+    }
+   },
+   "jev": {
+    "n_sampled": 5,
+    "n_scored": 5,
+    "agreement_at_0.5": {
+     "agree": 4,
+     "n": 5,
+     "pct": 80.0
+    },
+    "brier": 0.1173,
+    "fp": 1,
+    "fn": 0,
+    "disagreements": [
+     [
+      "PA-01",
+      "FP",
+      0.6,
+      {
+       "capabilities": [
+        "open",
+        "ask",
+        "reference"
+       ],
+       "viewerIsOwner": false
+      }
+     ]
+    ],
+    "latency_ms": {
+     "p50": 460.3,
+     "p95": 549.8
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 7,
+    "n": 8,
+    "pct": 87.5,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "LOW: false affordance fails at use",
+   "fn_cost": "LOW: missing affordance",
+   "stability": {}
+  },
+  "reconcileGate/v1": {
+   "n_cases": 8,
+   "baseline": {
+    "judged": 8,
+    "abstained": 0,
+    "abstention_typed": false,
+    "latency_ms": {
+     "p50": 1.731,
+     "p95": 4.98
+    }
+   },
+   "jev": {
+    "n_sampled": 6,
+    "n_scored": 6,
+    "agreement_at_0.5": {
+     "agree": 4,
+     "n": 6,
+     "pct": 66.7
+    },
+    "brier": 0.2477,
+    "fp": 1,
+    "fn": 1,
+    "disagreements": [
+     [
+      "RG-02",
+      "FP",
+      0.79,
+      "REFUSE"
+     ],
+     [
+      "RG-04",
+      "FN",
+      0.39,
+      "ALLOW"
+     ]
+    ],
+    "latency_ms": {
+     "p50": 395.4,
+     "p95": 578.5
+    },
+    "cost_per_call": "UNKNOWN (API does not report cost)"
+   },
+   "muse_shadow": {
+    "agreement": 8,
+    "n": 8,
+    "pct": 100.0,
+    "note": "same operator/model family as tournament runner; NOT independent evidence"
+   },
+   "fp_cost": "HIGH: false ALLOW re-dispatches duplicate/uncertain intent; possible double external effect",
+   "fn_cost": "LOW-MODERATE: false REFUSE stalls until reconciled",
+   "stability": {
+    "RG-03": {
+     "n": 5,
+     "mean": 0.41,
+     "min": 0.37,
+     "max": 0.44,
+     "range": 0.07
+    }
+   }
+  }
+ },
+ "notes": [],
+ "evidence_sensitivity_baseline": {
+  "mc.authorize_work_order/v1": "AW-08 (codex blockedUntil far-future) DENY vs AW-07 (expired) GRANT: output moves with the evidence flip",
+  "grantsForViewer/v1": "GV-01 (isSite true) bundle granted vs GV-04 (isSite false) object.reference only: moves",
+  "reconcileGate/v1": "RG-03 (latest attempt uncertain) REFUSE vs RG-07 (latest completed) ALLOW: moves",
+  "engagementGuard/v1": "EG-05 ALREADY_ENGAGED -> ELIGIBLE when the single ledger post-id fact is removed from the in-memory index (on-disk index untouched)",
+  "classifyReview/v1": "not probed (lexicon perturbation would change the function, not the evidence)",
+  "planActions/v1": "not probed",
+  "grill20Composition/v1": "not probed (composition is a pure function of failed_checks)"
+ },
+ "evidence_sensitivity_jev": {
+  "AW blocked->expired": {
+   "AW-08 p": 0.06,
+   "AW-07 p": 0.54,
+   "moves": true
+  },
+  "GV isSite true->false": {
+   "main GV-01 p": "see samples",
+   "GV-01b p": 0.34,
+   "moves": true
+  },
+  "RG uncertain->completed": {
+   "RG-03 p": 0.41,
+   "RG-07 p": 0.79,
+   "moves": true
+  }
+ }
+}

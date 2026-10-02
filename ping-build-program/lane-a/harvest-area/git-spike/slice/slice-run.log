@@ -1,0 +1,38 @@
+mirror: /home/hatch/workspace/ping-build-program/lane-a/harvest-area/ping-mirror.git
+HEAD(refs/heads/fyd-factory): e48ef710cb889bf4d59b833ef9766067a9e2bbf0
+OLD (HEAD~30): b3004bbe40a003c5d07369014b9f38519f60adca
+
+=== [1] FULL ingest: null -> HEAD ===
+packet1: status=OK commits_walked=107 skipped_seen=0 capped=false file_changes=1258
+  observations: {"repository":1,"branch":11,"tag":1,"commit":107,"commit_parent":106,"file_change":1258}
+  evidence: sha256=b6ce84e1d3ad6e3c655299fb3e5eece435046e9090bbd397b15304de36020658 bytes=771739
+  cursor: null -> e48ef710cb88
+cursor_advanced=true commits_new=107
+
+=== [2] SAME-COMMIT twice (idempotency) ===
+packet2: status=OK commits_walked=0 skipped_seen=0 capped=false file_changes=0
+  observations: {}
+  evidence: sha256=05f3c29da201c196cbd6e71a18a00818759af7cf9c6feba4bd1c184158cf54dd bytes=4292
+  cursor: e48ef710cb88 -> e48ef710cb88
+cursor_advanced=true commits_new=0 (expect 0 new: no duplicate canonical knowledge)
+
+=== [3] INCREMENTAL: OLD HEAD -> NEW HEAD walks only the delta ===
+delta: status=OK commits_walked=30 skipped_seen=0 capped=false file_changes=229
+  observations: {"repository":1,"branch":11,"tag":1,"commit":30,"commit_parent":30,"file_change":229}
+  evidence: sha256=5e960a9b40405ea2e9437fd304ef689f5adba7f6c2c5b71fb9d8aa7c771ab84e bytes=164300
+  cursor: b3004bbe40a0 -> e48ef710cb88
+
+=== [4] CURSOR ADVANCE on a real ref move ===
+scratch ingest: status=OK commits_new=0
+after ref move: status=OK commits_new=1 cursor_advanced=true
+range: e48ef710cb88 -> ca21353e2ccb
+scratch ref deleted
+
+=== [5] PACKET INVENTORY + dogfood query ===
+persisted packets: 2 (idempotent re-ingests persist nothing)
+  b6ce84e1d3ad6e3c status=OK ref=refs/heads/fyd-factory commits=107
+  7bb7503868d68330 status=OK ref=refs/heads/lane-a-slice-scratch commits=1
+
+Slice complete. Run the dogfood query, e.g.:
+  node src/query.mjs --state slice/state --slug ping --path src/fyd \
+    --from b3004bbe40a003c5d07369014b9f38519f60adca --to e48ef710cb889bf4d59b833ef9766067a9e2bbf0

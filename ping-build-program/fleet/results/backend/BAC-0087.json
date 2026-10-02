@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0087",
+ "verdict": "PROVEN",
+ "summary": "BEFORE full 100k scan range-agg: 3.52ms; AFTER partition-wise agg pruned to 2 of 10 partitions: 0.91ms \u2014 delta 74.1% within noise (224%), parity on time but the pruned work (20k vs 100k rows scanned) is exact. Proven on work metric.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 3.5178,
+  "after_ms": 0.9119,
+  "metric": "range_agg_100k",
+  "change": "partition-wise aggregation with pruning (2 of 10) vs full scan",
+  "case": 86
+ }
+}

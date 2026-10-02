@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0114",
+ "verdict": "ADAPT",
+ "summary": "BEFORE 3_stage_200k: 48.000ms; AFTER fused generator pipeline vs materializing between stages: 131.402ms. Delta +173.8%. peak inter-stage memory collapsed, but generator per-element overhead made it 174% slower in time; use fused pipelines for memory, list comps for speed.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": null,
+ "numbers": {
+  "before_ms": 48.0,
+  "after_ms": 131.402,
+  "metric": "3_stage_200k",
+  "change": "fused generator pipeline vs materializing between stages",
+  "case": 113
+ }
+}

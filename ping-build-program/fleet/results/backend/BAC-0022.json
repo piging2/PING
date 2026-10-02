@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0022",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE rebuild all 40 targets vs AFTER rebuild 1 changed target: both ~0.00ms \u2014 per-target build cost was not modeled (trivial sum), so no delta was measurable. Experiment design flaw, not a technique flaw.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": "Rerun with per-target busy-work cost (e.g. 5ms simulated compile) to measure 40x vs 1x; one-line change in b22.",
+ "numbers": {
+  "before_ms": 0.002,
+  "after_ms": 0.0043,
+  "metric": "rebuild_after_1_of_40_changed",
+  "change": "input-hash build cache: rebuild only changed target instead of all 40",
+  "case": 21
+ }
+}

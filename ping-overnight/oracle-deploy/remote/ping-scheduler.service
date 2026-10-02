@@ -1,0 +1,15 @@
+[Unit]
+Description=PING Scheduler Daemon
+Requires=docker.service ping-gateway.service
+After=docker.service ping-gateway.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml up -d scheduler
+ExecStop=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml stop scheduler
+ExecReload=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml restart scheduler
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

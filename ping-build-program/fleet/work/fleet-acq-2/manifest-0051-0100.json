@@ -1,0 +1,418 @@
+[
+ {
+  "case": 50,
+  "mission": "ACQ-0050",
+  "slug": "deep-nesting",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "400-deep nesting must parse (under cap) with depth note; text=BOTTOM with provenance depth=400"
+ },
+ {
+  "case": 51,
+  "mission": "ACQ-0051",
+  "slug": "sibling-explosion",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "6000 siblings under cap; node count recorded in observation"
+ },
+ {
+  "case": 52,
+  "mission": "ACQ-0052",
+  "slug": "table-cell-bomb",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "20000 cells parse fine; proves count-based cap decision point exists"
+ },
+ {
+  "case": 53,
+  "mission": "ACQ-0053",
+  "slug": "comment-bomb",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "100KB comment stripped; comment bytes never become claims"
+ },
+ {
+  "case": 54,
+  "mission": "ACQ-0054",
+  "slug": "cdata-namespace",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "SVG nesting parsed without tag-confusion; foreign elements isolated"
+ },
+ {
+  "case": 55,
+  "mission": "ACQ-0055",
+  "slug": "million-node-marker",
+  "bound": "P1",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "250k nodes exceed 200k cap -> parser aborts with INVALID_PAYLOAD, record node count"
+ },
+ {
+  "case": 56,
+  "mission": "ACQ-0056",
+  "slug": "text-10mb",
+  "bound": "P2",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "~10.8MB visible text truncated at 2MiB with truncated_text=true flag, never silently cut"
+ },
+ {
+  "case": 57,
+  "mission": "ACQ-0057",
+  "slug": "whitespace-bomb",
+  "bound": "P2",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "whitespace-only run collapses/truncates; END position noted"
+ },
+ {
+  "case": 58,
+  "mission": "ACQ-0058",
+  "slug": "link-farm-100k",
+  "bound": "P3",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "100k links -> cap at 10000 with truncated_links=true + count 100000"
+ },
+ {
+  "case": 59,
+  "mission": "ACQ-0059",
+  "slug": "javascript-hrefs",
+  "bound": "P3",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: hrefs dropped from link set (F6 scheme), /real kept; count of dropped recorded"
+ },
+ {
+  "case": 60,
+  "mission": "ACQ-0060",
+  "slug": "jsonld-200-blocks",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200 blocks -> cap 50 with truncated_jsonld=true"
+ },
+ {
+  "case": 61,
+  "mission": "ACQ-0061",
+  "slug": "jsonld-giant-block",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "700KB block -> per-block byte cap, quarantined as evidence, not promoted"
+ },
+ {
+  "case": 62,
+  "mission": "ACQ-0062",
+  "slug": "jsonld-malformed",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "malformed JSON-LD -> block isolated as ok=false INVALID_PAYLOAD, quarantined as evidence; page body extracted unaffected (containment, not page-level failure)"
+ },
+ {
+  "case": 63,
+  "mission": "ACQ-0063",
+  "slug": "meta-bomb",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5000 metas -> cap 500 with truncated_meta=true"
+ },
+ {
+  "case": 64,
+  "mission": "ACQ-0064",
+  "slug": "meta-refresh-redirect",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "meta refresh recorded as redirect signal, NOT followed automatically; target logged for policy check"
+ },
+ {
+  "case": 65,
+  "mission": "ACQ-0065",
+  "slug": "regex-nested-quant",
+  "bound": "P6",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "50k-char run completes inside parse budget; extractor uses possessive/linear patterns"
+ },
+ {
+  "case": 66,
+  "mission": "ACQ-0066",
+  "slug": "email-catastrophe",
+  "bound": "P6",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "pathological email-ish run must not backtrack-catastrophe; bounded extractor"
+ },
+ {
+  "case": 67,
+  "mission": "ACQ-0067",
+  "slug": "phone-in-script",
+  "bound": "P7",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "script-planted (555) 999-1234 must NEVER appear in extracted facts; only body number"
+ },
+ {
+  "case": 68,
+  "mission": "ACQ-0068",
+  "slug": "style-hidden-claim",
+  "bound": "P7",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "style contents never become text claims"
+ },
+ {
+  "case": 69,
+  "mission": "ACQ-0069",
+  "slug": "jsonld-vs-body-conflict",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "conflicting phone in JSON-LD vs body -> both labeled as separate observations with provenance, NO merge/guess"
+ },
+ {
+  "case": 70,
+  "mission": "ACQ-0070",
+  "slug": "unclosed-soup",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed tags -> best-effort bounded DOM, provenance marked parser_recovered"
+ },
+ {
+  "case": 71,
+  "mission": "ACQ-0071",
+  "slug": "broken-entities",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown entities kept literal, never decoded into guessed chars; valid ones decoded"
+ },
+ {
+  "case": 72,
+  "mission": "ACQ-0072",
+  "slug": "truncated-mid-token",
+  "bound": "MALFORMED",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "truncated stream mid-token -> INVALID_PAYLOAD with bytes_received note; no partial-title claim"
+ },
+ {
+  "case": 73,
+  "mission": "ACQ-0073",
+  "slug": "encoding-mismatch",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "latin-1 byte in utf-8-declared doc -> replacement char, flagged encoding_suspect, never guessed"
+ },
+ {
+  "case": 74,
+  "mission": "ACQ-0074",
+  "slug": "ignore-instructions",
+  "bound": "INJECTION",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "comment injection stays inert text evidence; never enters instruction channel"
+ },
+ {
+  "case": 75,
+  "mission": "ACQ-0075",
+  "slug": "fake-system-prompt",
+  "bound": "INJECTION",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "fake system prompt extracted as plain text only; no role upgrade"
+ },
+ {
+  "case": 76,
+  "mission": "ACQ-0076",
+  "slug": "phishing-form",
+  "bound": "INJECTION",
+  "expect": "TYPED_FAILURE:PERMANENT",
+  "note": "credential-harvest form -> PERMANENT reject class (hostile), quarantined, no field extraction"
+ },
+ {
+  "case": 77,
+  "mission": "ACQ-0077",
+  "slug": "event-handlers",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "event-handler attributes dropped from extraction; text hi/ok kept"
+ },
+ {
+  "case": 78,
+  "mission": "ACQ-0078",
+  "slug": "svg-onload",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "svg script stripped per P7; 'safe' kept"
+ },
+ {
+  "case": 79,
+  "mission": "ACQ-0079",
+  "slug": "two-phones-body",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two candidate phones -> both recorded as separate untrusted observations; no canonical pick"
+ },
+ {
+  "case": 80,
+  "mission": "ACQ-0080",
+  "slug": "title-vs-body-address",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "title/body address conflict -> separate provenance records, flagged needs_owner_confirmation"
+ },
+ {
+  "case": 81,
+  "mission": "ACQ-0081",
+  "slug": "data-url",
+  "bound": "F6",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "data: scheme rejected at L0 before parse (scheme allowlist)"
+ },
+ {
+  "case": 82,
+  "mission": "ACQ-0082",
+  "slug": "credential-url",
+  "bound": "F7",
+  "expect": "TYPED_FAILURE:AUTH_REQUIRED",
+  "note": "credential-bearing URL rejected at L0; no secret in record"
+ },
+ {
+  "case": 83,
+  "mission": "ACQ-0083",
+  "slug": "octet-stream",
+  "bound": "F10",
+  "expect": "TYPED_FAILURE:UNSUPPORTED",
+  "note": "non-HTML content-type on page fetch -> UNSUPPORTED, no parse attempted"
+ },
+ {
+  "case": 84,
+  "mission": "ACQ-0084",
+  "slug": "lying-content-length",
+  "bound": "F1",
+  "expect": "TYPED_FAILURE:TIMEOUT",
+  "note": "declared 100B but streams 50MiB -> streaming abort at 5MiB cap, TIMEOUT-classed fetch abort"
+ },
+ {
+  "case": 85,
+  "mission": "ACQ-0085",
+  "slug": "captcha-wall",
+  "bound": "ANTIBOT",
+  "expect": "TYPED_FAILURE:PERMISSION_DENIED",
+  "note": "CAPTCHA challenge -> detected, recorded blocked, never bypassed (Nolan rule)"
+ },
+ {
+  "case": 86,
+  "mission": "ACQ-0086",
+  "slug": "cookie-wall",
+  "bound": "ANTIBOT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cookie wall -> content behind wall not claimed; wall detected and recorded"
+ },
+ {
+  "case": 87,
+  "mission": "ACQ-0087",
+  "slug": "robots-disallow",
+  "bound": "F12",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "robots parse: /private/ disallowed -> fetch skipped with policy note (recorded, not silent)"
+ },
+ {
+  "case": 88,
+  "mission": "ACQ-0088",
+  "slug": "robots-malformed",
+  "bound": "F12",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "malformed robots -> fail closed to disallow-all (deny), recorded"
+ },
+ {
+  "case": 89,
+  "mission": "ACQ-0089",
+  "slug": "empty-body",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "empty body -> legitimate empty result, NOT a failure (taxonomy s6)"
+ },
+ {
+  "case": 90,
+  "mission": "ACQ-0090",
+  "slug": "bom-only",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "BOM-only doc -> empty result with encoding note"
+ },
+ {
+  "case": 91,
+  "mission": "ACQ-0091",
+  "slug": "giant-attribute",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200KB attribute truncated per-attr cap; text 'v' extracted"
+ },
+ {
+  "case": 92,
+  "mission": "ACQ-0092",
+  "slug": "control-chars",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "NUL/BEL stripped; text preserved without them"
+ },
+ {
+  "case": 93,
+  "mission": "ACQ-0093",
+  "slug": "mixed-rtl",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bidi override chars neutralized in extracted text (spoofing guard)"
+ },
+ {
+  "case": 94,
+  "mission": "ACQ-0094",
+  "slug": "nested-comments",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested comment edge -> single comment per spec-ish parse, 'done' extracted"
+ },
+ {
+  "case": 95,
+  "mission": "ACQ-0095",
+  "slug": "doctype-bomb",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "100KB doctype tolerated, skipped fast; 'ok' extracted"
+ },
+ {
+  "case": 96,
+  "mission": "ACQ-0096",
+  "slug": "pi-and-decl",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "processing instructions dropped; 'fine' extracted"
+ },
+ {
+  "case": 97,
+  "mission": "ACQ-0097",
+  "slug": "huge-title",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "300KB title truncated at title cap with note; body unaffected"
+ },
+ {
+  "case": 98,
+  "mission": "ACQ-0098",
+  "slug": "form-action-javascript",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: form action neutralized; form recorded as present, not executable"
+ },
+ {
+  "case": 99,
+  "mission": "ACQ-0099",
+  "slug": "iframe-srcdoc",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "srcdoc treated as inert quoted payload per P7-equivalent; script inside never executes/claims"
+ },
+ {
+  "case": 100,
+  "mission": "ACQ-0100",
+  "slug": "nested-template-inert",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "template contents inert per HTML spec; script inside never executes; inner text not extracted",
+  "assert_not_in_text": [
+   "TEMPLATE-SECRET",
+   "NESTED-SECRET"
+  ],
+  "assert_text_contains": [
+   "visible text",
+   "after"
+  ]
+ }
+]

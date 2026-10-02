@@ -1,0 +1,79 @@
+{
+ "case5_deadlock": {
+  "outcomes": {
+   "t2": "DEADLOCK_TYPED",
+   "t1": "OK"
+  },
+  "threads_reaped": true,
+  "wall_s": 0.55,
+  "typed_not_hang": true
+ },
+ "case6_exhaustion": {
+  "OK": 41,
+  "EXHAUSTED_TYPED": 159,
+  "SILENT": 0,
+  "accounted": true,
+  "never_silent": true
+ },
+ "case7_policy": {
+  "documented": true,
+  "max_attempts": 5,
+  "backoff": "exponential 100ms base, x2",
+  "jitter": "full jitter +/-50%",
+  "budget_total": "30s per operation",
+  "idempotency": "key required",
+  "exhaustion": "typed RetryExhausted, alert, never silent drop"
+ },
+ "case8_saga": {
+  "None": {
+   "result": "OK",
+   "log": [
+    "gateway:do",
+    "postgres:do",
+    "qdrant:do"
+   ]
+  },
+  "gateway": {
+   "result": "PARTIAL_FAILURE_TYPED",
+   "phase": "gateway",
+   "compensated": true,
+   "log": [
+    "gateway:do"
+   ]
+  },
+  "postgres": {
+   "result": "PARTIAL_FAILURE_TYPED",
+   "phase": "postgres",
+   "compensated": true,
+   "log": [
+    "gateway:do",
+    "postgres:do",
+    "gateway:compensate"
+   ]
+  },
+  "qdrant": {
+   "result": "PARTIAL_FAILURE_TYPED",
+   "phase": "qdrant",
+   "compensated": true,
+   "log": [
+    "gateway:do",
+    "postgres:do",
+    "qdrant:do",
+    "postgres:compensate",
+    "gateway:compensate"
+   ]
+  },
+  "all_compensated": true
+ },
+ "case9_jitter": {
+  "with_jitter": {
+   "peak_concurrent": 12,
+   "buckets": 3
+  },
+  "without_jitter": {
+   "peak_concurrent": 20,
+   "buckets": 1
+  },
+  "no_amplification": true
+ }
+}

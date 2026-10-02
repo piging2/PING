@@ -1,0 +1,180 @@
+/**
+ * Ask FYD context compiler v2 — ADOPT + EXTEND delta of
+ * src/fyd/ask/context-compiler.ts (Pig repo, untracked proposal).
+ *
+ * ADOPTED (kept from the base file): viewer tier model
+ * (anonymous/visitor/owner/staff/agent) with owner-identity verification and
+ * agent delegation; visibility filtering at assembly; target resolution with
+ * recorded unknowns; deterministic relevance scoring architecture; active-only
+ * relationships with both endpoints selected; per-field visibility with
+ * owner/staff flagging; field-level evidence registry (obj:/field:/rel: ids);
+ * unknowns derivation; consumerRules firewall; verifyAnswerClaims grade
+ * vocabulary (SUPPORTED/DERIVED/INFERRED/UNKNOWN).
+ *
+ * EXTENDED (delta, gaps G1..G12 closed — see DELTA.md):
+ * G1  byte budget with priority order + per-section ledger (was count caps only)
+ * G2  exclusion ledger is counts-only (was per-record with ids: privacy leak)
+ * G3  relevance gate: no question signal -> empty selection + note (was top-N always)
+ * G4  packetId hashes the full canonical body (was a subset of ids)
+ * G5  epistemic rank enforcement B3 in verifyAnswerClaims (was registry-membership only)
+ * G6  provenance mapping extended: directory -> DIRECT_FACT, owner kinds -> USER_OVERRIDE
+ * G7  secret-shaped fields stripped at Stage 1 (lane L rule; was absent)
+ * G8  capabilities filtered: known kinds only, forbidden agent effects stripped
+ * G9  explicit contentBoundary string for LLM consumers
+ * G10 predicate weights aligned to lane E's canonical relationship vocabulary
+ * G11 lane F SearchResponse seam (optional): hit-id boosts + indexDigest binding
+ * G12 deterministic recency term (relative to newest derivedAt; no clock)
+ *     conflict-signal hack (/conflict/i on provenance ref) removed; B5 semantics instead
+ *
+ * Ported 2026-09-24 (landings worker): wired to the repo canonicalize
+ * from lib/ping/ask-composer (algorithm identical to the lane-local copy:
+ * sha256-canonical-json-v1, verified). MinimalObject/MinimalRelationship
+ * are compiler-local structural types; PingObject/PingRelationship satisfy
+ * them structurally, so callers pass the real graph directly.
+ *
+ * Pure + deterministic: same input bytes -> same packet bytes. No loader, no
+ * network, no clock, no randomness. Nondeterminism belongs to the model, not
+ * the context assembly.
+ */
+
+import { sha256Hex } from "../../lib/ping/digest";
+import { canonicalize } from "../../lib/ping/ask-composer";
+
+export const CONTEXT_PACKET_VERSION = "ask-context-packet@2";
+export const COMPILER_VERSION = "ctx-compiler@2";
+export const CLAIM_BINDING_VERSION = "claim-binding@1";
+
+// ---------------------------------------------------------------------------
+// Canonical serialization (sha256-canonical-json-v1, FYD envelope pin)
+// ---------------------------------------------------------------------------
+
+
+function byteLen(s: string): number {
+  return Buffer.byteLength(s, "utf8");
+}
+
+// ---------------------------------------------------------------------------
+// Viewer tiers + visibility scope (ADOPTED from base)
+// ---------------------------------------------------------------------------
+
+export type ViewerTier = "anonymous" | "visitor" | "owner" | "staff" | "agent";
+
+export interface CompilerViewer {
+  id: string | null;
+  tier: ViewerTier;
+  grants: string[];
+  /** For tier "agent": the tier of the delegating principal, if verified. */
+  delegatedTier?: ViewerTier;
+}
+
+export interface ViewerScope {
+  tier: ViewerTier;
+  rulesApplied: string[];
+}
+
+const KNOWN_TIERS: readonly ViewerTier[] = ["anonymous", "visitor", "owner", "staff", "agent"];
+
+function resolveTier(viewer: CompilerViewer): ViewerTier {
+  return KNOWN_TIERS.includes(viewer.tier) ? viewer.tier : "anonymous";
+}
+
+export function resolveViewerScope(viewer: CompilerViewer, ownerId: string | null): ViewerScope {
+  let tier = resolveTier(viewer);
+  const rulesApplied: string[] = [];
+  if (tier === "owner") {
+    if (viewer.id && ownerId && viewer.id === ownerId) {
+      rulesApplied.push("owner-identity-verified");
+    } else {
+      tier = "visitor";
+      rulesApplied.push("owner-unverified-downgrade-to-visitor");
+    }
+  }
+  if (tier === "agent") {
+    const d = viewer.delegatedTier;
+    tier = d === "owner" && viewer.id && ownerId && viewer.id === ownerId ? "owner" : "visitor";
+    rulesApplied.push(`agent-delegated-tier:${tier}`);
+  }
+  if (tier === "visitor" || tier === "anonymous") rulesApplied.push("public-only");
+  if (tier === "staff") rulesApplied.push("staff-public-plus-hidden-fields");
+  if (tier === "owner") rulesApplied.push("owner-sees-private-and-hidden");
+  return { tier, rulesApplied };
+}
+
+// ---------------------------------------------------------------------------
+// Question normalization + intent signals (ADOPTED from base)
+// ---------------------------------------------------------------------------
+
+const STOPWORDS = new Set(
+  "a,an,the,do,does,did,is,are,was,were,what,whats,when,where,which,who,whom,how,why,to,of,in,on,at,for,with,you,your,they,their,it,its,and,or,but,if,then,than,so,such,as,by,from,about,can,could,would,should,any,all,some,there,here,i,me,my,we,our,us,this,that,these,those,be,been,being,have,has,had,having,not,no,yes,please,tell,give,show,list".split(","),
+);
+
+export function normalizeQuestion(q: string): string {
+  return String(q ?? "").trim().replace(/\s+/g, " ");
+}
+
+export function questionSignals(question: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of normalizeQuestion(question).toLowerCase().split(/[^a-z0-9]+/)) {
+    if (t.length >= 3 && !STOPWORDS.has(t) && !seen.has(t)) {
+      seen.add(t);
+      out.push(t);
+    }
+  }
+  return out;
+}
+
+const INTENT_KEYWORDS: Record<string, string[]> = {
+  services: ["service", "offer", "fix", "repair", "install", "clean", "drain", "sewer", "heater", "plumb"],
+  location: ["where", "located", "location", "address", "area", "serve", "city", "town"],
+  hours: ["hours", "open", "close", "closing", "saturday", "sunday", "weekend", "emergency"],
+  contact: ["phone", "call", "email", "contact", "number", "reach"],
+  price: ["price", "cost", "charge", "rate", "flat", "estimate", "quote"],
+  people: ["who", "team", "owner", "work", "staff", "technician", "employee"],
+  about: ["about", "business", "company", "story", "family"],
+  conflict: ["conflict", "disagree", "differ", "correct", "true", "really"],
+};
+
+export function detectIntents(signals: string[]): string[] {
+  const intents: string[] = [];
+  for (const [intent, words] of Object.entries(INTENT_KEYWORDS)) {
+    if (signals.some((s) => words.some((w) => s.includes(w) || w.includes(s)))) intents.push(intent);
+  }
+  return intents.sort();
+}
+
+// Schema -> intents it serves. Extended from lane E's agent-tool-descriptions
+// output (canonical fields + relationships per schema).
+const SCHEMA_INTENT_BOOST: Record<string, string[]> = {
+  "ping.social.business@1": ["about", "hours", "contact", "price"],
+  "ping.social.service@1": ["services"],
+  "ping.social.location@1": ["location"],
+  "ping.social.person@1": ["people"],
+  "ping.social.article@1": ["services", "about"],
+  "ping.social.post@1": ["services", "about"],
+};
+
+// ---------------------------------------------------------------------------
+// Predicate weights, aligned to lane E's canonical relationship vocabulary
+// (G10). Legacy aliases kept with the same weight; unknown -> 0.3.
+// ---------------------------------------------------------------------------
+
+const PREDICATE_WEIGHTS: Record<string, number> = {
+  provides: 0.9, offers: 0.9,
+  employs: 0.85, works_for: 0.85,
+  located_at: 0.8,
+  publishes: 0.6, has_article: 0.6, provided_by: 0.6, published_by: 0.6, authored: 0.6,
+  replies_to: 0.5, references: 0.5,
+  partnered_with: 0.4,
+  has_note: 0.2,
+};
+
+function predicateWeight(p: string): number {
+  return PREDICATE_WEIGHTS[p] ?? 0.3;
+}
+
+// ---------------------------------------------------------------------------
+// Epistemic classification from provenance (EXTENDED, G6) + rank table (G5)
+// ---------------------------------------------------------------------------
+
+export function classificationFromProvenance(provenanceKind: string | undefined | null): string {

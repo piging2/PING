@@ -1,0 +1,571 @@
+[
+ {
+  "case": 0,
+  "mission_no": 2151,
+  "slug": "noscript-fallback",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "noscript text extracted with provenance; script inert, src-less inline flagged",
+  "expect_flags": [
+   "script_inert",
+   "noscript_provenance"
+  ]
+ },
+ {
+  "case": 1,
+  "mission_no": 2152,
+  "slug": "inline-ignored",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "inline JS never executes; static text kept; title from JS never adopted",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 2,
+  "mission_no": 2153,
+  "slug": "json-data-block",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "typed JSON data block parsed as data, bounded",
+  "expect_flags": [
+   "json_data_block"
+  ]
+ },
+ {
+  "case": 3,
+  "mission_no": 2154,
+  "slug": "ldjson-data-block",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "ld+json data block parsed as data",
+  "expect_flags": [
+   "json_data_block"
+  ]
+ },
+ {
+  "case": 4,
+  "mission_no": 2155,
+  "slug": "unknown-script-type",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown script type: fully inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 5,
+  "mission_no": 2156,
+  "slug": "module-src",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "module src recorded as untrusted ref, never fetched",
+  "expect_flags": [
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 6,
+  "mission_no": 2157,
+  "slug": "document-write",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "document.write flagged; injected markup never materialized",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 7,
+  "mission_no": 2158,
+  "slug": "innerhtml",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "innerHTML assignment inert; no URL harvested from JS string",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 8,
+  "mission_no": 2159,
+  "slug": "eval",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "eval inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 9,
+  "mission_no": 2160,
+  "slug": "obfuscated",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "obfuscated JS: no deobfuscation guess",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 10,
+  "mission_no": 2161,
+  "slug": "template-literal",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "template literal HTML never rendered",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 11,
+  "mission_no": 2162,
+  "slug": "js-comment-facts",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS comments never become extracted facts",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 12,
+  "mission_no": 2163,
+  "slug": "onclick",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "event handler attrs inert",
+  "expect_flags": [
+   "event_handler_inert"
+  ]
+ },
+ {
+  "case": 13,
+  "mission_no": 2164,
+  "slug": "js-href",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: href dropped",
+  "expect_flags": [
+   "scheme_dropped"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 2165,
+  "slug": "data-script-src",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data: script src dropped",
+  "expect_flags": [
+   "scheme_dropped"
+  ]
+ },
+ {
+  "case": 15,
+  "mission_no": 2166,
+  "slug": "relative-script-src",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative script src: unresolved_ref, never resolved by guess",
+  "expect_flags": [
+   "unresolved_ref"
+  ]
+ },
+ {
+  "case": 16,
+  "mission_no": 2167,
+  "slug": "noscript-links",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "noscript links extracted with provenance",
+  "expect_flags": [
+   "noscript_provenance",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 17,
+  "mission_no": 2168,
+  "slug": "noscript-hostile",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "noscript still goes through link hygiene",
+  "expect_flags": [
+   "noscript_provenance",
+   "scheme_dropped"
+  ]
+ },
+ {
+  "case": 18,
+  "mission_no": 2169,
+  "slug": "lazy-datasrc",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data-src recorded as lazy_ref (claimed, not loaded)",
+  "expect_flags": [
+   "lazy_ref"
+  ]
+ },
+ {
+  "case": 19,
+  "mission_no": 2170,
+  "slug": "json-malformed",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "malformed JSON block: typed block failure; page text still extracted",
+  "expect_flags": [
+   "json_block_failure"
+  ]
+ },
+ {
+  "case": 20,
+  "mission_no": 2171,
+  "slug": "json-huge",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "300KB JSON block capped with flag",
+  "expect_flags": [
+   "json_data_block",
+   "json_cap"
+  ]
+ },
+ {
+  "case": 21,
+  "mission_no": 2172,
+  "slug": "script-localhost",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "localhost script src flagged, unfetched",
+  "expect_flags": [
+   "script_src_unfetched",
+   "ssrf_suspect"
+  ]
+ },
+ {
+  "case": 22,
+  "mission_no": 2173,
+  "slug": "many-scripts",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "all script srcs recorded, none fetched",
+  "expect_flags": [
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 23,
+  "mission_no": 2174,
+  "slug": "defer-async",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "defer/async/nonce recorded verbatim as opaque attrs",
+  "expect_flags": [
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 24,
+  "mission_no": 2175,
+  "slug": "importmap",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "importmap inert; URLs inside JS not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 25,
+  "mission_no": 2176,
+  "slug": "jsonp",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JSONP: code, not data",
+  "expect_flags": [
+   "script_inert",
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 26,
+  "mission_no": 2177,
+  "slug": "template-el",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "template content inert (regression: no leak)",
+  "expect_flags": [
+   "template_inert"
+  ]
+ },
+ {
+  "case": 27,
+  "mission_no": 2178,
+  "slug": "custom-elements",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "custom elements: tags recorded, no behavior guess",
+  "expect_flags": [
+   "custom_element_inert"
+  ]
+ },
+ {
+  "case": 28,
+  "mission_no": 2179,
+  "slug": "fetch-url",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "fetch URL inside JS never harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 29,
+  "mission_no": 2180,
+  "slug": "xhr-relative",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "XHR endpoint not a URL claim",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 30,
+  "mission_no": 2181,
+  "slug": "websocket",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "websocket URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 31,
+  "mission_no": 2182,
+  "slug": "js-string-url",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "string-literal URL never becomes a link observation",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 32,
+  "mission_no": 2183,
+  "slug": "b64-blob",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "base64 blob inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 33,
+  "mission_no": 2184,
+  "slug": "sourcemap",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "sourcemap comment recorded, not fetched",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 34,
+  "mission_no": 2185,
+  "slug": "integrity",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "integrity hash recorded verbatim",
+  "expect_flags": [
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 35,
+  "mission_no": 2186,
+  "slug": "csp-meta",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CSP recorded as policy signal",
+  "expect_flags": [
+   "policy_signal"
+  ]
+ },
+ {
+  "case": 36,
+  "mission_no": 2187,
+  "slug": "js-redirect",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS redirect: claimed intent only, never followed",
+  "expect_flags": [
+   "script_inert",
+   "js_redirect_claimed"
+  ]
+ },
+ {
+  "case": 37,
+  "mission_no": 2188,
+  "slug": "pushstate",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "pushState URL not adopted",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 38,
+  "mission_no": 2189,
+  "slug": "title-in-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "static title wins; JS title never adopted",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 39,
+  "mission_no": 2190,
+  "slug": "meta-in-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS-created meta never adopted",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 40,
+  "mission_no": 2191,
+  "slug": "canvas",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "canvas content unrendered, recorded as such",
+  "expect_flags": [
+   "script_inert",
+   "unrendered_surface"
+  ]
+ },
+ {
+  "case": 41,
+  "mission_no": 2192,
+  "slug": "iframe-src",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "iframe src recorded unfetched",
+  "expect_flags": [
+   "iframe_unfetched"
+  ]
+ },
+ {
+  "case": 42,
+  "mission_no": 2193,
+  "slug": "iframe-srcdoc",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "srcdoc inert",
+  "expect_flags": [
+   "iframe_srcdoc_inert"
+  ]
+ },
+ {
+  "case": 43,
+  "mission_no": 2194,
+  "slug": "video-source",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "video source recorded unfetched",
+  "expect_flags": [
+   "media_unfetched"
+  ]
+ },
+ {
+  "case": 44,
+  "mission_no": 2195,
+  "slug": "ldjson-in-string",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JSON-looking string inside code is not a data block",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 45,
+  "mission_no": 2196,
+  "slug": "dup-noscript",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "all noscript blocks extracted with provenance",
+  "expect_flags": [
+   "script_inert",
+   "noscript_provenance"
+  ]
+ },
+ {
+  "case": 46,
+  "mission_no": 2197,
+  "slug": "empty-script",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "empty script harmless",
+  "expect_flags": []
+ },
+ {
+  "case": 47,
+  "mission_no": 2198,
+  "slug": "syntax-error",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "broken JS still inert, text intact",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 48,
+  "mission_no": 2199,
+  "slug": "comment-cdata",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "legacy comment-wrapped script inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 49,
+  "mission_no": 2200,
+  "slug": "all-together",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "combined: inert code, noscript fallback, one JSON data block",
+  "expect_flags": [
+   "script_inert",
+   "noscript_provenance",
+   "json_data_block",
+   "untrusted_ref"
+  ]
+ }
+]

@@ -1,0 +1,74 @@
+{
+  "capture": {
+    "incidentRef": "lane-k-2.2",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling lane-K 2.2",
+    "sourceDigest": "sha256:27170d60cda69cb110c6f0f69f5f43a5bfa0bc1a13ebcd49381f02ce3830da40"
+  },
+  "connectorShape": "poll",
+  "expect": {
+    "failureCodes": [
+      "AUTH_EXPIRED"
+    ],
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 0,
+    "terminalState": "FAILED",
+    "uniqueRecords": 0
+  },
+  "fixtureId": "oauth-401-expired",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T20:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T20:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 102,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer <redacted> never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "me",
+      "kind": "request",
+      "note": "provider rejected the presented credential as expired; reference harness owns no refresh flow, so it halts",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/me/jobs"
+      },
+      "response": {
+        "body": {
+          "error": "invalid_token",
+          "error_description": "The access token expired"
+        },
+        "headers": {},
+        "latencyMs": 40,
+        "status": 401
+      }
+    }
+  ],
+  "title": "401 invalid_token is AUTH_EXPIRED (credential rejected as expired), never AUTH_REQUIRED or a blind retry"
+}

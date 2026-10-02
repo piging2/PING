@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0146",
+ "verdict": "REJECTED",
+ "summary": "BEFORE 2000_invalidation_checks: 0.041ms; AFTER bloom-filter pre-check vs set lookup per invalidation check: 0.603ms. Delta +1387.3%. 0.04ms to 0.60ms (+1387%); a Python bloom filter is far slower than a native set lookup, so the pre-check backfires.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.041,
+  "after_ms": 0.603,
+  "metric": "2000_invalidation_checks",
+  "change": "bloom-filter pre-check vs set lookup per invalidation check",
+  "case": 145
+ }
+}

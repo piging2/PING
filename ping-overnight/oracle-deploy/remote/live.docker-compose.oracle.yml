@@ -1,0 +1,189 @@
+# PING Oracle Deployment — Docker Compose
+# Target: Oracle Cloud VM (Ubuntu 22.04+, Docker Engine)
+# Usage: docker compose -f infrastructure/oracle/docker-compose.oracle.yml up -d
+
+version: "3.8"
+
+x-logging: &default-logging
+  driver: journald
+  options:
+    tag: "{{.Name}}"
+
+networks:
+  ping_internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  pgdata:
+    driver: local
+  qdrant_storage:
+    driver: local
+  mirror:
+    driver: local
+  scheduler_state:
+    driver: local
+
+services:
+
+  # ============================================================
+  # PostgreSQL — Event Store
+  # ============================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: ping-postgres
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ping}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-crx_runtime}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ping} -d ${POSTGRES_DB:-crx_runtime}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  # ============================================================
+  # Qdrant — Vector Store
+  # ============================================================
+  qdrant:
+    image: qdrant/qdrant:v1.7.0
+    container_name: ping-qdrant
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/6333' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  # ============================================================
+  # Temporal Server — Workflow Orchestration (Optional)
+  # ============================================================
+  temporal:
+    image: temporalio/auto-setup:1.24.0
+    container_name: ping-temporal
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    ports:
+      - "127.0.0.1:7233:7233"
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-ping}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_VALUE: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "health", "check"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+    profiles:
+      - temporal
+
+  # ============================================================
+  # Gateway — Express API
+  # ============================================================
+  gateway:
+    build:
+      context: ../../
+      dockerfile: gateway/Dockerfile
+    container_name: ping-gateway
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-crx_runtime}
+      POSTGRES_USER: ${POSTGRES_USER:-ping}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:8080/health', (r) => {if (r.statusCode !== 200) console.error('health status: ' + r.statusCode); process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  # ============================================================
+  # Scheduler Daemon — YAML Job Executor
+  # ============================================================
+  scheduler:
+    build:
+      context: ../../
+      dockerfile: infrastructure/oracle/Dockerfile.scheduler
+    container_name: ping-scheduler
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    volumes:
+      - ../../config:/app/config:ro
+      - ../../.git:/app/.git:ro
+      - scheduler_state:/app/config/automation
+      - ../../.env:/app/.env:ro
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      GATEWAY_URL: http://gateway:8080
+      POLL_INTERVAL_MS: ${SCHEDULER_POLL_MS:-30000}
+    depends_on:
+      - gateway
+    logging: *default-logging
+
+  # ============================================================
+  # LiteLLM (Optional) — Model Router
+  # ============================================================
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: ping-litellm
+    restart: unless-stopped
+    networks:
+      - ping_internal
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ping}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-crx_runtime}
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *default-logging
+    profiles:
+      - litellm

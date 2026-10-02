@@ -1,0 +1,192 @@
+{
+  "at": "2026-09-28T20:42:05.944Z",
+  "journal": "/home/hatch/workspace/ping-24h/repro/scratch/journals/run2/events.jsonl",
+  "results": [
+    {
+      "name": "T1 coordinator-death (synthetic)",
+      "verdict": "PASS",
+      "evidence": [
+        "status after kill (no terminal): RUNNING (expected RUNNING)",
+        "terminal events present: 0 (expected 0)",
+        "work_order_id byte-identical: true",
+        "capabilities_granted: [\"text.summarize\"]",
+        "evidence entries: 0",
+        "4 re-emits with identical summaries: all duplicate-skipped = true",
+        "journal line count before kill=0 after kill=4 after duplicates=4",
+        "MC_AGENT_AUTHORIZED events for mission: 1 (expected 1)",
+        "route.ts at HEAD: 409 mention=false, idempotency branch=false"
+      ],
+      "notes": "HTTP 409 HOLD is NOT in HEAD (mission ids embed ts; no idempotency branch in route.ts). HOLD-at-HTTP-layer verdict: FAIL-at-HEAD (feature exists only in uncommitted worktree per lane9 correction). Event-layer duplicate suppression: PASS via deterministic event ids."
+    },
+    {
+      "name": "T2 worker-death-before-dispatch",
+      "verdict": "PASS",
+      "evidence": [
+        "stub error: \"connect ECONNREFUSED 127.0.0.1:11434\" name=Error",
+        "classifyOutcome -> 'transport-failed' (expected 'transport-failed')",
+        "terminal emitted: FAILED, projected status: FAILED, result.outcome: failed"
+      ],
+      "notes": "Honest FAILED with no claim of execution. No redispatch logic exists in the slice."
+    },
+    {
+      "name": "T3 worker-death-after-dispatch-before-ack",
+      "verdict": "FAIL-CONFIRMED",
+      "evidence": [
+        "stub: effectDelivered=true (server computed result), client saw \"read ECONNRESET\"",
+        "classifyOutcome -> 'transport-failed' (route.ts heuristic: no 'abort' substring -> 'transport-failed')",
+        "projected status: FAILED while effectDelivered=true",
+        "journal records: \"The prompt was never delivered\" (unprovable when the server computed a result)"
+      ],
+      "notes": "S2 misclassification PROVEN by execution: a possibly-delivered run is recorded FAILED. Bounded in production only by the read-only FIXED_CONSTRAINTS slice (policy, untested at the boundary)."
+    },
+    {
+      "name": "T4 worker-death-after-effect (deadline)",
+      "verdict": "PASS",
+      "evidence": [
+        "stub error name=AbortError",
+        "classifyOutcome -> 'timeout' (expected 'timeout')",
+        "projected status: UNKNOWN, result.outcome: unknown",
+        "reconciliation_state: RECONCILIATION IN PROGRESS"
+      ],
+      "notes": "UNKNOWN first-class; never collapsed into FAILED."
+    },
+    {
+      "name": "T5 lease-expiry (mission layer)",
+      "verdict": "UNTESTABLE-SAFELY",
+      "evidence": [
+        "'lease' occurrences in dispatch lib source: 0",
+        "DEADLINES present (transport timeouts only): {\"ollama\":180,\"identity_1\":600,\"identity_2\":600,\"identity_3\":600,\"identity_4\":600}",
+        "mission-lease primitive in slice: none found"
+      ],
+      "notes": "The dispatch slice at HEAD has no mission-lease primitive, so the invariant \"lease-expired -> HOLD, never -> redispatch\" can neither be violated nor satisfied in-slice. The concrete violation (reapExpiredLeases -> created + retry_at=NOW()) lives in the Pig-side ping-runtime, out of this lane's tree; not re-executed per standing read-only constraints (see lane12 S7)."
+    },
+    {
+      "name": "T6 approval-expiry (dispatch slice)",
+      "verdict": "PASS-STRUCTURAL",
+      "evidence": [
+        "approval/expiry event types in dispatch slice: 0 (expected 0)",
+        "'APPROVED' transitions in route.ts: 0",
+        "slice issues durable grants: no (adapterCall('issue') is out-of-tree; FIXED_CONSTRAINTS read-only)"
+      ],
+      "notes": "Silence cannot become approval in the slice because no APPROVED transition exists at all. mc-approval/approval_request.py is absent from the canonical tree at HEAD 0264d517 (lane12 read it from outside this tree), so the subsystem expiry policy was NOT re-executed here."
+    },
+    {
+      "name": "T7 duplicate-result",
+      "verdict": "FAIL-CONFIRMED",
+      "evidence": [
+        "byte-identical re-emit: duplicate-skipped (expected duplicate-skipped); lines 23 -> 24 (delta 1)",
+        "divergent-summary re-emit (reconciler shape): appended (expected appended); lines -> 25 (delta 1)",
+        "MC_RUN_SUCCEEDED events accepted by projector: 2 (expected 2)",
+        "conflict marker in projection: none (last-write-wins)"
+      ],
+      "notes": "S13 PROVEN by execution: dedupe keys on (kind|missionId|eventType|summary) only; the data payload (output_digest, evidence) is NOT part of the id. A second terminal with any summary byte difference is silently accepted as a second terminal (last-write-wins, no conflict marker). Terminal transitions are set, not WON (no CAS single-winner guard). NOTE: route.ts at HEAD emits a constant summary per run (`run succeeded: ${runId}` with runId always -r1), so the trigger needs a second writer (future reconciler/retry path): latent today, mechanical the day one exists."
+    },
+    {
+      "name": "T8 late-result",
+      "verdict": "FAIL-CONFIRMED",
+      "evidence": [
+        "after MC_RUN_UNKNOWN: status=UNKNOWN, reconciliation_state=RECONCILIATION IN PROGRESS",
+        "after late MC_RUN_SUCCEEDED: status=SUCCEEDED, reconciliation_state=null",
+        "reconciliation marker on the late write: none (direct write, no gate)"
+      ],
+      "notes": "S14 PROVEN by execution (latent): a late result overwrites UNKNOWN by direct write; nothing enforces \"UNKNOWN -> terminal only via reconciliation\", and terminal states are not immutable under the projector's last-write-wins."
+    },
+    {
+      "name": "T9 event-write-succeeds-projection-fails",
+      "verdict": "PASS",
+      "evidence": [
+        "loadJournalEvents after torn line: OK, 31 events parsed",
+        "torn line presented as committed: false (expected false)",
+        "dedupe intact: true",
+        "odd-shape mission projected: yes, evidence entries: 0",
+        "projector threw on odd shapes: false",
+        "journal is read-only under projection: line count delta only from our appends"
+      ],
+      "notes": "Projection fails safe: torn lines skipped, malformed/odd events filtered, journal untouched by the read path. The MC journal torn-write skip path (S5) is now EXECUTED, not just code-read."
+    },
+    {
+      "name": "T10 effect-succeeds-event-write-fails",
+      "verdict": "FAIL-CONFIRMED",
+      "evidence": [
+        "effect completed in stub: true; result envelope in memory only",
+        "terminal emit threw: EACCES",
+        "projected status after write failure: RUNNING (expected RUNNING, NOT even UNKNOWN)",
+        "terminal events for mission: 0 (expected 0)",
+        "result evidence recoverable from journal: false (expected false)",
+        "reconciliation marker: null (expected null: nothing marks it for reconciliation)"
+      ],
+      "notes": "Weakest edge #2 PROVEN by execution: the crash window effect-returned-but-not-recorded loses the result entirely. Mission degrades to RUNNING-with-no-terminal (not even UNKNOWN); the output is unrecoverable; nothing marks it for reconciliation. A duplicate POST at HEAD would mint a NEW mission (no HOLD)."
+    },
+    {
+      "name": "T11 reconciliation-crash (event-layer idempotency only)",
+      "verdict": "PARTIAL",
+      "evidence": [
+        "first MC_RUN_UNKNOWN: appended; second identical: duplicate-skipped",
+        "journal line delta: 1 (expected 1: idempotent re-entry at the event layer)"
+      ],
+      "notes": "UNTESTABLE-SAFELY as a mechanism: no reconciler exists to crash (agents/route.ts is absent at HEAD; reconciliation is withheld). What IS proven: re-emitting the same UNKNOWN is idempotent at the event layer, so a future reconciler pass CAN be made crash-idempotent on this primitive. The P5 crash-mid-pass design from lane12 must run the day the reconciler lands."
+    },
+    {
+      "name": "T12 repeated-restart",
+      "verdict": "FAIL-CONFIRMED",
+      "evidence": [
+        "5 simulated restarts (load + project): projections byte-identical = true",
+        "journal line count stable across restarts: 53 (read path appends nothing)",
+        "stuck missions after restarts: RUNNING=1, UNKNOWN=1 (unchanged, no re-drive)",
+        "age-out/escalation/reconcile primitives in slice source: none"
+      ],
+      "notes": "S18 PROVEN by execution: restart is non-amplifying for state (PASS) but amplifying for stuck work (FAIL): no bound, no age-out, no escalation, no reconciler. Stuck UNKNOWN/RUNNING missions accumulate without bound. (\"reconcile\" appears only in the static string RECONCILIATION IN PROGRESS, which nothing consumes.)"
+    },
+    {
+      "name": "NEG-N4 success-only-watermark shape",
+      "verdict": "PASS",
+      "evidence": [
+        "effectRan=true, terminal events=0 (success-only watermark gap seeded)",
+        "MC_EXECUTION_STARTED count after 2 catchup projections + restart: 1 (expected 1)",
+        "journal line delta from projection: 0 (expected 0: projection never re-fires)"
+      ],
+      "notes": "No re-fire mechanism exists in the slice (projection is read-only), so the N4 anti-pattern cannot trigger here. The assertion to carry forward: when a reconciler lands, re-fire must key on a dispatch record, never on a success record."
+    },
+    {
+      "name": "A6 exactly-once continuation (ForkScout shape)",
+      "verdict": "PASS",
+      "evidence": [
+        "clean run: continuation fired 1x (expected 1)",
+        "after crash: token consumed=true, completion-pending marker=true",
+        "restart recovery: re-fire count=0 (expected 0: not twice), pending preserved=true (expected true: not zero)"
+      ],
+      "notes": "Prototype token mechanism, not PING code. Pairs with N2 delete-then-drive: a future reconciler's re-drive intent must be single-consumption; crash between consume and completion is an explicit completion-pending state, never silently lost, never re-enrolled."
+    },
+    {
+      "name": "A8 quiescence gate (N2 prototype)",
+      "verdict": "PASS",
+      "evidence": [
+        "case1 (dies at 300ms): mode=executor-dead, waited=306ms (expected executor-dead, waited>=300)",
+        "case2 (never dies): mode=bounded-timeout, waited=206ms (expected bounded-timeout ~200, timeout logged)",
+        "case3 (kill at 100ms, confirmed dead 400ms): mode=executor-dead, waited=409ms (expected >=400, NOT ~100)"
+      ],
+      "notes": "Prototype gate, not PING code. No quiescence gate or executor-liveness probe exists anywhere in the dispatch slice at HEAD (FAIL as PING mechanism). Authority fencing (WHO owns recovery) must pair with this gate (WHEN the replacement may start) the day a reconciler re-drives."
+    },
+    {
+      "name": "A7 fork-from-checkpoint",
+      "verdict": "FAIL-TODAY",
+      "evidence": [
+        "checkpoint primitive in dispatch lib: false (expected false)"
+      ],
+      "notes": "The test cannot be written against PING: replay is whole-journal only (loadJournalEvents has no checkpoint parameter; projectMissions replays from scratch). A7 stands as the acceptance test for the day checkpoints are introduced. Documents the gap vs the AgentOS donor invariant."
+    },
+    {
+      "name": "A1-A5 rollup",
+      "verdict": "PASS",
+      "evidence": [
+        "A1 no duplicate effect: MC_EXECUTION_STARTED count = 1 (expected 1)",
+        "A2 no synthesized authority: MC_AGENT_AUTHORIZED count = 1 (expected 1), capabilities exactly pre-kill set = true",
+        "A3 no lost decision/evidence: 4 pre-kill events project = true, work_order_id preserved = true, run_id/execution_id = mc-m-t1-coord-death-r1/mc-m-t1-coord-death-x1",
+        "A4 no fake success: status=RUNNING (RUNNING), result.outcome=null (null)",
+        "A5 UNKNOWN stays UNKNOWN: t4 status=UNKNOWN, reconciliation_state=RECONCILIATION IN PROGRESS, outcome=unknown",
+        "A5 caveat: T8 proved a direct late write CAN overwrite UNKNOWN (last-write-wins); A5 holds only against the projector, not against ungated writes"
+      ],
+      "notes": "A1 holds at the event layer via deterministic ids. The HTTP 409 HOLD half of the lane12 design does not exist at HEAD (see T1 note). A5 is conditional: no reconciler-gated write path exists to protect UNKNOWN."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+ "case0_throttled": {
+  "produced": 200,
+  "consumed": 200,
+  "dropped": 0,
+  "rejected": 0,
+  "max_depth": 16,
+  "qcap": 16,
+  "lag_alerts": 188,
+  "sample_lag": {
+   "depth": 15,
+   "lag_s": 0.0
+  },
+  "wall_s": 2.23,
+  "zero_silent_drops": true,
+  "pass": true
+ },
+ "case1_bounded": {
+  "qcap": 16,
+  "max_depth": 16,
+  "policies": {
+   "BLOCK": "producer blocks until space",
+   "REJECT": "typed BackpressureError to caller",
+   "DROP_OLDEST": "evict oldest, journaled",
+   "DROP_NEWEST": "shed load, counted"
+  },
+  "explicit_policy": "BLOCK",
+  "pass": true
+ },
+ "case2_lag": {
+  "alerts": 188,
+  "sample": {
+   "depth": 15,
+   "lag_s": 0.0
+  },
+  "threshold": "depth > 70% cap",
+  "pass": true
+ },
+ "case3_e2e": {
+  "inflight_peak": 9,
+  "cap_sum": 16,
+  "consumed": 100,
+  "no_hidden_buffer": true,
+  "pass": true
+ },
+ "case4_typed": {
+  "error": "BackpressureError: queue full (4): BACKPRESSURE",
+  "typed": true,
+  "not_silent": true,
+  "pass": true
+ },
+ "all_50_pass": true
+}

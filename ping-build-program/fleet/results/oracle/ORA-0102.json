@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-0102",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "NEEDS-FOLLOWUP: 'ping-gateway:candidate-84486f056' cannot be rebuilt here (no docker in sandbox; live build on the Oracle host is out of scope). Blocked additionally by unpinned inputs: live Dockerfile has unpinned 'FROM node:20-alpine' and an 'npm install --no-save typescript' leftover. The design-spec Dockerfile (digest-pinned base, npm ci, multi-stage) makes the two-build comparison possible.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/digest-pin-lockfile.json",
+    "fleet/work/fleet-ora-2/sandbox/reproducibility-designs.md"
+  ],
+  "confidence": 0.85,
+  "followup": "On a build host: build twice from the pinned Dockerfile, compare image digests and layer diffs; FAIL on any divergence with diff evidence."
+}

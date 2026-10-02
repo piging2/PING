@@ -1,0 +1,563 @@
+[
+ {
+  "case": 50,
+  "mission_no": 301,
+  "slug": "type-as-url",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "URL-form @type recorded verbatim, not normalized to short form",
+  "expect_flags": [
+   "type_url_form"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 51,
+  "mission_no": 302,
+  "slug": "name-array",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "name array: both kept, no canonical pick",
+  "expect_flags": [
+   "multi_name"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 52,
+  "mission_no": 303,
+  "slug": "name-langmap",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "language map verbatim; no language-default guess",
+  "expect_flags": [
+   "lang_map"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 53,
+  "mission_no": 304,
+  "slug": "description-array",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "description array verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 54,
+  "mission_no": 305,
+  "slug": "telephone-array-3",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "3 phones all kept as separate observations",
+  "expect_flags": [
+   "multi_phone"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 55,
+  "mission_no": 306,
+  "slug": "contactpoint-conflict",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contactPoint phones kept per-contactType, no merge",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 56,
+  "mission_no": 307,
+  "slug": "overnight-hours",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "overnight hours verbatim; no duration arithmetic performed",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 57,
+  "mission_no": 308,
+  "slug": "special-hours",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "special hours verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 58,
+  "mission_no": 309,
+  "slug": "pricerange-symbols",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "priceRange symbols verbatim",
+  "expect_flags": [],
+  "verbatim": [
+   "$$$"
+  ]
+ },
+ {
+  "case": 59,
+  "mission_no": 310,
+  "slug": "currencies",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "currenciesAccepted verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 60,
+  "mission_no": 311,
+  "slug": "payment-array",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "paymentAccepted verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 61,
+  "mission_no": 312,
+  "slug": "areaserved-geocircle",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "GeoCircle areaServed verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 62,
+  "mission_no": 313,
+  "slug": "areaserved-conflict",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "mixed areaServed kept separate",
+  "expect_flags": [
+   "multi_area"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 63,
+  "mission_no": 314,
+  "slug": "slogan-escapes",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "escapes preserved verbatim",
+  "expect_flags": [],
+  "verbatim": [
+   "the best"
+  ]
+ },
+ {
+  "case": 64,
+  "mission_no": 315,
+  "slug": "legalname-vs-name",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "legalName/name differ: separate observations, no merge",
+  "expect_flags": [
+   "name_conflict"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 65,
+  "mission_no": 316,
+  "slug": "parent-chain-3",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "3-deep org chain verbatim; no ultimate-parent resolution",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 66,
+  "mission_no": 317,
+  "slug": "suborg-backref",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "back-reference recorded; no cycle walk attempted",
+  "expect_flags": [
+   "back_reference"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 67,
+  "mission_no": 318,
+  "slug": "employee-2",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two employees kept",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 68,
+  "mission_no": 319,
+  "slug": "reviews-5-and-1",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5-star and 1-star reviews both kept; NEVER averaged into a synthetic rating",
+  "expect_flags": [
+   "no_computed_aggregate"
+  ],
+  "verbatim": [
+   "\"ratingValue\": 5",
+   "\"ratingValue\": 1"
+  ]
+ },
+ {
+  "case": 69,
+  "mission_no": 320,
+  "slug": "reviewcount-string",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "reviewCount '100+' verbatim, never parsed to int",
+  "expect_flags": [],
+  "verbatim": [
+   "100+"
+  ]
+ },
+ {
+  "case": 70,
+  "mission_no": 321,
+  "slug": "imageobject-width-str",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "width string verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 71,
+  "mission_no": 322,
+  "slug": "logo-relative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative logo -> unresolved_ref",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 72,
+  "mission_no": 323,
+  "slug": "sameas-upper-scheme",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "uppercase scheme recorded verbatim (valid), not lowercased by guess",
+  "expect_flags": [],
+  "verbatim": [
+   "HTTPS://ok.example/"
+  ]
+ },
+ {
+  "case": 73,
+  "mission_no": 324,
+  "slug": "id-whitespace",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "@id whitespace preserved verbatim with flag; never trimmed silently",
+  "expect_flags": [
+   "whitespace_id"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 74,
+  "mission_no": 325,
+  "slug": "name-whitespace",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "name whitespace preserved verbatim with flag",
+  "expect_flags": [
+   "whitespace_name"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 75,
+  "mission_no": 326,
+  "slug": "desc-json-looking",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JSON-looking description stays inert string",
+  "expect_flags": [
+   "inert_string"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 76,
+  "mission_no": 327,
+  "slug": "disambiguating-desc",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "description variants kept separate",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 77,
+  "mission_no": 328,
+  "slug": "hasmap-query",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "map URL recorded with query, never fetched",
+  "expect_flags": [
+   "untrusted_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 78,
+  "mission_no": 329,
+  "slug": "map-relative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative map -> unresolved_ref",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 79,
+  "mission_no": 330,
+  "slug": "validthrough-inverted",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "inverted validity range flagged, kept verbatim",
+  "expect_flags": [
+   "inverted_range"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 80,
+  "mission_no": 331,
+  "slug": "geo-elevation",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "elevation verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 81,
+  "mission_no": 332,
+  "slug": "country-object",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "country object verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 82,
+  "mission_no": 333,
+  "slug": "tel-plus1",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "E.164-ish phone verbatim",
+  "expect_flags": [],
+  "verbatim": [
+   "+1 (555) 111-2222"
+  ]
+ },
+ {
+  "case": 83,
+  "mission_no": 334,
+  "slug": "fax-present",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "faxNumber verbatim (obsolete but data)",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 84,
+  "mission_no": 335,
+  "slug": "contactoption",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contactOption verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 85,
+  "mission_no": 336,
+  "slug": "available-language",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "availableLanguage verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 86,
+  "mission_no": 337,
+  "slug": "smoking-bool",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "boolean verbatim (JSON false, not string)",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 87,
+  "mission_no": 338,
+  "slug": "accessible-maybe",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "non-boolean isAccessibleForFree verbatim with flag",
+  "expect_flags": [
+   "type_mismatch_verbatim"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 88,
+  "mission_no": 339,
+  "slug": "capacity-negative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "negative capacity flagged range_suspect, verbatim",
+  "expect_flags": [
+   "range_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 89,
+  "mission_no": 340,
+  "slug": "event-cancelled",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cancelled status verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 90,
+  "mission_no": 341,
+  "slug": "price-zero-string",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "price \"0\" string verbatim: free-vs-missing distinction preserved",
+  "expect_flags": [],
+  "verbatim": [
+   "\"price\": \"0\""
+  ]
+ },
+ {
+  "case": 91,
+  "mission_no": 342,
+  "slug": "price-zero-number",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "price 0 number verbatim: distinct from string '0'",
+  "expect_flags": [],
+  "verbatim": [
+   "\"price\": 0"
+  ]
+ },
+ {
+  "case": 92,
+  "mission_no": 343,
+  "slug": "availability-url",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "availability URL-form verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 93,
+  "mission_no": 344,
+  "slug": "item-condition",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "itemCondition verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 94,
+  "mission_no": 345,
+  "slug": "seller-string",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "string seller verbatim; no Organization synthesis",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 95,
+  "mission_no": 346,
+  "slug": "price-negative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "negative price flagged range_suspect, verbatim",
+  "expect_flags": [
+   "range_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 96,
+  "mission_no": 347,
+  "slug": "currency-words",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "priceCurrency words verbatim, never ISO-normalized",
+  "expect_flags": [],
+  "verbatim": [
+   "US dollars"
+  ]
+ },
+ {
+  "case": 97,
+  "mission_no": 348,
+  "slug": "validfrom-future",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "validFrom string verbatim; never parsed to canonical datetime",
+  "expect_flags": [],
+  "verbatim": [
+   "2027-01-01"
+  ]
+ },
+ {
+  "case": 98,
+  "mission_no": 349,
+  "slug": "graph-55-items",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "55 @graph items kept with count note",
+  "expect_flags": [
+   "item_count=55"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 99,
+  "mission_no": 350,
+  "slug": "duplicate-blocks",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "byte-identical duplicate blocks: both recorded with duplicate_bytes flag, no silent dedup",
+  "expect_flags": [
+   "duplicate_bytes"
+  ],
+  "verbatim": []
+ }
+]

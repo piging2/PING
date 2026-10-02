@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0086",
+ "verdict": "PROVEN",
+ "summary": "BEFORE index + row fetch (300 lookups): 0.03ms; AFTER covering index: 0.01ms \u2014 delta 60.6% within noise (380%), parity proven. Covering saves one indirection structurally; invisible at this row width.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0344,
+  "after_ms": 0.0136,
+  "metric": "300_lookups_covering",
+  "change": "covering index (payload inline) vs index + row fetch",
+  "case": 85
+ }
+}

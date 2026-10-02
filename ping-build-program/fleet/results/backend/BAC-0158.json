@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0158",
+ "verdict": "PROVEN",
+ "summary": "BEFORE wide_row_offset_50k: 1.307ms; AFTER deferred join (ids then rows) vs wide-row OFFSET: 0.820ms. Delta -37.3%. 1.31ms to 0.82ms (-37%): deferred join (ids first, then rows) beats wide-row OFFSET on 200-byte rows.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench4.py",
+  "fleet/work/fleet-be-1/bench4b.py",
+  "fleet/work/fleet-be-1/bench4_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 1.3069,
+  "after_ms": 0.8197,
+  "metric": "wide_row_offset_50k",
+  "change": "deferred join (ids then rows) vs wide-row OFFSET",
+  "case": 157
+ }
+}

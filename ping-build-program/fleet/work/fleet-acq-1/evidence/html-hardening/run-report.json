@@ -1,0 +1,2178 @@
+{
+  "lab": "html-hardening",
+  "worker": "fleet-acq-1",
+  "parser": "html-harness@1.1.0",
+  "generated_at": "2026-09-24T03:25:51.711Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-00",
+      "mission": "ACQ-0001",
+      "title": "script plants fake phone; strip must win (P7)",
+      "threat": "A <script> block contains a phone number that appears nowhere else. A naive text extractor would claim it.",
+      "fixture_sha256": "d49ed68725f15536bfecbe28a695295119c1ea17670824e3be079deeeaa15462",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"(970) 555-0199\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550199\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550199\""
+        },
+        {
+          "name": "note:scriptStripped",
+          "ok": true,
+          "detail": "true"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-01",
+      "mission": "ACQ-0002",
+      "title": "style block plants fake business name (P7)",
+      "threat": "CSS content declarations carry a fake name; style must be stripped before any claim extraction.",
+      "fixture_sha256": "3ad165cbaae57f28d2e1585bf3106443dce5d77388842a30a902c287d2ed0fe7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"Zebra Fake Enterprises\""
+        },
+        {
+          "name": "note:styleStripped",
+          "ok": true,
+          "detail": "true"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-02",
+      "mission": "ACQ-0003",
+      "title": "1M nested divs: DOM node cap abort (P1)",
+      "threat": "Deep nesting bomb; parser must abort with a typed record, not OOM.",
+      "fixture_sha256": "586abe53795fc34ff3e6ae73ff2b41a082bd533405a0f9fac2b525454b5f40e7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "PERMANENT"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "dom-node-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-03",
+      "mission": "ACQ-0004",
+      "title": "10 MiB visible text: text cap with truncation flag (P2)",
+      "threat": "Oversized text must be truncated WITH the flag set, never silently cut.",
+      "fixture_sha256": "faa56414c12bf19117251495cf58c6e53cf8ad6c3d1f39829298a35307992fb9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-04",
+      "mission": "ACQ-0005",
+      "title": "100k link farm: link cap + truncated_links note (P3)",
+      "threat": "Link farm must stop at 10k links with the truncation recorded.",
+      "fixture_sha256": "ef3b62b7ec96ef3c8f0dae4784527d9ae4ee2ca70ccb7d195c346e71384e58da",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:links",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-05",
+      "mission": "ACQ-0006",
+      "title": "200 JSON-LD blocks: block cap + note (P4)",
+      "threat": "JSON-LD bomb must stop at 50 blocks; first-block name claim still valid.",
+      "fixture_sha256": "97ed9f4c7c4753b542458b3b0f6a417b735f4a04d97e7597a83764718138f95c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:jsonld",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-06",
+      "mission": "ACQ-0007",
+      "title": "heavy-attribute tag storm: parse wall-clock budget (P6)",
+      "threat": "5000 well-formed tags each carrying a 5KB attribute (~25MB). Parsing takes ~2s; the runner TIGHTENS the budget to 40ms (contract: callers may tighten, never loosen) so the abort path is exercised deterministically: typed TIMEOUT, partial state discarded, zero claims.",
+      "fixture_sha256": "6914f5d302337c5af90e299cc1c82cd9d242eef1c07262fa984b2cc12389f517",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "TIMEOUT"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "parse-deadline-exceeded"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-07",
+      "mission": "ACQ-0008",
+      "title": "2000 meta tags: meta cap + note (P5)",
+      "threat": "Meta bomb; parser caps at 500 entries and records it.",
+      "fixture_sha256": "cf9910c75100706480c797f1902d2cf0470816241b1b9cd98029fb24ccadfe0e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:meta",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-08",
+      "mission": "ACQ-0009",
+      "title": "500k unclosed divs: node cap on malformed input (P1)",
+      "threat": "Unclosed-tag bomb; cap still fires, no invented tree structure.",
+      "fixture_sha256": "0bc6b7e6b67214bd35d6075ab94ae4664c4cee47d8e1a4bac2195633ca3697e9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "PERMANENT"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "dom-node-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-09",
+      "mission": "ACQ-0010",
+      "title": "10 MB title attribute: attribute byte cap (P-cap)",
+      "threat": "Single giant attribute must be truncated with flag, not buffered whole into claims.",
+      "fixture_sha256": "49d781b187f8bd67c03a466199f1a2ad35408d59c0cba8cefb7341140dec1864",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:attr",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-10",
+      "mission": "ACQ-0011",
+      "title": "display:none span holds the only phone -> no phone claim",
+      "threat": "Hidden-by-inline-style content is quarantined to hiddenText; claims see visible text only.",
+      "fixture_sha256": "44e1c27204f7cf344fdbf2e03e76367b368aa4b4bdb82a1016e49a264519e7b5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550777\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550777\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-11",
+      "mission": "ACQ-0012",
+      "title": "HTML comment hides a phone -> comments never extracted",
+      "threat": "Comments are inert; a phone inside a comment must not become a claim.",
+      "fixture_sha256": "9aedbde27407f68936ad1491de4f36c6f3e4f169c3428c56239f8af48b33b96c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550666\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550666\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-12",
+      "mission": "ACQ-0013",
+      "title": "template tag content is inert",
+      "threat": "<template> content is never rendered; its phone must not be claimed.",
+      "fixture_sha256": "0f0492e054f96652d1dbfc999d6ecfa8e934a503287963e324acffd1a6ce2351",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550555\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550555\""
+        },
+        {
+          "name": "note:inertRegions",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-13",
+      "mission": "ACQ-0014",
+      "title": "noscript fallback labeled, not claimed",
+      "threat": "noscript text is evidence (labeled noscript-only), excluded from claim extraction.",
+      "fixture_sha256": "31fa1462ca8cddc54521a6bf40d2418e80860157f808e39dff19173783ce8a98",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550444\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550444\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-14",
+      "mission": "ACQ-0015",
+      "title": "iframe srcdoc is inert",
+      "threat": "srcdoc content is a separate document; never parsed for claims.",
+      "fixture_sha256": "72b85072deeba00c582812a6098e9d168ff825d21cc29d1b54d1ecf8a8bf6905",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550333\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550333\""
+        },
+        {
+          "name": "note:inertRegions",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-15",
+      "mission": "ACQ-0016",
+      "title": "SVG <text> is evidence, not a claim source",
+      "threat": "SVG text nodes go to evidence strings; the SVG phone must not be claimed.",
+      "fixture_sha256": "941c41620b150e8ddbc5b7362334c9e92e0f4078eb01dbd24f9b81e8148ad141",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550222\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550222\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-16",
+      "mission": "ACQ-0017",
+      "title": "form input values never extracted",
+      "threat": "Input values are not user-visible content; the prefilled phone must not be claimed.",
+      "fixture_sha256": "47e87b4a0a4f32b9c78514e06ab14e81a3ec8292ebba6f2149d9271f46506776",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550111\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550111\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-17",
+      "mission": "ACQ-0018",
+      "title": "img alt text is evidence, not a claim",
+      "threat": "Alt text is recorded as an evidence string; the alt phone must not be claimed.",
+      "fixture_sha256": "6fba09c278c74828ceba9536bb0b6d49d8df5371fd90b02aa917d874d49b41c9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550888\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550888\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-18",
+      "mission": "ACQ-0019",
+      "title": "data-* attribute JSON never scanned for claims",
+      "threat": "Structured data smuggled in data-* attributes is quarantined, never parsed into claims.",
+      "fixture_sha256": "7523c1eacd5c52d2e53471c2cdcc8d31fe936a674e6cb9faf2dea4bf65b6a37d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550999\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550999\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-19",
+      "mission": "ACQ-0020",
+      "title": "CDATA section is evidence, not markup",
+      "threat": "CDATA content is recorded as evidence; the CDATA phone must not be claimed.",
+      "fixture_sha256": "46812a2ec311b754077a50b9bf41532e877bc7f927dca67ad43de90efa73bc72",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550123\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550123\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-20",
+      "mission": "ACQ-0021",
+      "title": "title vs og:title vs h1 disagree -> no name claim",
+      "threat": "Three distinct business names; the parser must not crown one. Conflict recorded, zero claims for the field.",
+      "fixture_sha256": "91e42fe6897221e30c6a392f43c308dac31767762cf328d36481bdf968d5025d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:business_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "unresolved:business_name",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-21",
+      "mission": "ACQ-0022",
+      "title": "two tel: links disagree -> no phone claim",
+      "threat": "Two different tel: numbers; no single phone claim; both kept as unresolved candidates.",
+      "fixture_sha256": "acf9b3bbcca7cc35e875dd18af9daa90b105c7bfd63e49560e23ef3919e7eb63",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "unresolved:phone",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-22",
+      "mission": "ACQ-0023",
+      "title": "link text vs tel: href mismatch -> no phone claim",
+      "threat": "Anchor text says one number, href dials another; conflict, no claim.",
+      "fixture_sha256": "6c75d6af7757485c0f2c9d3c4f088870d712722c80f35746708c15b588c1d542",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550100\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550999\""
+        },
+        {
+          "name": "unresolved:phone",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-23",
+      "mission": "ACQ-0024",
+      "title": "JSON-LD type vs HTML signal conflict on business kind",
+      "threat": "JSON-LD says Organization, og:type says website; type is not a claimed field — assert no invented type claim and names agree.",
+      "fixture_sha256": "480c191ddaf18bf16c199a55c9cd1d8d40b3d679e25343883f9658d9c8dcc689",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-24",
+      "mission": "ACQ-0025",
+      "title": "base href vs canonical vs og:url disagree -> no page_url claim",
+      "threat": "Three distinct URL signals; the parser must not guess the canonical URL.",
+      "fixture_sha256": "f22f71515bcfd09cde59495b3b81ece321750a534178fc77058a2da69dd3ef4b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:page_url",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "unresolved:page_url",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-25",
+      "mission": "ACQ-0026",
+      "title": "two titles -> no name claim from title alone",
+      "threat": "Duplicate <title> tags; ambiguous; no business_name claim may rest on title.",
+      "fixture_sha256": "b2c526d9000a049df325aec3c40d8316a0ae43db02ed41b0da372d7cb3bb1bdb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:business_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "unresolved:business_name",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-26",
+      "mission": "ACQ-0027",
+      "title": "address fragments in inconsistent order -> no address claim",
+      "threat": "Address text appears in two orders; parser does not assemble a canonical address (address is not a claimed field at all).",
+      "fixture_sha256": "a1aac9d5a206c91d29cddba44cb37c70a8f1fde1536ec41515b9de5fdd740cdb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:address",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-27",
+      "mission": "ACQ-0028",
+      "title": "hours stated two ways -> no hours claim",
+      "threat": "Conflicting hours; hours are not a claimed field; nothing invented.",
+      "fixture_sha256": "3d74d03bd85e1ac0a6d428845434dd4e44629bae86602bfae35e494bb3c242ae",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:hours",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-28",
+      "mission": "ACQ-0029",
+      "title": "og:description vs body conflict on hours -> still no hours claim",
+      "threat": "Meta/body disagreement changes nothing: no claim without a single verified source shape.",
+      "fixture_sha256": "0c57fab20f4c2c6cb40dc869ef033c1cb154dbe05c34ef30d0af7dd9ff21920f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:hours",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-29",
+      "mission": "ACQ-0030",
+      "title": "identical JSON-LD blocks dedupe to one claim, two provenances",
+      "threat": "Duplicate identical blocks are one claim with multi-source provenance, not two claims.",
+      "fixture_sha256": "658bf4e36dcc46987e66047930fd62bf7188a09331464dcdef11d6727a529095",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "provenance-depth:business_name",
+          "ok": true,
+          "detail": "depth=4"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-30",
+      "mission": "ACQ-0031",
+      "title": "invalid JSON-LD block quarantined, valid blocks still parsed",
+      "threat": "One of three JSON-LD blocks is broken JSON; it is quarantined with its index, the rest parse.",
+      "fixture_sha256": "cb13243435862dbbde62d4cdec0de60938376927a07c4e3d7e84c5444b14f39b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "note:malformedJsonLd",
+          "ok": true,
+          "detail": "1 item(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-31",
+      "mission": "ACQ-0032",
+      "title": "unclosed and overlapping tags do not crash or invent structure",
+      "threat": "Malformed nesting is parsed defensively; visible phone still extracted once, no duplicates invented.",
+      "fixture_sha256": "3e007925747850cd62531edfec1598f91cd84bed116ae94a32ad8e613881d25e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-32",
+      "mission": "ACQ-0033",
+      "title": "entity-encoded phone decodes deterministically",
+      "threat": "Numeric entities are a deterministic decode, not a guess; the decoded phone is claimable with visible-text provenance.",
+      "fixture_sha256": "42d8f450d455aff94551e51b8aeb4476e279086e31e03b98000e6a43b7a291af",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-33",
+      "mission": "ACQ-0034",
+      "title": "fullwidth digit phone is NOT pattern-matched",
+      "threat": "Homoglyph digits are not in the pinned ASCII pattern set; no claim is emitted rather than a normalized guess.",
+      "fixture_sha256": "addf776cb37fe02a084463fdcebb5079d134b7a012b78c54c685e3d24167eadc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550100\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550100\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-34",
+      "mission": "ACQ-0035",
+      "title": "obfuscated email 'name [at] domain' is NOT deobfuscated",
+      "threat": "Deobfuscation would be a guess; the verbatim string stays evidence, no email claim.",
+      "fixture_sha256": "d7f004b1cb7ccb9908b67cf2a4affb98a7605aa1d35decc5618c77742526734f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:email",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"info@acmeplumbing.com\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-35",
+      "mission": "ACQ-0036",
+      "title": "meta refresh recorded, never followed",
+      "threat": "A refresh redirect is an observation note for the fetch layer, not a fact about this page.",
+      "fixture_sha256": "60e282df8a357f01c46b634c079f52eb5e34ea698665f77ccacef44d982ed374",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:page_url",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "note:metaRefresh",
+          "ok": true,
+          "detail": "0;url=https://other.example/"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-36",
+      "mission": "ACQ-0037",
+      "title": "invalid <time datetime> is not parsed into a claim",
+      "threat": "Impossible date stays raw with a flag; no date claim invented.",
+      "fixture_sha256": "d0cfa33c756c08cbf9eeb65226319ead4ffc1189381414ef271aa04970ac7408",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:founding_date",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-37",
+      "mission": "ACQ-0038",
+      "title": "charset conflict flagged, text still bounded",
+      "threat": "Two conflicting charset declarations; decode proceeds with an explicit ambiguity flag in provenance, no silent choice.",
+      "fixture_sha256": "02d9717c9ff66878c5ab6aa847edb558c55edcf5d37b28d5522f67814469bc88",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "note:charsetConflict",
+          "ok": true,
+          "detail": "true"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-38",
+      "mission": "ACQ-0039",
+      "title": "empty body after script strip is legitimate empty, not failure",
+      "threat": "A page whose only content was script yields empty text: an observation with absent fields, never a failure record.",
+      "fixture_sha256": "ffa2f31adb5c2311a696558fde2206ce0292caae7a82b231574818122e7586e1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:email",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-39",
+      "mission": "ACQ-0040",
+      "title": "fragment without <html> wrapper parses fine",
+      "threat": "Tag-soup fragments are handled; no structure invented. The lone <h1> is uncorroborated so no name claim is emitted (corroboration rule); the distinctive phone pattern still claims.",
+      "fixture_sha256": "69e3a84500faee3e935abeff0f33f3dc076f17d159f780cddfcfa0e7abec32f2",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:business_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-40",
+      "mission": "ACQ-0041",
+      "title": "clean page: single tel: + matching text -> one phone claim, two provenances",
+      "threat": "Positive control: agreement across sources yields a claim with multi-source provenance.",
+      "fixture_sha256": "43407243d9850667970745e3532e5619a749b78080b846571c94b356b9b16772",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "provenance-depth:phone",
+          "ok": true,
+          "detail": "depth=3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-41",
+      "mission": "ACQ-0042",
+      "title": "clean page: mailto: link -> email claim",
+      "threat": "Positive control: unambiguous mailto yields an email claim.",
+      "fixture_sha256": "d5de39d3f0b5e08c0455b449b92fb1c539160eec113326f7d62e9efd4aabea10",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:email",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-42",
+      "mission": "ACQ-0043",
+      "title": "clean page: title + og:title + h1 agree -> name claim, three provenances",
+      "threat": "Positive control: unanimous name signals yield one claim with three provenances.",
+      "fixture_sha256": "3b6cfb911452422009db3042ea08c8a747fb3ea572fcfe1f22cf1b28f9bd83f3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "provenance-depth:business_name",
+          "ok": true,
+          "detail": "depth=3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-43",
+      "mission": "ACQ-0044",
+      "title": "clean page: canonical + og:url agree -> page_url claim",
+      "threat": "Positive control: agreeing URL signals yield one page_url claim.",
+      "fixture_sha256": "190e6f8c0a1b4015d34abbb00b1214b0b8bc2c7b0b598d9e452b6306d7612022",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:page_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-44",
+      "mission": "ACQ-0045",
+      "title": "clean page: JSON-LD name + telephone agree with HTML -> full claim set",
+      "threat": "Positive control: JSON-LD and visible HTML in agreement produce the full bounded claim set with provenance.",
+      "fixture_sha256": "27c8f14c2c1daf8bcc348b6b6e9920e78fd709436a74aaa8026ecf8a5fa379c5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:business_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-45",
+      "mission": "ACQ-0046",
+      "title": "keyword-stuffed footer: no location inference from keyword soup",
+      "threat": "500 city names in a footer must not produce any location claim; location inference from text is not a claimed field.",
+      "fixture_sha256": "30119e98848f689d27386212b5876f2fe1d0874f054b01483591bc32baa143ae",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:location",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:city",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:address",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-46",
+      "mission": "ACQ-0047",
+      "title": "challenge-page title never becomes the business name",
+      "threat": "Layering case: block-page detection is the FETCH layer's typed PERMISSION_DENIED (contract section 5), not the parser's job. The parser reports bytes honestly: the challenge <title> is uncorroborated so no business_name claim is emitted (corroboration rule kills the classic 'title-as-name' guess). The visible phone-shaped string is still extracted with visible-text provenance — a deterministic observation, not a guess.",
+      "fixture_sha256": "0f2d190242a8a982315b2a608f18015d2224847ffc0e8046ce5e20093c3ca0d0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:business_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"Attention Required\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-47",
+      "mission": "ACQ-0048",
+      "title": "duplicate identical phone in text twice -> one claim",
+      "threat": "Repeated identical evidence dedupes to a single claim; repetition is not corroboration.",
+      "fixture_sha256": "c01a19360c8ff069ddfbaa51db84d36dbaf78d39c76b4713d741a86b201857d8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "provenance-depth:phone",
+          "ok": true,
+          "detail": "depth=1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-48",
+      "mission": "ACQ-0049",
+      "title": "lang mismatch: declared lang kept as declared, not verified",
+      "threat": "lang='es' on English text: the parser records nothing about language (not a claimed field); no verification claim invented.",
+      "fixture_sha256": "4af82841e5c6aa33a866f5b864a644c161ff03f4d10704e80f70518bf552eacc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:language",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-49",
+      "mission": "ACQ-0050",
+      "title": "nested hidden ancestor quarantines descendants",
+      "threat": "display:none on an ancestor hides the whole subtree from claim extraction.",
+      "fixture_sha256": "9e9f7dc00119e261f5de1b6865a04d01cceb596236351e24755efb15447f78b2",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"9705550777\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"+19705550777\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

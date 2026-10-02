@@ -1,0 +1,56 @@
+{
+  "fixture": "github-issues-paginated",
+  "pass": true,
+  "gates": [
+    {
+      "name": "EXISTS",
+      "pass": true,
+      "evidence": "github-issues-paginated@v1 parses"
+    },
+    {
+      "name": "IMPORTS",
+      "pass": true,
+      "evidence": "transport,harness,assert,taxonomy,lint,secret-scan import clean"
+    },
+    {
+      "name": "INITIALIZES",
+      "pass": true,
+      "evidence": "transport constructed; seed=42 clock=virtual"
+    },
+    {
+      "name": "REACHABLE",
+      "pass": true,
+      "evidence": "first step page-1 -> HTTP 200"
+    },
+    {
+      "name": "EXECUTES",
+      "pass": true,
+      "evidence": "terminal=SUCCEEDED records=7"
+    },
+    {
+      "name": "PERSISTS",
+      "pass": true,
+      "evidence": "report persisted; verdict=PASS digestOk=true"
+    },
+    {
+      "name": "RECOVERS",
+      "pass": true,
+      "evidence": "injection=dropAt terminal=FAILED codes=[TIMEOUT]"
+    },
+    {
+      "name": "REPLAYS",
+      "pass": true,
+      "evidence": "double-run byte-identical (1269 bytes)"
+    },
+    {
+      "name": "PRESERVES PROVENANCE",
+      "pass": true,
+      "evidence": "digest ok sha256:173ed5d3b183...; provenance fields present"
+    },
+    {
+      "name": "FAILS SAFELY",
+      "pass": true,
+      "evidence": "tampered-bytes -> exit 2 (want 2, digest fail-closed); all-steps-500 -> exit 1 (want 1, failed fetch with failure record, never silent)"
+    }
+  ]
+}

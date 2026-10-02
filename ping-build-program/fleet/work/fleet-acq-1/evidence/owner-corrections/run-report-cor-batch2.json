@@ -1,0 +1,2328 @@
+{
+  "lab": "owner-corrections",
+  "worker": "fleet-acq-1",
+  "parser": "corr-1.0.0",
+  "generated_at": "2026-09-24T05:05:48.097Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-cor-50",
+      "mission": "ACQ-1601",
+      "title": "phone at cap",
+      "threat": "Boundary: exactly 40 chars is accepted.",
+      "fixture_sha256": "1d241c1c04e96adb391e063817a4962d28ede9f09cbbb88c32d86a56016d6ef6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-51",
+      "mission": "ACQ-1602",
+      "title": "phone over cap",
+      "threat": "41 chars exceeds the 40-char phone cap.",
+      "fixture_sha256": "fc803a3d88706c141854215490add6a05d2f95ee08452623ecc008f0176f5144",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "over-field-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-52",
+      "mission": "ACQ-1603",
+      "title": "url at cap",
+      "threat": "Boundary: exactly 500 chars is accepted.",
+      "fixture_sha256": "8eff8236cac052ffc7aec99446f320d615d021ecfdb1354811b1a441b7243c53",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-53",
+      "mission": "ACQ-1604",
+      "title": "url over cap",
+      "threat": "501 chars exceeds the 500-char url cap.",
+      "fixture_sha256": "09d6a1442460edc86a6728e940c9d8ed00a22d907f112ac26dedab7394c03903",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "over-field-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-54",
+      "mission": "ACQ-1605",
+      "title": "name at cap",
+      "threat": "Boundary: exactly 200 chars is accepted.",
+      "fixture_sha256": "48207a829a38a53b0ebda847fbe8e2d18fe42fe34ef3c7cbe678ac8f30a38cc7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-55",
+      "mission": "ACQ-1606",
+      "title": "hours at cap",
+      "threat": "Boundary: exactly 500 chars is accepted.",
+      "fixture_sha256": "4b9ceb5fc19c6ff74d7db061557072d55e8196632e6c3fd052f1a57c5cc16fa3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-56",
+      "mission": "ACQ-1607",
+      "title": "hours over cap",
+      "threat": "501 chars exceeds the 500-char hours cap.",
+      "fixture_sha256": "235d89db4a21fedff6bef47386a887bac0cb6af3602411c304b42c9846148f97",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "over-field-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-57",
+      "mission": "ACQ-1608",
+      "title": "address at cap",
+      "threat": "Boundary: exactly 500 chars is accepted.",
+      "fixture_sha256": "d1d1b5a7509d92739a144df5a7f1bdab8955902a6788120210ad10ede9e128b0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-58",
+      "mission": "ACQ-1609",
+      "title": "address over cap",
+      "threat": "501 chars exceeds the 500-char address cap.",
+      "fixture_sha256": "8eb144d1fb27c35055946e88b2316016b307df633b606306abe15d147500c7c3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "over-field-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-59",
+      "mission": "ACQ-1610",
+      "title": "url with userinfo",
+      "threat": "Userinfo is legal in a URL: accepted.",
+      "fixture_sha256": "c05c24681acd0ab5387630a040c7f9681557a3c4af50e5e10a2d69d38799779e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-60",
+      "mission": "ACQ-1611",
+      "title": "scheme-relative url",
+      "threat": "Scheme-relative URLs have no scheme: rejected.",
+      "fixture_sha256": "f510cf435e687c14fdd20158f961b2ffdc7895c7f90981ddc5855a957533edf3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "invalid-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-61",
+      "mission": "ACQ-1612",
+      "title": "url without slashes",
+      "threat": "WHATWG normalizes 'http:example.com' to a valid http URL with a host: accepted.",
+      "fixture_sha256": "417f98dee043073b2a174765cfdfc5942be7f92c7f894d3aa9d52053c18a0278",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-62",
+      "mission": "ACQ-1613",
+      "title": "ipv6 url",
+      "threat": "IPv6 hosts are valid hosts.",
+      "fixture_sha256": "d63c7edf0602685a489522d15687c4196e309463a992330da651f339c9d99224",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-63",
+      "mission": "ACQ-1614",
+      "title": "mailto url",
+      "threat": "mailto: is not http(s): rejected.",
+      "fixture_sha256": "d0469175c6cdc0cc1fbc94ead2b38a518cd7aaa269cab0fc7cc547e84caafc0e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "invalid-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-64",
+      "mission": "ACQ-1615",
+      "title": "tel url",
+      "threat": "tel: is not http(s): rejected.",
+      "fixture_sha256": "0336783e7a5bccbcd51b8fe9c8f6b6c3a9a4a64564d4f5eadd31700dda88ba35",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "invalid-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-65",
+      "mission": "ACQ-1616",
+      "title": "data url",
+      "threat": "data: URLs are rejected.",
+      "fixture_sha256": "017f608b0111f35a8bb8478a6cb5e6387776b9098625a45159fabc7c12a4a190",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "invalid-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-66",
+      "mission": "ACQ-1617",
+      "title": "empty submitter",
+      "threat": "Empty submitted_by fails the non-empty rule.",
+      "fixture_sha256": "fd7ee7beed4451743601aecaa14497c86295015406798ffd2ebef556af64c6c8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-submitter"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-67",
+      "mission": "ACQ-1618",
+      "title": "submitter at cap",
+      "threat": "Boundary: exactly 200 chars is accepted.",
+      "fixture_sha256": "e1e8d196e6bb77d7721354d2b39e303f6b0ddcca6f0beb6fab6ad882b8917849",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-68",
+      "mission": "ACQ-1619",
+      "title": "numeric old_value",
+      "threat": "old_value must be a string when present.",
+      "fixture_sha256": "77377e858afebf0a99b856b3db3e39ccb3586cc3cf7ef18c1a9f4208f92de9d1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-old-value"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-69",
+      "mission": "ACQ-1620",
+      "title": "newlines-only description",
+      "threat": "Trimmed-empty is empty, even in multiline fields.",
+      "fixture_sha256": "d2de8c5ece7132864a080279867b9e0954ae2b7bfc156d99fa7ff1fc7f702ed3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "empty-correction"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-70",
+      "mission": "ACQ-1621",
+      "title": "crlf description",
+      "threat": "CRLF is accepted in multiline fields.",
+      "fixture_sha256": "9ac962a2275284759fccaee033cca2c50ef7da9618dddfddcfa945ec0b8f5207",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-71",
+      "mission": "ACQ-1622",
+      "title": "tab in name",
+      "threat": "Tabs are not newlines: accepted in single-line fields.",
+      "fixture_sha256": "a85c2840e79aa8e9615791a1635a89357b62395cb0e18ea14cfef9c89d1ac189",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-72",
+      "mission": "ACQ-1623",
+      "title": "tab in url",
+      "threat": "Control characters are rejected: WHATWG would silently strip them, and the gate refuses normalization surprises.",
+      "fixture_sha256": "225cc9f1225f70652a3c834a40e98b172d00d5b0f0fc6bb7409831ff5e5ca2b9",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "control-char-in-url"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-73",
+      "mission": "ACQ-1624",
+      "title": "split marker",
+      "threat": "Matching is literal: '<scr ipt>' does not match '<script'.",
+      "fixture_sha256": "f19680d072a72dae6379aef5f0b19587aeec2484ce71232a94a9c05b54c1ea33",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-74",
+      "mission": "ACQ-1625",
+      "title": "unicode name",
+      "threat": "Unicode names are accepted.",
+      "fixture_sha256": "611f073c53cc57028e5daa25dbcfafc92885f46da3cb134407a79e8d76c30675",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-75",
+      "mission": "ACQ-1626",
+      "title": "emoji char count",
+      "threat": "Char counts use UTF-16 code units: 'a' + emoji = 3.",
+      "fixture_sha256": "bf76ed444a4015d4766f35b0f0afe18786d752e06e8f21dad4bcf372064265bc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_chars",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-76",
+      "mission": "ACQ-1627",
+      "title": "uppercase php marker",
+      "threat": "Marker scan is case-insensitive.",
+      "fixture_sha256": "d0c97c640303a9cc0482f4f25a801289a12c4f110a6fc6624975ef55db446f6d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:correction-new-value:active-content",
+          "ok": true,
+          "detail": "new_value"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-77",
+      "mission": "ACQ-1628",
+      "title": "uppercase onload",
+      "threat": "Marker scan is case-insensitive.",
+      "fixture_sha256": "d821007ae853f7edd63f502d3128d894a2cd10cf18b315e1b2eda8848dfa076f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:correction-new-value:active-content",
+          "ok": true,
+          "detail": "new_value"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-78",
+      "mission": "ACQ-1629",
+      "title": "unicode multiline address",
+      "threat": "Unicode plus newlines in a multiline field.",
+      "fixture_sha256": "c7238d63dfd5ad06150252ade91a54be07274531181d868020fe65b3857f8e86",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-79",
+      "mission": "ACQ-1630",
+      "title": "marker in url query",
+      "threat": "Marker scan fires before URL parsing.",
+      "fixture_sha256": "752fea16ce45ec163bf9fbe6d9edcd02123c0bfaea09eda5a5ce514e644f0587",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:correction-new-value:active-content",
+          "ok": true,
+          "detail": "new_value"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-80",
+      "mission": "ACQ-1631",
+      "title": "email field",
+      "threat": "'email' is not in the allowlist.",
+      "fixture_sha256": "5ee95ee498bb8f8c217a186cd513ea93f12cecdcadd241ba7f3bed712f8016e1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unknown-field"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-81",
+      "mission": "ACQ-1632",
+      "title": "empty field",
+      "threat": "Empty field names are unknown.",
+      "fixture_sha256": "2164d5110c7050034f0af26c192b235ed02ca25a3f35cf1a41bf8ea0b61aae3b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unknown-field"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-82",
+      "mission": "ACQ-1633",
+      "title": "boolean new_value",
+      "threat": "Booleans are not strings.",
+      "fixture_sha256": "5647ce422998c1c1d78bf84a6bcc804604b097e9cf00aa6d5303f11e3454f6b7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-value"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-83",
+      "mission": "ACQ-1634",
+      "title": "numeric input",
+      "threat": "Numbers are not corrections.",
+      "fixture_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-84",
+      "mission": "ACQ-1635",
+      "title": "null submitter",
+      "threat": "Null submitted_by fails the string rule.",
+      "fixture_sha256": "b670bd9be8f16d7ce1b57a8b27c458c1d5f94cbc140e662794b440d31afe6780",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-submitter"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-cor-85",
+      "mission": "ACQ-1636",
+      "title": "url with port",
+      "threat": "Ports are fine.",
+      "fixture_sha256": "5e612dd4bad907a1fd3d6767c0362cc94143ca9e65dbdc01e4aaca28e992a65c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-86",
+      "mission": "ACQ-1637",
+      "title": "percent-encoded marker",
+      "threat": "Matching is literal: percent-encoding is not decoded by the gate.",
+      "fixture_sha256": "616c09b456ffc111d731b3daf39aa0b0781102d7bd267903fe0158d55fc1d553",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-87",
+      "mission": "ACQ-1638",
+      "title": "24-7 hours",
+      "threat": "Free-form hours text is accepted.",
+      "fixture_sha256": "c6580f6619b9df836c2263ac7165e7353ebdc5a723b5104a8c161a4e8b648751",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-88",
+      "mission": "ACQ-1639",
+      "title": "short phone",
+      "threat": "No phone format guessing: '911' is accepted.",
+      "fixture_sha256": "9ddcb0c8a87b361262df804a96d3eefb7a0b6088d737f856e98acfff18cd2d2e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-89",
+      "mission": "ACQ-1640",
+      "title": "apostrophe name",
+      "threat": "Punctuation in names is accepted.",
+      "fixture_sha256": "b7bb64b531650c364df4c3ed9ea53d32ca614680006a0eda2f56eda9c6c84b3e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-90",
+      "mission": "ACQ-1641",
+      "title": "address punctuation",
+      "threat": "Address punctuation is accepted.",
+      "fixture_sha256": "1ec2ed39f82e372990074ff53685088a274f4ef6c0f168f525b1cb97311279a0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-91",
+      "mission": "ACQ-1642",
+      "title": "huge old_value",
+      "threat": "old_value is never capped or scanned.",
+      "fixture_sha256": "42f79d7f6795207bde6c72a510b64570b4d3786cce21b2ec9dfdf1f677723e2a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-92",
+      "mission": "ACQ-1643",
+      "title": "benign bold tag",
+      "threat": "Benign HTML is not on the marker list: accepted.",
+      "fixture_sha256": "688b5f51c3b2559222d51d854583b7a9975d0da46e5bf4494ce3f571828e06fd",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-93",
+      "mission": "ACQ-1644",
+      "title": "bare bold tag in name",
+      "threat": "The marker list is literal, not a tag blacklist.",
+      "fixture_sha256": "82d5b373cbfc3e40faa8257227769334538a9f4e7ed1952fdd047280d0018437",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-94",
+      "mission": "ACQ-1645",
+      "title": "trailing-dot host",
+      "threat": "Trailing-dot hosts are valid hosts.",
+      "fixture_sha256": "2d35ec9eefd0bb7515239f4fbb798a67698dd29bc086012ebdbf3eea110ecddf",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-95",
+      "mission": "ACQ-1646",
+      "title": "unicode at cap",
+      "threat": "Boundary: exactly 5000 chars is accepted, unicode or not.",
+      "fixture_sha256": "a1dc2b2295cbfcb2fa345629c1f5fa2d1a409ffc969db9b90bc77b40ec6fd117",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-96",
+      "mission": "ACQ-1647",
+      "title": "kitchen sink quarantine",
+      "threat": "Markers fire in every field.",
+      "fixture_sha256": "8daafb0591a70d32afd92fa568d188eb6d64df339968806ad69e788df5eeb3c6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:correction-new-value:active-content",
+          "ok": true,
+          "detail": "new_value"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-97",
+      "mission": "ACQ-1648",
+      "title": "kitchen sink accept",
+      "threat": "Submitter plus clean value: all agree.",
+      "fixture_sha256": "f5a98894e868fbd5d0049452033a0d37c814278ea0a4339b30b3abf35b600d47",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-98",
+      "mission": "ACQ-1649",
+      "title": "marker only in old",
+      "threat": "A marker that is being REMOVED does not hold the correction.",
+      "fixture_sha256": "88a6fdf3a52faf15f8fb3b92f4b88790b7e03deb23b58a6fb381866f28c62058",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-cor-99",
+      "mission": "ACQ-1650",
+      "title": "final phone accept",
+      "threat": "Formatted phone with a valid submitter.",
+      "fixture_sha256": "67afbc57f518dea4c6632479eeeac795274100fbd83f0159724db980856b414a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:cor_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_field",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:cor_chars",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

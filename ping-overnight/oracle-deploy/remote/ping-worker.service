@@ -1,0 +1,15 @@
+[Unit]
+Description=PING Worker Runtime
+Requires=docker.service ping-gateway.service
+After=docker.service ping-gateway.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml up -d worker
+ExecStop=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml stop worker
+ExecReload=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml restart worker
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

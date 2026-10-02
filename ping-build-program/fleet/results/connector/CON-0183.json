@@ -1,0 +1,11 @@
+{
+  "mission_id": "CON-0183",
+  "verdict": "PROVEN",
+  "summary": "[Shopify] rate-limits: Two systems. REST (legacy): leaky bucket, 40 requests with 2/sec leak standard (80/4 Plus); X-Shopify-Shop-Api-Call-Limit header. GraphQL: cost-based, 1,000-point bucket, restore 50/sec (plan-scaled); scalars/enums 0 pts, objects 1 pt, connections sized by first/last, mutations 10 pts default; HARD CEILING: no single query may exceed 1,000 points. Response extensions.cost carries throttleStatus + actualQueryCost: back off before zero. Nested connections multiply cost. THROTTLED: exponential backoff, fewer fields, never tight-loop retry.",
+  "evidence_files": [
+    "~/workspace/ping-build-program/fleet/work/fleet-con-1/ecommerce-shopify.md",
+    "https://shopify.dev/docs/api/admin-graphql"
+  ],
+  "confidence": 0.9,
+  "followup": null
+}

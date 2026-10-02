@@ -1,0 +1,89 @@
+=== AskContextInput (103-190) ===
+export interface AskContextInput {
+  viewer: { id: string | null; displayName: string | null };
+  target: PingObject | null;
+  relatedObjects: PingObject[];
+  relationships: PingRelationship[];
+  plan: CapabilityPlan | null;
+  /** Optional per-object field epistemic classes (pipeline FactClass vocabulary). */
+  fieldClasses?: Record<string, Record<string, string>>;
+}
+
+/** Extract deduped source URLs from object provenance refs. Deterministic. */
+function provenanceSourceUrls(objects: Array<PingObject | null>): string[] {
+  const urls = new Set<string>();
+  for (const o of objects) {
+    const ref = o?.provenance?.ref;
+    if (!ref) continue;
+    const m = /^website-ingestion:(https?:\/\/.+)$/.exec(ref);
+    if (m) {
+      urls.add(m[1]);
+      continue;
+    }
+    const u = /https?:\/\/[^\s"']+/.exec(ref);
+    if (u) urls.add(u[0]);
+  }
+  return [...urls].sort();
+}
+
+/**
+ * Epistemic classification from object provenance, used when the context
+ * carries no explicit field class and the object has no claim kind of its
+ * own. Website-derived material is the site's own words (never verified
+ * fact); canonical-journal objects are recorded facts in the site data;
+ * owner material is owner-authored. Overlay-authored (demo) content
+ * is classified DEMO_SYNTHETIC, never a recorded fact. This keeps
+ * citations on a real evidence class instead of degrading to the
+ * meaningless "unknown".
+ */
+function classificationFromProvenance(obj: PingObject): string {
+  const kind = obj.provenance?.kind ?? "";
+  if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
+  if (kind === "canonical-journal") return "DIRECT_FACT";
+  if (kind === "website-derived" || kind === "website-ingestion") return "website_statement";
+  if (kind === "owner") return "owner_authorship";
+  return "unknown";
+}
+
+/**
+ * Epistemic classification for one object field claim. Prefers the
+ * pipeline FactClass vocabulary when the context carries field classes;
+ * then the object's own claim kind; then the object's provenance;
+ * never invents certainty.
+ */
+function claimClassification(
+  fieldClasses: Record<string, Record<string, string>>,
+  obj: PingObject,
+  field: string,
+): string {
+  const fc = fieldClasses[obj.id]?.[field];
+  if (fc) return fc;
+  const ck = obj.fields["claimKind"];
+  if (typeof ck === "string" && ck !== "") return ck;
+  return classificationFromProvenance(obj);
+}
+
+function truncateField(value: string | string[]): string | string[] {
+  const cut = (s: string) =>
+    s.length > ASK_LIMITS.maxFieldChars ? s.slice(0, ASK_LIMITS.maxFieldChars) + "…" : s;
+  return Array.isArray(value) ? value.map(cut) : cut(value);
+}
+
+function boundedObject(obj: PingObject): PingObject {
+  const fields: Record<string, string | string[]> = {};
+  for (const [k, v] of Object.entries(obj.fields)) fields[k] = truncateField(v);
+  return {
+    ...obj,
+    title: obj.title.slice(0, 200),
+    description: obj.description.slice(0, 2000),
+    fields,
+  };
+}
+
+export function schemaLabel(schema: string): string {
+  const short = schema.split(".").pop() ?? schema;
+  return short.replace(/@.*$/, "").replace(/_/g, " ");
+}
+
+export function buildAskContext(input: AskContextInput): AskContext {
+  const related = input.relatedObjects.slice(0, ASK_LIMITS.maxRelated).map(boundedObject);

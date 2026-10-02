@@ -1,0 +1,1097 @@
+{
+ "generated": "2026-09-28T14:5x MDT lane B2",
+ "cases": [
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-01",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-02",
+   "input": {
+    "agentId": "hermes",
+    "capability": "orchestration.plan",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-03",
+   "input": {
+    "agentId": "nope-agent",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-04",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "bad-namespace",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-05",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-06",
+   "input": {
+    "agentId": "opencode",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-07",
+   "input": {
+    "agentId": "codex",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "codex blockedUntil 2026-09-17T06:01:00Z in profile; expired by design per lane-11 resolution"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?"
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-08",
+   "input": {
+    "agentId": "codex",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "runtime override: codex blockedUntil set to 2099-01-01 (in-process only)"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "overrides": {
+    "profiles": {
+     "codex": {
+      "status": "LIVE",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": {
+       "reason": "synthetic active block for replay",
+       "blockedUntil": "2099-01-01T00:00:00Z"
+      },
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      }
+     }
+    }
+   }
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-09",
+   "input": {
+    "agentId": "synth-pending",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "runtime override: synthetic PENDING_AUTH agent (in-process only)"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": false,
+   "jev_question": null,
+   "overrides": {
+    "profiles": {
+     "synth-pending": {
+      "status": "PENDING_AUTH",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": null,
+      "maxConstraints": {}
+     }
+    }
+   }
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-10",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": "not-an-object"
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-11",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-12",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "tenant::acme-1",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "mc.authorize_work_order/v1",
+   "id": "AW-13",
+   "input": {
+    "agentId": "identity_1",
+    "capability": "test.generate",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-01",
+   "input": {
+    "viewerId": "u1",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-02",
+   "input": {
+    "viewerId": "u2",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-03",
+   "input": {
+    "viewerId": null,
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-04",
+   "input": {
+    "viewerId": "u1",
+    "controllerId": "u1",
+    "isSite": false
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-05",
+   "input": {
+    "viewerId": "u2",
+    "controllerId": "u3",
+    "isSite": false
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "grantsForViewer/v1",
+   "id": "GV-06",
+   "input": {
+    "viewerId": "",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-01",
+   "input": {
+    "viewerId": null,
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-02",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "reply",
+    "reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-03",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": true,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "unlike",
+    "reply",
+    "reference"
+   ],
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-04",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj2",
+     "schema": "ping.social.business@1",
+     "controllerId": "v1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": "https://example.com",
+    "grants": [
+     "object.reference",
+     "site.read",
+     "site.propose"
+    ]
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "open_site",
+    "ask",
+    "like",
+    "propose_update",
+    "propose_site_patch",
+    "open_website",
+    "reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that 'propose_site_patch' is among the correct available actions for this viewer on this target?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-05",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj3",
+     "schema": "ping.social.profile@1",
+     "controllerId": "id9"
+    },
+    "targetIdentityId": "id9",
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "follow",
+    "reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-06",
+   "input": {
+    "viewerId": "id9",
+    "target": {
+     "id": "obj3",
+     "schema": "ping.social.profile@1",
+     "controllerId": "id9"
+    },
+    "targetIdentityId": "id9",
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "reference"
+   ],
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?"
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-07",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj4",
+     "schema": "ping.social.article@1",
+     "controllerId": "c2"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": "https://example.com/menu"
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "open_website",
+    "reference"
+   ],
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "planActions/v1",
+   "id": "PA-08",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj2",
+     "schema": "ping.social.business@1",
+     "controllerId": "c9"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null,
+    "grants": [
+     "object.reference"
+    ]
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "reference"
+   ],
+   "jev_shadow": false,
+   "jev_question": null
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-01",
+   "input": {
+    "text": "Excellent service! The plumber was prompt, professional, and the work was perfect. Highly recommend.",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "positive",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-02",
+   "input": {
+    "text": "Terrible. They never showed up and ignored my calls. Worst experience ever.",
+    "rating": 1
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-03",
+   "input": {
+    "text": "It was fine, I guess. Nothing special.",
+    "rating": 3
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-04",
+   "input": {
+    "text": "GREAT WORK!!!",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-05",
+   "input": {
+    "text": "Great service, will you come back next week?",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-06",
+   "input": {
+    "text": "CLICK HERE to win prize free money!!!"
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-07",
+   "input": {
+    "text": "These idiots did a damn terrible job.",
+    "rating": 1
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-08",
+   "input": {
+    "text": "Oh wonderful, another leak. Just fantastic.",
+    "rating": 4
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-09",
+   "input": {
+    "text": "Excellent, amazing, wonderful work.",
+    "rating": 2
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "classifyReview/v1",
+   "id": "CR-10",
+   "input": {
+    "text": "Good.",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "positive",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-01",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none"
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-02",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "outcome",
+      "outcome": "completed",
+      "effect_state": "effect_committed"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-03",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-04",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts and run logs",
+     "found": "no effect committed; process died pre-transport",
+     "decidedBy": "operator:hermes-reconciler"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-05",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts",
+     "found": "unknown"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-06",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": "__CORRUPT__"
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-07",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "outcome",
+      "outcome": "completed",
+      "effect_state": "effect_committed"
+     }
+    ]
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  },
+  {
+   "contract": "reconcileGate/v1",
+   "id": "RG-08",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts and run logs",
+     "found": "no effect committed",
+     "decidedBy": "operator:hermes-reconciler"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow": false,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?"
+  }
+ ]
+}

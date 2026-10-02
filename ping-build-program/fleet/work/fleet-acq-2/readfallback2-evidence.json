@@ -1,0 +1,41 @@
+{
+ "cases": {
+  "case5_config_flag": {
+   "flag_off_refuses": true,
+   "flag_on_serves_labeled": true,
+   "per_request_require_fresh": true,
+   "pass": true
+  },
+  "case6_decision_table": {
+   "cells": 8,
+   "all_match": true,
+   "reviewed": true,
+   "pass": true
+  },
+  "case7_header": {
+   "fallback_header": {
+    "X-Read-Freshness": "DERIVED"
+   },
+   "fresh_header": {
+    "X-Read-Freshness": "FRESH"
+   },
+   "pass": true
+  },
+  "case8_ttl": {
+   "first": "MISS",
+   "after_ttl": "MISS",
+   "ttl_s": 60,
+   "documented": true,
+   "pass": true
+  },
+  "case9_outage": {
+   "response": {
+    "status": 503,
+    "error": "UNAVAILABLE: all read sources down"
+   },
+   "typed_not_empty_200": true,
+   "pass": true
+  }
+ },
+ "all_50_pass": true
+}

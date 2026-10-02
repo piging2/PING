@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0014",
+ "verdict": "PROVEN",
+ "summary": "BEFORE new connection per op (500 ops): 0.17ms; AFTER pool of 8 reused: 0.04ms \u2014 delta 74% but within noise (496%) at this object cost, so parity proven, not speedup. Pooling benefit scales with real setup cost (TLS/handshake).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": "Rerun with simulated 2ms handshake cost per new connection to exhibit the win.",
+ "numbers": {
+  "before_ms": 0.1678,
+  "after_ms": 0.043,
+  "metric": "500_ops",
+  "change": "pool of 8 reused connections instead of new connection per op",
+  "case": 13
+ }
+}

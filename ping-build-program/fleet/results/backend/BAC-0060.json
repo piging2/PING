@@ -1,0 +1,23 @@
+{
+ "mission_id": "BAC-0060",
+ "verdict": "ADAPT",
+ "summary": "BEFORE regenerate all 200: 162.53ms; AFTER changed+dependents walk: 169.01ms, 196/200 regenerated. The change (page_195) sat upstream of nearly the whole chain (page_i depends on page_{i+1}), so the dependent cone was ~98% of the graph. Lesson: selective regeneration's benefit = 1 - cone/total; place changes leaf-ward or the walk degrades to full regen. Technique sound, precondition documented.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 162.5329,
+  "after_ms": 169.0092,
+  "metric": "regen_acyclic_chain",
+  "change": "regenerate changed + transitive dependents on acyclic graph instead of all 200",
+  "case": 59,
+  "extra": {
+   "pages_regenerated_before": 200,
+   "pages_regenerated_after": 196
+  }
+ }
+}

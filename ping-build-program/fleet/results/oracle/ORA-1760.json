@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-1760",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "No qdrant in the sandbox. [up-then-down migration on scratch, data intact] 'knowledge collection payload schema v1 to v2 (on-disk payloa' requires scratch qdrant v1.7.0; contract spec in schema-evolution-designs.md.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/schema-drift-evidence.json",
+    "fleet/work/fleet-ora-2/sandbox/schema-evolution-designs.md"
+  ],
+  "confidence": 0.85,
+  "followup": "On scratch qdrant v1.7.0: restore the 67MB 09-17 snapshot into scratch qdrant v1.7.0; rehearse the HNSW m=16 reindex contract (new collection, dual-read, recall parity); rehearse the 768-dim re-embed contract."
+}

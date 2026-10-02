@@ -1,0 +1,526 @@
+[
+ {
+  "case": 150,
+  "mission_no": 151,
+  "slug": "duplicate-id",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duplicate ids tolerated; no id-based identity guess",
+  "assert_text_contains": [
+   "1",
+   "2"
+  ]
+ },
+ {
+  "case": 151,
+  "mission_no": 152,
+  "slug": "inline-nesting-5k",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5k inline nesting parses",
+  "assert_text_contains": [
+   "deep"
+  ]
+ },
+ {
+  "case": 152,
+  "mission_no": 153,
+  "slug": "wbr-br-runs",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "wbr/br handled",
+  "assert_text_contains": [
+   "a",
+   "b",
+   "c"
+  ]
+ },
+ {
+  "case": 153,
+  "mission_no": 154,
+  "slug": "hr-separators",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "hr as separator only",
+  "assert_text_contains": [
+   "one",
+   "two"
+  ]
+ },
+ {
+  "case": 154,
+  "mission_no": 155,
+  "slug": "pre-whitespace",
+  "bound": "P2",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "pre whitespace preserved in extraction",
+  "assert_text_contains": [
+   "indented"
+  ]
+ },
+ {
+  "case": 155,
+  "mission_no": 156,
+  "slug": "code-kbd-sample",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "code-family elements as text",
+  "assert_text_contains": [
+   "npm i x"
+  ]
+ },
+ {
+  "case": 156,
+  "mission_no": 157,
+  "slug": "blockquote-cite",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cite URL recorded as untrusted ref, not fetched",
+  "assert_text_contains": [
+   "quoted words"
+  ]
+ },
+ {
+  "case": 157,
+  "mission_no": 158,
+  "slug": "figure-figcaption",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "figcaption text kept",
+  "assert_text_contains": [
+   "Our storefront",
+   "shop front"
+  ]
+ },
+ {
+  "case": 158,
+  "mission_no": 159,
+  "slug": "picture-srcset",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "srcset recorded as untrusted ref list, never fetched",
+  "assert_text_contains": [
+   "pic"
+  ]
+ },
+ {
+  "case": 159,
+  "mission_no": 160,
+  "slug": "video-audio-refs",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "media refs recorded, not fetched",
+  "assert_text_contains": [
+   "v"
+  ]
+ },
+ {
+  "case": 160,
+  "mission_no": 161,
+  "slug": "track-element",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "track src recorded as ref"
+ },
+ {
+  "case": 161,
+  "mission_no": 162,
+  "slug": "canvas-fallback",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "canvas fallback text extracted",
+  "assert_text_contains": [
+   "fallback chart text"
+  ]
+ },
+ {
+  "case": 162,
+  "mission_no": 163,
+  "slug": "map-area",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "area href recorded as link with alt",
+  "assert_text_contains": [
+   "zone"
+  ]
+ },
+ {
+  "case": 163,
+  "mission_no": 164,
+  "slug": "meter-progress",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "meter/progress values are presentation, not promoted facts",
+  "assert_text_contains": [
+   "80%",
+   "half"
+  ]
+ },
+ {
+  "case": 164,
+  "mission_no": 165,
+  "slug": "time-datetime",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "invalid datetime recorded verbatim with invalid_datetime flag; never normalized by guess"
+ },
+ {
+  "case": 165,
+  "mission_no": 166,
+  "slug": "data-attrs-5k",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5k data-* attrs: attr-count cap noted, text kept",
+  "assert_text_contains": [
+   "d"
+  ]
+ },
+ {
+  "case": 166,
+  "mission_no": 167,
+  "slug": "aria-attrs",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "aria attrs are hints, not claims",
+  "assert_text_contains": [
+   "x"
+  ]
+ },
+ {
+  "case": 167,
+  "mission_no": 168,
+  "slug": "contenteditable",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contenteditable region extracted, flagged user-editable (untrusted tier)",
+  "assert_text_contains": [
+   "user draft text"
+  ]
+ },
+ {
+  "case": 168,
+  "mission_no": 169,
+  "slug": "translate-no",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "translate=no honored as signal; text still extracted"
+ },
+ {
+  "case": 169,
+  "mission_no": 170,
+  "slug": "dir-rtl",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "rtl paragraph extracted with dir provenance"
+ },
+ {
+  "case": 170,
+  "mission_no": 171,
+  "slug": "lang-mix",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "lang attrs recorded per-span; no language guess beyond declared",
+  "assert_text_contains": [
+   "Hello",
+   "Hola"
+  ]
+ },
+ {
+  "case": 171,
+  "mission_no": 172,
+  "slug": "hidden-attr",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "hidden element extracted BUT flagged hidden_attr (never present as visible content)",
+  "assert_text_contains": [
+   "secret menu draft",
+   "public"
+  ]
+ },
+ {
+  "case": 172,
+  "mission_no": 173,
+  "slug": "inert-attr",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "inert region extracted with inert flag"
+ },
+ {
+  "case": 173,
+  "mission_no": 174,
+  "slug": "input-menagerie",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "input values are user state, never business facts",
+  "assert_not_in_text": [
+   "#ff0000"
+  ]
+ },
+ {
+  "case": 174,
+  "mission_no": 175,
+  "slug": "datalist",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "datalist suggestions recorded as suggestions, not facts"
+ },
+ {
+  "case": 175,
+  "mission_no": 176,
+  "slug": "fieldset-legend",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "legend text kept",
+  "assert_text_contains": [
+   "Contact info"
+  ]
+ },
+ {
+  "case": 176,
+  "mission_no": 177,
+  "slug": "textarea-content",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "textarea is user content: extracted, flagged user-content, phone NOT a business fact",
+  "assert_text_contains": [
+   "user typed draft"
+  ]
+ },
+ {
+  "case": 177,
+  "mission_no": 178,
+  "slug": "obsolete-applet",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "obsolete applet dropped",
+  "assert_text_contains": [
+   "new"
+  ]
+ },
+ {
+  "case": 178,
+  "mission_no": 179,
+  "slug": "obsolete-bgsound",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "obsolete bgsound dropped",
+  "assert_text_contains": [
+   "snd"
+  ]
+ },
+ {
+  "case": 179,
+  "mission_no": 180,
+  "slug": "comment-phone",
+  "bound": "P7",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "comment phone never leaks into facts",
+  "assert_not_in_text": [
+   "999-8888"
+  ],
+  "assert_phones_eq": [
+   "(555) 111-2222"
+  ]
+ },
+ {
+  "case": 180,
+  "mission_no": 181,
+  "slug": "phone-title-vs-body",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "title phone vs body phone: separate provenance, no canonical pick",
+  "assert_phones_eq": [
+   "(555) 111-2222"
+  ]
+ },
+ {
+  "case": 181,
+  "mission_no": 182,
+  "slug": "img-alt-phone",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "alt text extracted with provenance=alt; phone from alt kept as alt-sourced observation",
+  "assert_phones_eq": [
+   "(555) 222-0000"
+  ]
+ },
+ {
+  "case": 182,
+  "mission_no": 183,
+  "slug": "title-attr-tooltip",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "title-attr tooltip recorded as attr metadata, NOT body text",
+  "assert_not_in_text": [
+   "tooltip secret"
+  ]
+ },
+ {
+  "case": 183,
+  "mission_no": 184,
+  "slug": "meta-desc-conflict",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "description variants kept separate, no merge"
+ },
+ {
+  "case": 184,
+  "mission_no": 185,
+  "slug": "twitter-cards",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "twitter card tags capped under P5"
+ },
+ {
+  "case": 185,
+  "mission_no": 186,
+  "slug": "jsonld-id-selfref",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "self-referential @id recorded verbatim; no graph-cycle resolution attempted"
+ },
+ {
+  "case": 186,
+  "mission_no": 187,
+  "slug": "jsonld-html-in-string",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "HTML inside JSON-LD string stays string data; block ok, body extracted",
+  "assert_text_contains": [
+   "after"
+  ]
+ },
+ {
+  "case": 187,
+  "mission_no": 188,
+  "slug": "jsonld-60-graph-items",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "60 @graph items: block within caps; item count noted (no per-item semantic fan-out)"
+ },
+ {
+  "case": 188,
+  "mission_no": 189,
+  "slug": "jsonld-two-phones",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two JSON-LD blocks, two phones: separate observations, conflict flagged, no pick",
+  "assert_jsonld_n": 2
+ },
+ {
+  "case": 189,
+  "mission_no": 190,
+  "slug": "jsonld-bad-context",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "@context URL recorded, never fetched"
+ },
+ {
+  "case": 190,
+  "mission_no": 191,
+  "slug": "link-alternate-rss",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "feed link recorded as ref for feed-family acquisition, not fetched here"
+ },
+ {
+  "case": 191,
+  "mission_no": 192,
+  "slug": "html-in-html",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested html/body tags recovered",
+  "assert_text_contains": [
+   "nested doc"
+  ]
+ },
+ {
+  "case": 192,
+  "mission_no": 193,
+  "slug": "select-optgroup",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "optgroup parsed",
+  "assert_text_contains": [
+   "o1"
+  ]
+ },
+ {
+  "case": 193,
+  "mission_no": 194,
+  "slug": "output-element",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "output element text kept; computed value flagged derived-not-fact",
+  "assert_text_contains": [
+   "result 42"
+  ]
+ },
+ {
+  "case": 194,
+  "mission_no": 195,
+  "slug": "keygen-obsolete",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "obsolete keygen dropped",
+  "assert_text_contains": [
+   "kg"
+  ]
+ },
+ {
+  "case": 195,
+  "mission_no": 196,
+  "slug": "isindex-obsolete",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "obsolete isindex dropped",
+  "assert_text_contains": [
+   "ii"
+  ]
+ },
+ {
+  "case": 196,
+  "mission_no": 197,
+  "slug": "details-name",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "details name grouping recorded"
+ },
+ {
+  "case": 197,
+  "mission_no": 198,
+  "slug": "slot-shadow",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "slot/shadow content: light-DOM text kept; template stays inert",
+  "assert_text_contains": [
+   "slotted"
+  ],
+  "assert_not_in_text": [
+   "tmpl"
+  ]
+ },
+ {
+  "case": 198,
+  "mission_no": 199,
+  "slug": "svg-title-desc",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "svg title/desc extracted with svg provenance",
+  "assert_text_contains": [
+   "chart title",
+   "sv"
+  ]
+ },
+ {
+  "case": 199,
+  "mission_no": 200,
+  "slug": "math-annotation",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "math annotation text kept with foreign provenance",
+  "assert_text_contains": [
+   "spoken x"
+  ]
+ }
+]

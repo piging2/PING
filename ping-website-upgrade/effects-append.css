@@ -1,0 +1,28 @@
+
+/* ------------------------------------------------------------------
+ * Visual effects preference — user override (effects-provider.tsx).
+ * Layers on top of the prefers-reduced-motion block above.
+ *
+ * .effects-reduced: no continuous/ambient animation; one-shot
+ *   transitions (reveals, hovers) remain.
+ * .effects-off: no animation or transition at all.
+ * ------------------------------------------------------------------ */
+.effects-reduced .animate-shimmer-slow,
+.effects-reduced .animate-shimmer-fast,
+.effects-reduced .animate-happy-gold-idle,
+.effects-reduced .animate-ping,
+.effects-off .animate-shimmer-slow,
+.effects-off .animate-shimmer-fast,
+.effects-off .animate-happy-gold-idle,
+.effects-off .animate-ping {
+  animation: none;
+}
+
+.effects-off *,
+.effects-off *::before,
+.effects-off *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

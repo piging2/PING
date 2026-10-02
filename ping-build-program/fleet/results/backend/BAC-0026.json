@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0026",
+ "verdict": "REJECTED",
+ "summary": "BEFORE serial render of 24 pages: 0.07ms; AFTER 2-worker ThreadPoolExecutor: 0.72ms \u2014 10x slower. GIL-bound trivial string work makes thread-pool overhead dominate. Claim false at this work size; parallelism needs CPU-bound work units well above dispatch cost (or a process pool).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": "Rerun with 200ms CPU-bound render units to find the break-even grain size.",
+ "numbers": {
+  "before_ms": 0.0745,
+  "after_ms": 0.723,
+  "metric": "render_24_pages",
+  "change": "2-worker thread pool instead of serial rendering",
+  "case": 25
+ }
+}

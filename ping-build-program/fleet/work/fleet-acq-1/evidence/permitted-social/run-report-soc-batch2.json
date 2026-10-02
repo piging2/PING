@@ -1,0 +1,2238 @@
+{
+  "lab": "permitted-social",
+  "worker": "fleet-acq-1",
+  "parser": "soc-harness/1.0.0",
+  "generated_at": "2026-09-24T04:24:59.934Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-soc-50",
+      "mission": "ACQ-1301",
+      "title": "extra fields ignored",
+      "threat": "Unknown fields are not claims and not failures.",
+      "fixture_sha256": "0b0e58712c2f3b4a8ee169021040245499c0156c3060d7f3ad4d038ae9359c59",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-51",
+      "mission": "ACQ-1302",
+      "title": "empty author string",
+      "threat": "Author is optional; empty string is a string.",
+      "fixture_sha256": "6e70a5a2c2ec9ae2752d38e006590cd598a73b91135f79fbcbf1b994f1e2f882",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-52",
+      "mission": "ACQ-1303",
+      "title": "whitespace-only text",
+      "threat": "Not empty, not hostile: permitted with no signals.",
+      "fixture_sha256": "885e82ce031ca13baa5e1a2be063597b0b507014a882278200400790ade51f61",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-53",
+      "mission": "ACQ-1304",
+      "title": "50 USD",
+      "threat": "Word-form currency matches the money rule.",
+      "fixture_sha256": "ccc0327fa97ac1a07d15d0b4a73ed72f529cbcc0a4d79a793772ab7e26312a9d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:money",
+          "ok": true,
+          "detail": "rule money (w=1): mentions money amounts"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-54",
+      "mission": "ACQ-1305",
+      "title": "dollar with space",
+      "threat": "'$ 50' matches the money rule.",
+      "fixture_sha256": "6b7c184dc87fbd5bbe139a47c5b34079ad69c4269541e2c1dab40f126b514046",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:money",
+          "ok": true,
+          "detail": "rule money (w=1): mentions money amounts"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-55",
+      "mission": "ACQ-1306",
+      "title": "expires tomorrow",
+      "threat": "'expires' matches urgency framing.",
+      "fixture_sha256": "1bfc442f5c29e2d5a806dc6197e441d0f84e94c3651a26fcec1e13843d0cf4b3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:urgency",
+          "ok": true,
+          "detail": "rule urgency (w=2): pressure/urgency framing"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-56",
+      "mission": "ACQ-1307",
+      "title": "expiration is not expires",
+      "threat": "Word boundaries: 'expiration' must not match 'expires?'.",
+      "fixture_sha256": "6500f56227bb79b56cf9e0a32cb38e5468dddd47ffe5ac54719006b345a2c6c4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:urgency",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-57",
+      "mission": "ACQ-1308",
+      "title": "message me",
+      "threat": "DM-solicit variant.",
+      "fixture_sha256": "e3794757b5a376a468b702f10cec2d131520a4253abbad542a768336d684d556",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:dm-solicit",
+          "ok": true,
+          "detail": "rule dm-solicit (w=1): solicits private messages"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-58",
+      "mission": "ACQ-1309",
+      "title": "inbox me",
+      "threat": "DM-solicit variant.",
+      "fixture_sha256": "30fd5d8308866d655ebb15e32e1abc01473548a4caf204f4dff8dd6c84f07737",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:dm-solicit",
+          "ok": true,
+          "detail": "rule dm-solicit (w=1): solicits private messages"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-59",
+      "mission": "ACQ-1310",
+      "title": "free gift",
+      "threat": "Giveaway framing (w=2) alone stays permitted.",
+      "fixture_sha256": "462b25ec0afe574a46eb72dd667ee9cb16fd6be61d377fe302212b8a5fa21a02",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:giveaway",
+          "ok": true,
+          "detail": "rule giveaway (w=2): giveaway / free-money framing"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-60",
+      "mission": "ACQ-1311",
+      "title": "free gifts plural",
+      "threat": "Boundary: 'gifts' does not match 'gift'.",
+      "fixture_sha256": "5652993fcf278041714c98bf26fe51f74614d8cb017b69feca7d1ba57f68531a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:giveaway",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-61",
+      "mission": "ACQ-1312",
+      "title": "win cash prize",
+      "threat": "'win cash' matches giveaway framing.",
+      "fixture_sha256": "4ddd279857f308e53582175904b79335c7bd28eb1e20ac34b5e8948bcc466d86",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:giveaway",
+          "ok": true,
+          "detail": "rule giveaway (w=2): giveaway / free-money framing"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-62",
+      "mission": "ACQ-1313",
+      "title": "cryptocurrency news",
+      "threat": "Boundary: 'cryptocurrency' must not match 'crypto'.",
+      "fixture_sha256": "f860eadc80b1e2ca26a2187fcd511d0783d6337ada63723e65629033e42efaba",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:crypto-mention",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-63",
+      "mission": "ACQ-1314",
+      "title": "exactly 10 emoji",
+      "threat": "Boundary: 10 is not > 10.",
+      "fixture_sha256": "7ffd84bed0361a03947633877fc1431945b52d67f3c8e677119b62f0f6629cd1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:many-emoji",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-64",
+      "mission": "ACQ-1315",
+      "title": "11 emoji",
+      "threat": "Boundary: 11 > 10 fires, still permitted alone.",
+      "fixture_sha256": "944cc1ad563170fa0847d73d6ea26e7303490af9e0433d743d087fc82c9430f7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:many-emoji",
+          "ok": true,
+          "detail": "rule many-emoji (w=1): >10 emoji"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-65",
+      "mission": "ACQ-1316",
+      "title": "caps exactly 50 percent",
+      "threat": "Boundary probe: 10 letters, exactly 5 caps (ratio 0.50, must EXCEED 0.5).",
+      "fixture_sha256": "ce4f7243a0724332048f9b74f1fa6529725c36f328a499e7ec418f9ca3fe8d07",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:excessive-caps",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-66",
+      "mission": "ACQ-1317",
+      "title": "caps 70 percent",
+      "threat": "7/10 caps fires the signal, still permitted alone.",
+      "fixture_sha256": "8347861cb9365a19e79f4ebf8c0b7deaf6c9ba38a596a97395d9feaadadd0701",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:excessive-caps",
+          "ok": true,
+          "detail": "rule excessive-caps (w=1): >50% capital letters"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-67",
+      "mission": "ACQ-1318",
+      "title": "two URLs count once",
+      "threat": "A rule fires at most once per post; weight counts once.",
+      "fixture_sha256": "d23257cfa96f818b587b7cdb9a99a8be55e2ff3827bd42557201cad1b1b10f94",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:has-url",
+          "ok": true,
+          "detail": "rule has-url (w=1): contains a URL"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-68",
+      "mission": "ACQ-1319",
+      "title": "weight exactly 3 stays permitted",
+      "threat": "Threshold boundary: 3 < 4.",
+      "fixture_sha256": "fab12fe38576dc07dbdde825d5414080ce41558f4ba3424135770c3e8a2f2beb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "6 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-69",
+      "mission": "ACQ-1320",
+      "title": "weight exactly 4 via four singles",
+      "threat": "dm(1)+url(1)+crypto(1)+money(1)=4: review.",
+      "fixture_sha256": "9eb41060c11a312369f117f80a99fb26e0e535b69d2ad72dc301e1b2e1b0f886",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "4"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "7 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-70",
+      "mission": "ACQ-1321",
+      "title": "tab-separated block phrase",
+      "threat": "Whitespace-flexible rules still block.",
+      "fixture_sha256": "991c8123caade092ec844b1accd4213d7eb36e33ad9619cbffdfee29da487ec7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:crypto-doubling",
+          "ok": true,
+          "detail": "rule block:crypto-doubling: explicit crypto-doubling scam phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-71",
+      "mission": "ACQ-1322",
+      "title": "first block rule wins",
+      "threat": "Two block phrases: the earliest-listed rule claims the signal.",
+      "fixture_sha256": "0cced856367879d079599a8003a65c2febf1a13512c9301cffe9389eb9d5b97a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:crypto-doubling",
+          "ok": true,
+          "detail": "rule block:crypto-doubling: explicit crypto-doubling scam phrasing"
+        },
+        {
+          "name": "absent-signal:block:airdrop",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-72",
+      "mission": "ACQ-1323",
+      "title": "block phrase cut by truncation",
+      "threat": "Truncation is honest about scope: partial phrases do not block.",
+      "fixture_sha256": "852ebdbebc74a4ca28627e2f0603be68d2c3002105a7e352d68c8e102671b452",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent-signal:block:crypto-doubling",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-73",
+      "mission": "ACQ-1324",
+      "title": "in-scope block plus over-long tail",
+      "threat": "Truncation does not hide in-scope hostile content.",
+      "fixture_sha256": "c161a0fedc333218496a974cc9d3c7ed24d560a225bbafc68eaea166abfde70e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "signal:block:crypto-doubling",
+          "ok": true,
+          "detail": "rule block:crypto-doubling: explicit crypto-doubling scam phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-74",
+      "mission": "ACQ-1325",
+      "title": "over-long review",
+      "threat": "Truncated, flagged, then classified on the visible window.",
+      "fixture_sha256": "4822742a1e5757b63962de6e467be434e343ffb857dc16077bb17c73247fd655",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-75",
+      "mission": "ACQ-1326",
+      "title": "null input",
+      "threat": "Null is not a post object.",
+      "fixture_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-soc-76",
+      "mission": "ACQ-1327",
+      "title": "undefined input",
+      "threat": "Undefined is not a post object.",
+      "fixture_sha256": "eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-soc-77",
+      "mission": "ACQ-1328",
+      "title": "text null",
+      "threat": "Null text fails the type check.",
+      "fixture_sha256": "9c454146ef74156dd0c38d08d3d6bf9e8931fe1a04c0360c2238c85384160729",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-text-type"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-soc-78",
+      "mission": "ACQ-1329",
+      "title": "text is an array",
+      "threat": "Arrays are not text.",
+      "fixture_sha256": "5df672b3851be27b29571af80d74310fceb727d9457e01f80138c2ea618f913d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "bad-text-type"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-soc-79",
+      "mission": "ACQ-1330",
+      "title": "numeric input",
+      "threat": "Numbers are not posts.",
+      "fixture_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-object"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-soc-80",
+      "mission": "ACQ-1331",
+      "title": "leet-speak block attempt",
+      "threat": "'d0uble' does not match the literal rule; heuristic crypto signal only.",
+      "fixture_sha256": "4ab706d9c43f08788e9c03614f4bd7fedf1e0eebb5dbb8243104ad1bf0d2f327",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:crypto-mention",
+          "ok": true,
+          "detail": "rule crypto-mention (w=1): mentions crypto"
+        },
+        {
+          "name": "absent-signal:block:crypto-doubling",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-81",
+      "mission": "ACQ-1332",
+      "title": "fullwidth block attempt",
+      "threat": "Fullwidth glyphs do not match ASCII rules: no signals at all.",
+      "fixture_sha256": "52e09a3f70d2223e6b7f4bdb3b13b4d9a12a7effaf69dfb86c4b5eccc0591921",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-82",
+      "mission": "ACQ-1333",
+      "title": "double spaces still block",
+      "threat": "Whitespace-flexible matching: 'DOUBLE  YOUR  CRYPTO' blocks.",
+      "fixture_sha256": "5e8631e4ef077024b489e6b259bb1283898d2c855e7e9a6ecd6daa09eaf8ba1c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:crypto-doubling",
+          "ok": true,
+          "detail": "rule block:crypto-doubling: explicit crypto-doubling scam phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-83",
+      "mission": "ACQ-1334",
+      "title": "mixed-case verify-wallet",
+      "threat": "Case-insensitive block rule.",
+      "fixture_sha256": "b35f62ae6cf814712e3598a4d4c091afacc16748d582340cafb7aa01521b3c13",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:verify-wallet",
+          "ok": true,
+          "detail": "rule block:verify-wallet: wallet-verification phishing phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-84",
+      "mission": "ACQ-1335",
+      "title": "guaranteed 5x",
+      "threat": "Multiplier variant of the guaranteed-returns rule.",
+      "fixture_sha256": "63ea8c94f04fe4a2ad68e0e1e2c912c5ed0d1ac9e5f6efcd714391127ae87d9c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:guaranteed-returns",
+          "ok": true,
+          "detail": "rule block:guaranteed-returns: guaranteed multiplier returns (investment scam marker)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-85",
+      "mission": "ACQ-1336",
+      "title": "send 2 bitcoin",
+      "threat": "Word-form coin in the send-crypto rule.",
+      "fixture_sha256": "1692405359c10fccdb2add96363f85dde24e95c47f4114bccb57a2ea0b54378d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:send-crypto",
+          "ok": true,
+          "detail": "rule block:send-crypto: explicit instruction to send crypto"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-86",
+      "mission": "ACQ-1337",
+      "title": "suspension with period",
+      "threat": "Trailing punctuation does not save it.",
+      "fixture_sha256": "48d93e402838d9bb03e6276a9143c980e42b5f93e864d413c113946e40417361",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:suspension-phish",
+          "ok": true,
+          "detail": "rule block:suspension-phish: suspension-threat phishing phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-87",
+      "mission": "ACQ-1338",
+      "title": "caps giveaway pressure",
+      "threat": "caps(1)+giveaway(2)+urgency(2)=5: review.",
+      "fixture_sha256": "c66c9fcd852c3a02b1700fd75b8dee46e261fc6b52a25c319ab649388d146a16",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "6 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-88",
+      "mission": "ACQ-1339",
+      "title": "running club",
+      "threat": "Boundary: 'running club' must not match 'running out'.",
+      "fixture_sha256": "2ade955b3e4124c9584f3cc8d40789b1b756b1c4b20e66fc5a5a7ff80c72fa0a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:urgency",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-89",
+      "mission": "ACQ-1340",
+      "title": "running out of stock",
+      "threat": "'running out' matches urgency framing.",
+      "fixture_sha256": "b968f2d0e11302c3faea60d39fef335e04478e466d78f86e1de09f62b6564d5c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:urgency",
+          "ok": true,
+          "detail": "rule urgency (w=2): pressure/urgency framing"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-90",
+      "mission": "ACQ-1341",
+      "title": "100 dollars",
+      "threat": "Word-form amount matches money.",
+      "fixture_sha256": "567dcfd0ec1064000faa5975afdc638fe02b8093bc36f568a862817eff50d8a5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:money",
+          "ok": true,
+          "detail": "rule money (w=1): mentions money amounts"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-91",
+      "mission": "ACQ-1342",
+      "title": "ETH price update",
+      "threat": "Standalone ETH matches crypto-mention.",
+      "fixture_sha256": "6befc38470635dd24efc3a1e305c8b8a5303898e7544f173d85dafd9c7c096b0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:crypto-mention",
+          "ok": true,
+          "detail": "rule crypto-mention (w=1): mentions crypto"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-92",
+      "mission": "ACQ-1343",
+      "title": "bet on the game",
+      "threat": "Boundary: 'bet' must not match 'btc'.",
+      "fixture_sha256": "10131c1e4606c482c940d8201523989f7c9bae2c09831f44b425b58b49b72989",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent-signal:crypto-mention",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-93",
+      "mission": "ACQ-1344",
+      "title": "tab in dm solicit",
+      "threat": "Whitespace-flexible dm rule matches tabs.",
+      "fixture_sha256": "39523187689be8149837a49f0a65d063c1dc37250c480d019557bb5372965f13",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:dm-solicit",
+          "ok": true,
+          "detail": "rule dm-solicit (w=1): solicits private messages"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-94",
+      "mission": "ACQ-1345",
+      "title": "kitchen sink review",
+      "threat": "url(1)+money(1)+giveaway(2)+urgency(2)=6: review.",
+      "fixture_sha256": "0e3f94f9d8f1b9af8946f0a493ee200d7adba4cef07ad67af1e01252ff075cc7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "7 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-95",
+      "mission": "ACQ-1346",
+      "title": "kitchen sink benign",
+      "threat": "Phone, mention, hashtag: no signals at all.",
+      "fixture_sha256": "815649c0fc20f110b5da2c81c76abc9ff715b0ee8d4f907c4211b1902cbe915e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "0"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-96",
+      "mission": "ACQ-1347",
+      "title": "uppercase scheme URL",
+      "threat": "Case-insensitive URL detection; surrounding lowercase keeps caps ratio under 0.5.",
+      "fixture_sha256": "477ed9078608cc92750f8f744dff1cb9bbf27ee9df8df34699871c6103bbac3c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:has-url",
+          "ok": true,
+          "detail": "rule has-url (w=1): contains a URL"
+        },
+        {
+          "name": "exact-claims:soc_signal",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-97",
+      "mission": "ACQ-1348",
+      "title": "exactly at cap",
+      "threat": "5000 chars: no truncation flag.",
+      "fixture_sha256": "312e9662277765e7002dae23ea48271464112685c2396e2bcbcfaf2c3183cc1b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "not-truncated:text",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-98",
+      "mission": "ACQ-1349",
+      "title": "block phrase at start",
+      "threat": "Leading block phrase blocks immediately.",
+      "fixture_sha256": "1d76c46e174f833289086b27458b2bc0fd32dabb81e85fb324665c38184cbba4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "signal:block:crypto-doubling",
+          "ok": true,
+          "detail": "rule block:crypto-doubling: explicit crypto-doubling scam phrasing"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-soc-99",
+      "mission": "ACQ-1350",
+      "title": "emoji url money dm",
+      "threat": "many-emoji(1)+url(1)+money(1)+dm(1)=4: review.",
+      "fixture_sha256": "6796826ac0a89438e062e43bb522ba6c91ad5c093aa1f36022dfae255eef3b99",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:soc_verdict",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:soc_signal_weight",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "7 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0025",
+ "verdict": "ADAPT",
+ "summary": "BEFORE regenerate all 200 pages: 0.02ms; AFTER changed+dependents walk: 0.13ms and regenerated 200/200 \u2014 the test dependency graph was a CYCLE (page_i depends on page_{i+1 mod 200}), so the transitive closure is the whole graph. Finding: selective regeneration degrades to full regeneration on cyclic graphs; adopt only with acyclicity enforcement or a bounded walk depth.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0157,
+  "after_ms": 0.1278,
+  "metric": "regen_after_1_page_change",
+  "change": "regenerate changed page + transitive dependents instead of all 200 pages",
+  "case": 24,
+  "extra": {
+   "pages_regenerated_before": 200,
+   "pages_regenerated_after": 200
+  }
+ }
+}

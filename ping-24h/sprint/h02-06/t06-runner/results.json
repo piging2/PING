@@ -1,0 +1,327 @@
+{
+  "generated_at": "2026-09-29T01:43:44.629Z",
+  "cells": {
+    "f01xf01": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-01: unknown external effect (ack lost after dispatch)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   dispatch attempt recorded, effect_count=1",
+        "OK   parkHold parked 1 row",
+        "OK   status=hold (got hold)",
+        "OK   retry_eligibility=FALSE (structural)",
+        "OK   reconciliation_required=TRUE",
+        "OK   lease cleared (no reaper/renewal can touch it)",
+        "OK   outcome=UNKNOWN",
+        "OK   assign() on HOLD row -> 0 rows",
+        "OK   reapExpiredLeases -> 0 reclaimed",
+        "OK   getPending() excludes HOLD row",
+        "OK   reconcileHold('succeeded', evidence) resolved",
+        "OK   completed/SUCCEEDED",
+        "OK   effect_count exactly 1 (no second execution)",
+        "OK   reconciliation_required cleared",
+        "OK   second reconcileHold matches 0 rows (exactly one terminal transition)"
+      ]
+    },
+    "f01xf02": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-02: lease expiration after possible effect",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   narrowed reaper reclaimed 0 (started row refused created-reset)",
+        "OK   started row stays 'running' (got running)",
+        "OK   findOrphanedRunning surfaces the possibly-executed row",
+        "OK   orphaned-started row parks as HOLD",
+        "OK   parked HOLD retry_eligibility=FALSE",
+        "OK   never-started expired-lease row reclaimed to created (legitimate case preserved)"
+      ]
+    },
+    "f01xf03": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-03: death after effect before ack",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   dead worker's started row found by orphan detection",
+        "OK   orphaned-started parks as HOLD (not FAILED)",
+        "OK   hold/UNKNOWN, not failed",
+        "OK   fail() on HOLD row matches 0 rows (status still hold, outcome still UNKNOWN)",
+        "OK   reconcileHold('safe_to_retry') without proof throws TypeError",
+        "OK   PROVE ABSENCE -> SAFE_TO_RETRY",
+        "OK   effect_count corrected 1->0, re-eligible",
+        "OK   identity stable (never reminted)",
+        "OK   re-attempt brings effect_count to exactly 1"
+      ]
+    },
+    "f01xf04": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-04: death after result before journaling (effect proven)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   proven-effect row parks as HOLD (retry_eligibility=FALSE)",
+        "OK   no re-execution path while HOLD",
+        "OK   reconcileHold('succeeded', evidence) resolved",
+        "OK   completed/SUCCEEDED",
+        "OK   effect_count still 1 (effect never re-executed)",
+        "OK   recovered result journaled on the row",
+        "OK   result journaled exactly once (second resolve -> 0 rows)",
+        "NOTE  reconcileHold evidence content is caller-attested (non-empty check); structural enforcement (only-reconciler, only-from-hold, evidence-required) holds; automatic fail() cannot touch HOLD (shown in fixture 03)."
+      ]
+    },
+    "f01xf05": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-05: duplicate submission",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   duplicate submission resolves to the same mission id",
+        "OK   exactly one logical mission row exists",
+        "OK   conditional claim: first wins (1), second matches 0 rows",
+        "OK   single claim stands"
+      ]
+    },
+    "f01xf06": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-06: zombie result",
+      "verdict": "INCORRECT",
+      "evidence": [
+        "OK   zombie complete() after SUCCEEDED reconcile matches 0 rows (row byte-identical)",
+        "OK   zombie complete() while HOLD matches 0 rows (still hold, not a resolution)",
+        "HOSTILE zombie complete() during the SAFE_TO_RETRY re-attempt window matched the status='running' conditional (status now completed)",
+        "HOSTILE stale zombie data became the journaled truth; f01 has no fencing-token / claim-generation conditional (grep: zero hits in f01).",
+        "NOTE  f01 owns no attempt-fencing (no fencing-token CAS anywhere in mission_runtime.js / mission_scheduler.js); the status conditional covers zombie-vs-reconciled and zombie-vs-HOLD, but not the re-attempt window. The semantic register assigns fencing to attempt-fencing.ts (other impl)."
+      ]
+    },
+    "f01xf07": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-07: restart with HOLD present",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   neither scheduler can claim the HOLD row (0,0)",
+        "OK   post-restart getPending() hides HOLD",
+        "OK   post-restart reaper touches nothing (lease NULL)",
+        "OK   HOLD row survives restart byte-identical",
+        "OK   no fresh 'created' row reminted for the held intent",
+        "OK   still retry_eligibility=FALSE, reconciliation_required=TRUE"
+      ]
+    },
+    "f01xf08": {
+      "implementation": "f01 (narrowed reaper + parkHold + reconcileHold)",
+      "fixture": "fixture-08: reconciliation crash",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   continued-HOLD note merge committed",
+        "OK   after crash: still HOLD, still non-dispatchable, still reconciliation_required",
+        "OK   evidence notes preserved append-only in hold_record",
+        "OK   no dispatch path can claim between crash and resolution",
+        "OK   exactly one terminal transition (1 then 0 rows)",
+        "OK   resolved SUCCEEDED",
+        "NOTE  notes the reconciler held only in memory and never merged are lost on crash: f01 has no separate evidence-checkpoint API; checkpointing is the reconciler merging via reconcileHold('hold', {note})."
+      ]
+    },
+    "s5xf01": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-01: unknown external effect (ack lost after dispatch)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   attempt 1 invoked transport exactly once (n=1)",
+        "OK   attempt 1 outcome honest-unknown (outcome=escalated, honest=unknown)",
+        "OK   unknown path carries effect_may_have_occurred",
+        "OK   unreconciled retry refused with 'reconciliation_required' (got reconciliation_required)",
+        "OK   transport still invoked exactly once after refused retry",
+        "OK   reconciled retry invoked transport once more (n=2)",
+        "OK   reconciled attempt completed (outcome=completed)",
+        "OK   attempt-1 artifact exists"
+      ]
+    },
+    "s5xf02": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-02: lease expiration after possible effect",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   automatic post-expiry retry refused (reason=reconciliation_required)",
+        "OK   no second real execution (transport n=1)",
+        "NOTE  S5 has no reaper/lease/mission-row seam: it cannot park a HOLD record or narrow reapExpiredLeases. Its invariant contribution is the dispatch-path refusal: any redispatch crossing the adapter is refused until reconciled. Scope limit (from the S5 commit): the gate's memory is the evidenceDir; callers with separate dirs have separate gates."
+      ]
+    },
+    "s5xf03": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-03: death after effect before ack",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   retry-on-orphan refused without PROVE ABSENCE (reason=reconciliation_required)",
+        "OK   effect not re-executed on dead worker alone (n=1)",
+        "OK   malformed reconciliation refused (reason=reconciliation_invalid)",
+        "OK   transport still at exactly 1 invocation"
+      ]
+    },
+    "s5xf04": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-04: death after result before journaling (effect proven)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   re-execution-to-recompute refused without reconciliation",
+        "OK   proven effect never re-executed blindly (n=1)",
+        "OK   same-attempt resubmission refused (reason=duplicate_attempt)",
+        "NOTE  S5 does not journal mission results and cannot recover one; that is outside the adapter seam. Its invariant contribution: the proven effect is never re-executed without the reconciler's explicit attestation, and attempt artifacts are never overwritten. The reconciliation record's CONTENT is caller-attested (validated for shape, not truth) - the semantic PROVE EFFECT / PROVE ABSENCE decision is caller-owned by design (outcomes.js: \"reconcile vs retry stays caller-owned\")."
+      ]
+    },
+    "s5xf05": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-05: duplicate submission",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   first submission dispatches once",
+        "OK   duplicate submission refused (reason=duplicate_attempt)",
+        "OK   effect executed exactly once (n=1)",
+        "OK   idempotency key stable across attempt numbers (retry = same intent)"
+      ]
+    },
+    "s5xf06": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-06: zombie result",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   reconciled re-attempt completed as new attempt",
+        "OK   zombie attempt-1 write refused (reason=duplicate_attempt)",
+        "OK   attempt-1 artifact byte-identical (reconciled evidence untouched)",
+        "OK   no third transport invocation from the zombie (n=2)",
+        "OK   zombie refusal recorded in the idempotency index as evidence",
+        "NOTE  S5's zombie handling is at the artifact seam (never-overwrite + duplicate_attempt + refusal logged). The mission-row reconciled outcome is outside the adapter seam."
+      ]
+    },
+    "s5xf07": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-07: restart with HOLD present",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   post-restart retry still refused (reason=reconciliation_required)",
+        "OK   no dispatch across the restart (n=1)",
+        "OK   concurrent second caller also refused",
+        "OK   intent identity stable across restart (attempt excluded from key)",
+        "NOTE  S5 holds no mission rows; its \"HOLD survives restart\" is the refusal persisting via the append-only per-evidenceDir index. Callers with separate evidenceDirs have separate gates (documented scope limit of the S5 commit)."
+      ]
+    },
+    "s5xf08": {
+      "implementation": "S5 (reconcile gate on the dispatch path)",
+      "fixture": "fixture-08: reconciliation crash",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   mid-transport death propagates (no fake outcome recorded)",
+        "OK   same-attempt retry refused (reason=duplicate_attempt)",
+        "OK   new attempt without its own record refused (reason=reconciliation_required)",
+        "OK   new attempt with its own record proceeds exactly once (n=3)",
+        "OK   index append-only (9 lines, refusals + records preserved)",
+        "NOTE  S5 does not run the reconciler and has no mission-row transition commit; \"exactly one terminal transition\" at the mission seam is outside the adapter. Its crash-safety contribution: reconciliation records and refusals are append-only, attempts never overwrite, each unknown needs its own record."
+      ]
+    },
+    "classifyxf01": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-01: unknown external effect (ack lost after dispatch)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   indeterminate evidence -> HOLD_NEEDS_RECONCILIATION (got HOLD_NEEDS_RECONCILIATION)",
+        "OK   reexecute=false (never re-execute on unknown)"
+      ]
+    },
+    "classifyxf02": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-02: lease expiration after possible effect",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   expired-lease running projects to UNKNOWN_EXECUTION, not PENDING (got UNKNOWN_EXECUTION)",
+        "OK   control: a genuine created row still projects PENDING (distinction preserved)",
+        "OK   -> HOLD_NEEDS_RECONCILIATION, reexecute=false",
+        "NOTE  projectMission R-C (\"UNKNOWN_EXECUTION must never silently become PENDING\") is this implementation's version of the narrowed-reaper property: the wide reaper's created-reset is unprojectable as anything but a lie."
+      ]
+    },
+    "classifyxf03": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-03: death after effect before ack",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   orphaned running -> UNKNOWN_EXECUTION",
+        "OK   missing execution row (died before INSERT) -> UNKNOWN_EXECUTION, not absent",
+        "OK   dead worker after possible effect -> HOLD, never FAILED, never re-executed",
+        "OK   no legal edge UNKNOWN_EXECUTION -> FAILED (R-A enforced in the transition map)"
+      ]
+    },
+    "classifyxf04": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-04: death after result before journaling (effect proven)",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   proven effect -> MARK_SUCCEEDED_FROM_EVIDENCE (got MARK_SUCCEEDED_FROM_EVIDENCE)",
+        "OK   reexecute=false (R-B: never re-execute a proven effect)",
+        "OK   legal edge NEEDS_RECONCILIATION -> SUCCEEDED exists for the PROVE EFFECT arm"
+      ]
+    },
+    "classifyxf05": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-05: duplicate submission",
+      "verdict": "INAPPLICABLE",
+      "evidence": [
+        "INAPPLICABLE  classifyUnknownExecution is a pure function over ReconciliationEvidence {effectProven, effectAbsent, attemptStarted}: it has no intent-identity input, no dedup API, and dispatches nothing. Duplicate submission is prevented at the intent-identity seam (f01 deterministic mission_id + conditional claim; S5 idempotency key + duplicate_attempt), not at the classification seam."
+      ]
+    },
+    "classifyxf06": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-06: zombie result",
+      "verdict": "INAPPLICABLE",
+      "evidence": [
+        "INAPPLICABLE  the classifier accepts no result writes and keeps no attempt state: there is no write for a zombie to corrupt and no outcome for it to overwrite. Zombie handling belongs to the write seam (fencing-token CAS in attempt-fencing.ts per the semantic register; status-conditional writes in f01; never-overwrite artifacts in S5)."
+      ]
+    },
+    "classifyxf07": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-07: restart with HOLD present",
+      "verdict": "INAPPLICABLE",
+      "evidence": [
+        "INAPPLICABLE  the classifier persists nothing, so a restart cannot change its behavior; HOLD survival is a store property (f01) / index property (S5), not a decision-function property.",
+        "GAP-NAMED  projectMission is fail-closed on f01's 'hold' status: \"projectMission: unmapped status 'hold' (fail-closed)\". The classifier knows NEEDS_RECONCILIATION but not the 'hold' row status - the two vocabularies are not yet aligned at the projection seam."
+      ]
+    },
+    "classifyxf08": {
+      "implementation": "classifyUnknownExecution (pure decision function)",
+      "fixture": "fixture-08: reconciliation crash",
+      "verdict": "CORRECT",
+      "evidence": [
+        "OK   same evidence -> same directive on re-run (crash-safe re-classification)",
+        "OK   UNKNOWN_EXECUTION may only enter NEEDS_RECONCILIATION (no limbo claimable state)",
+        "OK   no shortcut edges UNKNOWN_EXECUTION -> SUCCEEDED / PENDING (chain shape enforced)",
+        "OK   RETRY_ATTEMPT_WITH_LINEAGE arm: NEEDS_RECONCILIATION -> RUNNING is legal",
+        "NOTE  the classifier commits nothing: atomicity of the terminal transition and append-only evidence notes are caller/store properties (f01 reconcileHold WHERE-status conditional; S5 append-only index). Its crash-safety contribution is decision totality + determinism."
+      ]
+    }
+  },
+  "matrix": {
+    "f01": {
+      "f01": "CORRECT",
+      "f02": "CORRECT",
+      "f03": "CORRECT",
+      "f04": "CORRECT",
+      "f05": "CORRECT",
+      "f06": "INCORRECT",
+      "f07": "CORRECT",
+      "f08": "CORRECT"
+    },
+    "s5": {
+      "f01": "CORRECT",
+      "f02": "CORRECT",
+      "f03": "CORRECT",
+      "f04": "CORRECT",
+      "f05": "CORRECT",
+      "f06": "CORRECT",
+      "f07": "CORRECT",
+      "f08": "CORRECT"
+    },
+    "classify": {
+      "f01": "CORRECT",
+      "f02": "CORRECT",
+      "f03": "CORRECT",
+      "f04": "CORRECT",
+      "f05": "INAPPLICABLE",
+      "f06": "INAPPLICABLE",
+      "f07": "INAPPLICABLE",
+      "f08": "CORRECT"
+    }
+  }
+}

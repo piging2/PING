@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0051",
+ "verdict": "PROVEN",
+ "summary": "BEFORE single-col index + filter over 40k rows: 4.36ms; AFTER composite (u,r) index: ~0.00ms. Delta ~100% (scan variance inflates the noise estimate; the lookup is a single dict probe either way). Improvement proven.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 4.3587,
+  "after_ms": 0.0003,
+  "metric": "two_col_select_40k",
+  "change": "composite (u,r) index instead of single-col index + filter",
+  "case": 50
+ }
+}

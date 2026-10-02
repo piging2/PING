@@ -1,0 +1,18 @@
+## fleet-po-1 night shift — 850 missions drained, 850 PROVEN
+- perfops 0001-0050: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0051-0100: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0101-0150: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0151-0200: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0201-0250: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0251-0300: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0301-0350: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0351-0400: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0401-0450: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0451-0500: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0501-0550: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0551-0600: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0601-0650: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0651-0700: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0701-0750: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0751-0800: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}
+- perfops 0801-0850: 50 missions, verdicts={'PROVEN': 50, 'REJECTED': 0, 'ADAPT': 0, 'NEEDS-FOLLOWUP': 0, 'N-A': 0}

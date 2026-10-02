@@ -1,0 +1,642 @@
+[
+ {
+  "case": 50,
+  "mission_no": 451,
+  "slug": "og-basic",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "basic OG tags recorded as claimed metadata",
+  "checks": {
+   "meta_present": {
+    "og:title": "Acme",
+    "og:type": "website"
+   }
+  }
+ },
+ {
+  "case": 51,
+  "mission_no": 452,
+  "slug": "og-title-vs-title",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "og:title vs <title> kept separate, no merge",
+  "checks": {
+   "flags": [
+    "title_conflict"
+   ],
+   "meta_present": {
+    "og:title": "OG Title"
+   }
+  }
+ },
+ {
+  "case": 52,
+  "mission_no": 453,
+  "slug": "triple-title-conflict",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "three title variants: separate provenance each",
+  "checks": {
+   "flags": [
+    "title_conflict"
+   ]
+  }
+ },
+ {
+  "case": 53,
+  "mission_no": 454,
+  "slug": "og-image-absolute",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "absolute og:image recorded as untrusted ref, never fetched",
+  "checks": {
+   "flags": [
+    "untrusted_ref"
+   ],
+   "meta_present": {
+    "og:image": "https://acme.example/i.jpg"
+   }
+  }
+ },
+ {
+  "case": 54,
+  "mission_no": 455,
+  "slug": "og-image-relative",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative og:image -> unresolved_ref",
+  "checks": {
+   "flags": [
+    "unresolved_ref"
+   ]
+  }
+ },
+ {
+  "case": 55,
+  "mission_no": 456,
+  "slug": "og-image-javascript",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: og:image dropped per scheme allowlist",
+  "checks": {
+   "flags": [
+    "scheme_dropped"
+   ],
+   "meta_absent": [
+    "og:image"
+   ]
+  }
+ },
+ {
+  "case": 56,
+  "mission_no": 457,
+  "slug": "og-image-data",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data: og:image dropped (no inline payload promotion)",
+  "checks": {
+   "flags": [
+    "scheme_dropped"
+   ],
+   "meta_absent": [
+    "og:image"
+   ]
+  }
+ },
+ {
+  "case": 57,
+  "mission_no": 458,
+  "slug": "og-image-multi",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two og:images both kept with dup flag",
+  "checks": {
+   "flags": [
+    "dup_meta"
+   ]
+  }
+ },
+ {
+  "case": 58,
+  "mission_no": 459,
+  "slug": "og-image-width-nonnumeric",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "non-numeric width verbatim with flag",
+  "checks": {
+   "flags": [
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 59,
+  "mission_no": 460,
+  "slug": "og-locale-vs-htmllang",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "og:locale vs html lang kept separate",
+  "checks": {
+   "flags": [
+    "locale_conflict"
+   ]
+  }
+ },
+ {
+  "case": 60,
+  "mission_no": 461,
+  "slug": "og-desc-markup",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "markup inside og:description stays inert string",
+  "checks": {
+   "flags": [
+    "markup_in_meta"
+   ]
+  }
+ },
+ {
+  "case": 61,
+  "mission_no": 462,
+  "slug": "dc-title",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "Dublin Core recorded verbatim",
+  "checks": {
+   "meta_present": {
+    "dc.title": "DC Title"
+   }
+  }
+ },
+ {
+  "case": 62,
+  "mission_no": 463,
+  "slug": "meta-refresh-js",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: refresh target dropped, refresh recorded not followed",
+  "checks": {
+   "flags": [
+    "hostile_refresh_dropped",
+    "meta_refresh_recorded_not_followed"
+   ]
+  }
+ },
+ {
+  "case": 63,
+  "mission_no": 464,
+  "slug": "meta-robots-noindex",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "robots noindex recorded as policy signal, not a content fact",
+  "checks": {
+   "flags": [
+    "policy_noindex"
+   ]
+  }
+ },
+ {
+  "case": 64,
+  "mission_no": 465,
+  "slug": "canonical-signal",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "canonical recorded as signal, never as authority",
+  "checks": {
+   "flags": [
+    "canonical_signal_not_authority"
+   ]
+  }
+ },
+ {
+  "case": 65,
+  "mission_no": 466,
+  "slug": "charset-conflict",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "conflicting charset declarations kept separate with flag",
+  "checks": {
+   "flags": [
+    "charset_conflict"
+   ]
+  }
+ },
+ {
+  "case": 66,
+  "mission_no": 467,
+  "slug": "theme-color-bad",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "invalid theme-color verbatim with flag",
+  "checks": {
+   "flags": [
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 67,
+  "mission_no": 468,
+  "slug": "viewport-weird",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "viewport verbatim, never interpreted",
+  "checks": {
+   "meta_present": {
+    "viewport": "width=99999, initial-scale=abc"
+   }
+  }
+ },
+ {
+  "case": 68,
+  "mission_no": 469,
+  "slug": "generator-claim",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "generator recorded as CLAIMED, never trusted as fact",
+  "checks": {
+   "flags": [
+    "claimed_not_verified"
+   ]
+  }
+ },
+ {
+  "case": 69,
+  "mission_no": 470,
+  "slug": "geo-position",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "geo.position/ICBM verbatim; never parsed to coordinates",
+  "checks": {
+   "flags": [
+    "geo_unparsed"
+   ]
+  }
+ },
+ {
+  "case": 70,
+  "mission_no": 471,
+  "slug": "revisit-after",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "revisit-after verbatim",
+  "checks": {}
+ },
+ {
+  "case": 71,
+  "mission_no": 472,
+  "slug": "rating-meta",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "rating meta verbatim",
+  "checks": {}
+ },
+ {
+  "case": 72,
+  "mission_no": 473,
+  "slug": "product-price-free",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "price 'free' verbatim, never coerced to 0",
+  "checks": {
+   "meta_present": {
+    "product:price:amount": "free"
+   }
+  }
+ },
+ {
+  "case": 73,
+  "mission_no": 474,
+  "slug": "og-type-mismatch",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "og:type verbatim even if mismatched to business page",
+  "checks": {}
+ },
+ {
+  "case": 74,
+  "mission_no": 475,
+  "slug": "empty-content",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "empty content recorded as empty, not dropped silently",
+  "checks": {
+   "meta_present": {
+    "description": ""
+   }
+  }
+ },
+ {
+  "case": 75,
+  "mission_no": 476,
+  "slug": "whitespace-content",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "whitespace-only content flagged",
+  "checks": {
+   "flags": [
+    "whitespace_value"
+   ]
+  }
+ },
+ {
+  "case": 76,
+  "mission_no": 477,
+  "slug": "case-variant-keys",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "case variants matched case-insensitively, original case recorded, dup flagged",
+  "checks": {
+   "flags": [
+    "dup_meta"
+   ]
+  }
+ },
+ {
+  "case": 77,
+  "mission_no": 478,
+  "slug": "property-vs-name",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "property/name variants both recorded with variant flag",
+  "checks": {
+   "flags": [
+    "attr_variant"
+   ]
+  }
+ },
+ {
+  "case": 78,
+  "mission_no": 479,
+  "slug": "anonymous-meta",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "meta with no name/property recorded as anonymous, not dropped",
+  "checks": {
+   "flags": [
+    "anonymous_meta"
+   ]
+  }
+ },
+ {
+  "case": 79,
+  "mission_no": 480,
+  "slug": "two-titles",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two <title>: first wins per spec, dup flagged",
+  "checks": {
+   "flags": [
+    "dup_title"
+   ]
+  }
+ },
+ {
+  "case": 80,
+  "mission_no": 481,
+  "slug": "title-empty",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "empty title -> legitimate empty, not a failure",
+  "checks": {}
+ },
+ {
+  "case": 81,
+  "mission_no": 482,
+  "slug": "desc-5k",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5KB description truncated at value cap with flag",
+  "checks": {
+   "flags": [
+    "value_truncated"
+   ]
+  }
+ },
+ {
+  "case": 82,
+  "mission_no": 483,
+  "slug": "meta-bomb-600",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "600 metas capped at 500 with flag",
+  "checks": {
+   "flags": [
+    "truncated_meta"
+   ]
+  }
+ },
+ {
+  "case": 83,
+  "mission_no": 484,
+  "slug": "article-tags-300",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "300 article:tags kept with count note (multi-values preserved)",
+  "checks": {
+   "flags": [
+    "multi_count=300"
+   ]
+  }
+ },
+ {
+  "case": 84,
+  "mission_no": 485,
+  "slug": "article-time-words",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "published_time verbatim, never parsed to datetime",
+  "checks": {
+   "flags": [
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 85,
+  "mission_no": 486,
+  "slug": "og-seealso-js",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: see_also dropped",
+  "checks": {
+   "flags": [
+    "scheme_dropped"
+   ],
+   "meta_absent": [
+    "og:see_also"
+   ]
+  }
+ },
+ {
+  "case": 86,
+  "mission_no": 487,
+  "slug": "twitter-image-http",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "http (non-https) image URL verbatim with insecure-scheme flag",
+  "checks": {
+   "flags": [
+    "insecure_scheme"
+   ]
+  }
+ },
+ {
+  "case": 87,
+  "mission_no": 488,
+  "slug": "fb-app-id",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "fb:app_id verbatim",
+  "checks": {}
+ },
+ {
+  "case": 88,
+  "mission_no": 489,
+  "slug": "al-ios-deeplink",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "app deep link recorded as untrusted ref, never followed",
+  "checks": {
+   "flags": [
+    "untrusted_ref"
+   ]
+  }
+ },
+ {
+  "case": 89,
+  "mission_no": 490,
+  "slug": "book-author-array",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two book:authors kept",
+  "checks": {
+   "flags": [
+    "dup_meta"
+   ]
+  }
+ },
+ {
+  "case": 90,
+  "mission_no": 491,
+  "slug": "profile-name-vs-og",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "profile name vs og:title kept separate",
+  "checks": {}
+ },
+ {
+  "case": 91,
+  "mission_no": 492,
+  "slug": "og-determiner",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "determiner verbatim",
+  "checks": {}
+ },
+ {
+  "case": 92,
+  "mission_no": 493,
+  "slug": "icon-data-url",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data: icon href dropped per scheme policy",
+  "checks": {
+   "flags": [
+    "scheme_dropped"
+   ]
+  }
+ },
+ {
+  "case": 93,
+  "mission_no": 494,
+  "slug": "alternate-hreflang",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "hreflang alternate recorded as untrusted ref",
+  "checks": {
+   "flags": [
+    "untrusted_ref"
+   ]
+  }
+ },
+ {
+  "case": 94,
+  "mission_no": 495,
+  "slug": "base-href",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "base href recorded as untrusted",
+  "checks": {
+   "flags": [
+    "base_href_recorded_untrusted"
+   ]
+  }
+ },
+ {
+  "case": 95,
+  "mission_no": 496,
+  "slug": "og-audio-spotify",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "og:audio URL recorded untrusted, never fetched",
+  "checks": {
+   "flags": [
+    "untrusted_ref"
+   ]
+  }
+ },
+ {
+  "case": 96,
+  "mission_no": 497,
+  "slug": "og-video-insecure",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "video + secure_url both recorded verbatim",
+  "checks": {
+   "flags": [
+    "insecure_scheme"
+   ]
+  }
+ },
+ {
+  "case": 97,
+  "mission_no": 498,
+  "slug": "music-namespace",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "music namespace verbatim",
+  "checks": {}
+ },
+ {
+  "case": 98,
+  "mission_no": 499,
+  "slug": "place-location",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "place coordinates verbatim strings, never parsed to floats",
+  "checks": {
+   "flags": [
+    "geo_unparsed"
+   ]
+  }
+ },
+ {
+  "case": 99,
+  "mission_no": 500,
+  "slug": "all-conflicts-together",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "four title variants: all separate, conflict flagged, no canonical pick",
+  "checks": {
+   "flags": [
+    "title_conflict"
+   ],
+   "meta_present": {
+    "og:title": "OG",
+    "twitter:title": "TW",
+    "dc.title": "DC"
+   }
+  }
+ }
+]

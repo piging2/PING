@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0061",
+ "verdict": "REJECTED",
+ "summary": "BEFORE serial 16x ~3ms CPU-bound units: 172.62ms; AFTER 2-thread pool: 229.08ms \u2014 slower (within noise, but never faster across repeats). CPython threads cannot parallelize CPU-bound work (GIL); thread-pool dispatch is pure overhead here. Claim false for CPU-bound Python; see BAC-0096 for the process-pool variant.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 172.6231,
+  "after_ms": 229.0803,
+  "metric": "16_cpu_bound_units_2_workers",
+  "change": "2-worker thread pool on ~3ms CPU-bound units instead of serial",
+  "case": 60
+ }
+}

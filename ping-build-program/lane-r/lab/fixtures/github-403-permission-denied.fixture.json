@@ -1,0 +1,75 @@
+{
+  "capture": {
+    "incidentRef": "lane-k-appendix-a-2",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling lane-K Appendix A scenario 2",
+    "sourceDigest": "sha256:59e3d398054061d6f7e56869446fb600d97952854b2e17bd3ca0ffa7818fe8ac"
+  },
+  "connectorShape": "poll",
+  "expect": {
+    "failureCodes": [
+      "PERMISSION_DENIED"
+    ],
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 0,
+    "terminalState": "FAILED",
+    "uniqueRecords": 0
+  },
+  "fixtureId": "github-403-permission-denied",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T20:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T20:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 105,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer <redacted> never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "issues",
+      "kind": "request",
+      "note": "same status, opposite meaning from fixture A: the quota header disambiguates; no retry",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues"
+      },
+      "response": {
+        "body": {
+          "message": "Resource not accessible by integration"
+        },
+        "headers": {
+          "x-ratelimit-remaining": "59"
+        },
+        "latencyMs": 40,
+        "status": 403
+      }
+    }
+  ],
+  "title": "CONTROL: GitHub 403 with quota remaining and 'Resource not accessible by integration' stays PERMISSION_DENIED (lane K scenario 2)"
+}

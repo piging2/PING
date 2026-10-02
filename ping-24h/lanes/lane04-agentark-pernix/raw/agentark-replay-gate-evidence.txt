@@ -1,0 +1,52 @@
+### agentark: replay_gate.rs header (evidence-only)
+//! Automatic replay/evidence gate for reviewable Evolve candidates.
+//!
+//! This gate deliberately relies on structured runtime evidence instead of user
+//! phrasing: candidate type, evidence references, run outcome state, correction
+//! state, procedural-pattern counters, memory-item counters, and privacy
+//! redaction results.
+
+use anyhow::Result;
+use serde::Serialize;
+use serde_json::Value;
+
+### agentark: replay thresholds
+const DEFAULT_MIN_EVIDENCE_SAMPLES: usize = 2;
+const DEFAULT_MIN_CONFIDENCE: f64 = 0.35;
+const DEFAULT_MAX_CORRECTION_RATE: f64 = 0.45;
+
+### agentark: skill_patch hard block
+        "skill_patch" => gate_result(
+            candidate,
+            evidence,
+            confidence,
+            "blocked",
+            false,
+            "Evolve learning does not create or modify skills".to_string(),
+        ),
+
+### agentark: secrets excluded from learning evidence
+    let Some(request) = run.request_text.as_deref() else {
+        return true;
+    };
+    let secret_redaction = crate::security::redact_secret_input(request);
+    if secret_redaction.had_secret() {
+        return false;
+    }
+    if crate::security::redact_pii(&secret_redaction.text) != secret_redaction.text {
+        evidence.pii_redacted_runs += 1;
+    }
+    true
+
+### agentark: accepted-success requirement
+    if evidence.successes == 0 {
+        return gate_result(
+            candidate,
+            evidence,
+            confidence,
+            "blocked",
+            false,
+            "structured evidence has no accepted successful run".to_string(),
+        );
+    }
+    gate_result(

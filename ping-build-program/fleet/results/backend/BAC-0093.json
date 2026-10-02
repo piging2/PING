@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0093",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE unbounded reuse vs AFTER max-age recycle (25 uses): stale_uses_before=0 and recycles_after=0 \u2014 60 tasks over 3 pages never hit the 25-use threshold, so neither staleness nor recycling was exercised. Scenario flaw.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun with 120 tasks to cross the recycle threshold and measure stale-page incidents vs recycle cost.",
+ "numbers": {
+  "before_ms": 0.0088,
+  "after_ms": 0.0089,
+  "metric": "60_tasks_recycle",
+  "change": "max-age recycle (25 uses) instead of unbounded page reuse (simulated)",
+  "case": 92,
+  "extra": {
+   "stale_uses_before": 0,
+   "recycles_after": 0,
+   "note": "correctness/freshness claim; time parity"
+  }
+ }
+}

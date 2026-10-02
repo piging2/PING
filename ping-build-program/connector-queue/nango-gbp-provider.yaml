@@ -1,0 +1,68 @@
+# Nango provider YAML: Google Business Profile
+#
+# Drop-in addition for packages/providers/providers.yaml in the Nango repo.
+# The Nango catalog (verified 2026-09-23, 1,015 entries) has NO
+# google-business-profile provider, so GBP must be added as YAML config.
+# No secrets live in this file: the OAuth client id/secret are registered
+# as the provider CONFIG in the Nango dashboard/server after this entry
+# is added. Placeholders for those are marked <PLACEHOLDER> below.
+#
+# GBP API approval gate (lane-conn/MORNING-QUEUE.md): Google Business
+# Profile APIs grant 0 QPM until the "Application for Basic API Access"
+# is approved. Nango-side, this means: configure the provider, run the
+# connect flow, but expect DISABLED/AUTH health until Google approves.
+#
+# Reviews-leg caveat: the reviews list endpoint is a producer-restricted
+# legacy surface (observed 403 SERVICE_DISABLED even on approved
+# projects). The connector degrades the reviews leg to UNKNOWN while
+# locations keep working. Not a YAML problem; handled in the adapter.
+google-business-profile:
+    display_name: Google Business Profile
+    categories:
+        - marketing
+        - productivity
+        - social
+    auth_mode: OAUTH2
+    authorization_url: https://accounts.google.com/o/oauth2/v2/auth
+    token_url: https://oauth2.googleapis.com/token
+    authorization_params:
+        response_type: code
+        access_type: offline
+        prompt: consent
+        # Smallest permission set for the demonstrated feature:
+        # read locations + read reviews. No write scopes, no speculative scopes.
+        scope: https://www.googleapis.com/auth/business.manage
+    proxy:
+        # Primary read surface: locations (Business Information API).
+        # Other legs via base_url_override at call time:
+        #   - accounts: https://mybusinessaccountmanagement.googleapis.com
+        #   - reviews (legacy, producer-restricted): https://mybusiness.googleapis.com
+        base_url: https://mybusinessbusinessinformation.googleapis.com
+        paginate:
+            type: cursor
+            cursor_path_in_response: nextPageToken
+            limit_name_in_request: pageSize
+            cursor_name_in_request: pageToken
+            response_path: locations
+    docs: https://nango.dev/docs/integrations/all/google-business-profile
+    setup_guide_url: https://nango.dev/docs/api-integrations/google/how-to-register-your-own-google-api-oauth-app
+#
+# --- Provider config registration (Nango dashboard / server, NOT this file) ---
+# provider_config_key: <PLACEHOLDER e.g. google-business-profile-ping>
+# client_id:           <PLACEHOLDER: Nolan's Google OAuth client id, from console.cloud.google.com>
+# client_secret:       <PLACEHOLDER: Nolan's Google OAuth client secret; entered in the Nango dashboard only>
+# scopes at connect:   https://www.googleapis.com/auth/business.manage (passed at connect time;
+#                      must match authorization_params.scope above)
+# PKCE:                yes (S256), handled by Nango's OAuth2 flow for this entry
+#
+# --- PING wrapper rules that apply to this provider (lane-bcq/NANGO-EVAL.md) ---
+# 1. Agents receive only the PING-issued opaque cap_ handle; the Nango
+#    connectionId is never canonical and never leaves the wrapper.
+# 2. Runtime API key scopes: environment:proxy, environment:connections:list,
+#    environment:connections:read, environment:connect_sessions:write.
+#    NEVER environment:connections:read_credentials at runtime.
+# 3. read() validates path against the connector's endpoint allowlist;
+#    base_url_override is disabled outside the allowlist above.
+# 4. health() reads the connection row (last_refresh_failure,
+#    refresh_exhausted, credentials_expires_at); proxy 500s collapse to
+#    server_error and are NOT trusted for typed health.

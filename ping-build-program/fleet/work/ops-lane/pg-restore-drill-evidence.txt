@@ -1,0 +1,17 @@
+drill dump: ping-postgres-20260924T114327Z.dump size=448103
+=== live digests (baseline) ===
+live ping_events md5=4dda4ebebb77e82008317d31403f3b54 missions=483 knowledge_nodes=202
+=== start isolated drill container ===
+drill container ready in 3s
+=== restore (timed) ===
+restore_exit=0
+restore took 0s
+=== verify ===
+drill ping_events md5=4dda4ebebb77e82008317d31403f3b54 missions=483 knowledge_nodes=202
+table-count sweep done
+RTO components: container_ready=1790250270s restore=1790250270s verify=1790250274s (epoch deltas below)
+T_START=1790250267 T_READY=1790250270 T_R0=1790250270 T_R1=1790250270 T_VERIFY=1790250274
+DRILL RESULT: RESTORE VERIFIED - content identical
+=== destroy drill ===
+drill container gone
+drill volume gone

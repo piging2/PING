@@ -1,0 +1,162 @@
+{
+  "capture": {
+    "incidentRef": null,
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling provider redelivery (at-least-once webhook semantics)",
+    "sourceDigest": "sha256:7b1b15b869139e0036f0d8d6bd668f79b303717dd9e56a2cc598ac6b5046dce4"
+  },
+  "connectorShape": "webhook-push",
+  "expect": {
+    "duplicatesAbsorbed": 2,
+    "failureCodes": [],
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 3,
+    "signatureFailures": 0,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 3
+  },
+  "fixtureId": "webhook-duplicate-delivery",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T19:00:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T19:00:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 11,
+    "strictOrder": false
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "replaced-with-ref",
+        "note": "signing secret never stored; the transport derives deterministic HMACs from a fixture-local key at replay time",
+        "path": "steps[*].delivery.headers.x-hub-signature-256"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "webhook-push",
+  "steps": [
+    {
+      "delivery": {
+        "body": {
+          "action": "opened",
+          "issue": {
+            "id": 201,
+            "title": "Emergency: burst pipe"
+          }
+        },
+        "deliveryId": "wh_001",
+        "eventId": "evt_aaa111",
+        "eventType": "issues.opened",
+        "headers": {
+          "x-hub-signature-256": "valid"
+        },
+        "latencyMs": 12,
+        "signature": "valid"
+      },
+      "id": "evt-1a",
+      "kind": "webhook-delivery",
+      "note": "first delivery of evt_aaa111: accepted, one knowledge unit"
+    },
+    {
+      "delivery": {
+        "body": {
+          "action": "opened",
+          "issue": {
+            "id": 201,
+            "title": "Emergency: burst pipe"
+          }
+        },
+        "deliveryId": "wh_002",
+        "eventId": "evt_aaa111",
+        "eventType": "issues.opened",
+        "headers": {
+          "x-hub-signature-256": "valid"
+        },
+        "latencyMs": 9,
+        "signature": "valid"
+      },
+      "id": "evt-1b",
+      "kind": "webhook-delivery",
+      "note": "provider redelivery of evt_aaa111 (at-least-once): absorbed, no second knowledge unit"
+    },
+    {
+      "delivery": {
+        "body": {
+          "action": "labeled",
+          "issue": {
+            "id": 202,
+            "title": "Quote request: water heater"
+          }
+        },
+        "deliveryId": "wh_003",
+        "eventId": "evt_bbb222",
+        "eventType": "issues.labeled",
+        "headers": {
+          "x-hub-signature-256": "valid"
+        },
+        "latencyMs": 14,
+        "signature": "valid"
+      },
+      "id": "evt-2",
+      "kind": "webhook-delivery",
+      "note": "distinct event: accepted, one knowledge unit"
+    },
+    {
+      "delivery": {
+        "body": {
+          "action": "labeled",
+          "issue": {
+            "id": 202,
+            "title": "Quote request: water heater"
+          }
+        },
+        "deliveryId": "wh_004",
+        "eventId": "evt_bbb222",
+        "eventType": "issues.labeled",
+        "headers": {
+          "x-hub-signature-256": "valid"
+        },
+        "latencyMs": 8,
+        "signature": "valid"
+      },
+      "id": "evt-2b",
+      "kind": "webhook-delivery",
+      "note": "provider redelivery of evt_bbb222: absorbed"
+    },
+    {
+      "delivery": {
+        "body": {
+          "action": "closed",
+          "issue": {
+            "id": 203,
+            "title": "Drain cleaning done"
+          }
+        },
+        "deliveryId": "wh_005",
+        "eventId": "evt_ccc333",
+        "eventType": "issues.closed",
+        "headers": {
+          "x-hub-signature-256": "valid"
+        },
+        "latencyMs": 11,
+        "signature": "valid"
+      },
+      "id": "evt-3",
+      "kind": "webhook-delivery",
+      "note": "distinct event: accepted, one knowledge unit"
+    }
+  ],
+  "title": "Webhook duplicate delivery: same event redelivered (at-least-once provider) must be absorbed by idempotency key, never double-counted"
+}

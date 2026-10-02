@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0101",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE 1500_similar_docs: 219.941ms; AFTER shared preset-dictionary compression vs independent per-doc zlib: 281.741ms. Delta +28.1%. dictionary-cost emulation subtracted a flat 12 bytes/doc and ran 28% slower; the measurement does not isolate true dictionary gain. Rerun with a real preset-dictionary codec.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "rerun with a real preset-dictionary codec to isolate true dictionary gain",
+ "numbers": {
+  "before_ms": 219.941,
+  "after_ms": 281.741,
+  "metric": "1500_similar_docs",
+  "change": "shared preset-dictionary compression vs independent per-doc zlib",
+  "case": 100
+ }
+}

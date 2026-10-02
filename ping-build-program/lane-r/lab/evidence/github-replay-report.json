@@ -1,0 +1,86 @@
+{
+  "connector": {
+    "connectorId": "github",
+    "version": "0.1.0-lab",
+    "provider": "github.com"
+  },
+  "spec": {
+    "connectorId": "github",
+    "version": "0.1.0-lab",
+    "capabilities": [
+      {
+        "verb": "read",
+        "object": "issue",
+        "scope": "repo"
+      }
+    ],
+    "configSchema": {
+      "owner": "string",
+      "repo": "string",
+      "credentialRef": "pingsec-handle (lane-L broker; never a token value)"
+    }
+  },
+  "check": {
+    "ok": true,
+    "probeStatus": 200
+  },
+  "streams": [
+    "issues"
+  ],
+  "verdict": "PASS",
+  "failures": [],
+  "report": {
+    "fixtureId": "github-issues-paginated",
+    "fixtureVersion": 1,
+    "taxonomyVersion": "lane-k-v1-2026-09-23",
+    "recordsEmitted": 7,
+    "uniqueRecords": 7,
+    "duplicatesAbsorbed": 0,
+    "quarantined": 0,
+    "attempts": [
+      {
+        "step": "/repos/acme/widgets/issues?state=open&per_page=3&page=1",
+        "attempt": 1,
+        "status": 200,
+        "failureCode": null,
+        "waitedMs": 0
+      },
+      {
+        "step": "/repos/acme/widgets/issues?state=open&per_page=3&page=2",
+        "attempt": 1,
+        "status": 200,
+        "failureCode": null,
+        "waitedMs": 0
+      },
+      {
+        "step": "/repos/acme/widgets/issues?state=open&per_page=3&page=3",
+        "attempt": 1,
+        "status": 200,
+        "failureCode": null,
+        "waitedMs": 0
+      }
+    ],
+    "failureCodes": [],
+    "checkpoints": [
+      "page-1",
+      "page-2",
+      "page-3"
+    ],
+    "terminalState": "SUCCEEDED",
+    "fullResync": false,
+    "retryAfterHonored": false,
+    "signatureFailures": 0,
+    "schemaViolationsQuarantined": 0,
+    "idempotencyKeys": [
+      "31160c011758cdc300bae39733c89582b9f2d315bf1745b508b0600bf0186972",
+      "6f6426c30eb155b18abc81323bf538a911d9c9cfff5287cfab22d4133246afc1",
+      "d7ed5926a042d53c05f2a8d522a47d1d95304e7ccf41997ba9ccacc666839b79",
+      "10db83095abd354e55b6b1df096d5b0f8f1d3d56be67913e216eb7664de01555",
+      "81b2845a93890d1552b2623ebdde5fa804b032df9dcbd191c2804be1a88e3ce7",
+      "2375eb11dcede02999d43b4edeefb6baf2283cbd05e940990feed865ab9fbe0d",
+      "106b8c773a36ee3b27d72b377afaa8fb17a301c0870868dec92ea96d810c5870"
+    ],
+    "virtualMs": 370,
+    "quarantine": []
+  }
+}

@@ -1,0 +1,34 @@
+=== :3100 PROCESS ===
+nolan    23045  0.0  0.0   2880  1964 ?        S    06:18   0:00 sh -c next start -p 3100
+nolan    23046  0.0  0.8 35877648 283024 ?     Sl   06:18   0:18 next-server (v15.5.24)
+--- which dir / uptime ---
+  PID     ELAPSED COMMAND
+19311    08:15:15 node server.mjs
+=== :3100 HTTP PROBES (read-only) ===
+/api/health -> 200
+/health -> 404
+/api/mc/health -> 404
+/api/version -> 404
+/api/ping/version -> 404
+=== docker ps ===
+NAMES            IMAGE                                STATUS
+ping-gateway     ping-gateway:repair-cert-20260924    Up 34 minutes
+ping-postgres    postgres:15-alpine                   Up 8 hours
+ping-qdrant      qdrant/qdrant:latest                 Up 8 hours (healthy)
+ping-redis       redis:alpine                         Up 8 hours (healthy)
+ping-vault       hashicorp/vault:latest               Up 8 hours (unhealthy)
+ollama           ollama/ollama                        Up 8 hours
+brain-postgres   postgres:15-alpine                   Up 8 hours
+brain-qdrant     qdrant/qdrant:latest                 Up 8 hours
+open-webui       ghcr.io/open-webui/open-webui:main   Up 8 hours (healthy)
+=== GATEWAY EVENTS TAIL ===
+-rw-rw---- 1 nolan nolan 125595 Sep 27 20:44 /home/nolan/workspace/fyd-journal-gateway/events.jsonl
+{"event_id":"mc-d-126a2ea0e2a8","timestamp":"2026-09-28T02:44:47.172Z","event_type":"MC_ARTIFACT_PUBLISHED","aggregate_id":"mc:mission:mc-m-3a0f2fdc3330","aggregate_type":"mc_mission","event_data":{"mission_id":"mc-m-3a0f2fdc3330","backfill":false,"source_timestamp":"2026-09-28T02:44:47.172Z","observation_timestamp":"2026-09-28T02:44:47.172Z","import_timestamp":"2026-09-28T02:44:47.172Z","summary"
+{"event_id":"mc-d-5170daa250ba","timestamp":"2026-09-28T02:44:47.738Z","event_type":"MC_ARTIFACT_PUBLISHED","aggregate_id":"mc:mission:mc-m-3a0f2fdc3330","aggregate_type":"mc_mission","event_data":{"mission_id":"mc-m-3a0f2fdc3330","backfill":false,"source_timestamp":"2026-09-28T02:44:47.738Z","observation_timestamp":"2026-09-28T02:44:47.738Z","import_timestamp":"2026-09-28T02:44:47.738Z","summary"
+{"event_id":"mc-d-97d0ba78c8be","timestamp":"2026-09-28T02:44:47.739Z","event_type":"MC_RUN_SUCCEEDED","aggregate_id":"mc:mission:mc-m-3a0f2fdc3330","aggregate_type":"mc_mission","event_data":{"mission_id":"mc-m-3a0f2fdc3330","backfill":false,"source_timestamp":"2026-09-28T02:44:47.739Z","observation_timestamp":"2026-09-28T02:44:47.739Z","import_timestamp":"2026-09-28T02:44:47.739Z","summary":"run
+=== SECRET BROKER PRESENCE (files only, no secrets read) ===
+mc-dispatch-identity.ts
+mc-dispatch.ts
+mc-tenant-gate.ts
+/home/nolan/projects/ping/src/lib/secrets/__tests__/secret-broker.redteam.test.ts
+/home/nolan/projects/ping/src/lib/secrets/secret-broker.ts

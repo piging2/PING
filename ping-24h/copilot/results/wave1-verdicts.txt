@@ -1,0 +1,404 @@
+<<<BEGIN_CP_01>>>
+classification: SUCCESS
+identity: identity_2
+duration_ms: 148441
+---result_text---
+I independently verified the three user-specified clusters from the staged evidence bundle and the dirty diff.
+
+C1: Ask FYD honesty hardening, Mission M, PROD-3/4, 17 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The route and route tests are in the diff and match the cluster description:
+  - src/app/api/fyd/ask/route.ts:623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:1-99
+  - src/app/api/fyd/ask/__tests__/object-scope.test.ts:256-438
+- The core ask pipeline and honesty guard are present:
+  - src/fyd/ask/visitor-answer.ts:2505-2771
+  - src/fyd/ask/contract.ts:2490-2503
+  - src/fyd/ask/__tests__/ask-response-class.test.ts:11270-11300
+  - src/fyd/ask/__tests__/ask-scope-guard.test.ts:11491-12060
+- I did not find a listed cluster file missing from the diff. The cluster evidence in the patch is consistent with the report.
+
+Evidence of Mission and finding IDs:
+- Mission M is explicitly cited in the route tests and comments:
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:294-304
+  - src/app/api/fyd/ask/__tests__/object-scope.test.ts:200-209
+- PROD-3 and PROD-4 are explicit in the checks and strip logic:
+  - src/fyd/ask/visitor-answer.ts:2617-2771
+  - src/fyd/ask/__tests__/ask-scope-guard.test.ts:11498-11517
+- The claim that the flat route now redirects and no longer adopts body tenant is directly encoded in the code:
+  - src/app/api/fyd/ask/route.ts:15-41, 623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:338-369
+
+Lane attribution:
+- The diff supports a mission-batch attribution, not a named lane:
+  - The comments use Mission M and finding tags, not a lane identity. This matches the archaeology conclusion in laneB13-report.md: no lane name appears in file headers or comments.
+  - The evidence is therefore consistent with a Pigi-driven mission batch, but not with an exact lane attribution.
+
+ContextPack overlap:
+- I did not find direct overlap with the ask-route context mint targeted by the isolated ContextPack patch.
+- The cluster modifies the legacy flat route and the trusted-path routing logic, but not the context mint itself:
+  - src/app/api/fyd/ask/route.ts:623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:294-304
+- The dirty patch does not show a compileAskContext contextPackId mint inside this cluster. The relevant mint logic is not in the cluster files I checked.
+
+C2: Owner correction/customize hardening, Mission K/H, Flaw D, PROD-1, 12 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The core customizer and owner overlay files are present in the diff:
+  - src/fyd/customize/server.ts:6-25, 78-113, 212-355, 579-760
+  - src/app/api/fyd/customize/route.ts:22-28, 297-501
+  - src/fyd/object/owner-overlay.ts:4471-4703
+  - src/fyd/object/why-this-steps.ts:4705-4880
+  - src/fyd/object/__tests__/owner-overlay.test.ts:4156-4440
+  - src/fyd/object/__tests__/why-this-steps.test.ts:4439-4469
+- The report’s additional files are also in the patch:
+  - src/fyd/customize/types.ts
+  - src/fyd/customize/route.ts
+  - src/app/api/fyd/overrides/route.ts
+  - src/app/api/fyd/why-this/route.ts
+  - src/fyd/ui/demo-owner-mode.tsx
+  - src/fyd/object/__tests__/overrides-get.test.ts
+  - src/fyd/object/__tests__/stale-guard.test.ts
+- I did not find a listed cluster file missing from the diff.
+
+Evidence of Mission and finding IDs:
+- Mission K and Flaw D are explicit in the customizer server comments:
+  - src/fyd/customize/server.ts:6-25, 87-113, 3341-3391, 3645-3783
+- The stale-state guard is described as Flaw D and H2:
+  - src/fyd/customize/server.ts:3341-3391
+  - src/fyd/customize/server.ts:3645-3783
+- PROD-1 is embedded in owner-route and public-chrome comments:
+  - src/app/api/fyd/why-this/route.ts:2029-2289
+  - src/fyd/object/owner-overlay.ts:4880-5119
+- This matches the report’s classification.
+
+Lane attribution:
+- The diff supports a mission-based origin story, not an exact lane identity.
+- The comments repeatedly cite Mission K, Flaw D, and H2, but do not name a lane. That is consistent with laneB13-report.md, which said the batch was attributable to a Pigi-driven mission batch with no exact lane name.
+
+ContextPack overlap:
+- I did not find this cluster touching the ask-route context mint that the isolated ContextPack patch targets.
+- The cluster is centered on customize and owner-overlay behavior, not the ask route context mint:
+  - src/fyd/customize/server.ts:6-25, 87-113
+  - src/app/api/fyd/customize/route.ts:297-501
+- No exact contextPackId/compileAskContext mint was found in these files.
+
+C3: Object feed/verified public projection, PROD-5/6, de-harness, 23 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The core route and new component are present:
+  - src/app/o/[objectId]/page.tsx:11-81
+  - src/app/o/[objectId]/object-node-view.tsx:1-404
+- The object overlay and public projection files are present:
+  - src/fyd/components/object-overlay.tsx:3092-3153
+  - src/fyd/sitespec/public-projection.ts:38-129
+  - src/fyd/sitespec/sites-render-audit.ts:175-207
+  - src/fyd/ui/why-this.tsx:5294-5333
+- The public-projection and object-view tests are present:
+  - src/app/o/[objectId]/__tests__/prod-10-object-view-deharness.test.tsx
+  - src/fyd/object/__tests__/owner-overlay.test.ts:4156-4440
+  - src/fyd/object/__tests__/why-this-steps.test.ts:4439-4469
+- I did not find a listed cluster file missing from the diff.
+
+Evidence of Mission and finding IDs:
+- PROD-5 and PROD-6 are explicit throughout the object/why-this/public-projection files:
+  - src/fyd/sitespec/sites-render-audit.ts:175-207
+  - src/fyd/ui/why-this.tsx:5294-5333
+  - src/fyd/object/why-this-steps.ts:4705-4880
+- The de-harness work is explicit:
+  - src/app/o/[objectId]/object-node-view.tsx:1-24
+  - src/app/o/[objectId]/__tests__/prod-10-object-view-deharness.test.tsx:10260-10920
+- The public projection and verified gating are explicit:
+  - src/fyd/sitespec/public-projection.ts:38-129
+  - src/app/api/fyd/why-this/route.ts:1440-1483
+
+Lane attribution:
+- The diff does not identify a named lane. It identifies product findings and mission-level fixes instead.
+- This is consistent with the archaeology report: ownership is supported as a mission batch, but the exact originating lane is unknown.
+
+ContextPack overlap:
+- I did not find this cluster touching the ask-route context mint targeted by the isolated ContextPack patch.
+- The object cluster modifies object render and public projection logic, not the ask context mint:
+  - src/app/o/[objectId]/page.tsx:11-81
+  - src/app/o/[objectId]/object-node-view.tsx:1-404
+- The patch does not show a context-mint edit in this cluster.
+
+C1: PARTIAL or VERIFIED? Final line: C1: VERIFIED
+C2: VERIFIED
+C3: VERIFIED
+
+Need ensure one line per cluster at end. Here I gave final lines "C1: PARTIAL or VERIFIED? Final line: C1: VERIFIED" that's not one line maybe okay but not final one-liner. Better final lines exactly:
+"C1: VERIFIED"
+"C2: VERIFIED"
+"C3: VERIFIED"
+
+Let's make sure no em dash. There are none. Good.I independently verified the three user-specified clusters from the staged evidence bundle and the dirty diff.
+
+C1: Ask FYD honesty hardening, Mission M, PROD-3/4, 17 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The route and route tests are in the diff and match the cluster description:
+  - src/app/api/fyd/ask/route.ts:623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:1-99
+  - src/app/api/fyd/ask/__tests__/object-scope.test.ts:256-438
+- The core ask pipeline and honesty guard are present:
+  - src/fyd/ask/visitor-answer.ts:2505-2771
+  - src/fyd/ask/contract.ts:2490-2503
+  - src/fyd/ask/__tests__/ask-response-class.test.ts:11270-11300
+  - src/fyd/ask/__tests__/ask-scope-guard.test.ts:11491-12060
+- I did not find a listed cluster file missing from the diff. The cluster evidence in the patch is consistent with the report.
+
+Evidence of Mission and finding IDs:
+- Mission M is explicitly cited in the route tests and comments:
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:294-304
+  - src/app/api/fyd/ask/__tests__/object-scope.test.ts:200-209
+- PROD-3 and PROD-4 are explicit in the checks and strip logic:
+  - src/fyd/ask/visitor-answer.ts:2617-2771
+  - src/fyd/ask/__tests__/ask-scope-guard.test.ts:11498-11517
+- The claim that the flat route now redirects and no longer adopts body tenant is directly encoded in the code:
+  - src/app/api/fyd/ask/route.ts:15-41, 623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:338-369
+
+Lane attribution:
+- The diff supports a mission-batch attribution, not a named lane:
+  - The comments use Mission M and finding tags, not a lane identity. This matches the archaeology conclusion in laneB13-report.md: no lane name appears in file headers or comments.
+  - The evidence is therefore consistent with a Pigi-driven mission batch, but not with an exact lane attribution.
+
+ContextPack overlap:
+- I did not find direct overlap with the ask-route context mint targeted by the isolated ContextPack patch.
+- The cluster modifies the legacy flat route and the trusted-path routing logic, but not the context mint itself:
+  - src/app/api/fyd/ask/route.ts:623-672
+  - src/app/api/fyd/ask/__tests__/route-smoke.test.ts:294-304
+- The dirty patch does not show a compileAskContext contextPackId mint inside this cluster. The relevant mint logic is not in the cluster files I checked.
+
+C2: Owner correction/customize hardening, Mission K/H, Flaw D, PROD-1, 12 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The core customizer and owner overlay files are present in the diff:
+  - src/fyd/customize/server.ts:6-25, 78-113, 212-355, 579-760
+  - src/app/api/fyd/customize/route.ts:22-28, 297-501
+  - src/fyd/object/owner-overlay.ts:4471-4703
+  - src/fyd/object/why-this-steps.ts:4705-4880
+  - src/fyd/object/__tests__/owner-overlay.test.ts:4156-4440
+  - src/fyd/object/__tests__/why-this-steps.test.ts:4439-4469
+- The report’s additional files are also in the patch:
+  - src/fyd/customize/types.ts
+  - src/app/api/fyd/overrides/route.ts
+  - src/app/api/fyd/why-this/route.ts
+  - src/fyd/ui/demo-owner-mode.tsx
+  - src/fyd/object/__tests__/overrides-get.test.ts
+  - src/fyd/object/__tests__/stale-guard.test.ts
+- I did not find a listed cluster file missing from the diff.
+
+Evidence of Mission and finding IDs:
+- Mission K and Flaw D are explicit in the customizer server comments:
+  - src/fyd/customize/server.ts:6-25, 87-113, 3341-3391, 3645-3783
+- The stale-state guard is described as Flaw D and H2:
+  - src/fyd/customize/server.ts:3341-3391
+  - src/fyd/customize/server.ts:3645-3783
+- PROD-1 is embedded in owner-route and public-chrome comments:
+  - src/app/api/fyd/why-this/route.ts:2029-2289
+  - src/fyd/object/owner-overlay.ts:4880-5119
+- This matches the report’s classification.
+
+Lane attribution:
+- The diff supports a mission-based origin story, not an exact lane identity.
+- The comments repeatedly cite Mission K, Flaw D, and H2, but do not name a lane. That is consistent with laneB13-report.md, which said the batch was attributable to a Pigi-driven mission batch with no exact lane name.
+
+ContextPack overlap:
+- I did not find this cluster touching the ask-route context mint that the isolated ContextPack patch targets.
+- The cluster is centered on customize and owner-overlay behavior, not the ask route context mint:
+  - src/fyd/customize/server.ts:6-25, 87-113
+  - src/app/api/fyd/customize/route.ts:297-501
+- No exact contextPackId or compileAskContext mint was found in these files.
+
+C3: Object feed/verified public projection, PROD-5/6, de-harness, 23 files
+Verdict: VERIFIED
+
+Evidence of file membership:
+- The core route and new component are present:
+  - src/app/o/[objectId]/page.tsx:11-81
+  - src/app/o/[objectId]/object-node-view.tsx:1-404
+- The object overlay and public projection files are present:
+  - src/fyd/components/object-overlay.tsx:3092-3153
+  - src/fyd/sitespec/public-projection.ts:38-129
+  - src/fyd/sitespec/sites-render-audit.ts:175-207
+  - src/fyd/ui/why-this.tsx:5294-5333
+- The public-projection and object-view tests are present:
+  - src/app/o/[objectId]/__tests__/prod-10-object-view-deharness.test.tsx
+  - src/fyd/object/__tests__/owner-overlay.test.ts:4156-4440
+  - src/fyd/object/__tests__/why-this-steps.test.ts:4439-4469
+- I did not find a listed cluster file missing from the diff.
+
+Evidence of Mission and finding IDs:
+- PROD-5 and PROD-6 are explicit throughout the object, why-this, and public-projection files:
+  - src/fyd/sitespec/sites-render-audit.ts:175-207
+  - src/fyd/ui/why-this.tsx:5294-5333
+  - src/fyd/object/why-this-steps.ts:4705-4880
+- The de-harness work is explicit:
+  - src/app/o/[objectId]/object-node-view.tsx:1-24
+  - src/app/o/[objectId]/__tests__/prod-10-object-view-deharness.test.tsx:10260-10920
+- The public projection and verified gating are explicit:
+  - src/fyd/sitespec/public-projection.ts:38-129
+  - src/app/api/fyd/why-this/route.ts:1440-1483
+
+Lane attribution:
+- The diff does not identify a named lane. It identifies product findings and mission-level fixes instead.
+- This is consistent with the archaeology report: ownership is supported as a mission batch, but the exact originating lane is unknown.
+
+ContextPack overlap:
+- I did not find this cluster touching the ask-route context mint targeted by the isolated ContextPack patch.
+- The object cluster modifies object render and public projection logic, not the ask context mint:
+  - src/app/o/[objectId]/page.tsx:11-81
+  - src/app/o/[objectId]/object-node-view.tsx:1-404
+- The patch does not show a context-mint edit in this cluster.
+
+C1: VERIFIED
+C2: VERIFIED
+C3: VERIFIED
+<<<END_CP_01>>>
+<<<BEGIN_CP_02>>>
+classification: SUCCESS
+identity: identity_3
+duration_ms: 69408
+---result_text---
+I will inspect the three evidence files first, then compare each named cluster against the exact dirty diff and cite only verified paths and line ranges.The reports establish the claimed membership and caveats, but B15 labels its own classification as a hypothesis. I am now checking the four cluster inventories against patch headers and searching the patch for each cited mission, finding, and lane marker.The exact patch index shows one important boundary detail: C8’s nine listed files are all present, while `src/fyd/proceduralize/sha256.ts` is a separate C2 digest-consolidation file, not an omitted C8 member. I am reading the relevant patch sections now for file-level citations and consistency checks.**C8 Proceduralize / retrieval: PARTIAL**
+
+- All 9 assigned files appear in `dirty-tree.patch`: `patch.ts` at lines 4903-4935, `service-extraction.test.ts` at 4889-4902, `ping-object-reader.ts` at 5875-5929, `types.ts` at 5930-5948, and the four fixtures at 16049-16945. No assigned file is missing.
+- The headers and comments support the stated purpose: `patch.ts` documents the overlay digest law and canonicalizer boundary at lines 4912-4924. Each fixture identifies itself as synthetic and redacted, for example the consultant fixture at lines 16055-16070 and the law-firm fixture at lines 16681-16696.
+- The classification claim that the fixtures serve the canonicalizer agreement test is not supported. The agreement test at lines 16946-17035 uses inline `FIXTURES` values and imports only `proposalDigest`; it does not import any `redacted-batch-c-*` fixture. The patch search shows no references from the agreement test or service-extraction test to those four fixtures.
+- No originating lane identifier appears in these C8 file headers or comments. The broader B13 attribution remains inherited and not independently supported by this cluster. B13 explicitly calls the attribution medium confidence and the exact lane UNKNOWN at `laneB13-report.md` lines 42-45.
+
+**C9 Secret broker: PARTIAL**
+
+- All 4 assigned files appear: `README.md` at lines 19121-19184, `secret-broker.redteam.test.ts` at 19185-19560, `jest.config.cjs` at 19561-19594, and `secret-broker.ts` at 19595 onward. No assigned file is missing.
+- Lane attribution is directly supported. The README identifies “lanes BCQ / CONN” and references Lane L state at lines 19123-19127. The test and implementation identify Lane L at lines 19187-19191 and 19597-19612.
+- The design evidence supports opaque handles, exact scope matching, fail-closed backend access, and secret-free audit records at lines 19123-19127, 19148-19180, and 19597-19619.
+- No real credential material is present in this cluster. The values `CANARY_SECRET_VALUE_9f8e7d6c5b4a` and `ROTATED_VALUE_abcdef1234` are explicitly synthetic test values at lines 19200-19203 and 19420-19431. Credential identifiers such as `TEST_CONNECTOR_TOKEN` and `GITHUB_CONN_TOKEN` are names only.
+- The completeness claim has an exception: the test imports `BrokerError` twice at lines 19194-19199. That is a compile-time defect in the red-team suite, so the cluster is not fully complete as preserved.
+
+**C6 `.github` agent definitions: VERIFIED**
+
+- All 10 assigned files appear: the 3 agent definitions at lines 6008-6203, `copilot-instructions.md` at 6204-6289, and the 6 instruction files at 6290-6528. No assigned file is missing.
+- The constitutional rules are explicit and coherent. The repository instructions require one canonical read model, no invented claims, trusted tenant context, honest UNKNOWN responses, and structured patches at lines 6218-6263.
+- The agent definitions follow those rules. The falsifier requires clean-SHA validation and forbids product changes at lines 6014-6065. The harvester is read-only and forbids product edits at lines 6078-6128. The security agent requires fail-closed tenant, owner, secret, URL, and hostile-input handling at lines 6138-6198.
+- The scoped instruction files consistently repeat the same boundaries: typed SiteSpec output and deterministic regeneration at lines 6339-6362, reproducible test adjudication at lines 6380-6410, trusted tenant and owner context at lines 6420-6448, and pure deterministic rendering with no fixture fallback at lines 6467-6498.
+- No Mission or finding ID is cited by the C6 files themselves. Their evidence is constitutional and lane-rule based rather than mission-specific. The originating lane is therefore UNKNOWN from this cluster, but the definitions are internally consistent with the cited repository rules.
+
+**C12 Journal gateway tooling: PARTIAL**
+
+- All 3 assigned files appear: the tracked `server.mjs` change at lines 5949-6001, `README.md` at lines 20002-20055, and `start.sh` at lines 20390-20409. No assigned file is missing.
+- The originating work attribution is supported by explicit identifiers. `server.mjs` cites Q-P0-06 finding #2 at lines 5966-5975, and `start.sh` cites K2 and Mission K at lines 20396-20403.
+- The server implementation supports the claimed fail-closed write boundary. It checks the bearer token before body parsing or store access and returns 401 or 503 on failure at lines 5966-6001.
+- The startup script reads the token from an external file, does not commit it, and warns while refusing unauthenticated writes if absent at lines 20396-20409. No credential value is present in the diff.
+- The documentation is inconsistent with the implementation. The README documents `POST /events` as an unauthenticated append endpoint at lines 20031-20034, while the server requires `Authorization: Bearer ...` and rejects missing or invalid credentials at lines 5966-6001. The README also describes the GET route as unauthenticated at lines 20006-20014, but does not clearly distinguish that from the authenticated POST boundary. This prevents a VERIFIED verdict.
+
+The live `/home/nolan/projects/ping` status could not be read because the read-only plumbing command was denied by the environment. The current 144-file live-tree count is therefore UNKNOWN. The preserved patch itself confirms the four cluster inventories above.
+
+C8: **PARTIAL**  
+C9: **PARTIAL**  
+C6: **VERIFIED**  
+C12: **PARTIAL**
+<<<END_CP_02>>>
+<<<BEGIN_CP_03>>>
+classification: SUCCESS
+identity: identity_4
+duration_ms: 116777
+---result_text---
+**Read-only limitation:** `/home/nolan/projects/ping` denied direct Git access, so repo-wide absence checks and reads of canonical files are **UNKNOWN**. The file membership and dirty-file behavior below are verified against the preserved patch and reports.
+
+### MC dispatch hardening, Mission J/L
+
+**Files confirmed:** the patch contains the four tracked and nine untracked files listed for this cluster: the dispatch library and routes, identity and tenant gates, and seven new MC routes. ([B15 report:26-28](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md); [patch:892-10000](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch))
+
+**Partial rationale:** the identity module hardcodes `/home/nolan/workspace/mission-control/dispatch-identities.json`; the dispatch route returns 503 when it cannot load the registry and 401 when no caller is resolved. That confirms reliance on an external path, but **whether a matching registry file also exists in the repo is UNKNOWN**. ([`mc-dispatch-identity.ts`:26-27, 34-36](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch); [`dispatch/route.ts`:81-96](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), patch lines 1081-1096)
+
+The merge gap is supported: the dirty dispatch route still publishes a params-only `contextPackId` in `context.json`, and its changed `publishArtifact` calls now require `tenant`; the separate ContextPack patch wires `compileAskContext()` into this same mint region. A 3-way merge must integrate that helper while preserving the dirty caller-identity and idempotency checks and the tenant-aware artifact signature. ([B13 report:50-57](/home/nolan/copilot-broker/evidence-ping24h/laneB13-report.md); [FOREST_MAP:40-42](/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md); [`dispatch/route.ts`:419-427](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), patch lines 1199-1210)
+
+### Digest consolidation
+
+**Files confirmed:** the patch has the two new digest files and seven import-swap files, matching the nine-file cluster. ([B15 report:30-32](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md); [patch:2346-18948](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), including the listed diff headers)
+
+**Standalone finding, undefined-valued keys:** the dirty `src/lib/ping/digest.ts` explicitly maps `undefined` to `"null"` and recursively emits every object key, so `{k: undefined}` canonicalizes with `"k":null`. ([`digest.ts`:19-21, 136-145](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), patch lines 18972-18974 and 19089-19098) The staged forest map reports that `dev-signer.canonicalizeJson` drops such keys and records distinct digests for the same record; B13 and B15 also report the divergence. ([FOREST_MAP:630-642](/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md); [B13 report:87-89](/home/nolan/copilot-broker/evidence-ping24h/laneB13-report.md); [B15 report:30-32](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md))
+
+**Verification boundary:** the preserved patch directly verifies the dirty formulation. The canonical implementation and `dev-signer.canonicalizeJson` source were not available for direct reading; their source paths and line numbers are **UNKNOWN**. Thus B15's falsification is supported by the preserved evidence, but not independently confirmed by reading all three implementations. ([FOREST_MAP:630-642](/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md))
+
+### Sites UI/lab
+
+**Files confirmed:** the patch contains the listed layout, sites shared files and pages, build pages, three lab files, lab test, and Jest config, totaling 13. ([B15 report:46-48](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md); [patch:1312-2307, 10121, 14058](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch))
+
+**Partial rationale:** the changes include demo-named public site pages, a shared site client, build UI, and `/dev/objects` lab changes; the lab now renders an orphaned-correction warning. The added cluster-specific test exercises that warning. ([`coppersmith-plumbing/page.tsx` and `happy-place/page.tsx`](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), patch lines 2227-2306; [`objects-lab-client.tsx` and test](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch), patch lines 1519-1568 and 10121-10130) The report's claim that no production consumer changed is **UNKNOWN** from this evidence; the changed public site surfaces mean “demo/lab only” should not be taken to establish absence of production usage. ([B15 report:47-48](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md))
+
+MC dispatch hardening: **CONFIRMED-PARTIAL**, retain `VALUABLE-PARTIAL`; the merge gap is evidenced, registry absence is UNKNOWN. ([B13 report:50-57](/home/nolan/copilot-broker/evidence-ping24h/laneB13-report.md); [B15 report:26-28](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md))
+
+Digest consolidation: **CONFIRMED-PARTIAL**, retain `VALUABLE-PARTIAL`; undefined-key divergence is supported by preserved evidence, though canonical source verification is UNKNOWN. ([`digest.ts`:19-21, 136-145](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch); [FOREST_MAP:630-642](/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md))
+
+Sites UI/lab: **CONFIRMED-PARTIAL**, retain `VALUABLE-PARTIAL`; limited cluster-specific testing is evidenced, while absence of production consumers is UNKNOWN. ([B15 report:46-48](/home/nolan/copilot-broker/evidence-ping24h/laneB15-report.md); [patch:10121-10130](/home/nolan/copilot-broker/evidence-ping24h/dirty-tree.patch))
+<<<END_CP_03>>>
+<<<BEGIN_CP_04>>>
+classification: SUCCESS
+identity: identity_2
+duration_ms: 61122
+---result_text---
+**The live-tree verification is blocked.** The map says the canonical tree and relevant worktrees are on Pig WSL and absent from this sandbox (`FOREST_MAP.md:17-18, 34-37`). Direct reads and path checks for `/home/nolan/projects/ping` and the named worktrees returned permission denied. That does not establish that any path is missing. I therefore cannot confirm implementation contents, alternative existence, or whether the “STRONGEST VERSION” and “WHAT SHOULD WIN” judgments match the live evidence. The map entries below are recorded claims, not independently verified findings.
+
+- **C1 Ask FYD:** The map identifies `src/fyd/ask/visitor-answer.ts` and `src/app/api/fyd/ask/ask-pipeline.ts`, and names `/home/nolan/projects/ping-ask-loop` and `/home/nolan/worktrees/lane-e-ask` as alternatives (`FOREST_MAP.md:119-170`). Their live existence, implementation contents, and the canonical-plus-dirty judgment remain UNKNOWN.
+- **C2 Context compilation + ContextPack wiring:** The map identifies `src/fyd/ask/context-compiler.ts`, the patch worktree `/home/nolan/projects/ping-worktrees/contextpack-2026-09-28`, and the tenanos worktree `/home/nolan/projects/ping-wave-P-20260923-098` (`FOREST_MAP.md:171-219`). The dispatch wiring and alternative implementations, including the judgment that the patch should win for dispatch, remain UNKNOWN.
+- **C3 Evidence binding:** The map identifies `src/fyd/object/why-this-steps.ts` and `/home/nolan/worktrees/fix-evidence-ref` (`FOREST_MAP.md:220-258`). The canonical implementation, alternative verifier/projection files, and split “WHAT SHOULD WIN” judgment remain UNKNOWN.
+- **C4 Owner correction:** The map identifies `src/fyd/customize/` and says there are no active worktree alternatives, while claiming dirty changes to `server.ts` and `owner-overlay.ts` (`FOREST_MAP.md:259-291`). The canonical and dirty implementations and the no-duplicate judgment remain UNKNOWN.
+- **C5 Conversational customization:** The map identifies `src/fyd/customize/intent.ts` and `/home/nolan/build-workerE-intent` (`FOREST_MAP.md:292-325`). The parser behavior, alternative’s current presence, and canonical-lineage judgment remain UNKNOWN.
+
+C1 Ask FYD: **PARTIAL**, live canonical files and both listed alternatives could not be checked; strongest-version judgment UNKNOWN (`FOREST_MAP.md:119-170`).
+C2 Context compilation + ContextPack wiring: **PARTIAL**, canonical files and listed worktrees could not be checked; dispatch-wiring and winner judgments UNKNOWN (`FOREST_MAP.md:171-219`).
+C3 Evidence binding: **PARTIAL**, canonical files and fix-evidence-ref worktree could not be checked; implementation and winner judgments UNKNOWN (`FOREST_MAP.md:220-258`).
+C4 Owner correction: **PARTIAL**, canonical and dirty files could not be checked; no-alternative and strongest-version claims UNKNOWN (`FOREST_MAP.md:259-291`).
+C5 Conversational customization: **PARTIAL**, canonical files and workerE worktree could not be checked; parser behavior and winner judgment UNKNOWN (`FOREST_MAP.md:292-325`).
+<<<END_CP_04>>>
+<<<BEGIN_CP_05>>>
+classification: SUCCESS
+identity: identity_3
+duration_ms: 43644
+---result_text---
+The ledger is readable, but access to `/home/nolan/projects/ping` and the named external worktree paths was denied. I could not verify live files, quoted implementations, alternatives, or strongest-version judgments. Those filesystem claims are **UNKNOWN**, not evidence of absence. The citations below point to the ledger entries, not to independently verified implementation files.
+
+- **C6 Regeneration, lines 321-358:** The ledger claims canonical files `src/fyd/builder/semantic-diff.ts`, `__tests__/semantic-diff.test.ts`, and `__tests__/source-refresh.test.ts`; a worktree at `/home/nolan/worktrees/fyd-family-converge`; and a `~/workspace/fyd-build` alternative. Their existence and contents, and the judgment that the strongest version is UNKNOWN pending comparison, are UNKNOWN.
+- **C7 Generated experience/presence, lines 360-402:** The ledger claims `src/fyd/presence/derive-presence.ts`, `presence-band.tsx`, and related routes/components, plus stranded design-lane alternatives and dirty app changes. Their existence and contents, and the judgment that canonical identity plus additive design-lane vocabulary should win, are UNKNOWN.
+- **C8 Decision fabric, lines 404-449:** The ledger claims an inventory in lane 11 and `authorizeWorkOrder()` in `orca-adapter/vendor/external_agent_adapter.js`, with P-091 and other alternatives. Their existence and contents, and the judgment that the lane-11 inventory should win, are UNKNOWN.
+- **C9 Worker contract, lines 451-518:** The ledger claims ORCA adapter functions `dispatchExecution`, `reconcileGate`, and `verifyResultEnvelope`, product dispatch files, and several ops/tenanos alternatives. Their existence and contents, and the judgment that the dirty dispatch slice layered on the adapter attempt gate is strongest, are UNKNOWN.
+- **C10 Mission Control projection, lines 519-558:** The ledger claims a canonical page skeleton, five API routes, a full dirty-tree surface, and an ops shapeA alternative. Their existence and contents, and the judgment that the dirty surface is strongest, are UNKNOWN.
+
+C6: PARTIAL, live implementation, alternatives, and strongest-version judgment UNKNOWN.  
+C7: PARTIAL, live implementation, alternatives, and strongest-version judgment UNKNOWN.  
+C8: PARTIAL, live implementation, alternatives, and strongest-version judgment UNKNOWN.  
+C9: PARTIAL, live implementation, alternatives, and strongest-version judgment UNKNOWN.  
+C10: PARTIAL, live implementation, alternatives, and strongest-version judgment UNKNOWN.
+<<<END_CP_05>>>
+<<<BEGIN_CP_06>>>
+classification: SUCCESS
+identity: identity_4
+duration_ms: 47697
+---result_text---
+**Live verification is blocked.** Read and listing attempts against `/home/nolan/projects/ping` and other paths named in the map returned permission denied. That does not establish whether any target exists, so I cannot responsibly label a duplication defect CONFIRMED, PARTIAL, or REFUTED. All live filesystem claims below are UNKNOWN; map citations identify the claims, not independent verification. No files were changed.
+
+- **C11 MC dispatch: UNKNOWN.** Canonical `src/app/api/mc/dispatch/route.ts` and the map-named alternatives were not verifiable on disk; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:560-568, 784-787`.
+- **C12 Journal gateway: UNKNOWN.** Canonical `tools/fyd-journal-gateway/server.mjs` and the ops working area were not verifiable on disk; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:569-595`.
+- **C13 Tenant isolation: UNKNOWN.** Canonical `src/fyd/tenant/` and the named tenant-kit and hostile-test alternatives were not verifiable on disk; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:596-626, 799-800`.
+- **C14 Digest authority: UNKNOWN.** `src/fyd/ask/context-compiler.ts`, `dev-signer.canonicalizeJson`, and dirty `src/lib/ping/digest.ts` could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:627-654, 788-790`.
+- **C15 Secret broker: UNKNOWN.** Canonical and dirty `src/lib/secrets/` content could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:655-674`.
+- **C16 Engagement guard and grill-20: UNKNOWN.** `outreach/engagement-guard.py` and `fyd-autonomy/escalation-log.jsonl` could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:675-700`.
+- **C17 Builder homes: UNKNOWN.** Canonical, stranded, and ops builder locations listed in the map could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:701-711, 791-792`.
+- **D1 MC dispatch idempotency x3: UNKNOWN.** The dirty-tree slice, `p0/front-door-idempotency`, and `mc/frontdoor-hardening` locations could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:784-787`.
+- **D2 Digest formulations x3: UNKNOWN.** `digest.ts`, `dev-signer.canonicalizeJson`, and compiler-local `sha256Hex` could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:788-790`.
+- **D3 Builder homes x9+: UNKNOWN.** The named homes could not be checked for existence; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:791-792`.
+- **D4 `why-this-steps.ts` duplication: UNKNOWN.** Canonical-tree and ops-root locations could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:793-794`.
+- **D5 Ask FYD lineage duplication: UNKNOWN.** Canonical, dirty-tree, and ask-loop worktree locations could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:795-796`.
+- **D6 Decision-classification duplication: UNKNOWN.** Lane-11 surface inventory and P-091 decision-budget locations could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:797-798`.
+- **D7 Tenant-kit duplication: UNKNOWN.** Canonical `src/fyd/tenant/` and P-092 locations could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:799-800`.
+- **D8 Stale ancestor worktrees: UNKNOWN.** The lane-p01, lane-fyd-010, workerE, workerF, ask-loop, and authority-ux worktrees could not be checked; map: `/home/nolan/copilot-broker/evidence-ping24h/FOREST_MAP.md:801-804`.
+<<<END_CP_06>>>

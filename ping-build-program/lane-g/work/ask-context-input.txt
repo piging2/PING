@@ -1,0 +1,119 @@
+export const ASK_LIMITS = {
+  maxRelated: 8,
+  maxRelationships: 20,
+  maxFieldChars: 500,
+  maxRelatedInAnswer: 5,
+} as const;
+
+/** Whitelisted object fields a proposal may change. Aliases map to canonical names. */
+const PROPOSABLE_FIELDS: Record<string, string> = {
+  bio: "description",
+  description: "description",
+  summary: "description",
+  title: "title",
+  name: "title",
+  website: "website",
+  url: "website",
+  location: "location",
+};
+
+// ---------------------------------------------------------------------------
+// Canonical JSON + digest (sha256-canonical-json-v1)
+// ---------------------------------------------------------------------------
+
+export function canonicalize(value: unknown): string {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
+  if (typeof value === "object") {
+    const rec = value as Record<string, unknown>;
+    const keys = Object.keys(rec).sort();
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalize(rec[k])}`).join(",")}}`;
+  }
+  return "null";
+}
+
+===== AskContextInput (109-190) =====
+export interface AskContextInput {
+  viewer: { id: string | null; displayName: string | null };
+  target: PingObject | null;
+  relatedObjects: PingObject[];
+  relationships: PingRelationship[];
+  plan: CapabilityPlan | null;
+  /** Optional per-object field epistemic classes (pipeline FactClass vocabulary). */
+  fieldClasses?: Record<string, Record<string, string>>;
+}
+
+/** Extract deduped source URLs from object provenance refs. Deterministic. */
+function provenanceSourceUrls(objects: Array<PingObject | null>): string[] {
+  const urls = new Set<string>();
+  for (const o of objects) {
+    const ref = o?.provenance?.ref;
+    if (!ref) continue;
+    const m = /^website-ingestion:(https?:\/\/.+)$/.exec(ref);
+    if (m) {
+      urls.add(m[1]);
+      continue;
+    }
+    const u = /https?:\/\/[^\s"']+/.exec(ref);
+    if (u) urls.add(u[0]);
+  }
+  return [...urls].sort();
+}
+
+/**
+ * Epistemic classification from object provenance, used when the context
+ * carries no explicit field class and the object has no claim kind of its
+ * own. Website-derived material is the site's own words (never verified
+ * fact); canonical-journal objects are recorded facts in the site data;
+ * owner material is owner-authored. Overlay-authored (demo) content
+ * is classified DEMO_SYNTHETIC, never a recorded fact. This keeps
+ * citations on a real evidence class instead of degrading to the
+ * meaningless "unknown".
+ */
+function classificationFromProvenance(obj: PingObject): string {
+  const kind = obj.provenance?.kind ?? "";
+  if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
+  if (kind === "canonical-journal") return "DIRECT_FACT";
+  if (kind === "website-derived" || kind === "website-ingestion") return "website_statement";
+  if (kind === "owner") return "owner_authorship";
+  return "unknown";
+}
+
+/**
+ * Epistemic classification for one object field claim. Prefers the
+ * pipeline FactClass vocabulary when the context carries field classes;
+ * then the object's own claim kind; then the object's provenance;
+ * never invents certainty.
+ */
+function claimClassification(
+  fieldClasses: Record<string, Record<string, string>>,
+  obj: PingObject,
+  field: string,
+): string {
+  const fc = fieldClasses[obj.id]?.[field];
+  if (fc) return fc;
+  const ck = obj.fields["claimKind"];
+  if (typeof ck === "string" && ck !== "") return ck;
+  return classificationFromProvenance(obj);
+}
+
+function truncateField(value: string | string[]): string | string[] {
+  const cut = (s: string) =>
+    s.length > ASK_LIMITS.maxFieldChars ? s.slice(0, ASK_LIMITS.maxFieldChars) + "…" : s;
+  return Array.isArray(value) ? value.map(cut) : cut(value);
+}
+
+function boundedObject(obj: PingObject): PingObject {
+  const fields: Record<string, string | string[]> = {};
+  for (const [k, v] of Object.entries(obj.fields)) fields[k] = truncateField(v);
+  return {
+    ...obj,
+    title: obj.title.slice(0, 200),
+    description: obj.description.slice(0, 2000),
+    fields,
+  };
+}
+
+export function schemaLabel(schema: string): string {

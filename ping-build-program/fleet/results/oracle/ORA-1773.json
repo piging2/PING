@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-1773",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "No postgres in the sandbox (sqlite3 only). [dump digest before and after migration matches] 'ping-postgres-2026-09-19.dump restore compatibility against ' requires scratch postgres:17-alpine.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/schema-drift-evidence.json",
+    "fleet/work/fleet-ora-2/sandbox/schema-evolution-designs.md"
+  ],
+  "confidence": 0.85,
+  "followup": "On staging postgres:17-alpine: restore pgdata-backup-2026-09-16.sql.gz and ping-postgres-2026-09-19.dump into an isolated scratch postgres:17-alpine; verify 17.x->17.y patch compatibility; run up-then-down with pg_dump digest comparison."
+}

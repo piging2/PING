@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0079",
+ "verdict": "PROVEN",
+ "summary": "BEFORE buffer-all-events-per-window: peak 1055300 bytes; AFTER incremental per-window aggregation: peak 93112 bytes (11x less). Memory claim proven \u2014 completes the memory half BAC-0044 deferred; time parity.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 243.8222,
+  "after_ms": 258.2628,
+  "metric": "windowed_agg_memory",
+  "change": "incremental per-window aggregation: O(windows) vs O(events) memory",
+  "case": 78,
+  "extra": {
+   "peak_bytes_before": 1055300,
+   "peak_bytes_after": 93112,
+   "note": "metric is peak bytes; time parity shown in BAC-0044"
+  }
+ }
+}

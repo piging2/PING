@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0094",
+ "verdict": "ADAPT",
+ "summary": "BEFORE direct-dependents selection: 8 tests; AFTER transitive import-closure: 300 tests. The import graph was a CYCLE covering all 40 sources, so the closure is the whole suite \u2014 correct (direct-only would miss real transitive dependents) but useless as a selection. Same precondition as BAC-0025/0060: transitive selection needs a DAG; on cyclic graphs the full run is genuinely required.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0253,
+  "after_ms": 0.0366,
+  "metric": "transitive_selection",
+  "change": "transitive import-closure selection instead of direct-dependents only",
+  "case": 93,
+  "extra": {
+   "tests_before": 8,
+   "tests_after": 300,
+   "note": "correctness claim: transitive dependents would be missed by direct-only"
+  }
+ }
+}

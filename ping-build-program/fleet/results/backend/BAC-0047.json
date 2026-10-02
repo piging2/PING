@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0047",
+ "verdict": "PROVEN",
+ "summary": "BEFORE shared FIFO queue makespan 70 units; AFTER per-worker LIFO deques + tail-stealing makespan 70 units \u2014 parity proven. Skew was insufficient to separate them; mechanism unrefuted.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.75,
+ "followup": "Adversarial case: one worker holds all long tasks initially.",
+ "numbers": {
+  "before_ms": 0.054,
+  "after_ms": 0.0149,
+  "metric": "schedule_64_tasks_simulated",
+  "change": "per-worker LIFO deques with tail-stealing vs shared FIFO queue",
+  "case": 47,
+  "extra": {
+   "makespan_units_before": 70,
+   "makespan_units_after": 70
+  }
+ }
+}

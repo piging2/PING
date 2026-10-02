@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0045",
+ "verdict": "ADAPT",
+ "summary": "BEFORE unbounded ingest of 5000-burst: peak 5000 buffered; AFTER bounded-256 drop-oldest: bounded memory with 4744 DOCUMENTED drops. Not a free win \u2014 it is a policy choice: adopt only where drop-oldest is acceptable and drops are metered/alerted; otherwise use BAC-0010 blocking backpressure.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.1987,
+  "after_ms": 0.4465,
+  "metric": "ingest_5000_burst",
+  "change": "bounded queue with drop-oldest + drop counter instead of unbounded growth",
+  "case": 44,
+  "extra": {
+   "peak_before": 5000,
+   "drops_after": 4744,
+   "note": "bounded memory at cost of 4744 documented drops; policy choice, not free lunch"
+  }
+ }
+}

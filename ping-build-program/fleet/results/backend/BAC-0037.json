@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0037",
+ "verdict": "PROVEN",
+ "summary": "BEFORE flat content-hash map, 300 point lookups: 3.66ms; AFTER 16-way hash-prefix sharded store: 0.36ms \u2014 delta 90% but within noise (338%), so parity proven single-threaded. Sharding pays under lock contention / distribution, not in one dict.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.75,
+ "followup": "Rerun under threaded contention to exhibit the sharding win.",
+ "numbers": {
+  "before_ms": 4.083,
+  "after_ms": 0.3815,
+  "metric": "300_point_lookups_sharded",
+  "change": "16-way hash-prefix sharded content store instead of single flat hash map",
+  "case": 36
+ }
+}

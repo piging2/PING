@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-09-24T03:20:09.123Z",
+  "definition": "spike/schemas.canonical.json",
+  "results": [
+    {
+      "target": "1. validator",
+      "status": "PROVEN",
+      "evidence": "Generated validator accepts a complete business, errors on missing title, errors on socials type change, warns on non-URL website, info-tolerates unknown fields. Same semantics as PING's hand-written validateAgainstSchema; derivation is mechanical."
+    },
+    {
+      "target": "2. TypeScript type",
+      "status": "PROVEN",
+      "evidence": "Generated interfaces Business/Service/Post with required vs optional preserved and url branded as FYDUrl. The field-type map is total over the three-type vocabulary, deterministic, no contortion. Caveat: PING's read model uses generic projections (PingObject/ObjectView), so generated types serve ingestion/editor boundaries, not the read model."
+    },
+    {
+      "target": "3. object editor",
+      "status": "PARTIAL",
+      "evidence": "Flat form spec (widget per type) generates cleanly for the three proof schemas. Red team: nested objects, dual-value owner corrections, conditionals, and custom widgets are inexpressible; those are real product requirements in PING today (Company.address, OwnerFieldCorrection, estimate branching). Matches the ecosystem finding: every mature system needs a second UI layer (uiSchema/admin config)."
+    },
+    {
+      "target": "4. component eligibility",
+      "status": "PROVEN",
+      "evidence": "Eligibility lists generated; knowledge vocabulary projects onto proof roles via schemaRole-equivalent; unknown schemas fall back to GenericObjectCard. HONEST LABEL: the mapping is DECLARED in the definition (or lives registry-side), not inferred from field shapes; no field-shape inference could produce 'Hero'. Same shape as PING's wired eligibleComponents()."
+    },
+    {
+      "target": "5. relationship eligibility",
+      "status": "PARTIAL",
+      "evidence": "Predicate allow-lists (isAllowedPredicate equivalent) derive cleanly and are tested. Full relationship governance (cardinality, required edges, inverses) is not expressible in the definition; documented in relationship-redteam.md."
+    },
+    {
+      "target": "6. search fields",
+      "status": "PROVEN",
+      "evidence": "Text-indexable field lists derive mechanically: string/string[] in, url out as identifier. Unwired in PING (lane F owns search); handoff-ready as JSON."
+    },
+    {
+      "target": "7. agent tool description",
+      "status": "PROVEN",
+      "evidence": "Deterministic tool-description text per schema from label/summary/fields/relationships. Same semantics as PING's hand-written agentToolDescription(); derivation is mechanical and cacheable. Handoff-ready for lane I (MCP) / lane G (Ask FYD context)."
+    },
+    {
+      "target": "8. connector normalization target",
+      "status": "PARTIAL",
+      "evidence": "JSON-Schema target spec generates cleanly and gives adapters a mapping contract. Red team: must stay advisory (additionalProperties: true); prescriptive validation would break PING's evidence-first ingestion and the constitutional observation rule."
+    },
+    {
+      "target": "9. protocol projection hints",
+      "status": "PARTIAL",
+      "evidence": "HONEST LABEL: hints are DECLARED metadata, not derived. No field-shape analysis yields 'ActivityPub Organization'; Service has no natural ActivityPub type (left null rather than forced). Carrying them in the definition is convenient co-location, not generation."
+    }
+  ],
+  "totals": {
+    "proven": 5,
+    "partial": 4,
+    "failed": 0
+  }
+}

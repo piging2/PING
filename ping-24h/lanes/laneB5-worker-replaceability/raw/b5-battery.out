@@ -1,0 +1,41 @@
+=== REGISTRY ===
+{"agent":"hermes","status":"LIVE","caps":["fixture.read","text.transform","text.summarize"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"codex","status":null,"caps":["fixture.read","text.transform","text.summarize"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"yes"}
+{"agent":"opencode","status":null,"caps":[],"maxC":null,"blocked":"yes"}
+{"agent":"cloud-subagent","status":"LIVE","caps":["orchestration.plan","orchestration.review","text.transform","text.summarize","documentation.generate","dead_code.analyze","test.generate"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"ollama","status":"LIVE","caps":["text.transform","text.summarize","documentation.generate","dead_code.analyze","test.generate"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"identity_1","status":"LIVE","caps":["test.generate","documentation.generate","dead_code.analyze"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"identity_2","status":"LIVE","caps":["test.generate","documentation.generate","dead_code.analyze"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"identity_3","status":"LIVE","caps":["test.generate","documentation.generate","dead_code.analyze"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+{"agent":"identity_4","status":"LIVE","caps":["test.generate","documentation.generate","dead_code.analyze"],"maxC":{"read_only":true,"no_writes":true,"no_network":true},"blocked":"no"}
+=== ADMISSION ===
+EXPECT-MET A1 hermes admit -> {"granted":true,"agentId":"hermes","capability":"text.transform","namespace":"core::ping24h"}
+EXPECT-MET A2 hermes self-grant mission.write -> {"granted":false,"reason":"Capability 'mission.write' not allowed for agent 'hermes'"}
+EXPECT-MET A3 deterministic-js (unregistered) -> {"granted":false,"reason":"Unknown exterior agent: deterministic-js"}
+EXPECT-MET A4 muse-worker (unregistered) -> {"granted":false,"reason":"Unknown exterior agent: muse-worker"}
+EXPECT-MET A5 cloud-subagent text.transform -> {"granted":true,"agentId":"cloud-subagent","capability":"text.transform","namespace":"core::ping24h"}
+EXPECT-MET A6 cloud-subagent orchestration.plan (posture differs from hermes) -> {"granted":true,"agentId":"cloud-subagent","capability":"orchestration.plan","namespace":"core::ping24h"}
+EXPECT-MET A7 hermes orchestration.plan (hermes narrower) -> {"granted":false,"reason":"Capability 'orchestration.plan' not allowed for agent 'hermes'"}
+EXPECT-MISS A8 codex blockedExternal -> {"granted":true,"agentId":"codex","capability":"text.transform","namespace":"core::ping24h"}
+EXPECT-MET A9 missing no_canonical_events -> {"granted":false,"reason":"Work order must forbid canonical events and mission-state writes"}
+EXPECT-MET A10 loosened read_only=false -> {"granted":false,"reason":"Constraint 'read_only' must be true for agent 'hermes'"}
+EXPECT-MET A11 bad namespace -> {"granted":false,"reason":"Invalid namespace 'bogus::x' (must be core::<name> or tenant::<id>)"}
+EXPECT-MET A12 opencode empty caps -> {"granted":false,"reason":"Agent unavailable: No headless CLI on the Pig; only OpenCode.exe desktop (Electron). No safe invocation path."}
+=== ISSUED WORKORDER ===
+{"work_order_id":"b15167326b5256e5","agent_id":"hermes","mission_id":"ping-24h:laneB5","task_id":"laneb5-synth:attempt-1","correlation_id":"laneb5-run1","context_pack_id":"ctx-laneb5-synth","causation_id":null,"attempt":1,"principal":"ping:external-agent-adapter","namespace":"core::ping24h","capability":"text.transform","input":{"task":"text.transform","op":"reverse_words","text":"alpha bravo charlie delta","note":"synthetic scratch input; no external effects"},"constraints":{"read_only":true,"no_writes":true,"no_network":true,"no_canonical_events":true,"no_mission_state_writes":true},"result_path":"/tmp/laneb5-synth-result.json","deadline":"2026-09-28T20:44:22.997Z"}
+=== CANCELLATION ===
+exports: AGENT_PROFILES,workOrderId,authorizeWorkOrder,issueWorkOrder,verifyResultEnvelope,resultIdentity,recordVerifiedResult
+has cancel/interrupt export: false
+=== VERIFY ===
+EXPECT-MET V1 honest completed -> valid=true reason=none retryable=false
+EXPECT-MET V2 capability self-grant in envelope -> valid=false reason=capability mismatch (result does not match authorized capability) retryable=false
+EXPECT-MET V3 agent_id lie in envelope -> valid=false reason=executor mismatch (authorized, invoked, and result agent must match) retryable=false
+EXPECT-MET V4 objective rewrite (output unrelated to input) -> valid=true reason=none retryable=false
+EXPECT-MET V5 manufactured evidence (impossible timestamps) -> valid=true reason=none retryable=false
+EXPECT-MET V6 self-approval claim in evidence -> valid=true reason=none retryable=false
+EXPECT-MET V7 uncertainty status unknown -> valid=false reason=Invalid status: unknown retryable=false
+EXPECT-MET V8 malformed (missing evidence) -> valid=false reason=Missing field: evidence retryable=false
+EXPECT-MET V9 completed with null output -> valid=false reason=completed result requires non-null output and null error retryable=false
+EXPECT-MET V10 failed well-formed -> valid=true reason=none retryable=false
+EXPECT-MET V11 deadline exceeded -> valid=false reason=Work order deadline exceeded retryable=false
+EXPECT-MET V12 budget-expansion claim in evidence ignored -> valid=true reason=none retryable=false

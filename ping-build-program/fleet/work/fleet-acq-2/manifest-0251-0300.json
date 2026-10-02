@@ -1,0 +1,595 @@
+[
+ {
+  "case": 0,
+  "mission_no": 251,
+  "slug": "valid-localbusiness",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid block -> observations with provenance",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 1,
+  "mission_no": 252,
+  "slug": "malformed-json",
+  "bound": "JSONLD",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "malformed JSON -> block quarantined, INVALID_PAYLOAD",
+  "expect_flags": [
+   "quarantined"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 2,
+  "mission_no": 253,
+  "slug": "top-level-array",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "top-level array normalized to item list",
+  "expect_flags": [
+   "top_level_array"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 3,
+  "mission_no": 254,
+  "slug": "trailing-garbage",
+  "bound": "JSONLD",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "trailing garbage -> INVALID_PAYLOAD",
+  "expect_flags": [
+   "quarantined"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 4,
+  "mission_no": 255,
+  "slug": "nesting-500",
+  "bound": "JSONLD",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "500-deep nesting exceeds depth cap 32 -> abort",
+  "expect_flags": [
+   "depth_cap"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 5,
+  "mission_no": 256,
+  "slug": "giant-string-1mb",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "1MB string truncated at 256KiB with flag",
+  "expect_flags": [
+   "string_truncated"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 6,
+  "mission_no": 257,
+  "slug": "block-count-note",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "block-count cap is a page-level bound (P4); single block fine here",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 7,
+  "mission_no": 258,
+  "slug": "duplicate-id-graph",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duplicate @id -> conflict flagged, two separate observations, NO merge",
+  "expect_flags": [
+   "id_conflict"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 8,
+  "mission_no": 259,
+  "slug": "type-array-conflict",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "@type array recorded verbatim, no canonical type pick",
+  "expect_flags": [
+   "multi_type"
+  ],
+  "verbatim": [
+   "LocalBusiness"
+  ]
+ },
+ {
+  "case": 9,
+  "mission_no": 260,
+  "slug": "unknown-type",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown @type kept verbatim, never coerced to known schema",
+  "expect_flags": [
+   "unknown_type"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 10,
+  "mission_no": 261,
+  "slug": "missing-type",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "missing @type -> type=unknown, WEAK observation",
+  "expect_flags": [
+   "type_unknown"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 11,
+  "mission_no": 262,
+  "slug": "relative-id-nobase",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative @id without base -> unresolved-ref, NOT resolved by guess",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 12,
+  "mission_no": 263,
+  "slug": "absolute-id",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "@id recorded as claimed ref, never treated as canonical identity",
+  "expect_flags": [
+   "id_claimed_not_identity"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 13,
+  "mission_no": 264,
+  "slug": "telephone-integer",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "integer telephone kept verbatim (int), never normalized to phone string",
+  "expect_flags": [
+   "type_mismatch_verbatim"
+  ],
+  "verbatim": [
+   "5551112222"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 265,
+  "slug": "pricerange-number",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "numeric priceRange verbatim, no string coercion",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 15,
+  "mission_no": 266,
+  "slug": "invalid-day-enum",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "invalid dayOfWeek recorded with invalid_enum flag, never corrected",
+  "expect_flags": [
+   "invalid_enum"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 16,
+  "mission_no": 267,
+  "slug": "geo-string-lat",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "string latitude verbatim, never parsed to float",
+  "expect_flags": [
+   "type_mismatch_verbatim"
+  ],
+  "verbatim": [
+   "39.1N"
+  ]
+ },
+ {
+  "case": 17,
+  "mission_no": 268,
+  "slug": "geo-out-of-range",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "lat 999 flagged range_suspect, kept verbatim",
+  "expect_flags": [
+   "range_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 18,
+  "mission_no": 269,
+  "slug": "address-string-vs-object",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "mixed address forms kept as separate observations",
+  "expect_flags": [
+   "multi_address"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 19,
+  "mission_no": 270,
+  "slug": "two-postal-addresses",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two addresses -> two observations, no pick",
+  "expect_flags": [
+   "multi_address"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 20,
+  "mission_no": 271,
+  "slug": "sameas-javascript",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: sameAs dropped per scheme allowlist; https kept",
+  "expect_flags": [
+   "scheme_dropped"
+  ],
+  "verbatim": [
+   "https://ok.example/"
+  ]
+ },
+ {
+  "case": 21,
+  "mission_no": 272,
+  "slug": "sameas-relative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative sameAs -> unresolved_ref, not fetched",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 22,
+  "mission_no": 273,
+  "slug": "rating-inconsistent",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "ratingValue > bestRating flagged inconsistent, verbatim",
+  "expect_flags": [
+   "inconsistent_rating"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 23,
+  "mission_no": 274,
+  "slug": "review-no-author",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "authorless review kept as anonymous-claimed",
+  "expect_flags": [
+   "anonymous_claim"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 24,
+  "mission_no": 275,
+  "slug": "blank-nodes-graph",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "blank nodes never merged across blocks (two Jo != one Jo)",
+  "expect_flags": [
+   "blank_nodes_unmerged"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 25,
+  "mission_no": 276,
+  "slug": "context-array-remote",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "remote context URL recorded, never fetched",
+  "expect_flags": [
+   "context_unfetched"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 26,
+  "mission_no": 277,
+  "slug": "context-remote-only",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "remote-only context -> terms unresolved, verbatim kept",
+  "expect_flags": [
+   "context_unfetched",
+   "terms_unresolved"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 27,
+  "mission_no": 278,
+  "slug": "html-in-name",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "markup inside string stays inert data, flagged",
+  "expect_flags": [
+   "markup_in_string"
+  ],
+  "verbatim": [
+   "Acme"
+  ]
+ },
+ {
+  "case": 28,
+  "mission_no": 279,
+  "slug": "bidi-in-name",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bidi overrides neutralized in normalized view, verbatim preserved",
+  "expect_flags": [
+   "bidi_neutralized"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 29,
+  "mission_no": 280,
+  "slug": "injection-in-desc",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "instruction text inside JSON-LD stays inert data",
+  "expect_flags": [
+   "injection_inert"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 30,
+  "mission_no": 281,
+  "slug": "price-free-text",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "price verbatim, never coerced to number",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 31,
+  "mission_no": 282,
+  "slug": "telephone-ext",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "extension kept verbatim in the string",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 32,
+  "mission_no": 283,
+  "slug": "email-invalid",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "invalid email verbatim with format_suspect flag",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 33,
+  "mission_no": 284,
+  "slug": "url-typo",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "typo scheme verbatim with format_suspect flag",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 34,
+  "mission_no": 285,
+  "slug": "openinghours-string",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "openingHours string verbatim, never parsed to structured hours",
+  "expect_flags": [],
+  "verbatim": [
+   "Mo-Fr 09:00-17:00"
+  ]
+ },
+ {
+  "case": 35,
+  "mission_no": 286,
+  "slug": "dayofweek-forms",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "single-string dayOfWeek verbatim, not normalized to array/URL form",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 36,
+  "mission_no": 287,
+  "slug": "offer-catalog-6deep",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested catalog within depth cap",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 37,
+  "mission_no": 288,
+  "slug": "offer-missing-price",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "offer without price flagged incomplete, not defaulted",
+  "expect_flags": [
+   "incomplete_offer"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 38,
+  "mission_no": 289,
+  "slug": "brand-string-vs-org",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "string brand verbatim; no Organization synthesis",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 39,
+  "mission_no": 290,
+  "slug": "founder-samename",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "same name founder/business: no identity merge",
+  "expect_flags": [
+   "no_identity_merge"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 40,
+  "mission_no": 291,
+  "slug": "department-200",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200 departments kept with count note (no fan-out cap on objects)",
+  "expect_flags": [
+   "item_count=200"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 41,
+  "mission_no": 292,
+  "slug": "additionaltype-url",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "additionalType URL recorded untrusted, not fetched",
+  "expect_flags": [
+   "untrusted_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 42,
+  "mission_no": 293,
+  "slug": "subjectof-self",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "self-reference recorded, no cycle resolution",
+  "expect_flags": [
+   "self_reference"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 43,
+  "mission_no": 294,
+  "slug": "mainentity-relative",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative mainEntity -> unresolved_ref",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 44,
+  "mission_no": 295,
+  "slug": "identifier-object",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "identifier object verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 45,
+  "mission_no": 296,
+  "slug": "knowsabout-5000",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "5000-entry scalar array truncated at 1000 with flag",
+  "expect_flags": [
+   "array_truncated"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 46,
+  "mission_no": 297,
+  "slug": "action-urltemplate",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "urlTemplate verbatim, never expanded",
+  "expect_flags": [],
+  "verbatim": [
+   "{search}"
+  ]
+ },
+ {
+  "case": 47,
+  "mission_no": 298,
+  "slug": "interaction-count-string",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "count string verbatim, never parsed to number",
+  "expect_flags": [],
+  "verbatim": [
+   "1M"
+  ]
+ },
+ {
+  "case": 48,
+  "mission_no": 299,
+  "slug": "workhours-vs-openinghours",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "conflicting hours props -> separate observations, conflict flagged",
+  "expect_flags": [
+   "hours_conflict"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 49,
+  "mission_no": 300,
+  "slug": "empty-object",
+  "bound": "JSONLD",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "empty block -> legitimate empty, not a failure",
+  "expect_flags": [
+   "empty_block"
+  ],
+  "verbatim": []
+ }
+]

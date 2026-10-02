@@ -1,0 +1,77 @@
+{
+  "capture": {
+    "incidentRef": "lane-k-appendix-a-10",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling lane-K Appendix A scenario 10",
+    "sourceDigest": "sha256:4526b621e2b7c131daa2f065fa985bf394ef9c36d7d1d5c1dba9ce5354a1111e"
+  },
+  "connectorShape": "poll",
+  "expect": {
+    "failureCodes": [
+      "SOURCE_CHANGED"
+    ],
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 0,
+    "terminalState": "FAILED",
+    "uniqueRecords": 0
+  },
+  "fixtureId": "api-sunset-410-source-changed",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T20:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T20:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 103,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer <redacted> never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "orders",
+      "kind": "request",
+      "note": "previously-valid endpoint retired by the provider; retrying it is futile",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/orders"
+      },
+      "response": {
+        "body": {
+          "error": "gone",
+          "message": "v1 sunset; migrate to /v2/orders"
+        },
+        "headers": {
+          "link": "</v2/orders>; rel=\"successor-version\"",
+          "sunset": "Sat, 01 Nov 2025 00:00:00 GMT"
+        },
+        "latencyMs": 45,
+        "status": 410
+      }
+    }
+  ],
+  "title": "410 with Sunset header is SOURCE_CHANGED (stale endpoint knowledge), not SOURCE_UNAVAILABLE; no retry, flag maintenance"
+}

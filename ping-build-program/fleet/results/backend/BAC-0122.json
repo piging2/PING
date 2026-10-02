@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0122",
+ "verdict": "ADAPT",
+ "summary": "BEFORE add_node_20k_keys: 4.428ms; AFTER consistent hashing ring vs mod-N on node addition: 23.854ms. Delta +438.7%. remapped keys fell from 20000 to about 2222 (-89%), but Python ring lookup was 4x slower; consistent hashing is a remap win with a lookup cost.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": null,
+ "numbers": {
+  "before_ms": 4.428,
+  "after_ms": 23.854,
+  "metric": "add_node_20k_keys",
+  "change": "consistent hashing ring vs mod-N on node addition",
+  "case": 121
+ }
+}

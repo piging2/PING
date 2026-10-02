@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0005",
+ "verdict": "PROVEN",
+ "summary": "BEFORE per-query scan+aggregate over 8k events: 0.66ms; AFTER read of materialized projection: ~0.00ms. Delta 99.9% vs noise 2.7%. Improvement proven; write-amplification cost is the known tradeoff.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.95,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.6627,
+  "after_ms": 0.0006,
+  "metric": "aggregate_query",
+  "change": "maintain materialized aggregate on append; query reads precomputed",
+  "case": 4
+ }
+}

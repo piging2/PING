@@ -1,0 +1,37 @@
+mission_id	title	invariant	falsifier	method
+ORA4-001	V4R-01 rpcbind :111 still bound	external listener set == {sshd:22}	ss -tlnp shows 0.0.0.0:111	read-only ssh
+ORA4-002	V4R-02 rpcbind service enabled	rpcbind disabled or documented	systemctl is-active/is-enabled read-only ssh
+ORA4-003	V4R-03 no NFS consumers of rpcbind	nothing requires :111	systemctl list-units rpc/nfs class	read-only ssh
+ORA4-004	V4R-04 :111 documented	justification exists in current docs	grep /opt/ping docs	read-only ssh
+ORA4-005	V4R-05 [::]:111 bound	no wildcard v6 rpcbind listener	ss -tlnp	read-only ssh
+ORA4-006	V4R-06 loopback partitions hold	5432/6333/6334 on 127.0.0.1 only	ss -tlnp	read-only ssh
+ORA4-007	V4R-07 firewall mitigates :111	iptables drops :111	iptables -L INPUT	read-only ssh
+ORA4-008	V4R-08 unknown :46699 listener	all listeners identified	ss -tlnp	read-only ssh
+ORA4-009	V4H-01 gateway memory limit	limit > 0	docker inspect HostConfig.Memory	read-only ssh
+ORA4-010	V4H-02 postgres memory limit	limit > 0	docker inspect HostConfig.Memory	read-only ssh
+ORA4-011	V4H-03 qdrant memory limit	limit > 0	docker inspect HostConfig.Memory	read-only ssh
+ORA4-012	V4H-04 postgres healthcheck	healthcheck present + healthy	docker inspect Config.Healthcheck/State	read-only ssh
+ORA4-013	V4H-05 qdrant healthcheck	healthcheck present + healthy	docker inspect Config.Healthcheck/State	read-only ssh
+ORA4-014	V4H-06 gateway healthcheck	healthcheck present	docker inspect Config.Healthcheck	read-only ssh
+ORA4-015	V4H-07 restart policies	restart=unless-stopped x3	docker inspect HostConfig	read-only ssh
+ORA4-016	V4H-08 exit-137 alerting	alert wiring exists	grep /opt/ping docs	read-only ssh
+ORA4-017	V4B-01 backup recency	newest pg backup <= 24h	ls -lht /opt/ping/backups	read-only ssh
+ORA4-018	V4B-02 backup automation	scheduled backup exists	crontab + /etc/cron.d	read-only ssh
+ORA4-019	V4B-03 backup digests pinned	digests match lockfile	lockfile three-way verify	local evidence
+ORA4-020	V4B-04 RPO documented	RPO budget in docs	grep /opt/ping docs	read-only ssh
+ORA4-021	V4B-05 newest backup sane	non-empty artifact	ls -lht	read-only ssh
+ORA4-022	V4B-06 single backup authority	one backup root	artifact location survey	read-only ssh
+ORA4-023	V4Q-01 snapshot exists	snapshot artifact present	docker exec ls + releases copy	read-only ssh
+ORA4-024	V4Q-02 snapshot recency	snapshot <= 24h	snapshot mtime	read-only ssh
+ORA4-025	V4Q-03 snapshot cadence	automated schedule	snapshot count + cron	read-only ssh
+ORA4-026	V4Q-04 restore drilled	drill executed + RTO measured	staging drill	owner-executed (parked)
+ORA4-027	V4Q-05 RTO documented	RTO budget in docs	grep /opt/ping docs	read-only ssh
+ORA4-028	V4Q-06 collection healthy	status green, points > 0	qdrant API 127.0.0.1:6333	read-only ssh
+ORA4-029	V4Q-07 re-derivation path	components located	/opt/ping survey	read-only ssh
+ORA4-030	V4Q-08 snapshot digest pinned	sha256 == lockfile pin	sha256sum	read-only ssh
+ORA4-031	V4M-01 no host pressure	available mem ample	free -m	read-only ssh
+ORA4-032	V4M-02 containers bounded	limits set + usage sane	docker stats + inspect	read-only ssh
+ORA4-033	V4M-03 zero swap	swap = 0	swapon -s	read-only ssh
+ORA4-034	V4M-04 no OOM kills	0 oom-kill in 96h	journalctl -k	read-only ssh
+ORA4-035	V4M-05 disk headroom	/ use < 80%	df -h	read-only ssh
+ORA4-036	V4M-06 pressure drill run	drill executed on scratch	owner-executed (parked)

@@ -1,0 +1,364 @@
+/**
+ * Canonicalization Service — PING Canonical Boundary v1
+ *
+ * The Canonicalization Boundary law: every observation, command, artifact,
+ * decision, memory, plan, and external event MUST cross this boundary before
+ * it exists. "If it wasn't canonicalized, it doesn't exist."
+ *
+ * This is a THIN FAÇADE over the two existing primitives — it builds no new
+ * subsystem:
+ *   1. createCanonicalObject()  (gateway/canonical_object.js — single envelope)
+ *   2. UnifiedEventRuntime.emit (ping-runtime/events — single event spine)
+ *
+ * Responsibilities (nothing more):
+ *   - resolve + validate the namespace before persistence (core:: / tenant::)
+ *   - derive a deterministic, timestamp-stripped logical identity
+ *   - wrap the payload in the canonical envelope (schema_version /
+ *     constitution_version / canonical_version already carried by the envelope)
+ *   - emit through the event runtime with namespace + logical_id so retries
+ *     are idempotent (same logical event → same event_id)
+ *   - attach confidence (< 1 for observations) and evidence to the envelope
+ *
+ * The REST route (POST /ingest) and every producer (emitters, workers,
+ * capture adapters) are thin adapters over this service.
+ */
+
+const { createCanonicalObject, verifyCanonicalObject } = require('./canonical_object');
+
+const CANONICAL_VERSION = '1.0.0';
+const DEFAULT_NAMESPACE = 'core::owner';
+const NAMESPACE_RE = /^(core|tenant)::[a-zA-Z0-9_-]+$/;
+
+// Volatile fields are stripped when deriving logical identity so that two
+// emissions of the same logical event hash identically (no Date.now()).
+const VOLATILE_FIELDS = [
+  'timestamp', 'created_at', 'updated_at', 'paid_at', 'accepted_at',
+  'completed_at', 'occurred_at', 'received_at', 'sent_at', 'started_at',
+  'ended_at', 'recorded_at', 'processed_at',
+];
+
+class CanonicalizationService {
+  /**
+   * @param {object} options
+   * @param {object} options.eventRuntime — UnifiedEventRuntime instance
+   * @param {object} [options.namespaces] — source → namespace map (e.g. { 'review-authority': 'tenant::hpp' })
+   * @param {string} [options.defaultNamespace] — fallback namespace (default 'core::owner')
+   */
+  constructor(options = {}) {
+    this._eventRuntime = options.eventRuntime || null;
+    this._namespaces = options.namespaces || {};
+    this._defaultNamespace = options.defaultNamespace || DEFAULT_NAMESPACE;
+  }
+
+  /**
+   * Resolve and validate the namespace for a source.
+   * Priority: explicit request > per-source map > default.
+   */
+  resolveNamespace(source, requested) {
+    const namespace = requested || this._namespaces[source] || this._defaultNamespace;
+    if (!NAMESPACE_RE.test(namespace)) {
+      throw new Error(`Invalid namespace: '${namespace}' (must be core::<name> or tenant::<id>)`);
+    }
+    return namespace;
+  }
+
+  /**
+   * Authorize a producer's namespace claim at the boundary (audit §7 #1).
+   * Producers' allowed namespaces = the per-source map + explicit override,
+   * resolved by the same rule as resolveNamespace. This is the guard decision
+   * (authorized: true/false) the boundary route uses before canonicalizing;
+   * it wraps resolveNamespace so resolution + validation have exactly one owner.
+   *
+   * @param {string} source — producing source/authority ID
+   * @param {string} [requested] — explicit namespace override (optional)
+   * @returns {{authorized: true, namespace: string} | {authorized: false, reason: string}}
+   */
+  authorizeNamespace(source, requested) {
+    try {
+      const namespace = this.resolveNamespace(source, requested);
+      return { authorized: true, namespace };
+    } catch (err) {
+      return { authorized: false, reason: err.message };
+    }
+  }
+
+  /**
+   * Derive a deterministic logical identity, stripping volatile timestamp
+   * fields from the payload so retries never produce duplicate IDs.
+   */
+  _logicalIdentity(payload, logicalId) {
+    if (logicalId) return logicalId;
+    const stable = { ...payload };
+    for (const field of VOLATILE_FIELDS) delete stable[field];
+    return JSON.stringify(stable);
+  }
+
+  /**
+   * The canonical boundary. Every producer calls this.
+   * @param {object} input
+   * @param {string} input.source — producing source/authority ID
+   * @param {string} input.eventType — event type (validated by EventValidator)
+   * @param {object} input.payload — event data
+   * @param {string} [input.namespace] — explicit namespace override
+   * @param {string} [input.logicalId] — explicit logical identity (defaults to timestamp-stripped payload)
+   * @param {number} [input.confidence] — default 0.5 (observations are not knowledge)
+   * @param {array} [input.evidence] — evidence event IDs / references
+   * @param {string} [input.lifecycleStage] — 'observation' | 'candidate' | 'knowledge' (default 'observation')
+   * @param {object} [input.options] — passthrough to eventRuntime.emit (causation_id, correlation_id, metadata)
+   */
+  async canonicalizeAndEmit({
+    source,
+    eventType,
+    payload,
+    namespace,
+    logicalId,
+    confidence,
+    evidence,
+    lifecycleStage,
+    options = {},
+  }) {
+    if (!this._eventRuntime) throw new Error('CanonicalizationService: no eventRuntime configured');
+    if (!source || typeof source !== 'string') throw new Error('CanonicalizationService: source (string) required');
+    if (!eventType || typeof eventType !== 'string') throw new Error('CanonicalizationService: eventType (string) required');
+    if (typeof payload !== 'object' || payload === null) throw new Error('CanonicalizationService: payload (object) required');
+
+    const ns = this.resolveNamespace(source, namespace);
+    const lifecycle = lifecycleStage || 'observation';
+
+    const envelope = createCanonicalObject({
+      kind: eventType,
+      payload,
+      authority: source,
+      options: {
+        namespace: ns,
+        confidence: confidence === undefined ? 0.5 : confidence,
+        metadata: {
+          canonical_version: CANONICAL_VERSION,
+          lifecycle_stage: lifecycle,
+          evidence: evidence || [],
+        },
+      },
+    });
+
+    const result = await this._eventRuntime.emit(eventType, source, payload, {
+      ...options,
+      namespace: ns,
+      logical_id: this._logicalIdentity(payload, logicalId),
+      metadata: {
+        canonical_object_id: envelope.id,
+        canonical_hash: envelope.canonical_hash,
+        canonical_version: CANONICAL_VERSION,
+        lifecycle_stage: lifecycle,
+        evidence: evidence || [],
+        // Forward confidence from producer into event metadata so downstream
+        // workers and projection subscribers can read it without recomputing.
+        confidence: confidence === undefined ? 0.5 : confidence,
+        ...(options.metadata || {}),
+      },
+    });
+
+    return {
+      ...result,
+      objectId: envelope.id,
+      canonicalHash: envelope.canonical_hash,
+      canonicalVersion: CANONICAL_VERSION,
+      namespace: ns,
+      envelope,
+      verified: verifyCanonicalObject(envelope),
+    };
+  }
+
+  /**
+   * Duck-typed emit for existing producers that call runtime.emit(eventType, source, payload, options).
+   * Allows emitters/workers to be pointed at this service without signature changes.
+   */
+  async emit(eventType, source, payload, options = {}) {
+    return this.canonicalizeAndEmit({
+      source,
+      eventType,
+      payload,
+      namespace: options.namespace,
+      logicalId: options.logicalId,
+      confidence: options.confidence,
+      evidence: options.evidence,
+      lifecycleStage: options.lifecycleStage,
+      options,
+    });
+  }
+}
+
+module.exports = { CanonicalizationService, DEFAULT_NAMESPACE, CANONICAL_VERSION };
+=====CANONICAL_OBJECT=====
+/**
+ * Canonical Object — Shared Constitutional Object Envelope
+ *
+ * Single immutable envelope for all constitutional objects.
+ *
+ * Consolidates ~15 isomorphic implementations that each built the same
+ * envelope independently:
+ *   - canonical_object_authority.js      (create)
+ *   - constitutional_object_factory.js   (createObject)
+ *   - knowledge_objects.js               (Function/Class/Interface/API/Dependency/Concept)
+ *   - knowledge_object.js                (class-based)
+ *   - canonical_symbol_objects.js        (symbol objects)
+ *   - github_constitutional_objects.js   (repository/commit/tree/dir/blob)
+ *   - constitutional_parser_objects.js   (parser objects)
+ *   - prompt_objects.js                  (prompt objects)
+ *   - relationship_objects.js            (relationship objects)
+ *   - artifact_authority.js              (ArtifactContract)
+ *   - pipeline_witness.js                (witness objects)
+ *   - replay_certificate_authority.js    (replay certificates)
+ *   - temporal_authority.js              (temporal objects)
+ *   - generated/*.json registries        (event/capability/workflow entries)
+ *
+ * Constitutional Constraint: There shall be only one canonical envelope.
+ * Every producer builds through createCanonicalObject().
+ * Every consumer reads the same field contract.
+ *
+ * Envelope schema (union of all historical implementations):
+ *   id, kind, authority,
+ *   canonical_hash, canonical_bytes,
+ *   identity, lineage, relationships,
+ *   health, confidence,
+ *   metadata, payload,
+ *   witness, certificate,
+ *   schema_version, canonical_version, constitution_version
+ */
+
+const { CanonicalBytes, CanonicalAuthority } = require('../authorities/canonical_authority.js');
+const { identityAuthority } = require('../authorities/identity_authority.js');
+const { constitutionalTimeAuthority } = require('../authorities/constitutional_time_authority.js');
+
+const SCHEMA_VERSION = '1.0.0';
+const CONSTITUTION_VERSION = '1.0.0';
+const RUNTIME_VERSION = '1.0.0';
+
+/**
+ * Create a canonical constitutional object.
+ *
+ * @param {Object} config - Object configuration
+ * @param {string} config.kind - Object kind (e.g., 'Symbol', 'Commit', 'Repository')
+ * @param {Object} config.payload - Object payload (the content being wrapped)
+ * @param {string} config.authority - Producing authority ID
+ * @param {Object} [config.options] - Envelope options
+ * @param {string} [config.options.namespace] - Identity namespace (default 'default')
+ * @param {string} [config.options.lifecycle_id] - Lifecycle ID
+ * @param {Array} [config.options.derivation_path] - Derivation path (default [kind])
+ * @param {Array} [config.options.provenance_chain] - Provenance chain
+ * @param {Array} [config.options.relationships] - Relationships array
+ * @param {string} [config.options.source_id] - Lineage source ID
+ * @param {string} [config.options.source_kind] - Lineage source kind
+ * @param {string} [config.options.id] - Explicit ID (defaults to identity-generated)
+ * @param {Object} [config.options.identity] - Explicit identity block
+ * @param {string} [config.options.health] - Health state (default 'healthy')
+ * @param {number} [config.options.confidence] - Confidence (default 1.0)
+ * @param {Object} [config.options.metadata] - Extra metadata merged into envelope metadata
+ * @param {Object} [config.options.witness] - Witness block
+ * @param {Object} [config.options.certificate] - Certificate block
+ * @param {boolean} [config.options.include_canonical_bytes] - Include canonical_bytes (default true)
+ * @returns {Object} Canonical constitutional object
+ */
+function createCanonicalObject({ kind, payload, authority, options = {} }) {
+  if (!kind) throw new Error('createCanonicalObject() requires kind');
+  if (typeof payload !== 'object' || payload === null) throw new Error('createCanonicalObject() requires payload object');
+  if (!authority) throw new Error('createCanonicalObject() requires authority');
+
+  const {
+    namespace = 'default',
+    lifecycle_id = null,
+    derivation_path = [kind],
+    provenance_chain = [],
+    relationships = [],
+    source_id = null,
+    source_kind = null,
+    id = null,
+    identity = null,
+    health = 'healthy',
+    confidence = 1.0,
+    metadata = {},
+    witness = null,
+    certificate = null,
+    include_canonical_bytes = true,
+  } = options;
+
+  // Canonical bytes + hash from payload
+  const canonicalBytes = CanonicalBytes.serialize(payload);
+  const canonicalHash = CanonicalAuthority.hashBytes(canonicalBytes);
+
+  // Identity: explicit block wins, otherwise derive from identity authority
+  const objectId = id || identityAuthority.generateFromCanonicalHash(canonicalBytes, kind);
+  const identityBlock = identity || {
+    namespace,
+    version: 'v1',
+    created_at: constitutionalTimeAuthority.nowAsISOString(),
+    created_by: authority,
+  };
+
+  // Lineage
+  const lineage = {
+    source_id: source_id || objectId,
+    source_kind,
+    derivation_path,
+    provenance_chain,
+  };
+
+  const envelope = {
+    id: objectId,
+    kind,
+    authority,
+    canonical_hash: canonicalHash,
+    identity: identityBlock,
+    lineage,
+    relationships,
+    health,
+    confidence,
+    metadata: {
+      lifecycle_id,
+      timestamp: constitutionalTimeAuthority.nowAsISOString(),
+      schema_version: SCHEMA_VERSION,
+      constitution_version: CONSTITUTION_VERSION,
+      runtime_version: RUNTIME_VERSION,
+      ...metadata,
+    },
+    payload,
+    witness,
+    certificate,
+    schema_version: SCHEMA_VERSION,
+    canonical_version: SCHEMA_VERSION,
+    constitution_version: CONSTITUTION_VERSION,
+  };
+
+  if (include_canonical_bytes) {
+    envelope.canonical_bytes = canonicalBytes;
+  }
+
+  return envelope;
+}
+
+/**
+ * Verify a canonical object envelope.
+ *
+ * Recomputes canonical hash from payload and compares.
+ *
+ * @param {Object} obj - Canonical object to verify
+ * @returns {Object} { valid, error }
+ */
+function verifyCanonicalObject(obj) {
+  if (!obj || typeof obj !== 'object') return { valid: false, error: 'not an object' };
+  if (!obj.kind) return { valid: false, error: 'missing kind' };
+  if (typeof obj.payload !== 'object' || obj.payload === null) return { valid: false, error: 'missing payload' };
+  if (typeof obj.canonical_hash !== 'string') return { valid: false, error: 'missing canonical_hash' };
+
+  const expectedHash = CanonicalAuthority.hashBytes(CanonicalBytes.serialize(obj.payload));
+  if (obj.canonical_hash !== expectedHash) {
+    return { valid: false, error: 'canonical_hash mismatch' };
+  }
+  return { valid: true, error: null };
+}
+
+module.exports = {
+  createCanonicalObject,
+  verifyCanonicalObject,
+  CANONICAL_OBJECT_SCHEMA_VERSION: SCHEMA_VERSION,
+  CANONICAL_OBJECT_CONSTITUTION_VERSION: CONSTITUTION_VERSION,
+};

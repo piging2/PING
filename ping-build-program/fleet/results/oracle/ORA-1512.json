@@ -1,0 +1,13 @@
+{
+  "mission_id": "ORA-1512",
+  "verdict": "PROVEN",
+  "summary": "Executed sandbox-local against the REAL CanonicalizationService fetched read-only from the live gateway image (190-line boundary service + full authority chain, node v24): 20 adversarial injections (duplicate/malformed/oversized/collision/reordered) -> 100% classified, 0 crashes, 0 poisoned canonical state, all applied envelopes verify. Real findings: array payloads accepted by the typeof-object guard (F-E1), no payload size cap (F-E2, 10MB applied with bounded 28.9MB heap).",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox-execution-pass.md",
+    "fleet/work/fleet-ora-2/sandbox/tree/chaos-harness.js",
+    "fleet/work/fleet-ora-2/sandbox/tree/chaos-log.json",
+    "fleet/work/fleet-ora-2/sandbox/tree/store-loss-drill.sh"
+  ],
+  "confidence": 0.8,
+  "followup": "Owner: add Array.isArray rejection (400) and a documented payload max (413) to the ingest boundary; full HTTP-route + real-runtime idempotency pass on the chaos candidate remains staging followup."
+}

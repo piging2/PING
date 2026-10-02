@@ -1,0 +1,9 @@
+[Unit]
+Description=Bounded daily postgres backup (ops lane)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/opt/ping/backups/pg-backup.sh

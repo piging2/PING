@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0048",
+ "verdict": "PROVEN",
+ "summary": "BEFORE non-expiring fencing token: crashed holder blocks takeover indefinitely (acquired=false); AFTER expiring lease: new writer fences (token 5->6) and acquires after expiry (acquired=true). Liveness claim proven; lease duration is the staleness/availability tradeoff knob.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0003,
+  "after_ms": 0.0009,
+  "metric": "acquire_after_holder_crash",
+  "change": "expiring lease with fencing on takeover instead of non-expiring token",
+  "case": 47,
+  "extra": {
+   "acquired_before": false,
+   "acquired_after": true,
+   "note": "liveness claim: crashed holder no longer blocks progress"
+  }
+ }
+}

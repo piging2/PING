@@ -1,0 +1,121 @@
+[
+  {
+    "class": "duplicate",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-21f10eaaccc68ad2",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"dup probe\",\""
+  },
+  {
+    "class": "duplicate",
+    "outcome": "DUPLICATE",
+    "detail": "idempotent re-emit, single application",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"dup probe\",\""
+  },
+  {
+    "class": "duplicate",
+    "outcome": "DUPLICATE",
+    "detail": "idempotent re-emit, single application",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"dup probe\",\""
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: source (string) required",
+    "probe": "{\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"well-formed probe\",\"n\":1}}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: source (string) required",
+    "probe": "{\"source\":42,\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"well-formed probe\",\"n\":"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: eventType (string) required",
+    "probe": "{\"source\":\"chaos-probe\",\"payload\":{\"note\":\"well-formed probe\",\"n\":1}}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: eventType (string) required",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":123,\"payload\":{\"note\":\"well-formed probe\",\"n\":1}}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: payload (object) required",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\"}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: payload (object) required",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":null}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "CanonicalizationService: payload (object) required",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":\"not-an-object\"}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-72aeee313158d0ba",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":[1,2,3]}"
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "Invalid namespace: 'bogus::ns' (must be core::<name> or tenant::<id>)",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"well-formed "
+  },
+  {
+    "class": "malformed",
+    "outcome": "REJECTED_TYPED",
+    "detail": "Invalid namespace: '../../etc' (must be core::<name> or tenant::<id>)",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"note\":\"well-formed "
+  },
+  {
+    "class": "oversized",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-9b6c518e10924e6e",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"blob\":\"xxxxxxxxxxxx"
+  },
+  {
+    "class": "oversized",
+    "outcome": "HEAP_DELTA_MB",
+    "detail": "28.9"
+  },
+  {
+    "class": "collision",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-9a5b923436feb32d",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"v\":\"original\"},\"log"
+  },
+  {
+    "class": "collision",
+    "outcome": "REJECTED_TYPED",
+    "detail": "ID_COLLISION CONFLICT: logical_id collision, original preserved (event evt-9a5b923436feb32d)",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"v\":\"ATTACKER\"},\"log"
+  },
+  {
+    "class": "reordered",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-c66722ee1c5f9dca",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"seq\":3},\"evidence\":"
+  },
+  {
+    "class": "reordered",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-d9234fda84b30d9c",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"seq\":1}}"
+  },
+  {
+    "class": "reordered",
+    "outcome": "APPLIED",
+    "detail": "eventId=evt-dabe8ffa85639a4d",
+    "probe": "{\"source\":\"chaos-probe\",\"eventType\":\"observation.recorded\",\"payload\":{\"seq\":2}}"
+  }
+]

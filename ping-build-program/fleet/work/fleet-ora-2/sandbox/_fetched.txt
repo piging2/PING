@@ -1,0 +1,87 @@
+/**
+ * Canonical Authority
+ * 
+ * Re-export from dist/runtime/replay to avoid duplication
+ */
+
+const { CanonicalHashAuthority } = require('../dist/runtime/replay/canonical_hash_authority');
+
+class CanonicalAuthority {
+  constructor() {
+    this.hashAuthority = new CanonicalHashAuthority();
+  }
+
+  static hash(obj) {
+    const authority = new CanonicalAuthority();
+    const canonical = authority.hashAuthority.canonicalize(obj);
+    const fingerprint = authority.hashAuthority.computeFingerprint(canonical);
+    return fingerprint.hash;
+  }
+
+  static canonicalize(obj) {
+    const authority = new CanonicalAuthority();
+    return authority.hashAuthority.canonicalize(obj);
+  }
+}
+
+module.exports = { CanonicalAuthority };
+=====ENVELOPE=====
+const { identityAuthority } = require('./identity_authority');
+const { CanonicalAuthority } = require('./canonical_authority');
+const { constitutionalTimeAuthority } = require('./constitutional_time_authority');
+
+function deepFreeze(value) {
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  Object.freeze(value);
+  for (const child of Object.values(value)) deepFreeze(child);
+  return value;
+}
+
+/**
+ * Canonical business boundary for anything acquired from the external world.
+ * Providers may return transport-specific data internally, but they never emit it.
+ */
+class ObservationEnvelope {
+  constructor({ type, provider, evidence = [], knowledge = [], relationships = [], data, authority = 'ObservationAuthority', replayHash = null, witness = null }) {
+    if (!type || !provider) throw new Error('observation type and provider are required');
+    if (data === undefined) throw new Error('observation data is required');
+
+    const identity = identityAuthority.generateId('observation', { type, provider });
+    const timestamp = constitutionalTimeAuthority.nowAsMillis();
+    // Runtime time records acquisition time but must not change replay identity.
+    const canonical = { identity, type, provider, evidence, knowledge, relationships, data, authority };
+
+    this.identity = identity;
+    this.type = type;
+    this.provider = provider;
+    this.timestamp = timestamp;
+    this.evidence = evidence;
+    this.knowledge = knowledge;
+    this.relationships = relationships;
+    this.data = data;
+    this.authority = authority;
+    this.canonicalHash = CanonicalAuthority.hash(canonical);
+    this.replayHash = replayHash || this.canonicalHash;
+    this.witness = witness;
+    deepFreeze(this);
+  }
+
+  toJSON() {
+    return {
+      identity: this.identity,
+      type: this.type,
+      provider: this.provider,
+      timestamp: this.timestamp,
+      evidence: this.evidence,
+      knowledge: this.knowledge,
+      relationships: this.relationships,
+      data: this.data,
+      witness: this.witness,
+      canonical_hash: this.canonicalHash,
+      replay_hash: this.replayHash,
+      authority: this.authority,
+    };
+  }
+}
+
+module.exports = { ObservationEnvelope };

@@ -1,0 +1,11 @@
+{
+  "mission_id": "CON-0096",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "[Google Calendar] idempotency: No confirmed native idempotency-key header in retrieved docs. Documented safe pattern: client-chosen iCalUID on insert + re-check by iCalUID makes retries safe; recurring-instance edits key on (recurringEventId, originalStartTime); watch notifications are idempotent hints (always reconcile via syncToken). iCalUID-on-insert semantics UNVERIFIED in this pass.",
+  "evidence_files": [
+    "~/workspace/ping-build-program/fleet/work/fleet-con-1/calendar-gcal.md",
+    "https://developers.google.com/workspace/calendar/api/guides/push"
+  ],
+  "confidence": 0.6,
+  "followup": "Verify iCalUID-keyed insert/dedupe behavior (events.insert/import with client-chosen iCalUID) against current Google Calendar API docs at build time."
+}

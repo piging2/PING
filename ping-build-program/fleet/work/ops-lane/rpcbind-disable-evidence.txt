@@ -1,0 +1,28 @@
+=== rpcbind.socket unit? ===
+rpcbind.service                                                               enabled         enabled
+rpcbind.socket                                                                enabled         enabled
+rpcbind.target                                                                static          -
+=== DISABLING ===
+Synchronizing state of rpcbind.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install disable rpcbind
+Reload daemon failed: Interactive authentication required.
+update-rc.d: error: Permission denied
+disable_exit=1
+=== state after ===
+active
+enabled
+=== :111 now? ===
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*          
+LISTEN 0      4096            [::]:111           [::]:*          
+=== rpcinfo after ===
+   program vers proto   port  service
+    100000    4   tcp    111  portmapper
+    100000    3   tcp    111  portmapper
+=== :46699 identification ===
+LISTEN 0      4096       127.0.0.1:46699      0.0.0.0:*          
+=== boot persistence proof ===
+lrwxrwxrwx  1 root root   39 Apr 30 22:10 rpcbind.service -> /usr/lib/systemd/system/rpcbind.service
+=== docker still healthy (sanity) ===
+ping-gateway Up 3 days
+ping-postgres Up 3 days (healthy)
+ping-qdrant Up 4 days (healthy)

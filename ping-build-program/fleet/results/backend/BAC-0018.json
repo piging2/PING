@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0018",
+ "verdict": "REJECTED",
+ "summary": "BEFORE OFFSET slice over 100k list: ~0.00ms; AFTER Python keyset loop: 0.88ms \u2014 AFTER slower. List slicing is already O(k); the keyset benefit is a database-engine property (avoiding O(offset) row skips in the executor), not a Python-list property. Claim as implemented is false at this layer.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": "Exhibit on SQLite: SELECT ... LIMIT 100 OFFSET 50000 vs WHERE id > ? on 1M rows.",
+ "numbers": {
+  "before_ms": 0.0005,
+  "after_ms": 0.8754,
+  "metric": "fetch_page_500_of_1000",
+  "change": "keyset pagination (WHERE id > last) instead of OFFSET",
+  "case": 17
+ }
+}

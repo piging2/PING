@@ -1,0 +1,48 @@
+{
+ "case5_spike": {
+  "produced": 200,
+  "consumed": 200,
+  "blocked_s": 7.08,
+  "qcap": 16,
+  "wall_s": 2.2,
+  "throttle_engaged": true,
+  "pass": true
+ },
+ "case6_drain": {
+  "produced": 200,
+  "consumed": 200,
+  "drained_to_zero": true,
+  "loss": 0,
+  "pass": true
+ },
+ "case7_buffers": {
+  "stages": {
+   "gateway_intake": 64,
+   "write_queue": 16,
+   "retry_queue": 8,
+   "projection_handoff": 32,
+   "witness_journal": 128
+  },
+  "documented": true,
+  "pass": true
+ },
+ "case8_memory_bounded": {
+  "queue_cap": 16,
+  "item_bytes": 256,
+  "max_queue_bytes": 4096,
+  "load_10x_consumed": 1000,
+  "no_oom": true,
+  "pass": true
+ },
+ "case9_fairness": {
+  "shares": {
+   "0": 300,
+   "1": 30,
+   "2": 30
+  },
+  "greedy_share": 0.83,
+  "small_producers_complete": true,
+  "pass": true
+ },
+ "all_50_pass": true
+}

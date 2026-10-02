@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0065",
+ "verdict": "PROVEN",
+ "summary": "BEFORE always-copy mixed slices (500x64B + 200x256KB over 8MB): 40.11ms; AFTER threshold-gated hybrid (copy <4KB, memoryview above): 0.07ms. Delta 99.8%; noise estimate inflated by before-side variance, but the hybrid is structurally never worse (small path identical, large path copy-free: ~51MB of copies avoided). Applies BAC-0030's threshold finding.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 40.1099,
+  "after_ms": 0.0717,
+  "metric": "mixed_slice_sizes_hybrid",
+  "change": "threshold-gated hybrid (copy <4KB, memoryview above) vs always-copy",
+  "case": 64
+ }
+}

@@ -1,0 +1,10 @@
+decision-fabric: wire compileAskContext() into MC dispatch context.json
+
+Replace the params-only context.json mint with one call to the real
+compileAskContext() over the live tenant graph + journal evidence
+(getFydTenantGraph seam). Keeps mc-ctx-<missionId> as context_pack_id and
+the params envelope as packet metadata under dispatch. Fail-closed:
+graph/compilation failure fails the mission before the executor runs.
+
+Tests: evidence refs + provenance classifications, metadata regression,
+attack-9 retraction, no-reader fail-closed.

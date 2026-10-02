@@ -1,0 +1,59 @@
+{
+  "capture": {
+    "incidentRef": "redteam-3",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "redteam",
+    "sourceDigest": "sha256:COMPUTED-BY-RUNNER"
+  },
+  "connectorShape": "poll",
+  "expect": {
+    "recordsEmitted": 1,
+    "terminalState": "SUCCEEDED"
+  },
+  "fixtureId": "redteam-nondeterministic",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T21:00:00Z",
+  "replay": {
+    "baseTime": "not-a-timestamp",
+    "deterministicClock": false,
+    "latencyMode": "wallclock",
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "latency drawn from Math.random() at capture time",
+      "request": {
+        "body": null,
+        "headers": {},
+        "method": "GET",
+        "path": "/v1/jobs"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_1"
+          }
+        ],
+        "headers": {},
+        "latencyMs": "Date.now() % 1000",
+        "status": 200
+      }
+    }
+  ],
+  "title": "REDTEAM: fixture with wall-clock latency and no seed"
+}

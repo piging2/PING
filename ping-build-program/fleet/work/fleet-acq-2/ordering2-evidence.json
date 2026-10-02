@@ -1,0 +1,58 @@
+{
+ "case5_restorm": {
+  "cycles": 5,
+  "invariant": "deps-before-dependents every cycle",
+  "tie_break_free": true,
+  "pass": true
+ },
+ "case6_doc": {
+  "documented": true,
+  "services": 4,
+  "pass": true
+ },
+ "case7_coldboot": {
+  "attempts": 5,
+  "elapsed_s": 0.75,
+  "served_while_postgres_down": false,
+  "pass": true
+ },
+ "case8_timer": {
+  "sequence": [
+   "backup-done",
+   "prune-done"
+  ],
+  "pass": true
+ },
+ "case9_graph_review": {
+  "declared": {
+   "postgres": [],
+   "qdrant": [],
+   "gateway": [
+    "postgres",
+    "qdrant"
+   ],
+   "workers": [
+    "postgres",
+    "qdrant",
+    "gateway"
+   ]
+  },
+  "live": {
+   "postgres": [],
+   "qdrant": [],
+   "gateway": [
+    "postgres",
+    "qdrant"
+   ],
+   "workers": [
+    "postgres",
+    "qdrant",
+    "gateway"
+   ]
+  },
+  "match": true,
+  "reviewed": true,
+  "pass": true
+ },
+ "all_50_pass": true
+}

@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0135",
+ "verdict": "REJECTED",
+ "summary": "BEFORE 100_file_slices_mmap: 0.084ms; AFTER mmap views vs seek+read copies for file slices: 1.600ms. Delta +1806.6%. 0.08ms vs 1.60ms (+1807%); mmap setup dominates for 100 small random slices, so read-copy wins this access pattern.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.084,
+  "after_ms": 1.6,
+  "metric": "100_file_slices_mmap",
+  "change": "mmap views vs seek+read copies for file slices",
+  "case": 134
+ }
+}

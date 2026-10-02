@@ -1,0 +1,15 @@
+[Unit]
+Description=PING Gateway
+Requires=docker.service ping-postgres.service
+After=docker.service ping-postgres.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml up -d gateway
+ExecStop=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml stop gateway
+ExecReload=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml restart gateway
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

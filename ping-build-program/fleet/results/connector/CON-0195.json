@@ -1,0 +1,11 @@
+{
+  "mission_id": "CON-0195",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "[Square Inventory] idempotency: Idempotency-key support on batchChangeInventory NOT confirmed in retrieved docs. Safe client pattern: physical counts are naturally idempotent (re-asserting the same count is a no-op); ADJUSTMENTs are NOT (re-applying double-counts): guard adjustments with ledger pre-reads (check whether the change already exists for the occurred_at window) and unique client references where accepted. Webhook handlers dedupe by event_id.",
+  "evidence_files": [
+    "~/workspace/ping-build-program/fleet/work/fleet-con-1/inventory-square.md",
+    "https://developer.squareup.com/reference/square/inventory-api"
+  ],
+  "confidence": 0.6,
+  "followup": "Verify batchChangeInventory idempotency-key support in current Square docs at build time."
+}

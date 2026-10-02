@@ -1,0 +1,22 @@
+{
+ "mission_id": "BAC-0077",
+ "verdict": "PROVEN",
+ "summary": "BEFORE restore = deepcopy of 20k-key snapshot: 12.66ms; AFTER restore = base + replay 10 diffs: 0.10ms. Delta 99.2% vs noise 9.2%. Improvement proven \u2014 completes the restore-side half of BAC-0007's NEEDS-FOLLOWUP.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 12.6621,
+  "after_ms": 0.1027,
+  "metric": "restore_20k_keys",
+  "change": "restore via base + 10 diffs vs deepcopy of full snapshot",
+  "case": 76,
+  "extra": {
+   "note": "take-path was proven in BAC-0042; this measures the restore side of the tradeoff"
+  }
+ }
+}

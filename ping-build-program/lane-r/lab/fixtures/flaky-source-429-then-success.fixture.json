@@ -1,0 +1,126 @@
+{
+  "capture": {
+    "incidentRef": null,
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling a flaky provider under burst load (429 with Retry-After, then 429 without, then recovery)",
+    "sourceDigest": "sha256:476e9453bd185d92675c3ec5b47f76bc644863cfe5713085f97669ed9829d43d"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "checkpoints": [
+      "page-1"
+    ],
+    "duplicatesAbsorbed": 0,
+    "failureCodes": [
+      "RATE_LIMITED"
+    ],
+    "maxAttemptsPerStep": 3,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 2,
+    "retryAfterHonored": true,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 2
+  },
+  "fixtureId": "flaky-source-429-then-success",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "string",
+      "rating": "number",
+      "text": "string",
+      "updated_at": "string"
+    },
+    "idField": "id",
+    "versionField": "updated_at"
+  },
+  "recordedAt": "2026-09-23T19:00:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T19:00:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 7,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer tokens never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "one logical request, three recorded attempts: 429 with Retry-After (must be honored, not busy-retried), 429 without (harness falls back to its own exponential backoff), then 200. Bounded at 3 attempts: no retry storm.",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/reviews?business_id=biz_9&per_page=2"
+      },
+      "responses": [
+        {
+          "body": {
+            "error": "burst limit exceeded",
+            "message": "Slow down. You are making too many requests."
+          },
+          "headers": {
+            "retry-after": "2",
+            "x-ratelimit-remaining": "0"
+          },
+          "latencyMs": 40,
+          "status": 429
+        },
+        {
+          "body": {
+            "error": "rate limited"
+          },
+          "headers": {
+            "x-ratelimit-remaining": "0"
+          },
+          "latencyMs": 35,
+          "status": 429
+        },
+        {
+          "body": [
+            {
+              "id": "r_5001",
+              "rating": 2,
+              "text": "Nobody answers the phone here.",
+              "updated_at": "2026-09-22T18:20:00Z"
+            },
+            {
+              "id": "r_5002",
+              "rating": 5,
+              "text": "Fast, fair, showed up on time.",
+              "updated_at": "2026-09-23T09:02:00Z"
+            }
+          ],
+          "headers": {
+            "x-ratelimit-limit": "30",
+            "x-ratelimit-remaining": "27"
+          },
+          "latencyMs": 95,
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "title": "Flaky source: two 429s (one with Retry-After, one without) then success; bounded retries, no retry storm"
+}

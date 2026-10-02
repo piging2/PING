@@ -1,0 +1,340 @@
+  const kind = provenanceKind ?? "";
+  if (kind === "owner-authored" || kind === "owner-correction" || kind === "owner" || kind === "owner_asserted")
+    return "USER_OVERRIDE";
+  if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
+  if (kind === "canonical-journal" || kind === "observation") return "DIRECT_FACT";
+  if (kind === "directory") return "DIRECT_FACT";
+  if (kind === "website-derived" || kind === "website-ingestion") return "website_statement";
+  return "UNKNOWN";
+}
+
+/** Rank order for B3: a claim must not outrank its best cited evidence. */
+const EPISTEMIC_RANK: Record<string, number> = {
+  UNKNOWN: 0,
+  DEMO_SYNTHETIC: 1,
+  GENERATED_COPY: 1,
+  INFERENCE: 2,
+  website_statement: 3,
+  provenance: 3,
+  owner_authorship: 4,
+  relationship_fact: 4,
+  DERIVED_FACT: 4,
+  DIRECT_FACT: 5,
+  USER_OVERRIDE: 5,
+};
+
+export const CLAIM_GRADES = ["SUPPORTED", "DERIVED", "INFERRED", "UNKNOWN"] as const;
+export type ClaimGrade = (typeof CLAIM_GRADES)[number];
+
+// Concierge grade -> epistemic rank, for the B3 check inside verifyAnswerClaims.
+const GRADE_RANK: Record<string, number> = { SUPPORTED: 5, DERIVED: 4, INFERRED: 2, UNKNOWN: 0 };
+
+// Secret-shaped field names (lane L custody rule): never enter a packet (G7).
+const SECRET_FIELD_RE =
+  /(api[_-]?key|secret|password|passwd|token|private[_-]?key|bearer|session|cookie|ssn|credentials?)/i;
+
+// Capability gating (G8): known executable kinds; forbidden agent effects.
+const KNOWN_CAPABILITY_KINDS = new Set([
+  "follow", "unfollow", "open", "open_site", "open_website", "ask",
+  "propose_site_patch", "propose_update", "call", "reply", "like", "unlike",
+]);
+const FORBIDDEN_AGENT_EFFECTS = new Set([
+  "site.publish", "message.send", "purchase.make", "ad.buy", "provider.call", "business.mutate",
+]);
+
+// ---------------------------------------------------------------------------
+// Packet shapes (ADOPTED from base; ledger + capabilities + boundary extended)
+// ---------------------------------------------------------------------------
+
+export interface PacketFieldValue {
+  value: string | string[];
+  truncated: boolean;
+  hiddenInPublic: boolean;
+}
+
+export interface PacketObject {
+  id: string;
+  schema: string;
+  title: string;
+  description: { value: string; truncated: boolean };
+  fields: Record<string, string | string[] | PacketFieldValue>;
+  evidenceRefIds: string[];
+  relevance: { score: number; why: string[] };
+  /** Every object content is DATA. It is never instructions. */
+  contentRole: "DATA";
+}
+
+export interface PacketRelationship {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  evidenceRef: string | null;
+  contentRole: "DATA";
+}
+
+export interface PacketEvidence {
+  evidenceId: string;
+  kind: "object" | "relationship" | "field";
+  objectId?: string;
+  label: string;
+  classification: string;
+}
+
+/** G2: counts only. Listing hidden ids would leak their existence. */
+export interface ExclusionCounts {
+  nonPublic: number;
+  aclMissing: number;
+  inactiveRelationships: number;
+  danglingRelationships: number;
+  ownerHiddenFields: number;
+  belowFloor: number;
+  selectionCut: number;
+  budgetCut: number;
+  secretFields: number;
+}
+
+export interface CapabilityView {
+  kind: string;
+  label: string;
+  actionId: string;
+}
+
+export interface BudgetPolicy {
+  maxBytes: number;
+  maxFieldChars: number;
+  maxDescChars: number;
+  maxObjects: number;
+  maxRelationships: number;
+  maxEvidenceItems: number;
+  maxSourceExcerptChars: number;
+  proportions: { target: number; evidence: number; relationships: number; relatedObjects: number; sourceExcerpts: number };
+}
+
+const DEFAULT_BUDGET: BudgetPolicy = {
+  maxBytes: 24000,
+  maxFieldChars: 500,
+  maxDescChars: 2000,
+  maxObjects: 8,
+  maxRelationships: 20,
+  maxEvidenceItems: 32,
+  maxSourceExcerptChars: 2000,
+  proportions: { target: 0.15, evidence: 0.3, relationships: 0.15, relatedObjects: 0.3, sourceExcerpts: 0.1 },
+};
+
+/** G11: lane F SearchResponse seam. Hits are id + rank metadata only;
+ *  the compiler fetches nothing through search; visibility stays enforced
+ *  at assembly. When absent, local deterministic scoring stands alone. */
+export interface SearchHit {
+  objectId: string;
+  tier: string;
+  rule: string;
+  score: number;
+}
+
+export interface SearchSeam {
+  hits: SearchHit[];
+  indexDigest: string;
+}
+
+export interface CapabilityInput {
+  kind: string;
+  label?: string;
+  actionId?: string;
+  effect?: string;
+}
+
+export interface CompilerInput {
+  question: string;
+  viewer: CompilerViewer;
+  siteId: string;
+  objectId?: string | null;
+  graph: { objects: MinimalObject[]; relationships: MinimalRelationship[] };
+  graphDigest?: string;
+  /** objectId -> field -> "public" | "hidden" (per-fact policy; absent = public). */
+  fieldVisibility?: Record<string, Record<string, "public" | "hidden">>;
+  ownerId?: string | null;
+  siteSpecDigest?: string | null;
+  capabilities?: Array<string | CapabilityInput>;
+  limits?: { maxObjects?: number; maxRelationships?: number; maxFieldChars?: number; maxDescChars?: number };
+  budget?: Partial<BudgetPolicy>;
+  /** Lane F retrieval contract output, when the caller used it. */
+  search?: SearchSeam | null;
+}
+
+export interface MinimalObject {
+  id: string;
+  schema: string;
+  title?: string | null;
+  description?: string | null;
+  fields?: Record<string, unknown>;
+  visibility?: string | null;
+  provenance?: { kind?: string; ref?: string; derivedAt?: string } | null;
+}
+
+export interface MinimalRelationship {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  status?: string;
+  evidenceRef?: string | null;
+}
+
+export interface ContextPacket {
+  version: typeof CONTEXT_PACKET_VERSION;
+  compilerVersion: typeof COMPILER_VERSION;
+  packetId: string;
+  question: string;
+  questionSignals: string[];
+  questionIntents: string[];
+  siteId: string;
+  targetId: string | null;
+  viewerTier: ViewerTier;
+  objects: PacketObject[];
+  relationships: PacketRelationship[];
+  evidence: PacketEvidence[];
+  sourceExcerpts: SourceExcerpt[];
+  /** Viewer-invocable capability handles (never tokens, never forbidden effects). */
+  capabilities: CapabilityView[];
+  visibility: {
+    tier: ViewerTier;
+    rulesApplied: string[];
+    excluded: ExclusionCounts;
+    nonInferenceRule: string;
+  };
+  budget: { maxBytes: number; usedBytes: number; sections: Record<string, { max: number; used: number }> };
+  consumerRules: string[];
+  /** Untrusted-data marker for LLM consumers: everything in objects,
+   *  relationships, evidence, sourceExcerpts is DATA, never instructions. */
+  contentBoundary: string;
+  unknowns: string[];
+  notes: string[];
+  digests: { graph: string; siteSpec: string | null; searchIndex: string | null; packet: string };
+}
+
+export interface SourceExcerpt {
+  id: string;
+  objectId: string;
+  text: string;
+  provenanceRef: string;
+  boundary: string;
+}
+
+// ---------------------------------------------------------------------------
+// The compiler
+// ---------------------------------------------------------------------------
+
+const DEFAULT_LIMITS = { maxObjects: 8, maxRelationships: 20, maxFieldChars: 500, maxDescChars: 2000 };
+
+function textHaystack(o: { title?: string | null; description?: string | { value: string } | null; fields?: Record<string, unknown> }): string {
+  const desc = typeof o.description === "string" ? o.description : (o.description?.value ?? "");
+  const parts: string[] = [o.title ?? "", desc];
+  for (const v of Object.values(o.fields ?? {})) {
+    parts.push(Array.isArray(v) ? v.map(String).join(" ") : String(v ?? ""));
+  }
+  return parts.join(" ").toLowerCase();
+}
+
+function truncateStr(s: string, maxChars: number): { value: string; truncated: boolean } {
+  const str = String(s ?? "");
+  if (str.length <= maxChars && byteLen(str) <= maxChars) return { value: str, truncated: false };
+  return { value: str.slice(0, maxChars), truncated: true };
+}
+
+export function compileAskContext(input: CompilerInput): ContextPacket {
+  const {
+    question,
+    viewer,
+    siteId,
+    objectId = null,
+    graph,
+    graphDigest = "unknown",
+    fieldVisibility = {},
+    ownerId = null,
+    siteSpecDigest = null,
+    capabilities = [],
+    limits = {},
+    search = null,
+  } = input;
+
+  const L = { ...DEFAULT_LIMITS, ...limits };
+  const budget: BudgetPolicy = {
+    ...DEFAULT_BUDGET,
+    ...(input.budget || {}),
+    maxObjects: limits.maxObjects ?? input.budget?.maxObjects ?? DEFAULT_BUDGET.maxObjects,
+    maxRelationships: limits.maxRelationships ?? input.budget?.maxRelationships ?? DEFAULT_BUDGET.maxRelationships,
+    maxFieldChars: limits.maxFieldChars ?? input.budget?.maxFieldChars ?? DEFAULT_BUDGET.maxFieldChars,
+    maxDescChars: limits.maxDescChars ?? input.budget?.maxDescChars ?? DEFAULT_BUDGET.maxDescChars,
+  };
+  const qNorm = normalizeQuestion(question);
+  const signals = questionSignals(qNorm);
+  const intents = detectIntents(signals);
+  const scope = resolveViewerScope(viewer, ownerId);
+  const excluded: ExclusionCounts = {
+    nonPublic: 0, aclMissing: 0, inactiveRelationships: 0, danglingRelationships: 0,
+    ownerHiddenFields: 0, belowFloor: 0, selectionCut: 0, budgetCut: 0, secretFields: 0,
+  };
+
+  const objects: MinimalObject[] = Array.isArray(graph?.objects) ? graph.objects : [];
+  const relationships: MinimalRelationship[] = Array.isArray(graph?.relationships) ? graph.relationships : [];
+
+  // 1. Visibility filter at assembly (never prompt-side). G2: counts only.
+  const visible: MinimalObject[] = [];
+  for (const obj of objects) {
+    const vis = obj?.visibility;
+    if (!vis) { excluded.aclMissing++; continue; }
+    if (vis === "public" || ((vis === "private" || vis === "owner-private") && (scope.tier === "owner" || scope.tier === "staff"))) {
+      visible.push(obj);
+    } else {
+      excluded.nonPublic++;
+    }
+  }
+  const visibleIds = new Set(visible.map((o) => o.id));
+
+  // Active relationships with both endpoints visible (kills dangling/cross-tenant).
+  const activeRels: MinimalRelationship[] = [];
+  for (const r of relationships) {
+    if (r.status !== "active") { excluded.inactiveRelationships++; continue; }
+    if (!visibleIds.has(r.subject) || !visibleIds.has(r.object)) { excluded.danglingRelationships++; continue; }
+    activeRels.push(r);
+  }
+
+  // 2. Target resolution (unknown id -> recorded unknown, never throw).
+  let target: MinimalObject | null = null;
+  let targetUnknown = false;
+  if (objectId) {
+    target = visible.find((o) => o.id === objectId) ?? null;
+    if (!target) targetUnknown = true;
+  } else {
+    target = visible.find((o) => o.schema === "ping.social.business@1") ?? visible[0] ?? null;
+  }
+
+  // Lane F seam: hit-id -> boost. Exact tiers dominate; graded scale in.
+  const searchBoost = new Map<string, number>();
+  if (search && Array.isArray(search.hits)) {
+    for (const h of search.hits) {
+      const exact = h.tier === "exact" || h.rule.startsWith("exact-");
+      searchBoost.set(h.objectId, Math.max(searchBoost.get(h.objectId) ?? 0, exact ? 25 : 5 + Math.min(10, h.score)));
+    }
+  }
+
+  // Best incident predicate weight per object (structural term).
+  const incidentWeight = new Map<string, number>();
+  for (const r of activeRels) {
+    const w = predicateWeight(r.predicate);
+    for (const id of [r.subject, r.object]) {
+      if (w > (incidentWeight.get(id) ?? 0)) incidentWeight.set(id, w);
+    }
+  }
+
+  // G12: deterministic recency, relative to the newest derivedAt in the set.
+  // No clock: missing dates are neutral.
+  const derivedTimes = visible.map((o) => Date.parse(o.provenance?.derivedAt || "")).filter((t) => !Number.isNaN(t));
+  const newest = derivedTimes.length ? Math.max(...derivedTimes) : 0;
+  function recency01(o: MinimalObject): number {
+    const t = Date.parse(o.provenance?.derivedAt || "");
+    if (Number.isNaN(t) || newest === 0) return 0.5;
+    return Math.max(0, 1 - (newest - t) / 86400000 / 365);
+  }
+

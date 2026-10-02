@@ -1,0 +1,93 @@
+### pernix: counterfactual replay
+async def _validate_lesson_ineffective(row: dict) -> str:
+    pm_refs = [e for e in _evidence(row) if e.get("type") == "pm" and e.get("session_id")]
+    if not pm_refs:
+        return _finish(row, "expired", "scout_replay", "no post-mortem refs in evidence")
+
+    session_id = pm_refs[0]["session_id"]
+    pm = db.get_post_mortem(pm_refs[0].get("id") or "")
+    messages = await asyncio.to_thread(db.get_messages, session_id)
+    user_msgs = [m for m in messages if m.get("role") == "user"]
+    if pm is None or len(user_msgs) != 1:
+        return _bump_attempts(
+            row, f"replay needs exactly one user turn (found {len(user_msgs)}) and a live post-mortem"
+        )
+
+    original_request = str(user_msgs[0].get("content", ""))[:4000]
+    try:
+        pm_payload = json.loads(pm.get("payload_json") or "{}")
+    except (TypeError, ValueError):
+        pm_payload = {}
+
+    _debit_replay()
+
+    # Fresh-session brief carrying the original session id: cross-session
+    # search excludes the failed session (keyed off brief.session_id), and
+    # the counterfactual is not contaminated by the failure transcript.
+    from core.scout.report import SessionBrief
+    from core.scout.runner import _run_scout_llm
+
+    brief = SessionBrief(session_id=session_id)
+    try:
+
+### pernix: evidence-expiry docstring
+def adaptive_expire_stale_proposals(max_age_days: int) -> int:
+    """Expire pending proposals past the TTL. Returns the number expired.
+
+    A proposal is a snapshot of evidence at a moment. Weeks later the entries
+    it cites may have moved, the tool it complains about may have recovered,
+    and approving it blind is worse than letting it lapse — the producer will
+    re-raise it from current evidence if it still holds.
+    """
+    if max_age_days <= 0:
+
+### pernix: usage-epoch grace
+# The usage sweep's epoch: instrumentation only started counting when v3.1
+# deployed, so "never used" is only meaningful for time OBSERVED. Stamped on
+# the sweep's first run; nothing retires before epoch + the retire window —
+# without this grace, every pre-instrumentation entry would mass-retire on
+# day one for lacking a signal that did not exist yet.
+_USAGE_EPOCH_KEY = "adaptive_usage_epoch"
+
+### pernix: failure-dominated retirement
+        # Failure-dominated check first: it applies precisely to USED
+        # entries, and its reason names the evidence. No epoch/age gate —
+        # the outcomes themselves are the observed window.
+        if harm_min_uses > 0 and outcomes >= harm_min_uses and (wins / outcomes) < harm_max_success:
+            reason = f"failure-dominated: {wins}/{outcomes} attributed outcomes succeeded"
+        elif window > 0 and not used and age >= window and epoch_age >= window:
+
+### pernix: veto window + I6 carve-out
+def is_canary_proposal(prop: dict) -> bool:
+    """Canary-suite proposals carry a dict payload, not an edit list. They are
+    the one class the veto-window drain never takes (invariant I6)."""
+    payload = _payload_of(prop)
+478:    adaptive_auto_approve_after_hours: int = 24
+482:    # Same veto-window contract as adaptive_auto_approve_after_hours, for
+
+### pernix: manufactured evidence stamp
+            e = dict(e)
+            ev = e.get("evidence")
+            e["evidence"] = [str(r) for r in ev] if isinstance(ev, list) else []
+            # The producer pass itself is always admissible evidence — stamp
+            # the session so an edit is never refused for a bare list when
+            # the model forgot to echo refs.
+
+### pernix: skill verify bridge
+"""Pernix — skill-change detection + verify-block sync (the skills⇄canary bridge).
+
+Skills are the one machine-editable surface that had no measurement at all:
+no content hash, no change event, no behavioral test — only a syntax
+pre-flight. This module closes both gaps from the maintenance sweep (idle
+by construction, and a watermark scan catches every mutation path including
+hand edits — the same reason `skill_reqs_hash:` lives there):
+
+  detect — sha256 over each SKILL.md, watermarked in snooze_state under
+           `skill_hash:{name}`. A changed skill triggers ONE targeted sweep
+           of every canary covering `skill:{name}`. First sight only sets
+           the watermark — a fresh deploy must not stampede the suite.
+  sync   — a skill may embed its own behavioral test as a `verify:` block
+           (prompt, gates, files?, timeout?) in SKILL.md frontmatter. It is
+           materialized as the MANAGED canary `skill--{name}` with
+           `covers: [skill:{name}]`, resynced whenever the skill changes,
+           and retired when the block (or the skill) goes away. The test

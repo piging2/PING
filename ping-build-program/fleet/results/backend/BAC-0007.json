@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0007",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE deepcopy snapshot of 3k-key state: 4.97ms; AFTER copy-on-write (version pointer + delta): ~0.00ms but delta within noise (188%). Snapshot-take is O(1) structurally, but restore path and memory were not measured, and the CoW 'snapshot' as implemented is not independently restorable. Claim incomplete.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": "Measure restore-from-version latency and peak memory for deepcopy vs CoW chain at 100k keys; then decide.",
+ "numbers": {
+  "before_ms": 4.9683,
+  "after_ms": 0.0007,
+  "metric": "snapshot_time",
+  "change": "copy-on-write snapshot (version pointer + delta) instead of deepcopy",
+  "case": 6
+ }
+}

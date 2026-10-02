@@ -1,0 +1,39 @@
+=== everything the agent saw ===
+handle=pingsec_1_GLu182WIi0LZQuJ1p_8Msh6or9Efoq9Y7KB_j0TXbPY
+observation={"kind":"github.issues","source":"github.com/acme/roofing-co","records":[{"id":101,"title":"Gutter replacement quote"}]}
+audit=[{"seq":1,"ts":"2026-09-24T02:45:50.175Z","event":"issued","handleFp":"266be0e410b22cb0","principal":"agent:connector-worker-7","operation":"fetch:issues","target":"github.com/acme/roofing-co","tenantId":"tenant-acme","audience":"connector-runtime-seam","purpose":"nightly issues sync","outcome":"OK","usesLeft":1},{"seq":2,"ts":"2026-09-24T02:45:50.222Z","event":"executed","handleFp":"266be0e410b22cb0","principal":"agent:connector-worker-7","operation":"fetch:issues","target":"github.com/acme/roofing-co","tenantId":"tenant-acme","audience":"connector-runtime-seam","purpose":"nightly issues sync","outcome":"OK","usesLeft":0}]
+
+=== boundary check ===
+PASS: secret never appears in agent context, logs, observation, or audit
+
+=== audit record (the evidence) ===
+[
+  {
+    "seq": 1,
+    "ts": "2026-09-24T02:45:50.175Z",
+    "event": "issued",
+    "handleFp": "266be0e410b22cb0",
+    "principal": "agent:connector-worker-7",
+    "operation": "fetch:issues",
+    "target": "github.com/acme/roofing-co",
+    "tenantId": "tenant-acme",
+    "audience": "connector-runtime-seam",
+    "purpose": "nightly issues sync",
+    "outcome": "OK",
+    "usesLeft": 1
+  },
+  {
+    "seq": 2,
+    "ts": "2026-09-24T02:45:50.222Z",
+    "event": "executed",
+    "handleFp": "266be0e410b22cb0",
+    "principal": "agent:connector-worker-7",
+    "operation": "fetch:issues",
+    "target": "github.com/acme/roofing-co",
+    "tenantId": "tenant-acme",
+    "audience": "connector-runtime-seam",
+    "purpose": "nightly issues sync",
+    "outcome": "OK",
+    "usesLeft": 0
+  }
+]

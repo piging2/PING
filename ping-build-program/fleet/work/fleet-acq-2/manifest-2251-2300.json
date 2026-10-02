@@ -1,0 +1,590 @@
+[
+ {
+  "case": 0,
+  "mission_no": 2251,
+  "slug": "unclosed-p",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed paragraphs: text recovered, soup flagged",
+  "expect_flags": [
+   "soup_recovered"
+  ]
+ },
+ {
+  "case": 1,
+  "mission_no": 2252,
+  "slug": "unclosed-div",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed div/span: text kept, structure flagged",
+  "expect_flags": [
+   "soup_recovered"
+  ]
+ },
+ {
+  "case": 2,
+  "mission_no": 2253,
+  "slug": "mismatched",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "mismatched nesting: no structure guess, text kept",
+  "expect_flags": [
+   "soup_recovered"
+  ]
+ },
+ {
+  "case": 3,
+  "mission_no": 2254,
+  "slug": "stray-lt",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "stray angle brackets stay literal text",
+  "expect_flags": [
+   "literal_angle"
+  ]
+ },
+ {
+  "case": 4,
+  "mission_no": 2255,
+  "slug": "stray-lt-gt",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bare text angles literal",
+  "expect_flags": [
+   "literal_angle"
+  ]
+ },
+ {
+  "case": 5,
+  "mission_no": 2256,
+  "slug": "broken-entity",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "broken entities stay literal, never decoded by guess",
+  "expect_flags": [
+   "entity_literal"
+  ]
+ },
+ {
+  "case": 6,
+  "mission_no": 2257,
+  "slug": "unclosed-comment",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed comment swallows rest: flagged, no secret extraction",
+  "expect_flags": [
+   "comment_unclosed"
+  ]
+ },
+ {
+  "case": 7,
+  "mission_no": 2258,
+  "slug": "comment-dashes",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "double-dash inside comment flagged",
+  "expect_flags": [
+   "comment_abuse"
+  ]
+ },
+ {
+  "case": 8,
+  "mission_no": 2259,
+  "slug": "cdata-html",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CDATA in HTML is bogus comment, content not treated as markup",
+  "expect_flags": [
+   "cdata_bogus"
+  ]
+ },
+ {
+  "case": 9,
+  "mission_no": 2260,
+  "slug": "dup-attrs",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duplicate attrs: both recorded, no winner guessed",
+  "expect_flags": [
+   "dup_attr"
+  ]
+ },
+ {
+  "case": 10,
+  "mission_no": 2261,
+  "slug": "unquoted-attrs",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unquoted attrs are valid HTML: no recovery needed",
+  "expect_flags": []
+ },
+ {
+  "case": 11,
+  "mission_no": 2262,
+  "slug": "missing-quote",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "missing quote swallows rest into attr: nothing extractable, no URL invented",
+  "expect_flags": [
+   "no_content"
+  ]
+ },
+ {
+  "case": 12,
+  "mission_no": 2263,
+  "slug": "no-value-attr",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valueless attr recorded as present",
+  "expect_flags": []
+ },
+ {
+  "case": 13,
+  "mission_no": 2264,
+  "slug": "deep-nesting",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "500-deep nesting capped with flag",
+  "expect_flags": [
+   "depth_cap"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 2265,
+  "slug": "deep-1000",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "1000-deep unclosed capped",
+  "expect_flags": [
+   "depth_cap",
+   "soup_recovered"
+  ]
+ },
+ {
+  "case": 15,
+  "mission_no": 2266,
+  "slug": "many-attrs",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "300 attrs capped",
+  "expect_flags": [
+   "attr_cap"
+  ]
+ },
+ {
+  "case": 16,
+  "mission_no": 2267,
+  "slug": "huge-attr",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200KB attr value truncated with flag",
+  "expect_flags": [
+   "attr_length_cap"
+  ]
+ },
+ {
+  "case": 17,
+  "mission_no": 2268,
+  "slug": "huge-text",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "3MB text capped",
+  "expect_flags": [
+   "text_cap"
+  ]
+ },
+ {
+  "case": 18,
+  "mission_no": 2269,
+  "slug": "null-byte",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "null byte dropped with flag, text continues",
+  "expect_flags": [
+   "null_byte_dropped"
+  ]
+ },
+ {
+  "case": 19,
+  "mission_no": 2270,
+  "slug": "null-many",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "leading null run dropped",
+  "expect_flags": [
+   "null_byte_dropped"
+  ]
+ },
+ {
+  "case": 20,
+  "mission_no": 2271,
+  "slug": "control-chars",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "control chars dropped, flagged",
+  "expect_flags": [
+   "control_char_dropped"
+  ]
+ },
+ {
+  "case": 21,
+  "mission_no": 2272,
+  "slug": "bad-nesting-table",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "tag stream is balanced: no restructure guess, no flag",
+  "expect_flags": []
+ },
+ {
+  "case": 22,
+  "mission_no": 2273,
+  "slug": "li-outside",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "orphan li: balanced stream, kept as-is",
+  "expect_flags": []
+ },
+ {
+  "case": 23,
+  "mission_no": 2274,
+  "slug": "nested-a",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested anchors: tag stream balanced; both hrefs recorded, no nesting guess",
+  "expect_flags": [
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 24,
+  "mission_no": 2275,
+  "slug": "nested-form",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested forms: balanced stream; both actions recorded as claimed",
+  "expect_flags": [
+   "form_action_claimed",
+   "no_content"
+  ]
+ },
+ {
+  "case": 25,
+  "mission_no": 2276,
+  "slug": "script-unclosed",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed script swallows rest as code: nothing extracted beyond",
+  "expect_flags": [
+   "script_inert",
+   "script_unclosed"
+  ]
+ },
+ {
+  "case": 26,
+  "mission_no": 2277,
+  "slug": "style-unclosed",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unclosed style swallows rest",
+  "expect_flags": [
+   "style_unclosed"
+  ]
+ },
+ {
+  "case": 27,
+  "mission_no": 2278,
+  "slug": "textarea-raw",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "textarea content is raw text",
+  "expect_flags": [
+   "rawtext_element"
+  ]
+ },
+ {
+  "case": 28,
+  "mission_no": 2279,
+  "slug": "title-raw",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "title content raw",
+  "expect_flags": [
+   "rawtext_element"
+  ]
+ },
+ {
+  "case": 29,
+  "mission_no": 2280,
+  "slug": "bogus-tag",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown tags kept, no behavior",
+  "expect_flags": [
+   "unknown_tag"
+  ]
+ },
+ {
+  "case": 30,
+  "mission_no": 2281,
+  "slug": "processing-instruction",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "processing instruction ignored",
+  "expect_flags": [
+   "pi_ignored"
+  ]
+ },
+ {
+  "case": 31,
+  "mission_no": 2282,
+  "slug": "doctype-weird",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "doctype ignored",
+  "expect_flags": [
+   "doctype_ignored"
+  ]
+ },
+ {
+  "case": 32,
+  "mission_no": 2283,
+  "slug": "doctype-inside",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "misplaced doctype ignored",
+  "expect_flags": [
+   "doctype_ignored"
+  ]
+ },
+ {
+  "case": 33,
+  "mission_no": 2284,
+  "slug": "html-twice",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "double html: balanced stream, both bodies' text kept",
+  "expect_flags": []
+ },
+ {
+  "case": 34,
+  "mission_no": 2285,
+  "slug": "head-in-body",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "misplaced head: title still captured as rawtext, stream balanced",
+  "expect_flags": [
+   "rawtext_element"
+  ]
+ },
+ {
+  "case": 35,
+  "mission_no": 2286,
+  "slug": "body-in-head",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "body in head: balanced stream, text kept",
+  "expect_flags": []
+ },
+ {
+  "case": 36,
+  "mission_no": 2287,
+  "slug": "self-close-div",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "self-closing syntax on non-void closes immediately per parser; no structure guessed",
+  "expect_flags": []
+ },
+ {
+  "case": 37,
+  "mission_no": 2288,
+  "slug": "br-no-close",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "void elements fine, no flag needed",
+  "expect_flags": []
+ },
+ {
+  "case": 38,
+  "mission_no": 2289,
+  "slug": "entity-mixed",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid entities decoded normally",
+  "expect_flags": []
+ },
+ {
+  "case": 39,
+  "mission_no": 2290,
+  "slug": "entity-nonascii",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "named entities decoded",
+  "expect_flags": []
+ },
+ {
+  "case": 40,
+  "mission_no": 2291,
+  "slug": "attr-entity",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "attr entities decoded, recorded verbatim-ish",
+  "expect_flags": [
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 41,
+  "mission_no": 2292,
+  "slug": "whitespace-doc",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "whitespace-only: INVALID_PAYLOAD",
+  "expect_flags": [
+   "empty_input"
+  ]
+ },
+ {
+  "case": 42,
+  "mission_no": 2293,
+  "slug": "empty-doc",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "empty: INVALID_PAYLOAD",
+  "expect_flags": [
+   "empty_input"
+  ]
+ },
+ {
+  "case": 43,
+  "mission_no": 2294,
+  "slug": "only-comment",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "comment-only: success with zero text, flagged",
+  "expect_flags": [
+   "no_content"
+  ]
+ },
+ {
+  "case": 44,
+  "mission_no": 2295,
+  "slug": "only-script",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "script-only: success, no text, inert",
+  "expect_flags": [
+   "script_inert",
+   "no_content"
+  ]
+ },
+ {
+  "case": 45,
+  "mission_no": 2296,
+  "slug": "bom-text",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "BOM stripped",
+  "expect_flags": [
+   "bom_stripped"
+  ]
+ },
+ {
+  "case": 46,
+  "mission_no": 2297,
+  "slug": "replacement-char",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "replacement char kept, encoding noted",
+  "expect_flags": [
+   "encoding_suspect"
+  ]
+ },
+ {
+  "case": 47,
+  "mission_no": 2298,
+  "slug": "mixed-newlines",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CR/CRLF normalized",
+  "expect_flags": [
+   "newline_normalized"
+  ]
+ },
+ {
+  "case": 48,
+  "mission_no": 2299,
+  "slug": "tab-in-tag",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "tab before tag name recovered",
+  "expect_flags": [
+   "soup_recovered"
+  ]
+ },
+ {
+  "case": 49,
+  "mission_no": 2300,
+  "slug": "everything",
+  "bound": "MALFORMED",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "kitchen sink: text out, every recovery flagged, null dropped",
+  "expect_flags": [
+   "soup_recovered",
+   "entity_literal",
+   "null_byte_dropped",
+   "template_inert",
+   "untrusted_ref"
+  ]
+ }
+]

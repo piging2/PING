@@ -1,0 +1,191 @@
+
+  // Fail-closed idempotency-key validation (before any event or side
+  // effect). Absent/null -> deterministic default so byte-identical
+  // retries derive the same missionId and collide. Supplied but malformed
+  // (empty, >128 chars, outside [A-Za-z0-9._-]) -> 400, never defaulted.
+  let idempotencyKey = IDEMPOTENCY_KEY_DEFAULT;
+  const rawKey = body.idempotency_key;
+  if (rawKey !== undefined && rawKey !== null) {
+    if (typeof rawKey !== 'string' || !IDEMPOTENCY_KEY_RE.test(rawKey)) {
+      return bad(400, 'bad_idempotency_key', 'idempotency_key must be a string of 1..128 chars matching [A-Za-z0-9._-].');
+    }
+    idempotencyKey = rawKey;
+  }
+
+  // ---- Identity set (deterministic ids) ----
+  // P0 idempotency: missionId derives from the idempotency key, NEVER from
+  // the clock. Byte-identical retries (double-click, concurrent identical
+  // POSTs) mint the same id, so the journal lookup below catches them.
+  const promptDigest = sha256hex(prompt);
+  const missionId = 'mc-m-' + sha256hex(['mission', agent, tenant, capability, promptDigest, idempotencyKey].join('|')).slice(0, 12);
+  const runId = `${missionId}-r1`;
+  const executionId = `${missionId}-x1`;
+  const taskId = `${missionId}:task:1`;
+  const correlationId = missionId;
+  const contextPackId = `mc-ctx-${missionId}`;
+  const namespace = `tenant::${tenant}`;
+  if (!NAMESPACE_RE.test(namespace)) return bad(400, 'bad_namespace', namespace);
+  const deadlineS = DEADLINES[agent as SliceAgent];
+  const deadline = new Date(Date.now() + deadlineS * 1000).toISOString();
+  const resultPath = `/home/nolan/workspace/mission-control/artifacts/${missionId}/result.json`;
+
+  // ---- Idempotency: lookup-before-mint (no new authority, no new store) ----
+  // Runs BEFORE any adapter call: a duplicate POST never touches the
+  // adapter, emits nothing, publishes nothing. If the aggregate already has
+  // a terminal event (SUCCEEDED/FAILED/DENIED) the original record is
+  // returned with duplicate_suppressed:true. If the original is in-flight
+  // (CREATED/QUEUED/RUNNING/UNKNOWN, no terminal) the duplicate is refused
+  // with 409 HOLD: the outcome is unknown and must never be re-dispatched
+  // blindly.
+  const prior = findPriorMission(missionId);
+  if (prior !== null) {
+    if (MISSION_TERMINAL_STATUSES.has(prior.status)) {
+      const denied = prior.status === 'DENIED';
+      return Response.json({
+        ok: !denied,
+        status: prior.status,
+        duplicate_suppressed: true,
+        mission_id: missionId,
+        run_id: prior.run_id,
+        execution_id: prior.execution_id,
+        work_order_id: prior.work_order_id,
+        result: prior.result,
+        reconciliation_state: prior.reconciliation_state,
+      }, { status: denied ? 403 : 200 });
+    }
+    return Response.json({
+      ok: false,
+      status: 'HOLD',
+      mission_id: missionId,
+      run_id: prior.run_id,
+      execution_id: prior.execution_id,
+      reconciliation_state: prior.reconciliation_state,
+      reason: 'previous dispatch for this mission is in-flight (no terminal event); refusing duplicate dispatch',
+    }, { status: 409 });
+  }
+
+  let profiles: Record<string, AgentProfile>;
+  try {
+    profiles = loadProfiles();
+  } catch (e) {
+    return bad(503, 'adapter_unavailable', String(e).slice(0, 300));
+  }
+  const profile = profiles[agent];
+  if (!profile || profile.status !== 'LIVE') {
+    return bad(403, 'agent_denied', `agent '${agent}' is not LIVE in the adapter registry.`);
+  }
+  if (!profile.allowedCapabilities.includes(capability)) {
+    return bad(403, 'capability_denied', `capability '${capability}' not allowed for agent '${agent}'.`);
+  }
+
+  const emit = (type: string, summary: string, data: Record<string, unknown> = {}) =>
+    appendDispatchEvent(type, missionId, summary, {
+      run_id: runId, execution_id: executionId, agent, tenant, capability,
+      context_pack_id: contextPackId, ...data,
+    });
+
+  // ---- Adapter: authorize (the adapter owns this decision) ----
+  let authz: { ok: boolean; granted?: boolean; reason?: string | null };
+  try {
+    authz = adapterCall('authorize', {
+      agentId: agent, capability, namespace, constraints: FIXED_CONSTRAINTS,
+    }) as typeof authz;
+  } catch (e) {
+    return bad(503, 'adapter_error', String(e).slice(0, 300));
+  }
+  if (!authz || authz.ok !== true || authz.granted !== true) {
+    emit('MC_MISSION_CREATED', `mission created (dispatch denied): ${missionId}`, { prompt_digest: promptDigest });
+    const reason = (authz && authz.reason) || 'adapter denied';
+    emit('MC_AGENT_DENIED', `dispatch denied for agent ${agent}: ${reason}`, { reason });
+    return Response.json({ ok: false, status: 'DENIED', mission_id: missionId, reason }, { status: 403 });
+  }
+
+  // ---- Adapter: issue work order (builds the envelope; never sends) ----
+  let workOrder: Record<string, unknown>;
+  try {
+    const issued = adapterCall('issue', {
+      agentId: agent, capability, namespace, taskId, missionId, correlationId,
+      contextPackId, input: { prompt, prompt_digest: promptDigest, note: 'bounded dispatch prompt; full text in prompt.txt artifact' },
+      constraints: FIXED_CONSTRAINTS, resultPath, deadline, causationId: null, attempt: 1,
+    }) as { ok: boolean; workOrder?: Record<string, unknown>; error?: string; detail?: string };
+    if (!issued || issued.ok !== true || !issued.workOrder) {
+      throw new Error(`issue_failed: ${issued?.error || 'unknown'} ${issued?.detail || ''}`);
+    }
+    workOrder = issued.workOrder;
+  } catch (e) {
+    emit('MC_MISSION_CREATED', `mission created (work order issue failed): ${missionId}`, { prompt_digest: promptDigest });
+    emit('MC_RUN_UNKNOWN', `work order issue failed: ${String(e).slice(0, 200)}`, {
+      reason: String(e).slice(0, 300), reconciliation_state: 'RECONCILIATION IN PROGRESS',
+    });
+    return bad(503, 'workorder_issue_failed', String(e).slice(0, 300));
+  }
+  const workOrderId = workOrder.work_order_id as string;
+
+  // ---- Lifecycle events: mission -> run -> execution (the witnessed dispatch) ----
+  emit('MC_MISSION_CREATED', `mission created: ${missionId}`, { prompt_digest: promptDigest });
+  emit('MC_RUN_QUEUED', `run queued: ${runId}`, {});
+  emit('MC_EXECUTION_STARTED', `execution started: ${executionId}`, {});
+  emit('MC_AGENT_AUTHORIZED', `agent ${agent} authorized for ${capability}`, {
+    capabilities_granted: [capability], work_order_id: workOrderId,
+  });
+
+  // ---- Artifacts: prompt, work order, context (evidence the agent receives) ----
+  publishArtifact(missionId, 'prompt', 'prompt.txt', prompt, tenant);
+  publishArtifact(missionId, 'work-order', 'workorder.json', JSON.stringify(workOrder, null, 2), tenant);
+  publishArtifact(missionId, 'context', 'context.json', JSON.stringify({
+    context_pack_id: contextPackId, mission_id: missionId, run_id: runId,
+    execution_id: executionId, agent, tenant, capability, namespace,
+    constraints: FIXED_CONSTRAINTS, deadline, deadline_seconds: deadlineS,
+    prompt_digest: promptDigest, principal: 'mission-control-dispatch',
+  }, null, 2), tenant);
+
+  // ---- Execute via the agent's proven transport ----
+  let outcome: AgentOutcome;
+  if (agent === 'ollama') {
+    outcome = await runOllama(prompt, deadlineS);
+  } else {
+    outcome = runBroker(agent, prompt, deadlineS);
+  }
+
+  // ---- Terminal event. UNKNOWN is first-class; never collapsed. ----
+  if (outcome.kind === 'transport-failed') {
+    // The prompt was never delivered: honest execution failure.
+    emit('MC_RUN_FAILED', `execution failed: ${outcome.error}`, {
+      error: outcome.error, evidence: outcome.evidence ?? null,
+    });
+    return Response.json({
+      ok: true, status: 'FAILED', mission_id: missionId, run_id: runId,
+      execution_id: executionId, work_order_id: workOrderId, error: outcome.error,
+    });
+  }
+
+  if (outcome.kind === 'timeout') {
+    // Delivered-or-maybe-delivered, no verifiable result: OUTCOME UNKNOWN.
+    emit('MC_RUN_UNKNOWN', `outcome unknown: ${outcome.error}`, {
+      reason: outcome.error, reconciliation_state: 'RECONCILIATION IN PROGRESS',
+      evidence: outcome.evidence ?? null,
+    });
+    return Response.json({
+      ok: true, status: 'UNKNOWN', mission_id: missionId, run_id: runId,
+      execution_id: executionId, work_order_id: workOrderId,
+      reconciliation_state: 'RECONCILIATION IN PROGRESS', reason: outcome.error,
+    });
+  }
+
+  // The agent ran: build the 8-field result envelope and let the ADAPTER verify.
+  const verifiedAt = nowIso();
+  const resultEnvelope = {
+    work_order_id: workOrderId,
+    context_pack_id: contextPackId,
+    agent_id: agent,
+    capability,
+    status: outcome.output ? 'completed' : 'failed',
+    output: outcome.output ?? null,
+    evidence: outcome.evidence ?? {},
+    error: outcome.output ? null : (outcome.error || 'no output'),
+  };
+  let verification: { ok: boolean; valid?: boolean; result_id?: string | null; error?: string | null };
+  try {
+    verification = adapterCall('verify', {
+      result: resultEnvelope, workOrder, invokedAgentId: agent, verifiedAt,
+    }) as typeof verification;

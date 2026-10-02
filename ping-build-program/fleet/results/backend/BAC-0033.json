@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0033",
+ "verdict": "PROVEN",
+ "summary": "BEFORE keep 50 full checkpoints: 25000 entries / ~0.00ms accounting; AFTER 5 full + deltas: 2860 entries (89% fewer). Delta 71.8% vs noise 48.6%. Storage claim proven; restore-from-delta cost not measured.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": "Measure restore latency: replay 45 deltas vs read one full checkpoint.",
+ "numbers": {
+  "before_ms": 0.0036,
+  "after_ms": 0.001,
+  "metric": "checkpoint_storage",
+  "change": "compact 50 checkpoints to 5 full + deltas instead of keeping all",
+  "case": 32,
+  "extra": {
+   "entries_before": 25000,
+   "entries_after": 2860
+  }
+ }
+}

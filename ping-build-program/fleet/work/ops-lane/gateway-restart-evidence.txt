@@ -1,0 +1,17 @@
+=== restart gateway ===
+=== health gating during recovery ===
+11:55:36 health=starting http=000
+11:55:46 health=healthy http=200
+recovery_to_healthy=21s
+=== limits + healthcheck persist after restart ===
+mem=1073741824 memswap=1073741824 health=healthy
+{"status":"healthy","uptime":10.095357128,"components":{"gateway":{"status":"healthy","uptime":10.095367088,"memory":{"rss":188416000,"heapTotal":127033344,"heapUsed":97985696,"external":20069741,"arr
+=== cleanup preserved old container (new proven) ===
+ping-gateway-preopslane
+ping-gateway
+ping-gateway-candidate
+ping-gateway-prev-84486f056
+=== final limits across fleet ===
+ping-gateway 138.2MiB / 1GiB
+ping-postgres 37.23MiB / 1GiB
+ping-qdrant 54.2MiB / 1GiB

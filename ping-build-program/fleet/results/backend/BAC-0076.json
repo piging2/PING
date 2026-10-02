@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0076",
+ "verdict": "REJECTED",
+ "summary": "BEFORE clear-all + rebuild 2000 entries: 0.41ms; AFTER version-vector scan invalidating stale entries: 0.98ms \u2014 2.4x SLOWER, beyond noise (11.8%). The naive scan touches every entry with dict-compare overhead. Claim false as implemented; needs an entry->deps index to find affected entries without scanning.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": "Rerun with reverse index dep->entries; expect O(affected) instead of O(N).",
+ "numbers": {
+  "before_ms": 0.4115,
+  "after_ms": 0.9835,
+  "metric": "dep_version_invalidation",
+  "change": "dependency version-vector invalidation instead of clear-all on dep change",
+  "case": 75
+ }
+}

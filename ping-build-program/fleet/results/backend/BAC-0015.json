@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0015",
+ "verdict": "PROVEN",
+ "summary": "BEFORE always-full-scan selective query over 30k rows: 2.27ms; AFTER planner picks hash index: ~0.00ms. Delta ~100% vs noise 71.9%. Improvement proven.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 2.2674,
+  "after_ms": 0.0005,
+  "metric": "selective_query_30k_rows",
+  "change": "planner picks hash index for selective predicate instead of always scanning",
+  "case": 14
+ }
+}

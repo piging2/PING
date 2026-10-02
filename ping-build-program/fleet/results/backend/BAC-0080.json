@@ -1,0 +1,23 @@
+{
+ "mission_id": "BAC-0080",
+ "verdict": "ADAPT",
+ "summary": "BEFORE fixed cap-64 backpressure: peak 64, drain 0.75ms; AFTER AIMD adaptive cap (16-256): peak 16, drain 1.27ms (slower beyond noise 9.3%). Adaptive cap buys lower peak memory at control-loop cost. Adopt only where memory headroom is the constraint.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.7517,
+  "after_ms": 1.2675,
+  "metric": "drain_5000_adaptive",
+  "change": "adaptive queue cap (16-256, AIMD) instead of fixed cap 64",
+  "case": 79,
+  "extra": {
+   "peak_before": 64,
+   "peak_after": 16
+  }
+ }
+}

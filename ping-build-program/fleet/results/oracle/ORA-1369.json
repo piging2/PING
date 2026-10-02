@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "evidence_files": [
+    "fleet/work/fleet-po-1/range-1351-1400-investigation.md",
+    "fleet/gen_matrices.py"
+  ],
+  "followup": "Staging drill (NEVER the live host): restore the 'knowledge' snapshot into fresh qdrant/qdrant:v1.7.0 on staging; verify collection/point counts + sample vector search; time the restore = measured RTO; document snapshot cadence + RTO budget. Also drill the re-derivation path (postgres canonical events -> re-embed -> re-index) and compare RTOs. PASS = restore within budget, data verified.",
+  "mission_id": "ORA-1369",
+  "summary": "Store-loss mission for REAL service 'qdrant' (verified on Oracle host: collection 'knowledge' live). Wiping production is destructive and forbidden on the live baseline. Read-only finding: snapshot artifact EXISTS (/qdrant/snapshots/knowledge) but restore is undrilled; no RTO budget documented (grep: zero hits).",
+  "verdict": "NEEDS-FOLLOWUP"
+}

@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0035",
+ "verdict": "ADAPT",
+ "summary": "BEFORE full 120-node recompile: 0.02ms; AFTER changed+downstream recompile: 0.04ms (slower, within noise 33%). Same chain-graph trap as BAC-0001: changed={7,42} with edges i->i+1 dirties ~113/120 nodes, so 'incremental' compiles nearly everything plus set overhead. Precondition: small dependent cone; adopt cone-bounded recompilation only when the change is not upstream of the world.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.02,
+  "after_ms": 0.0395,
+  "metric": "recompile_after_2_node_change",
+  "change": "recompile changed nodes + downstream only instead of full 120-node compile",
+  "case": 34,
+  "extra": {
+   "nodes_compiled_before": 120,
+   "nodes_compiled_after": 113
+  }
+ }
+}

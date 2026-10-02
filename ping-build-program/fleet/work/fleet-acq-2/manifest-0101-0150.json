@@ -1,0 +1,495 @@
+[
+ {
+  "case": 100,
+  "mission_no": 101,
+  "slug": "nested-tables-50",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "50-deep table nesting parses; depth recorded",
+  "assert_text_contains": [
+   "deep"
+  ]
+ },
+ {
+  "case": 101,
+  "mission_no": 102,
+  "slug": "div-soup-300k",
+  "bound": "P1",
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "600k+ nodes exceed 200k cap -> abort with node count"
+ },
+ {
+  "case": 102,
+  "mission_no": 103,
+  "slug": "option-bomb",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "60k options under node cap; parsed, count recorded"
+ },
+ {
+  "case": 103,
+  "mission_no": 104,
+  "slug": "legacy-presentational",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "legacy tags treated as inline text carriers",
+  "assert_text_contains": [
+   "scroll",
+   "flash",
+   "big"
+  ]
+ },
+ {
+  "case": 104,
+  "mission_no": 105,
+  "slug": "ruby-nested",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "ruby annotations parsed, text kept"
+ },
+ {
+  "case": 105,
+  "mission_no": 106,
+  "slug": "details-10k",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "10k details/summary blocks parsed"
+ },
+ {
+  "case": 106,
+  "mission_no": 107,
+  "slug": "template-inert",
+  "bound": "P7",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "template content is inert: must not enter extracted text",
+  "assert_not_in_text": [
+   "999-0000"
+  ],
+  "assert_phones_eq": [
+   "(555) 111-2222"
+  ]
+ },
+ {
+  "case": 107,
+  "mission_no": 108,
+  "slug": "dialog-open",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "dialog text extracted with provenance",
+  "assert_text_contains": [
+   "dialog text"
+  ]
+ },
+ {
+  "case": 108,
+  "mission_no": 109,
+  "slug": "noscript-fallback",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "noscript content extracted, flagged noscript-source (no JS ran)",
+  "assert_text_contains": [
+   "JS disabled message"
+  ]
+ },
+ {
+  "case": 109,
+  "mission_no": 110,
+  "slug": "iframe-fallback-text",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "iframe inner fallback text only; src NOT fetched, recorded as untrusted ref",
+  "assert_text_contains": [
+   "fallback ad text"
+  ]
+ },
+ {
+  "case": 110,
+  "mission_no": 111,
+  "slug": "object-embed-dropped",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "object/embed params never become facts",
+  "assert_text_contains": [
+   "ok"
+  ]
+ },
+ {
+  "case": 111,
+  "mission_no": 112,
+  "slug": "microdata-itemscope",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "microdata stays plain text; telephone NOT promoted to canonical fact without JSON-LD/verification",
+  "assert_phones_eq": [
+   "(555) 222-3333"
+  ]
+ },
+ {
+  "case": 112,
+  "mission_no": 113,
+  "slug": "rdfa-prefix",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "RDFa attrs dropped from claim set; text kept",
+  "assert_text_contains": [
+   "Acme"
+  ]
+ },
+ {
+  "case": 113,
+  "mission_no": 114,
+  "slug": "jsonld-graph-3biz",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "@graph 3 businesses -> 3 separate observations, no canonical pick",
+  "assert_jsonld_n": 1
+ },
+ {
+  "case": 114,
+  "mission_no": 115,
+  "slug": "jsonld-type-confusion",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "type/name mismatch recorded verbatim, never reconciled by guess"
+ },
+ {
+  "case": 115,
+  "mission_no": 116,
+  "slug": "jsonld-sameas",
+  "bound": "P4",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "sameAs recorded as untrusted refs, never fetched"
+ },
+ {
+  "case": 116,
+  "mission_no": 117,
+  "slug": "script-json-not-ld",
+  "bound": "P7",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "non-ld+json script config dropped per P7; secret-shaped blob never in facts",
+  "assert_not_in_text": [
+   "SECRET-123"
+  ],
+  "assert_text_contains": [
+   "visible"
+  ]
+ },
+ {
+  "case": 117,
+  "mission_no": 118,
+  "slug": "meta-og-vs-title",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "og:title vs <title> conflict -> separate provenance records, no merge"
+ },
+ {
+  "case": 118,
+  "mission_no": 119,
+  "slug": "meta-keywords-stuff",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "oversize keywords truncated per meta value cap"
+ },
+ {
+  "case": 119,
+  "mission_no": 120,
+  "slug": "link-canonical",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "canonical recorded as signal, not authority"
+ },
+ {
+  "case": 120,
+  "mission_no": 121,
+  "slug": "meta-refresh-30s",
+  "bound": "P5",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "delayed refresh recorded, not followed"
+ },
+ {
+  "case": 121,
+  "mission_no": 122,
+  "slug": "base-hijack",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "base href recorded as untrusted; relative links flagged base-relative, quarantined from canonical URL set"
+ },
+ {
+  "case": 122,
+  "mission_no": 123,
+  "slug": "form-get-benign",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "benign form recorded as present, never submitted"
+ },
+ {
+  "case": 123,
+  "mission_no": 124,
+  "slug": "input-hidden-csrf",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "hidden inputs never become facts",
+  "assert_not_in_text": [
+   "tok123"
+  ]
+ },
+ {
+  "case": 124,
+  "mission_no": 125,
+  "slug": "button-formaction-js",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: formaction neutralized"
+ },
+ {
+  "case": 125,
+  "mission_no": 126,
+  "slug": "honeypot-field",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "honeypot field recorded as bot-trap signal, not a real field"
+ },
+ {
+  "case": 126,
+  "mission_no": 127,
+  "slug": "homograph-link",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cyrillic homograph in link recorded verbatim with confusable flag; no punycode guess into fact"
+ },
+ {
+  "case": 127,
+  "mission_no": 128,
+  "slug": "invisible-white-text",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "style-visibility unknown without render: text extracted, marked visibility_unverified (never claim 'hidden')",
+  "assert_text_contains": [
+   "hidden offer",
+   "visible"
+  ]
+ },
+ {
+  "case": 128,
+  "mission_no": 129,
+  "slug": "zero-width-phone",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "zero-width chars stripped in normalization; digits preserved",
+  "assert_text_contains": [
+   "(555) 111-2222"
+  ]
+ },
+ {
+  "case": 129,
+  "mission_no": 130,
+  "slug": "soft-hyphen",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "soft hyphens removed in normalized text",
+  "assert_text_contains": [
+   "plumber"
+  ]
+ },
+ {
+  "case": 130,
+  "mission_no": 131,
+  "slug": "fullwidth-chars",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "fullwidth kept verbatim with script-mix flag; no transliteration guess"
+ },
+ {
+  "case": 131,
+  "mission_no": 132,
+  "slug": "emoji-text",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "emoji preserved in text",
+  "assert_text_contains": [
+   "plumber"
+  ]
+ },
+ {
+  "case": 132,
+  "mission_no": 133,
+  "slug": "mathml-isolated",
+  "bound": "P1",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "MathML isolated as foreign content"
+ },
+ {
+  "case": 133,
+  "mission_no": 134,
+  "slug": "custom-elements",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown custom element: text kept, tag not interpreted",
+  "assert_text_contains": [
+   "widget text"
+  ]
+ },
+ {
+  "case": 134,
+  "mission_no": 135,
+  "slug": "unquoted-attrs",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unquoted attrs parsed per HTML rules",
+  "assert_text_contains": [
+   "q"
+  ]
+ },
+ {
+  "case": 135,
+  "mission_no": 136,
+  "slug": "duplicate-attrs",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duplicate attr: first wins, dup recorded (no silent pick of second)"
+ },
+ {
+  "case": 136,
+  "mission_no": 137,
+  "slug": "attr-no-value",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valueless attrs fine"
+ },
+ {
+  "case": 137,
+  "mission_no": 138,
+  "slug": "comment-inside-tag",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "comment inside tag recovered",
+  "assert_text_contains": [
+   "cmt"
+  ]
+ },
+ {
+  "case": 138,
+  "mission_no": 139,
+  "slug": "bogus-tag-names",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bogus tags dropped, inner text kept",
+  "assert_text_contains": [
+   "real"
+  ]
+ },
+ {
+  "case": 139,
+  "mission_no": 140,
+  "slug": "cdata-in-html",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CDATA section in HTML treated as bogus comment, dropped",
+  "assert_text_contains": [
+   "a"
+  ]
+ },
+ {
+  "case": 140,
+  "mission_no": 141,
+  "slug": "conditional-comment",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "conditional comment content extracted with provenance conditional-comment (condition not evaluated)"
+ },
+ {
+  "case": 141,
+  "mission_no": 142,
+  "slug": "xmp-literal",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "xmp raw-text: markup inside kept literal-ish; 'after' extracted",
+  "assert_text_contains": [
+   "after"
+  ]
+ },
+ {
+  "case": 142,
+  "mission_no": 143,
+  "slug": "plaintext-element",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "plaintext swallows rest as literal; no tag interpretation after"
+ },
+ {
+  "case": 143,
+  "mission_no": 144,
+  "slug": "nested-forms",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested form dropped per spec; recorded"
+ },
+ {
+  "case": 144,
+  "mission_no": 145,
+  "slug": "table-misnesting",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "misnested table recovered (foster parenting); text kept",
+  "assert_text_contains": [
+   "cell"
+  ]
+ },
+ {
+  "case": 145,
+  "mission_no": 146,
+  "slug": "li-stray",
+  "bound": "MALFORMED",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "stray li text kept",
+  "assert_text_contains": [
+   "stray one"
+  ]
+ },
+ {
+  "case": 146,
+  "mission_no": 147,
+  "slug": "heading-skip",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "heading levels recorded as-is; no inference of missing h2/h3",
+  "assert_text_contains": [
+   "Title",
+   "Deep"
+  ]
+ },
+ {
+  "case": 147,
+  "mission_no": 148,
+  "slug": "address-element",
+  "bound": "CONFLICT",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "<address> contact block extracted as text only, NOT promoted to canonical address"
+ },
+ {
+  "case": 148,
+  "mission_no": 149,
+  "slug": "doctype-public",
+  "bound": "EDGE",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "legacy doctype tolerated",
+  "assert_text_contains": [
+   "old"
+  ]
+ },
+ {
+  "case": 149,
+  "mission_no": 150,
+  "slug": "svg-foreignobject-text",
+  "bound": "XSS",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "foreignObject HTML parsed but script inside stripped per P7",
+  "assert_text_contains": [
+   "fo text",
+   "out"
+  ],
+  "assert_not_in_text": [
+   "bad()"
+  ]
+ }
+]

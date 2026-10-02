@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0159",
+ "verdict": "PROVEN",
+ "summary": "BEFORE sqlite_txn_cursor: 29.288ms; AFTER cursor in same transaction as batch vs separate cursor commits: 4.309ms. Delta -85.3%. 29.29ms to 4.31ms (-85%): batching cursor commits with data in one transaction gives 10x fewer commits and closes the 500-row crash skew.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench4.py",
+  "fleet/work/fleet-be-1/bench4b.py",
+  "fleet/work/fleet-be-1/bench4_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 29.2882,
+  "after_ms": 4.3091,
+  "metric": "sqlite_txn_cursor",
+  "change": "cursor in same transaction as batch vs separate cursor commits",
+  "case": 158
+ }
+}

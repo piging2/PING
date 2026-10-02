@@ -1,0 +1,13 @@
+=== stop + preserve old gateway (rollback available) ===
+ping-gateway
+=== create new gateway: identical image/config + healthcheck + mem limit ===
+a374a21b28d19e89204929e88afc2dc80fffeb33033d0e45a6881b95c2ea3290
+run_exit=0
+=== watch health transition ===
+11:55:06 health=starting
+11:55:16 health=healthy
+=== final state ===
+health=healthy mem=1073741824 image=ping-gateway:candidate-3c5d280dd healthcmd=["CMD-SHELL","node -e \"require('http').get('http://127.0.0.1:8080/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+ping-gateway Up 10 seconds (healthy)
+/health -> 200 0.007685s
+ping-gateway 144.8MiB / 1GiB

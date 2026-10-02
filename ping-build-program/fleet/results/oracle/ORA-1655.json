@@ -1,0 +1,12 @@
+{
+  "mission_id": "ORA-1655",
+  "verdict": "PROVEN",
+  "summary": "Event ingress chaos [reordered]: sandbox execution PASS (fleet/work/fleet-ora-1/ingress-chaos-rehearse.py, deterministic seed 20260924). 200 injected (seq 0 after watermark), all REORDERED, ordered by seq, no loss. Across all 5 classes: 100% classified into the failure taxonomy, zero crashes, zero poisoned canonical state (store digest verified, no malformed/poison entries). Live Oracle host and gateway never touched. Scope caveat: pattern-level execution with a reference classifier implementing the lane-K failure taxonomy (no docker on this worker); the peer harness spec for the real candidate image (fleet/work/fleet-ora-2/range-1501-1550-investigation.md) remains the path to image-level proof on a docker-capable staging host.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-1/ingress-chaos-rehearse.py",
+    "fleet/work/fleet-ora-1/ingress-chaos-evidence.log",
+    "fleet/work/fleet-ora-2/range-1501-1550-investigation.md"
+  ],
+  "confidence": 0.72,
+  "followup": "Point this same injector at ping-gateway:candidate-3c5d280dd on a docker-capable staging host (scratch stores) per the peer investigation; attach the harness log for image-level proof."
+}

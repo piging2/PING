@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-1972",
+  "verdict": "ADAPT",
+  "summary": "ADAPT: restore pattern executed sandbox-local (store-loss drill: 5,000/5,000 rows, digest chain verified, 238 ms RTO). Engine-specific pg_restore on staging is the followup; rollback-of-bad-restore keeps the pre-restore dump. [rollback procedure dry-run on scratch with no live-host contact]",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/rollback-runbook.md",
+    "fleet/work/fleet-ora-2/sandbox/tree/store-loss-drill.sh"
+  ],
+  "confidence": 0.82,
+  "followup": "On staging: pg_restore both backup files into isolated postgres:17-alpine; verify row counts."
+}

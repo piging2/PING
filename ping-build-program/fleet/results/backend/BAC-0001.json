@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0001",
+ "verdict": "ADAPT",
+ "summary": "BEFORE full recompute of 300-node DAG: 0.04ms; AFTER dirty-propagation: 0.16ms (within noise). Followup with expensive nodes (1.2k-op compute): BEFORE 27.44ms, AFTER 82.5ms \u2014 SLOWER. Root cause: test graph is a chain (node i depends on i-1,i-2), so one leaf change dirties the entire cone; incremental degenerates to full recompute + bookkeeping. Precondition identified: incremental wins only when the changed node's dependent cone is a small fraction of the graph.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": "Rerun with fan-out graph (leaf cone <10% of nodes) to exhibit the win; command sketch in followup.py b01_heavy with deps={i:[i//4]}.",
+ "numbers": {
+  "before_ms": 0.0441,
+  "after_ms": 0.1553,
+  "metric": "update_latency",
+  "change": "topological dirty-propagation from changed leaf instead of full recompute",
+  "case": 0
+ }
+}

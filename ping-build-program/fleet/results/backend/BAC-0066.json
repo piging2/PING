@@ -1,0 +1,23 @@
+{
+ "mission_id": "BAC-0066",
+ "verdict": "PROVEN",
+ "summary": "BEFORE raw 2000 docs: 129780 bytes; AFTER single-stream zlib: 10821 bytes (92% saved) at 0.83ms vs 0.08ms CPU. Space claim proven \u2014 the stream variant fixes BAC-0031's REJECTED per-doc attempt. CPU cost is the explicit tradeoff.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0776,
+  "after_ms": 0.8282,
+  "metric": "store_2000_docs_stream",
+  "change": "single-stream zlib over concatenated docs instead of per-doc compression",
+  "case": 65,
+  "extra": {
+   "bytes_before": 129780,
+   "bytes_after": 10821
+  }
+ }
+}

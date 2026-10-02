@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0115",
+ "verdict": "ADAPT",
+ "summary": "BEFORE burst_3000_token_bucket: 0.086ms; AFTER token-bucket admission (bounded 500, shed counted) vs unbounded accept: 2.686ms. Delta +3031.7%. peak queue bounded at 500 with explicit shed counts, but admission cost 30x in Python; bounded queues are a correctness win, not a speed win.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.086,
+  "after_ms": 2.686,
+  "metric": "burst_3000_token_bucket",
+  "change": "token-bucket admission (bounded 500, shed counted) vs unbounded accept",
+  "case": 114
+ }
+}

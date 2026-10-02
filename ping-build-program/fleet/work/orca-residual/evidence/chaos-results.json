@@ -1,0 +1,207 @@
+[
+  {
+    "mission_id": "ORU-000",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.716Z",
+    "verdict": "FALSIFIED",
+    "confidence": 1,
+    "summary": "FALSIFIED (control): old timeout->assume-failed->retry path produced 3 consequential effects for ONE logical operation (attempts=3). The invariant is violated under the pre-fix behavior, exactly the T2 chain proven live on the Pig.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-000-events.jsonl"
+    ],
+    "detail": {
+      "effects": 3,
+      "attempts": 3,
+      "opKey": "9a9d94b77acbd34667102ce5813f7a16ece6946db235cc7245a099a294ac274a",
+      "eventCounts": {
+        "MISSION_FAILED": 3
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None: control behaved as the T2 finding predicts. The fix (ORU-001..006) must hold the invariant where this control breaks it."
+  },
+  {
+    "mission_id": "ORU-001",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.724Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: effect succeeded + coordinator died before receipt. Timeout -> EFFECT_UNKNOWN -> reconcile found the worker's write-ahead EFFECT_SUCCEEDED -> result recovered, no re-dispatch. Effects for op: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-001-events.jsonl"
+    ],
+    "detail": {
+      "effects": 1,
+      "status": "completed",
+      "via": "durable_succeeded_event",
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 1,
+        "EFFECT_SUCCEEDED": 1,
+        "EFFECT_UNKNOWN": 1
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  },
+  {
+    "mission_id": "ORU-002",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.727Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: effect succeeded but the SUCCEEDED persistence failed (journal fault). No durable outcome event; reconcile probed the effector's executed-op log -> executed=true -> result recovered via probe, no re-dispatch. Effects for op: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-002-events.jsonl"
+    ],
+    "detail": {
+      "effects": 1,
+      "status": "completed",
+      "via": "effector_probe",
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 1,
+        "EFFECT_UNKNOWN": 1,
+        "EFFECT_RECONCILED": 1
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  },
+  {
+    "mission_id": "ORU-003",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.728Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: response lost in transit after SUCCEEDED was persisted. Coordinator saw only the lost ack -> EFFECT_UNKNOWN -> reconcile recovered from the durable event. Effects for op: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-003-events.jsonl"
+    ],
+    "detail": {
+      "effects": 1,
+      "status": "completed",
+      "via": "durable_succeeded_event",
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 1,
+        "EFFECT_SUCCEEDED": 1,
+        "EFFECT_UNKNOWN": 1
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  },
+  {
+    "mission_id": "ORU-004",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.731Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: duplicate dispatch of the same logical operation (scheduler race). Both coordinators derived the same op_key; the effector's idempotency gate served the second dispatch from the executed-op log without re-running the effect; the duplicate EFFECT_DISPATCHED deduplicated at the event layer via logical_id. Effects for op: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-004-events.jsonl"
+    ],
+    "detail": {
+      "effects": 1,
+      "sameOpKey": true,
+      "secondWasDuplicate": true,
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 2,
+        "EFFECT_SUCCEEDED": 1
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  },
+  {
+    "mission_id": "ORU-005",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.733Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: outcome unknown after probe (SUCCEEDED lost, log unavailable) + consequential effect -> HELD with escalation, zero blind retries. When the log recovered, re-reconcile recovered the result. Effects for op across hold+recovery: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-005-events.jsonl"
+    ],
+    "detail": {
+      "effectsAfterHold": 1,
+      "effectsFinal": 1,
+      "holdStatus": "held",
+      "recoveryResolution": "recovered",
+      "recoveryVia": "effector_probe",
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 1,
+        "EFFECT_UNKNOWN": 1,
+        "EFFECT_HELD": 1,
+        "EFFECT_RECONCILED": 1
+      },
+      "journalStats": {
+        "emitted": 4,
+        "persisted": 4,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  },
+  {
+    "mission_id": "ORU-006",
+    "matrix": "orca-residual",
+    "at": "2026-09-24T11:43:44.737Z",
+    "verdict": "PROVEN",
+    "confidence": 0.99,
+    "summary": "PROVEN: coordinator crashed between probe and EFFECT_RECONCILED. Fresh coordinator swept the unresolved EFFECT_UNKNOWN, re-ran reconcile, reached the identical verdict (recovered via probe); EFFECT_RECONCILED emitted exactly once (logical_id dedup). Effects for op: 1.",
+    "evidence_files": [
+      "fleet/work/orca-residual/evidence/ORU-006-events.jsonl"
+    ],
+    "detail": {
+      "crashed": true,
+      "swept": true,
+      "finalResolution": "recovered",
+      "effects": 1,
+      "reconciledEmits": 1,
+      "eventCounts": {
+        "EFFECT_DISPATCHED": 1,
+        "EFFECT_UNKNOWN": 1,
+        "EFFECT_RECONCILED": 1
+      },
+      "journalStats": {
+        "emitted": 3,
+        "persisted": 3,
+        "deduplicated": 0,
+        "failed": 0,
+        "collisions": 0
+      }
+    },
+    "followup": "None."
+  }
+]

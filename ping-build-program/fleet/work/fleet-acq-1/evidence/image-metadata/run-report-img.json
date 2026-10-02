@@ -1,0 +1,2378 @@
+{
+  "lab": "image-metadata",
+  "worker": "fleet-acq-1",
+  "parser": "img-harness/1.0.0",
+  "generated_at": "2026-09-24T04:19:19.484Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-img-0",
+      "mission": "ACQ-1151",
+      "title": "png baseline",
+      "threat": "Regression anchor.",
+      "fixture_sha256": "1d627795c5303afa541d0341847d690cef41f8e08674cfaa22d5f08845e9e8c1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-1",
+      "mission": "ACQ-1152",
+      "title": "png tEXt typed fields",
+      "threat": "Author/Description/Comment/Software map to typed claims.",
+      "fixture_sha256": "a9bd4725669f51cd71e6f2b403d01f0b06ec13679873f5e027523a91a4eb4677",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_author",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_description",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_comment",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_software",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "7 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-2",
+      "mission": "ACQ-1153",
+      "title": "png unknown keyword -> img_text",
+      "threat": "Unmapped keywords stay generic with keyword in provenance.",
+      "fixture_sha256": "cec0b76bb851205708b41ab4ebb111592d85d2923707d66a8c9ae0ba2895afa0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_text",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-3",
+      "mission": "ACQ-1154",
+      "title": "png iTXt uncompressed utf-8",
+      "threat": "iTXt text is UTF-8 by spec.",
+      "fixture_sha256": "3fa5c606bad7e934e1f71242cd1df1dd1f9944c7388af5df10dc2ddcb4d60659",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-4",
+      "mission": "ACQ-1155",
+      "title": "png iTXt compressed",
+      "threat": "Deflate iTXt inflates within cap.",
+      "fixture_sha256": "8b68804f1e87260289b67d541dfcad3584622f53f601d3bc888f48725bdf43aa",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_description",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-5",
+      "mission": "ACQ-1156",
+      "title": "png zTXt",
+      "threat": "zTXt inflates within cap.",
+      "fixture_sha256": "d9e26656b0eb4678fe4aab30c5125c79e4563086ea7b5412e7395bf9ebbb31b7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_comment",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-6",
+      "mission": "ACQ-1157",
+      "title": "png tEXt bad crc -> quarantined, no claim",
+      "threat": "Corrupt chunk bytes are untrusted.",
+      "fixture_sha256": "ac3583f2692c485e7f488ce22fa1e4eee3287ece56ad03c25960ed614868849b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"Lie\""
+        },
+        {
+          "name": "quarantined:undefined:crc-mismatch",
+          "ok": true,
+          "detail": "png tEXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-7",
+      "mission": "ACQ-1158",
+      "title": "png IHDR bad crc -> no dimensions",
+      "threat": "Corrupt IHDR contributes no dimension claims.",
+      "fixture_sha256": "65685425383f9849c9bc220a16649cb0ea5b82bfad7470b53448ea7852c2eb6d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_height",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:crc-mismatch",
+          "ok": true,
+          "detail": "png IHDR chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-8",
+      "mission": "ACQ-1159",
+      "title": "png truncated mid-chunk",
+      "threat": "Declared length past EOF: bounded, dims kept.",
+      "fixture_sha256": "9cd82ca7e493c1a42bec30e61e375d24bdacfc3032d61b1d84fa12050309095f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:truncated",
+          "ok": true,
+          "detail": "png/tEXt"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-9",
+      "mission": "ACQ-1160",
+      "title": "png magic only",
+      "threat": "No chunks: format known, everything else quarantined.",
+      "fixture_sha256": "4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_height",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:missing-ihdr",
+          "ok": true,
+          "detail": "png"
+        },
+        {
+          "name": "quarantined:undefined:missing-iend",
+          "ok": true,
+          "detail": "png"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-10",
+      "mission": "ACQ-1161",
+      "title": "png zero width -> invalid-dimensions",
+      "threat": "Zero is not a dimension.",
+      "fixture_sha256": "bac11cc13bede292b732f2807a68ca1d65795cbc5f611288550d6936e9972dda",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_height",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:invalid-dimensions",
+          "ok": true,
+          "detail": "png IHDR chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-11",
+      "mission": "ACQ-1162",
+      "title": "png huge dimensions -> invalid-dimensions",
+      "threat": "200000px exceeds the dimension cap; never claimed.",
+      "fixture_sha256": "8708b38cd452756a78ad853a20349d15d88a5f567035cb64d346602d935ad2cb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"200000\""
+        },
+        {
+          "name": "quarantined:undefined:invalid-dimensions",
+          "ok": true,
+          "detail": "png IHDR chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-12",
+      "mission": "ACQ-1163",
+      "title": "png bad bit depth -> invalid-ihdr",
+      "threat": "Bit depth 7 exists nowhere in the spec.",
+      "fixture_sha256": "ab7170d043510abaa0ba68e48e06374002a39dbb78530d179286914f5d54cbff",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:invalid-ihdr",
+          "ok": true,
+          "detail": "png IHDR chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-13",
+      "mission": "ACQ-1164",
+      "title": "png duplicate IHDR -> first wins",
+      "threat": "Second IHDR is quarantined, never merged.",
+      "fixture_sha256": "c3879a5893e96c0f82f714b6dbb92503da07d0d83f45fbdab2003569ea36f81e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"99\""
+        },
+        {
+          "name": "quarantined:undefined:duplicate-ihdr",
+          "ok": true,
+          "detail": "png IHDR chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-14",
+      "mission": "ACQ-1165",
+      "title": "png tEXt before IHDR -> misordered but read",
+      "threat": "Ordering violation quarantined; bytes still readable.",
+      "fixture_sha256": "2b4dd19fa2eb472ddaca6f9b395e4af3c6f2f06dc23b366ea44beca77cd76aa7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:misordered-chunk",
+          "ok": true,
+          "detail": "png tEXt chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-15",
+      "mission": "ACQ-1166",
+      "title": "png tEXt empty keyword -> bad-keyword",
+      "threat": "No keyword, no claim.",
+      "fixture_sha256": "ffad3ce16e4731be8abcf18bc08b09a742a42ac032d62e3d28af05a318aa6933",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-keyword",
+          "ok": true,
+          "detail": "png tEXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-16",
+      "mission": "ACQ-1167",
+      "title": "png tEXt 80-char keyword -> bad-keyword",
+      "threat": "Spec caps keywords at 79 chars.",
+      "fixture_sha256": "002fabf616a271f1068f607fad4cbfbb706b0e0181eb13abd26d99bde4abea08",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-keyword",
+          "ok": true,
+          "detail": "png tEXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-17",
+      "mission": "ACQ-1168",
+      "title": "png iTXt bad compression method -> unsupported",
+      "threat": "Method 9 is not deflate; no guessing.",
+      "fixture_sha256": "6ebca581da4303670b63251e1b96384c37451784f8832cebbd918a2aadadbacb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:unsupported-compression",
+          "ok": true,
+          "detail": "png iTXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-18",
+      "mission": "ACQ-1169",
+      "title": "png zTXt decompression bomb -> PERMANENT",
+      "threat": "2MB of 'A' from a small blob: terminal, no claims leak.",
+      "fixture_sha256": "9229d45a5544c7bb3c0a3807de64327c1da9a644347f92648ef6d8bd6e79d360",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "PERMANENT"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "decompression-bomb"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-19",
+      "mission": "ACQ-1170",
+      "title": "png iTXt invalid utf-8 -> bad-utf8",
+      "threat": "Replacement characters would be a guess; skip instead.",
+      "fixture_sha256": "55419fd64b05c5256dbdd4553758d0f8288a972bcb8a6aede2b4553172a6cfd6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-utf8",
+          "ok": true,
+          "detail": "png iTXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-20",
+      "mission": "ACQ-1171",
+      "title": "png unknown ancillary chunk skipped",
+      "threat": "Private chunks are extensible by design; ignore.",
+      "fixture_sha256": "381556f81b10846a07be5d0a5e0a98f080a45cb50d2ff7485537519675c3f752",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-21",
+      "mission": "ACQ-1172",
+      "title": "png duplicate Title -> two claims",
+      "threat": "Repeated keywords each get their own claim.",
+      "fixture_sha256": "cad651ba3c2adba999c8f1fc1f4e4f368b9742e5f678254a0e94e0cdbf7a5726",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:img_title",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-22",
+      "mission": "ACQ-1173",
+      "title": "png 2MB tEXt -> truncated and flagged",
+      "threat": "Over-long text truncates with an explicit flag, never silently.",
+      "fixture_sha256": "30c20283f8c545491427f12406b8c23fdda5aefc599f9e2240cec8c11cd3658d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "truncated:text",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:text-too-long",
+          "ok": true,
+          "detail": "png tEXt chunk#2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-23",
+      "mission": "ACQ-1174",
+      "title": "png IHDR length 12 -> bad-ihdr-length",
+      "threat": "Short IHDR is malformed, not parseable.",
+      "fixture_sha256": "7294b3ba6602a95693fca970a8ef54b0c6fe04432b6dee5a47bd932fb5dd6709",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-ihdr-length",
+          "ok": true,
+          "detail": "png IHDR chunk#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-24",
+      "mission": "ACQ-1175",
+      "title": "png non-alpha chunk type -> bad-chunk-type",
+      "threat": "Chunk types are 4 ASCII letters; anything else ends parsing.",
+      "fixture_sha256": "5a7806b1e46747dc022ea1ecd628ba2782a29e1170476ad501eb60e344d4a390",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:bad-chunk-type",
+          "ok": true,
+          "detail": "png"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-25",
+      "mission": "ACQ-1176",
+      "title": "garbage bytes -> INVALID_PAYLOAD",
+      "threat": "Not magic, not an image.",
+      "fixture_sha256": "212d04911841115c8c247e6a03800dc714e5215ce70e05c2415dbb63af50dcb3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "not-an-image"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-26",
+      "mission": "ACQ-1177",
+      "title": "empty input -> INVALID_PAYLOAD",
+      "threat": "Zero bytes.",
+      "fixture_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "empty-input"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-27",
+      "mission": "ACQ-1178",
+      "title": "gif -> UNSUPPORTED",
+      "threat": "GIF is outside the claim surface.",
+      "fixture_sha256": "1f19970f056cd116a5fe3c02422c1ee1ac827136df470b5c89af492620512aa4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unsupported-format"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-28",
+      "mission": "ACQ-1179",
+      "title": "bmp -> UNSUPPORTED",
+      "threat": "BMP is outside the claim surface.",
+      "fixture_sha256": "6e502e2415d1fbfbbf53f32fbcb82a4052fef06007a2d0c4b8980cf1b06187ec",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unsupported-format"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-29",
+      "mission": "ACQ-1180",
+      "title": "webp -> UNSUPPORTED",
+      "threat": "RIFF/WEBP is outside the claim surface.",
+      "fixture_sha256": "44e65465e5e82733c8e5499cdd2fb106b8b703ea3f28da3b7da7f3a661267d6e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unsupported-format"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-img-30",
+      "mission": "ACQ-1181",
+      "title": "png no IEND -> missing-iend",
+      "threat": "Clean EOF without IEND: dims kept, flagged.",
+      "fixture_sha256": "2dbfd9dd5e23fe68082f7ee90645748f3cc83d40c0c5333801597b48c1b5ee1f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:missing-iend",
+          "ok": true,
+          "detail": "png"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-31",
+      "mission": "ACQ-1182",
+      "title": "jpeg baseline",
+      "threat": "SOI/APP0/SOF0/SOS/EOI: format and dims.",
+      "fixture_sha256": "58702e76c2d1d4b2c2240c7e81681cf52f8e862e9be1951b6a66368771b8e8ba",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-32",
+      "mission": "ACQ-1183",
+      "title": "jpeg exif little-endian",
+      "threat": "IFD0 ASCII tags map to typed claims.",
+      "fixture_sha256": "1c6ed340e369ebd7812b928b1959c6572968d01236db29947da21fb2e370df4d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_make",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_model",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_software",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_description",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_author",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_copyright",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "9 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-33",
+      "mission": "ACQ-1184",
+      "title": "jpeg exif big-endian",
+      "threat": "MM byte order parses identically.",
+      "fixture_sha256": "a2faa13fbc825a931888e998e9c2ceb99f7f0cc1617ef2eec373989dc614d442",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_make",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_model",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-34",
+      "mission": "ACQ-1185",
+      "title": "jpeg exif gps skipped",
+      "threat": "GPS sub-IFD is never descended (privacy boundary).",
+      "fixture_sha256": "97ce7688a9d3e4c4e48d5fe1c5d510b02dc2c7f4bdb5e92eeb52dc9823d08f96",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_make",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"37.7749\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"122.4194\""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-35",
+      "mission": "ACQ-1186",
+      "title": "jpeg exif bad ifd offset -> bad-offset",
+      "threat": "IFD pointer outside APP1: EXIF dropped, SOF dims kept.",
+      "fixture_sha256": "f89f7a98915292ba6f80e9da08749f864ba003eeacb6dca38a18eda2cad9599f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_make",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-offset",
+          "ok": true,
+          "detail": "jpeg FFE1 seg#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-36",
+      "mission": "ACQ-1187",
+      "title": "jpeg xmp app1 skipped",
+      "threat": "XMP is XML: another family's problem.",
+      "fixture_sha256": "f8b9f46f766da5613add444a517665d544aec4942e18690f059c5ca9d1fac459",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_description",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-37",
+      "mission": "ACQ-1188",
+      "title": "jpeg COM -> img_comment",
+      "threat": "COM segments are latin1 text.",
+      "fixture_sha256": "15a658c0f85eb02f0fc9a7025ada5e69b433704312e8c20b23b2d6307ed51156",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_comment",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-38",
+      "mission": "ACQ-1189",
+      "title": "jpeg truncated mid-segment",
+      "threat": "Segment runs past EOF: bounded.",
+      "fixture_sha256": "9284160b983eea2cc5a91ad5a6a41b59e2771c8c4c31573adb9baee5b42fb202",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:truncated",
+          "ok": true,
+          "detail": "jpeg"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-39",
+      "mission": "ACQ-1190",
+      "title": "jpeg soi+eoi only",
+      "threat": "Format known, no dimensions anywhere.",
+      "fixture_sha256": "32461d5bd1773012acef0ba15636752949bd7c2ce50f9172159d9f56cf0dd9af",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-40",
+      "mission": "ACQ-1191",
+      "title": "jpeg sof zero height -> invalid-dimensions",
+      "threat": "Zero is not a dimension, in JPEG either.",
+      "fixture_sha256": "4a23445fed8d227a9d2eedafc0cd4a1606f6a01af9f8fd3e89f556f84f8da158",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_width",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_height",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:invalid-dimensions",
+          "ok": true,
+          "detail": "jpeg FFC0 seg#1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-41",
+      "mission": "ACQ-1192",
+      "title": "jpeg segment length 1 -> bad-segment",
+      "threat": "Lengths under 2 cannot exist; stop.",
+      "fixture_sha256": "a9fda4aab3f1ca830ff6f6d1f77577c90ff690ef1920049864348da7435c5920",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "quarantined:undefined:bad-segment",
+          "ok": true,
+          "detail": "jpeg"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-42",
+      "mission": "ACQ-1193",
+      "title": "jpeg app1 non-exif skipped",
+      "threat": "Unknown APP1 payloads are not EXIF.",
+      "fixture_sha256": "565be955a1e2e468cdfa0b6ac6d5779d3c1856138bd1608c05617c39453b4731",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-43",
+      "mission": "ACQ-1194",
+      "title": "jpeg exif inline ascii value",
+      "threat": "Values of 4 bytes or fewer live in the entry itself.",
+      "fixture_sha256": "93dfac417ea9d4dff650dd6099213646f2106d61b172546922ac2c59bf995afb",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_make",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-44",
+      "mission": "ACQ-1195",
+      "title": "jpeg exif value offset past end -> bad-offset",
+      "threat": "Offset lies are caught before any read.",
+      "fixture_sha256": "da8e6ff8f4f040589a69af797ce6e7666866eb632c64df97a3be4edbe1918082",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_make",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-offset",
+          "ok": true,
+          "detail": "jpeg FFE1 seg#1 exif"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-45",
+      "mission": "ACQ-1196",
+      "title": "jpeg progressive sof2 -> dims",
+      "threat": "SOF2 carries dimensions like SOF0.",
+      "fixture_sha256": "b7dfbcf46af5cef5782815d298b80572dd61478ee6b0219350bd93feed6d0e1b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-46",
+      "mission": "ACQ-1197",
+      "title": "jpeg sos then garbage -> stop at sos",
+      "threat": "Entropy data is opaque; parsing ends at SOS.",
+      "fixture_sha256": "111c3ee202561e258602909120bc5ffe02b8066bbfca58a97bb43da772a261b4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-47",
+      "mission": "ACQ-1198",
+      "title": "png kitchen sink -> exact claim set",
+      "threat": "Good text + compressed iTXt + corrupt chunk + missing IEND.",
+      "fixture_sha256": "4b5f5a48814e1d31beed1729c86fb0bc4c8f7df2a2530d2a7b6624d227c048b8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_title",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_author",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_description",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_software",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_comment",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"Hidden\""
+        },
+        {
+          "name": "quarantined:undefined:crc-mismatch",
+          "ok": true,
+          "detail": "png tEXt chunk#5"
+        },
+        {
+          "name": "quarantined:undefined:missing-iend",
+          "ok": true,
+          "detail": "png"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "7 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-48",
+      "mission": "ACQ-1199",
+      "title": "jpeg kitchen sink -> exact claim set",
+      "threat": "EXIF + COM + XMP skipped + SOF dims.",
+      "fixture_sha256": "c44a9c66bf23845a34f3b9e953dd435cfdcc96a6093eefedb1fa8f01e1376a44",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_make",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_model",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_comment",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "6 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-img-49",
+      "mission": "ACQ-1200",
+      "title": "jpeg app0+app13+dqt skipped -> dims only",
+      "threat": "Vendor and quantization segments are not metadata claims.",
+      "fixture_sha256": "526f84ffc4276adfe602a7aaa562d1b52e17c389d49e024e16b8ba544978dfe6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:img_format",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_width",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "claim:img_height",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "absent:img_make",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_comment",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:img_title",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

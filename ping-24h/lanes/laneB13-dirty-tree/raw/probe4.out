@@ -1,0 +1,130 @@
+########## src/app/api/mc/_lib/mc-dispatch-identity.ts (head -40)
+/**
+ * Mission J (Q-P0-06 finding #1, 2026-09-27): trusted caller identity for the
+ * MC dispatch POST (src/app/api/mc/dispatch/route.ts).
+ *
+ * The dispatch tenant is DERIVED from a server-side, operator-provisioned
+ * caller registry, never from the request body. The caller presents a
+ * provisioned key in the x-mc-caller-key header; this module maps it to the
+ * trusted caller context { agent_id, tenant, entitled_tenants }.
+ *
+ * Reference semantics: the Python front door's AuthenticatedContext +
+ * resolve_tenant + check_agent_entitlement (mission_intent.py): trusted A +
+ * body B -> DENY; missing trusted identity -> refuse; explicit trusted
+ * cross-tenant entitlement -> ALLOW. Nothing more.
+ *
+ * The registry is read per request so key rotation needs no rebuild; any
+ * read or parse failure throws and the route refuses the dispatch (fail
+ * closed). No new event types, no new authorities, no journal changes.
+ */
+
+import { readFileSync } from 'fs';
+
+export const CALLER_KEY_HEADER = 'x-mc-caller-key';
+
+// Operator-provisioned registry. Lives outside the repo (no secrets in git).
+export const CALLER_REGISTRY_PATH =
+  '/home/nolan/workspace/mission-control/dispatch-identities.json';
+
+export interface CallerContext {
+  agent_id: string;
+  tenant: string;
+  entitled_tenants: string[];
+}
+
+export interface CallerRegistry {
+  agents: Record<string, CallerContext>;
+  /** Union of every provisioned tenant and entitlement: the only body-tenant
+   *  values that are not immediate 400 bad_tenant. */
+  tenants: Set<string>;
+}
+
+########## src/app/api/mc/_lib/mc-tenant-gate.ts (head -40)
+/**
+ * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant gate for the MC missions
+ * READ routes (GET /api/mc/missions, GET /api/mc/missions/[id]).
+ *
+ * The missions journal is a single mixed-tenant JSONL BY DESIGN (operator
+ * surface on loopback); the gate lives at the READ API, not the journal.
+ *
+ * Identity model: the caller asserts its tenant via the `x-mc-tenant`
+ * header. A loopback caller omitting the header gets the operator view;
+ * asserting another tenant's id gets that tenant's view. This stops
+ * accidental cross-tenant reads and fails closed on malformed input, but
+ * it is NOT authorization against a deliberate loopback caller. (The
+ * dispatch POST is stricter: it key-authenticates via `x-mc-caller-key`
+ * and refuses body-claimed tenants.)
+ *
+ * - No header      -> operator view: all missions (the MC page sends no
+ *                     header; its honest operator surface is unchanged).
+ * - Valid header   -> tenant view: only that tenant's missions. Missions
+ *                     with tenant === null are NOT visible here (fail-closed).
+ * - Invalid header -> 400 invalid_caller_tenant, fail-closed (never fall
+ *                     back to unscoped reads on a malformed identity).
+ * - Cross-tenant [id] -> 403 cross_tenant_denied carrying the requested
+ *                     mission_id ONLY: no tenant field, no metadata, no hint
+ *                     about which tenant owns it.
+ *
+ * Tenant identity is taken from the header ONLY, never from a body or
+ * query param. No new authority, no journal change, no new event types.
+ */
+
+export const CALLER_TENANT_HEADER = 'x-mc-tenant';
+
+// Conservative tenant-id shape: covers the journal's existing tenants
+// (happy-place, coppersmith-plumbing) and Mission D's synthetic tenants
+// (tenant-a-synth), and rejects anything that could smuggle a second
+// identity or a path/selector.
+export const CALLER_TENANT_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
+
+export type CallerScope = { kind: 'operator' } | { kind: 'tenant'; tenant: string };
+
+/**
+########## src/lib/ping/digest.ts (head -40)
+/**
+ * PING shared digest implementation — `sha256-canonical-json-v1`.
+ *
+ * NORTH STAR BACKLOG_PING.md rule 16 requires every lane to "commit the exact
+ * digest algorithm/script with it, **or point at the shared digest
+ * implementation**". This module IS that implementation. There is exactly one
+ * definition of each primitive here; lanes import, never re-implement.
+ *
+ * Algorithm (pinned; reproduce any digest from the record alone):
+ *
+ *   1. CANONICALIZE the value to canonical JSON:
+ *      - objects: keys sorted by UTF-16 code-unit order (the default
+ *        String < sort), applied recursively; no whitespace anywhere;
+ *        separators are exactly `,` and `:`.
+ *      - arrays: element order preserved (array order is semantic).
+ *      - strings: JSON.stringify escaping.
+ *      - numbers/booleans: JSON.stringify (NaN and Infinity become null,
+ *        -0 becomes 0 — JSON semantics, pinned).
+ *      - null and undefined become the literal `null`. NOTE: an object key
+ *        whose value is undefined is EMITTED as `"key":null`; it is NOT
+ *        dropped. Functions and symbols become `null`.
+ *      - toJSON methods are IGNORED: a Date canonicalizes as `{}`, not as
+ *        its ISO string. Identity must not depend on host-defined
+ *        serialization hooks.
+ *   2. ENCODE the canonical string as UTF-8 bytes.
+ *   3. SHA-256 over those bytes, hex-encoded lowercase.
+ *
+ * Shell reproduction recipe for any recorded digest:
+ *   canonical=<canonical JSON per step 1, exact bytes>
+ *   printf '%s' "$canonical" | sha256sum
+ * (printf, not echo: no trailing newline. The digest covers the exact bytes.)
+ *
+ * The SHA-256 below is pure TypeScript (no node:crypto) so browser-safe
+ * lanes can import this module. It is byte-identical to node:crypto's
+ * SHA-256 on all inputs (proven by the pinned vectors in
+ * src/lib/ping/__tests__/digest.test.ts). Harvested 2026-09-27 from
+ * src/fyd/proceduralize/sha256.ts, extended to also accept raw bytes
+ * (string | Uint8Array; Buffer is a Uint8Array) for content digests.
+ *
+ * Event-ID formulation note (live gateway runtime — OUT OF SCOPE here):
+=== digest sha256Hex export ===
+56:export const DIGEST_ALGORITHM = "sha256-canonical-json-v1" as const;
+124:export function sha256Hex(input: string | Uint8Array): string {
+136:export function canonicalize(value: unknown): string {
+150:export function digestCanonical(value: unknown): string {
+151:  return sha256Hex(canonicalize(value));
+159:export function verify(value: unknown, expectedHex: string): boolean {

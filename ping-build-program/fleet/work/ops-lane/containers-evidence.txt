@@ -1,0 +1,49 @@
+=== docker ps ===
+NAMES           IMAGE                              STATUS                PORTS
+ping-gateway    ping-gateway:candidate-3c5d280dd   Up 3 days             127.0.0.1:8080->8080/tcp
+ping-postgres   postgres:17-alpine                 Up 3 days (healthy)   127.0.0.1:5432->5432/tcp
+ping-qdrant     qdrant/qdrant:v1.7.0               Up 4 days (healthy)   127.0.0.1:6333-6334->6333-6334/tcp
+=== docker stats (current) ===
+NAME            MEM USAGE / LIMIT     MEM %     CPU %
+ping-gateway    117.9MiB / 5.765GiB   2.00%     0.00%
+ping-postgres   32.11MiB / 5.765GiB   0.54%     0.00%
+ping-qdrant     48.04MiB / 5.765GiB   0.81%     0.01%
+=== gateway inspect: network/ports/restart/health ===
+{"8080/tcp":[{"HostIp":"127.0.0.1","HostPort":"8080"}]}
+
+Image=ping-gateway:candidate-3c5d280dd Restart=unless-stopped Health=null
+
+=== gateway container count on 8080/8081 ===
+ping-gateway 127.0.0.1:8080->8080/tcp
+=== compose? ===
+NAME                STATUS              CONFIG FILES
+oracle              running(1)          /opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/infrastructure/oracle/docker-compose.oracle.yml
+=== gateway entrypoint/cmd ===
+Entrypoint=["docker-entrypoint.sh"] Cmd=["node","gateway/server.js"]
+
+=== gateway env KEYS only (no values) ===
+LOG_LEVEL=<redacted>
+POSTGRES_PASSWORD=<redacted>
+QDRANT_HOST=<redacted>
+QDRANT_PORT=<redacted>
+QDRANT_URL=<redacted>
+POSTGRES_DB=<redacted>
+POSTGRES_USER=<redacted>
+OLLAMA_BASE_URL=<redacted>
+POSTGRES_PORT=<redacted>
+NODE_ENV=<redacted>
+POSTGRES_HOST=<redacted>
+PATH=<redacted>
+NODE_VERSION=<redacted>
+YARN_VERSION=<redacted>
+
+=== gateway mounts/networks ===
+Mounts=[]
+
+Networks={"oracle_ping_internal":{"IPAMConfig":null,"Links":null,"Aliases":null,"DriverOpts":null,"GwPriority":0,"NetworkID":"8f1271c82e7aa8993f47dbac86b51d4f74bab0ea5783a2bac9d68a310a7e86d0","EndpointID":"a23079a49840d2c59eca7964d1e4e9dbbe6b4832e946265f9303d05685a1851d","Gateway":"172.20.0.1","IPAddress":"172.20.0.4","MacAddress":"fe:57:ce:68:4c:30","IPPrefixLen":16,"IPv6Gateway":"","GlobalIPv6Address":"","GlobalIPv6PrefixLen":0,"DNSNames":["ping-gateway","9e3fc6fd186c"]}}
+
+=== postgres/qdrant images ===
+postgres:17-alpine
+
+qdrant/qdrant:v1.7.0
+

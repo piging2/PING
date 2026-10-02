@@ -1,0 +1,10 @@
+{
+  "mission_id": "ORA-0565",
+  "verdict": "PROVEN",
+  "summary": "PROVEN (documented): alpine-based images use musl libc (postgres:17-alpine, node:*-alpine, gateway). No glibc-dependent native modules observed in the gateway image (sharp is a repo dependency but is NOT installed in the image - verified 'Cannot find module'). musl is therefore the only libc in play. Applies to 'node:20-alpine @ sha256:fb4cd12c85ee03686f6af5362a0b0d5'.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/arch-compat-evidence.json"
+  ],
+  "confidence": 0.88,
+  "followup": "Owner: if a glibc-linked native module is ever added, switch that image to a -slim (glibc) base."
+}

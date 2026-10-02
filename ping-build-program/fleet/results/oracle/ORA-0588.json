@@ -1,0 +1,10 @@
+{
+  "mission_id": "ORA-0588",
+  "verdict": "ADAPT",
+  "summary": "ADAPTED (premise does not apply): sharp ^0.35.1 is in presentping/package.json but is NOT installed in the gateway image (verified 'Cannot find module sharp' in a transient --rm container; node reports arm64/linux). No native module in the image needs prebuilt binaries today. The design contract requires arm64 prebuilts when native modules are added.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/arch-compat-evidence.json"
+  ],
+  "confidence": 0.85,
+  "followup": "Owner: when adding a native module, verify its linux-arm64-musl prebuilt exists before merging."
+}

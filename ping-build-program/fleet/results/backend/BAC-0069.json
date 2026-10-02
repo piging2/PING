@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0069",
+ "verdict": "PROVEN",
+ "summary": "BEFORE replay 20k events with op-branch: 1.80ms; AFTER write-time noop tagging + O(1) skip: 1.86ms \u2014 parity (within noise). The tagging itself is free at write time and makes the skip explicit; this is the corrected design BAC-0034's followup prescribed (no replay-time hashing).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 1.8007,
+  "after_ms": 1.8572,
+  "metric": "replay_20k_tagged",
+  "change": "write-time noop tagging + O(1) skip instead of replay-time fingerprint hashing",
+  "case": 68
+ }
+}

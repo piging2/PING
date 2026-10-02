@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0030",
+ "verdict": "ADAPT",
+ "summary": "BEFORE bytes-slice copies vs AFTER memoryview: at 64-byte slices over 2MB, AFTER was SLOWER (-104%, view overhead dominates); followup at 250KB slices over 16MB: BEFORE 252.19ms, AFTER 0.14ms (99.9% win). Threshold-gated adoption: use zero-copy views only above ~4-64KB slice size; copy small slices.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0865,
+  "after_ms": 0.177,
+  "metric": "1000_slices_2MB_buffer",
+  "change": "memoryview slices instead of copying bytes slices",
+  "case": 29
+ }
+}

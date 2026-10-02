@@ -1,0 +1,27 @@
+# Oracle baseline read-only probe — component-N definition search
+Worker: fleet-ora-1. Date: 2026-09-23 (MDT night shift).
+Method: ./oracle-ssh.sh -s < probe script (read-only; no writes, no key material read).
+
+Script run (probe_components.sh):
+  hostname
+  ls / ; ls /home/ubuntu
+  find /home /opt /srv /usr/local -maxdepth 4 \( -iname "*component-*" -o -iname "components" \) 2>/dev/null
+  grep -rl "component-1[0-9]" /home/ubuntu /opt /srv --include=*.md,*.json,*.yaml,*.yml,*.tsv
+
+Result:
+  hostname: ping-core-01
+  /home/ubuntu contains: p18-oracle-staging
+  find for *component-*: NO HITS
+  grep for "component-1N": one irrelevant hit
+    /opt/unified-monitoring-agent/embedded/lib/ruby/gems/3.3.0/gems/mime-types-data-3.2026.0701/data/mime-types.json
+    (a vendored mime-types data file; not an oracle baseline definition)
+
+Follow-up script (probe_staging.sh) listed /home/ubuntu/p18-oracle-staging/:
+  build-arm64-temporal-removed.log, build-arm64-v2.log, build-arm64.log,
+  p18-probe.js, source/p18-source-76bd8f4f8.tar.gz, source/p18-source-a2c2626ce.tar.gz
+  .pgpass (permissions 600; NOT read, per no-key-material rule)
+
+Conclusion: NO component-0..component-19 definitions exist on the Oracle baseline host.
+The p18-oracle-staging directory is unrelated p18 migration work, not the
+reproducibility mission subjects. Per oracle-worker duty the baseline stays
+untouched; no definition is fabricated here.

@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0009",
+ "verdict": "PROVEN",
+ "summary": "BEFORE materialize-then-process 200k records: 73.84ms, peak 19.2MB; AFTER generator pipeline: 26.25ms (within noise on time), peak 113KB \u2014 170x memory reduction. Memory claim proven; time parity.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 73.842,
+  "after_ms": 26.2534,
+  "metric": "process_200k_records",
+  "change": "generator pipeline instead of materializing full list",
+  "case": 8,
+  "extra": {
+   "peak_bytes_before": 19189024,
+   "peak_bytes_after": 112832
+  }
+ }
+}

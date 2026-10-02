@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0049",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE fixed 16 pool vs AFTER idle-eviction (min 4): both ended at 16 \u2014 the workload kept every connection hot (touched every 16 cycles, idle threshold 50 never hit), so eviction never engaged. Scenario flaw, not a technique flaw.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun with bursty workload: 200-cycle burst then 500 idle cycles; measure steady-state pool size.",
+ "numbers": {
+  "before_ms": 0.018,
+  "after_ms": 0.3799,
+  "metric": "pool_churn_200_cycles",
+  "change": "idle eviction (min 4) instead of fixed 16-connection pool",
+  "case": 48,
+  "extra": {
+   "pool_size_before": 16,
+   "pool_size_after": 16
+  }
+ }
+}

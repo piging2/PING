@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "evidence_files": [
+    "fleet/work/fleet-po-1/range-1351-1400-investigation.md",
+    "fleet/gen_matrices.py"
+  ],
+  "followup": "Staging drill (NEVER the live host): restore ping-postgres-2026-09-19.dump on staging, take a FRESH dump (current dump is 4 days stale \u2014 fix backup cadence to daily, retain 7d), wipe staging data dir, rebuild, time it = measured RTO; verify row counts + canonical digest of ping_events; write the RTO budget (measured x2 headroom) into /opt/ping/config. PASS = rebuild within budget with matching digest.",
+  "mission_id": "ORA-1370",
+  "summary": "Store-loss mission for REAL service 'postgres' (verified on Oracle host). Wiping production is destructive and forbidden on the live baseline. Read-only finding: rebuild source EXISTS at /opt/ping/backups/ping-postgres-2026-09-19.dump (368KB) but is 4 DAYS STALE; no RTO budget documented in /opt/ping/config or /opt/ping/infrastructure (grep: zero hits).",
+  "verdict": "NEEDS-FOLLOWUP"
+}

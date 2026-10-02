@@ -1,0 +1,31 @@
+{
+ "mission_id": "BAC-0081",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE equal RR vs AFTER deficit-round-robin WFQ (4:2:1): served counts identical (gold 300/silver 300/bronze 150) because the harness drains all queues after t=300 \u2014 policies indistinguishable by construction. Same design flaw as BAC-0046.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun under true saturation: no drain phase, measure average wait / completion-time per tenant at t=300.",
+ "numbers": {
+  "before_ms": 0.453,
+  "after_ms": 0.8187,
+  "metric": "saturated_300_units",
+  "change": "deficit-round-robin WFQ (4:2:1) instead of equal round-robin under saturation",
+  "case": 80,
+  "extra": {
+   "served_before": {
+    "gold": 300,
+    "silver": 300,
+    "bronze": 150
+   },
+   "served_after": {
+    "gold": 300,
+    "silver": 300,
+    "bronze": 150
+   }
+  }
+ }
+}

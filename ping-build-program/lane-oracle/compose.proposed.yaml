@@ -1,0 +1,106 @@
+# PROPOSED Oracle compose topology - DESIGN ARTIFACT ONLY (lane-oracle, 2026-09-23)
+# DO NOT APPLY. The live host runs hand-started `docker run` containers from the
+# P18 effort (see ORACLE-DEPLOYMENT-CLOSURE.md). This file is the convergence
+# target for the build program once morning decisions land (gateway generation,
+# Ollama verdict). Every tag below is one verified live on the host tonight.
+#
+# Conventions enforced here:
+# - loopback-only port publishing (nothing on 0.0.0.0 except sshd)
+# - memory limits on EVERY service (the live host has MemoryLimit=0 everywhere;
+#   two gateway containers died with exit 137 - see closure doc)
+# - healthcheck on EVERY service (live gateway has none)
+# - env_file only; no secret values in this file, ever
+# - json-file log rotation (live gateway/postgres use unbounded json-file today)
+
+name: ping-oracle
+
+networks:
+  ping_internal:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+  qdrant_storage:
+    driver: local
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17-alpine          # verified live: PostgreSQL 17.11 aarch64
+    container_name: ping-postgres
+    restart: unless-stopped
+    mem_limit: 1g
+    mem_reservation: 256m
+    networks: [ping_internal]
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    env_file: [/opt/ping/.env]        # 0600 on host; POSTGRES_USER/_PASSWORD/_DB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-ping} -d $${POSTGRES_DB:-crx_runtime}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  qdrant:
+    image: qdrant/qdrant:v1.7.0       # verified live: v1.7.0 arm64, healthy
+    container_name: ping-qdrant
+    restart: unless-stopped
+    mem_limit: 1g
+    mem_reservation: 128m
+    networks: [ping_internal]
+    ports: ["127.0.0.1:6333:6333", "127.0.0.1:6334:6334"]
+    volumes: [qdrant_storage:/qdrant/storage]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/6333' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  gateway:
+    # Build from the PING repo Dockerfile once the morning generation decision
+    # lands. Base MUST satisfy repo engines (node 24.x); the live candidate runs
+    # node 18.20.8, which is drift, not a target.
+    build:
+      context: /opt/ping            # placeholder; coordinator sets canonical source
+      dockerfile: gateway/Dockerfile
+    image: ping-gateway:build-program
+    container_name: ping-gateway
+    restart: unless-stopped
+    mem_limit: 2g
+    mem_reservation: 512m
+    networks: [ping_internal]
+    ports: ["127.0.0.1:8080:8080"]
+    env_file: [/opt/ping/.env]
+    depends_on:
+      postgres: { condition: service_healthy }
+      qdrant:   { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  # OLLAMA IS NOT ADOPTED. Image ollama/ollama:latest (6.99 GB) sits on the host
+  # but no container runs it; at 5.9 GB RAM / 0 swap, local inference is a
+  # veto-gate REJECT for production (see closure doc). Kept as a commented
+  # profile so the shape of the decision is visible, not hidden.
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   profiles: ["brain"]
+  #   restart: unless-stopped
+  #   mem_limit: 3g
+  #   networks: [ping_internal]
+  #   ports: ["127.0.0.1:11434:11434"]
+  #   volumes: [ollama_models:/root/.ollama]

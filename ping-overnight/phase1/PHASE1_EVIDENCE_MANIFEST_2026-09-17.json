@@ -1,0 +1,512 @@
+{
+  "anomalies": [
+    {
+      "detail": "The 05:35 capture identified /opt/ping/infrastructure/oracle/docker-compose.oracle.yml (2a8bcc4e, 'older') as the live compose. The gateway's own compose labels (config_files) prove the running container was created from the releases-snapshot compose (bce92787.../ping-oracle-clean-snapshot/infrastructure/oracle/docker-compose.oracle.yml, dacc189745...), which Phase 0 also used for the --force-recreate.",
+      "id": "compose-live-identity-correction",
+      "severity": "correction"
+    },
+    {
+      "detail": "ping-postgres shows STARTED=2026-09-17T11:42:31Z, restarted at the start of the Phase 0 window. Phase 0 report claims 'minimum services restarted (gateway only)'. Data is intact (all IDs re-verified), but the restart claim is inaccurate for the postgres container. Qdrant genuinely untouched (started 02:00:52Z).",
+      "id": "postgres-restarted-during-phase0",
+      "severity": "observation"
+    },
+    {
+      "detail": "ping_events 1158 -> 1380 (+222), ping_missions 222 -> 264 (+42) since the 02:26 UTC backup. Trailing-12h activity: ~70 missions completed with witness/replay/lineage events. Post-sprint runtime activity; next phase should diff against these frozen counts.",
+      "id": "event-mission-growth",
+      "severity": "observation"
+    },
+    {
+      "detail": "knowledge collection points_count: 13 (backup) -> 30 (Phase 0) -> 34 (now). Recorded as observed.",
+      "id": "qdrant-point-growth",
+      "severity": "observation"
+    },
+    {
+      "detail": "Tables use event_id, mission_id, node_id as primary key columns, not 'id'. First probe failed cleanly; all queries re-run with correct columns.",
+      "id": "schema-column-names",
+      "severity": "note"
+    },
+    {
+      "detail": "Named in task context but not registered in git worktree list; consistent with the sprint report (six worktrees).",
+      "id": "ping-promotion-worktree-absent",
+      "severity": "note"
+    },
+    {
+      "detail": "Every re-verified hash matches the independent 05:35 capture except deliberate Phase 0 deltas (gateway start time, rotation-proof event, .env mtimes, mission/event counts) and the compose live-identity correction.",
+      "id": "convergence-with-0535-capture",
+      "severity": "note"
+    }
+  ],
+  "attestation": "Read-only. No git mutations (no commits, pushes, merges, resets, checkouts, cleans, stashes, branch changes, history rewrites). No database writes (SELECT only). No containers restarted, rebuilt, or reconfigured. No credential, token, password, or .env value appears in this manifest; only variable names, file metadata, and SHA256 hashes. Playbook revision node 194a2b85bde957ed inspected via read-only SELECT only; unchanged.",
+  "backup_artifacts": [
+    {
+      "bytes": 160927,
+      "path": "/opt/ping/releases/pgdata-backup-2026-09-16.sql.gz",
+      "sha256": "10e315c3ef2570e210149db95b6f57ad4268b6a4816d37764a9bc40875d8f51e"
+    },
+    {
+      "bytes": 67375104,
+      "path": "/opt/ping/releases/qdrant-snapshots-2026-09-16/knowledge-knowledge-7722890700902776-2026-09-17-02-26-36.snapshot",
+      "sha256": "b0a0aa29aca7bc5abb98d4fd303070ba94d65eb106babbf2feef4143a04edfc5"
+    },
+    {
+      "bytes": 26628632,
+      "path": "/opt/ping/releases/ping-source-clean-2026-09-16.tar.gz",
+      "sha256": "962beb7c53385c6771dd2197fbca86ac4f67867d9477cab81564d7aba8cb3ed6"
+    },
+    {
+      "bytes": 3379,
+      "path": "/opt/ping/releases/RESTORE-2026-09-16.md",
+      "sha256": "896156dd801de097367e2fdef3e8983f9be5470100bdf207f87175cbcb85867e"
+    }
+  ],
+  "capture_window_utc": [
+    "2026-09-17T11:50:30Z",
+    "2026-09-17T11:56:00Z"
+  ],
+  "compose": {
+    "canonical_worktree": {
+      "path": "/home/nolan/ping/worktrees/oracle-assembly/infrastructure/oracle/docker-compose.oracle.yml",
+      "sha256": "5163084ec2f15b710159d53bf491b0dc40ccdff762f3019f6b055d4a9e4f6749"
+    },
+    "canonical_worktree_matches_sprint_report": true,
+    "live": {
+      "path": "/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/infrastructure/oracle/docker-compose.oracle.yml",
+      "proof": "docker inspect ping-gateway label com.docker.compose.project.config_files",
+      "sha256": "dacc189745c7039cdd2538d9bcd72918557435036a8c48f26fe39bf209dd30fa"
+    },
+    "live_env_project_dir": {
+      "mode": "600",
+      "mtime": "2026-09-17T11:47Z",
+      "path": "/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/infrastructure/oracle/.env",
+      "sha256": "50e7b6e99981b65f941a48e0f5a827c4d5ae70018a6fbc9904ebb61001834601"
+    },
+    "non_live_opt_ping_copy": {
+      "path": "/opt/ping/infrastructure/oracle/docker-compose.oracle.yml",
+      "sha256": "2a8bcc4ef60d75e0b6358a885a3ed832e33a2882e2194a5809c1995ebe790e8f"
+    }
+  },
+  "critical_ids": {
+    "events": [
+      {
+        "event_id": "5e24e593f6a9f7b762ecedfed45a447faba57b6d1d9dded1dacd28feab3fe443",
+        "event_type": "ENTITY_CREATED",
+        "namespace": "core::owner",
+        "role": "/events boundary receipt",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id": "27482dbdabfb57b7190dd9f4ae530bee98ff381c8cc0eebec27349dd04b502a1",
+        "event_type": "PYTHON_CAPABILITY_VERIFY",
+        "namespace": "test.python-prod",
+        "role": "Python chain E1",
+        "source": "agent-c-phase7"
+      },
+      {
+        "event_id_prefix": "a6e70b783956e4c1",
+        "event_type": "TASK_STARTED",
+        "namespace": "test.python-prod",
+        "role": "Python task",
+        "source": "python-worker"
+      },
+      {
+        "event_id_prefix": "9bbbfff731a2023d",
+        "event_type": "TASK_COMPLETED",
+        "namespace": "test.python-prod",
+        "role": "Python task completion",
+        "source": "python-worker"
+      },
+      {
+        "event_id_prefix": "f8c1ae1fc1c7bc32",
+        "event_type": "MISSION_COMPLETED",
+        "namespace": "core::system",
+        "role": "Python chain completion",
+        "source": "mission-runtime"
+      },
+      {
+        "event_id_prefix": "21a6af0b72a8cfeb",
+        "event_type": "MISSION_DEAD_LETTERED",
+        "namespace": "test.python-prod",
+        "role": "dead-letter proof",
+        "source": "mission-scheduler"
+      },
+      {
+        "event_id": "f326ea70d7cf16ce85c4cc56a23bc147ce0273984023c123b8b5467ea6d507de",
+        "event_type": "ENTITY_CREATED",
+        "namespace": "core::owner",
+        "role": "Hermes evidence 1",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id": "e91681bfd300389e9c8f10c7c3ad2f9cea352342bfe6aa71f962d14c764bb587",
+        "event_type": "ENTITY_CREATED",
+        "namespace": "core::owner",
+        "role": "Hermes evidence 2",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id": "daaa75fc5b298c5b7fedab679e8bbf8a792099afc779877dd3d8acc7def1bf92",
+        "event_type": "ENTITY_CREATED",
+        "namespace": "core::owner",
+        "role": "Hermes evidence 3",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id": "3586f5ee8176bb708bfd4d4d4733f3e89a3ac2ab2c21d228b4db9e8cf3f80692",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "tenant::rotation-proof",
+        "role": "Phase 0 rotation proof",
+        "source": "api:muse"
+      },
+      {
+        "event_id_prefix": "9d5b14d34e1a445f",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "core::playbook",
+        "role": "playbook proposal",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "3c1985a53d9fa1e5",
+        "event_type": "SNIPPET_APPROVED",
+        "namespace": "core::playbook",
+        "role": "playbook approval",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "0bc80b9de9cc41f7",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "core::playbook",
+        "role": "activation",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "04e4808ae4067a27",
+        "event_type": "PROJECTION_CREATED",
+        "namespace": "core::playbook",
+        "role": "projection",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "408247b6cd7f2ba0",
+        "event_type": "REPLAY_COMPLETED",
+        "namespace": "core::playbook",
+        "role": "replay 1",
+        "source": "replay"
+      },
+      {
+        "event_id_prefix": "2c75c8da1fdb6b22",
+        "event_type": "WITNESS_CREATED",
+        "namespace": "core::playbook",
+        "role": "witness 1",
+        "source": "witness"
+      },
+      {
+        "event_id_prefix": "93687aab65fb0ddc",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "core::playbook",
+        "role": "outcome",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "ead4be8a1eaaa77c",
+        "event_type": "REPLAY_COMPLETED",
+        "namespace": "core::playbook",
+        "role": "mission-driven replay",
+        "source": "replay"
+      },
+      {
+        "event_id_prefix": "4aa7b0ebecdbf2fc",
+        "event_type": "WITNESS_CREATED",
+        "namespace": "core::playbook",
+        "role": "witness 2",
+        "source": "witness"
+      },
+      {
+        "event_id_prefix": "c4b129f76a8afd17",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "core::playbook",
+        "role": "restart probe",
+        "source": "api:muse-level-2"
+      },
+      {
+        "event_id_prefix": "d1b47668c4b71b12",
+        "event_type": "OBSERVATION_CREATED",
+        "namespace": "core::owner",
+        "role": "known-vector self-test",
+        "source": "api:muse-level-2"
+      }
+    ],
+    "hermes_workorder": {
+      "id": "0d598aef352b9a8a",
+      "payload_references_in_events": 3
+    },
+    "missions": [
+      {
+        "mission_id": "bfe815990337e45d",
+        "mission_type": "PYTHON_CAPABILITY_RUN",
+        "retries": 0,
+        "role": "Python production chain",
+        "status": "completed"
+      },
+      {
+        "mission_id": "3daa14285107788e",
+        "mission_type": "PYTHON_FAIL_RUN",
+        "retries": 2,
+        "role": "dead-letter (terminal)",
+        "status": "failed"
+      },
+      {
+        "mission_id": "0405c01805096690",
+        "mission_type": "REPLAY_VERIFY",
+        "retries": 0,
+        "role": "playbook REPLAY_VERIFY",
+        "status": "completed"
+      },
+      {
+        "mission_id": "945689817fdad075",
+        "mission_type": "REPLAY_VERIFY",
+        "retries": 0,
+        "role": "mission-driven replay",
+        "status": "completed"
+      },
+      {
+        "mission_id": "73e08f46f843beb2",
+        "mission_type": "PYTHON_FLAKY_RUN",
+        "retries": 1,
+        "role": "orphaned test mission, neutralized",
+        "status": "failed"
+      }
+    ],
+    "nodes": {
+      "orphan_4917265ee67e678c": {
+        "confidence": 0.5,
+        "namespace": "test.playbook",
+        "node_type": "playbook",
+        "source_event_id": null,
+        "status": "candidate"
+      },
+      "playbook_94043c0eb1d3918d": {
+        "confidence": 1.0,
+        "namespace": "test.playbook",
+        "node_type": "playbook",
+        "source_event_id": "9d5b14d34e1a445f",
+        "status": "approved"
+      },
+      "revision_194a2b85bde957ed": {
+        "approval_events_referencing": 0,
+        "confidence": 0.5,
+        "data_decided_by": "",
+        "data_lifecycle": "",
+        "data_required_approver": "Nolan Geske (human)",
+        "data_version": "1.1.0",
+        "namespace": "test.playbook",
+        "node_type": "playbook_revision",
+        "source_event_id": "93687aab65fb0ddc613089e364ee102934a048b8ab3134844fe7e3019bdc8b30",
+        "status": "candidate",
+        "updated_at": "2026-09-17T02:38:32.621369+00"
+      }
+    }
+  },
+  "db_counts": {
+    "ping_events": 1380,
+    "ping_missions": 264,
+    "public_tables": 31
+  },
+  "live_oracle": {
+    "append_only_trigger": "trg_ping_events_append_only on ping_events (confirmed in pg_trigger)",
+    "containers": [
+      {
+        "image": "oracle-gateway",
+        "name": "ping-gateway",
+        "started": "2026-09-17T11:47:30Z",
+        "state": "running, healthy"
+      },
+      {
+        "image": "postgres:17-alpine",
+        "name": "ping-postgres",
+        "started": "2026-09-17T11:42:31Z",
+        "state": "running, healthy"
+      },
+      {
+        "image": "qdrant/qdrant:v1.7.0",
+        "name": "ping-qdrant",
+        "started": "2026-09-17T02:00:52Z",
+        "state": "running, healthy"
+      }
+    ],
+    "gateway_files_via_docker_cp": {
+      "capability_authority.js": {
+        "lines": 889,
+        "sha256": "7a74d6eaaaadcb1f12e7341ac57a0d5fdde545e8097d098f4f8cdc62db537d2f"
+      },
+      "events.js": {
+        "lines": 166,
+        "sha256": "6f1abebb7c3b38a2405fcbb73518495387c2c7a7592da955715402d544844117"
+      },
+      "gateway_runtime.js": {
+        "lines": 984,
+        "sha256": "880d0d06d5cafb16d72373d57c898e5c11130c07ebd428ddeeaa5dd2c7dcd80c"
+      }
+    },
+    "host": "ping-core-01",
+    "patches_survived_phase0_recreate": true,
+    "qdrant_knowledge_points": 34
+  },
+  "manifest_version": "1.0.0",
+  "patch_file_hashes": {
+    "worktrees/agent-exec/external-agent/BOUNDARY.md": "0a20be8af6667e9c552207d0067e955f0f6a7720c3fe96204531f36b571a84cb",
+    "worktrees/agent-exec/external-agent/RESULT_SCHEMA.json": "8ccf84e219259cd472a96bf6a0432085c87f8abca490204dab281028d7b537c9",
+    "worktrees/agent-exec/external-agent/WORKORDER_SCHEMA.json": "3bca1cfec36b570ae26850deffa436fc42cf823508a309fe777eba623ab28cb3",
+    "worktrees/agent-exec/external-agent/external_agent_adapter.js": "521e516a7cfd57dabe1febdcf7f3361911e8e1c9b5d7fb6d771098b2d7836098",
+    "worktrees/agent-exec/external-agent/external_agent_adapter.test.js": "0f95ef8748a6b56d3c6865790a9d4f736faf849c60e4ceb8ad7a60599d789999",
+    "worktrees/oracle-assembly/infrastructure/oracle/docker-compose.oracle.yml": "5163084ec2f15b710159d53bf491b0dc40ccdff762f3019f6b055d4a9e4f6749",
+    "worktrees/oracle-assembly/infrastructure/oracle/docker-compose.oracle.yml.pre-canonical-20260916": "9a8757172ae8b78539f5a22f7022b9700217696d51121faed1303f47f6a5af6b",
+    "worktrees/oracle-assembly/infrastructure/oracle/oracle.env.template": "d5181072eece68ae54f07c03401d0128385eb40fd3ac7a8b4e2ca778f9660297",
+    "worktrees/oracle-assembly/oracle-assembly-patches/gateway/bootstrap/gateway_runtime.js": "880d0d06d5cafb16d72373d57c898e5c11130c07ebd428ddeeaa5dd2c7dcd80c",
+    "worktrees/oracle-assembly/oracle-assembly-patches/gateway/routes/events.js": "6f1abebb7c3b38a2405fcbb73518495387c2c7a7592da955715402d544844117",
+    "worktrees/playbook/playbook/PLAYBOOK_SPEC.md": "39e2048c37bd1b8bb6df8eab405883a533b62423e1e983bcdb57da21d337ede5",
+    "worktrees/python-prod/prod/dlq_authority.cjs": "38bc4c4b7034d2540b080117c9d37877e44deeb9ed82bc1da3934fc0806ae637",
+    "worktrees/python-prod/prod/python_prod_adapter.cjs": "c52cac9529cf583f0484f7dbc913c35b8815e7cfcd6e82cfc63dbe483aaba40b"
+  },
+  "produced_at_mdt": "2026-09-17T05:52:00-06:00",
+  "produced_at_utc": "2026-09-17T11:52:00Z",
+  "producer": "Phase 1 subagent (constitutional-convergence program)",
+  "recent_activity_12h": {
+    "CLAIM_CREATED": 8,
+    "CLASSIFICATION_CREATED": 8,
+    "ENTITY_CREATED": 9,
+    "LINEAGE_CREATED": 12,
+    "MISSION_ASSIGNED": 72,
+    "MISSION_COMPLETED": 70,
+    "MISSION_CREATED": 72,
+    "MISSION_FAILED": 3,
+    "MISSION_STARTED": 72,
+    "OBSERVATION_CREATED": 8,
+    "PROJECTION_CREATED": 9,
+    "RECOMMENDATION_CREATED": 8,
+    "REPLAY_COMPLETED": 12,
+    "TASK_STARTED": 5,
+    "WITNESS_CREATED": 12
+  },
+  "relation_to_0535_capture": "Independent re-verification of the 05:35 MDT (11:35 UTC) capture at workspace/ping-overnight/PHASE1_EVIDENCE_MANIFEST_2026-09-17.md. Phase 0 (credential rotation, 11:35-11:55 UTC) ran between the captures.",
+  "sprint_evidence_hashes": {
+    "PING_OVERNIGHT_2026-09-16.md": "e3d39c640b3ef5801a1dfab9fd8f3a08b01cdf7c9f2bd931019e35adab445980",
+    "PING_TEN_HOUR_CONVERGENCE_2026-09-17.md": "5334fb9a2e60c3b0418eac4020425e040d103e362d694337f65f6c32092703b2",
+    "STATUS.md": "69f0742e2f9b81bb2d32a076fd2a4743705495e5d458f7e2cfc6fd75f6d65007",
+    "agent-exec/REPORT.md": "ecd0f0b6f4eda083fd8bc3b26773ef6abc25d27bf938877ced5014dc1a64404e",
+    "backup/REPORT.md": "58f05cac7fa4f2676e5c1418788d916f7329bb676db4680dd9ed175a58fc10f5",
+    "event-boundary/REPORT.md": "d3e9fb1d06ef964104f4d3304d2505166744bdc411654fca2de6cc66df9bd6db",
+    "event-boundary/trigger-append-only.sql": "43b899790ddc98b102fc671b7bcc57d1d9486cb2be2f78f4cffaa7d157b43600",
+    "forensics/AUTHORITY_FORENSICS.md": "49a5dcfd7fd48e900487fc961829f51c9973030df538cb868349fffee81f7452",
+    "multiruntime/CROSS_RUNTIME_PROOF.md": "d11ae6d145d7cd2bd1a9d1abc7b70deef52ef09b78bd9a56e03c42471db75c8b",
+    "multiruntime/EXECUTION_CONTRACT.md": "1d38b1a60c30a92d30659ecd868a9178457250ddf456fc89088c952a49cd55b0",
+    "multiruntime/PYTHON_ADAPTER.md": "49a39f10e83184f7e31eac6c23cd0d7d3e0c48a100a7953ac8e4af7ccfbdeb13",
+    "oracle-deploy/REPORT.md": "3c52f4d0c324d92602725b8ad701f3d72b3b780f4eabd70d7454b21905e3771b",
+    "oracle-deploy/docker-compose.oracle.yml": "5163084ec2f15b710159d53bf491b0dc40ccdff762f3019f6b055d4a9e4f6749",
+    "oracle-deploy/oracle.env.template": "d5181072eece68ae54f07c03401d0128385eb40fd3ac7a8b4e2ca778f9660297",
+    "oracle-deploy/remote/Dockerfile.scheduler": "9bcbe46b5d790b35b2c0a70ba69d4f2778f3dec045a6b5b4d851a022ce8ac02e",
+    "oracle-deploy/remote/bak.docker-compose.oracle.yml": "9c52b314a4e19e6025f8cf57d6377b0b672549f28812ff0710263ff01b5ee4de",
+    "oracle-deploy/remote/bootstrap.sh": "cc01ab5c9f2f086ea2904e8898ff1974ca46d642e9ab3bc44e19aa6272f1ae0f",
+    "oracle-deploy/remote/live.docker-compose.oracle.yml": "dacc189745c7039cdd2538d9bcd72918557435036a8c48f26fe39bf209dd30fa",
+    "oracle-deploy/remote/older.docker-compose.oracle.yml": "2a8bcc4ef60d75e0b6358a885a3ed832e33a2882e2194a5809c1995ebe790e8f",
+    "oracle-deploy/remote/ping-gateway.service": "2e98d3dbd77a0bebf7f65a7b2f880ac956f94537f84f1cd42cf18da00e065f35",
+    "oracle-deploy/remote/ping-postgres.service": "4743c6253f3edaacba8bd42b732e384ff1e7ebe3a4d3f40c19ee160a55cc2f78",
+    "oracle-deploy/remote/ping-scheduler.service": "265ac13a1adda185fd7761319257953280a3479e90af97f281fe0364a4a160f0",
+    "oracle-deploy/remote/ping-worker.service": "2f2abcd5ec91b008fa3b3d8c829db23a8e1b41a25f15fb8ed0935",
+    "oracle-deploy/remote/repo-oracle-assembly.docker-compose.oracle.yml": "9a8757172ae8b78539f5a22f7022b9700217696d51121faed1303f47f6a5af6b",
+    "oracle/TRIAGE_REPORT.md": "b96121a21808fa8284fd5f6d76518d77953d0c0937d198f3493aaa98cd9183e6",
+    "playbook/PLAYBOOK_SPEC.md": "39e2048c37bd1b8bb6df8eab405883a533b62423e1e983bcdb57da21d337ede5",
+    "playbook/REPORT.md": "3a065ec412f47c2a268ed9608b9801360a9843156e5abdad7af3dcfdb838f1ce",
+    "playbook/chain.json": "e2b3580cfdfa7f24b314d1b4ff8e578c9536dc6d1a3cbcfbb956e9986c6fc63f",
+    "playbook/run_phases.py": "6207a296372848379868d5e9addecba1f9c528d24d47d55aaea8b14555b763f5",
+    "playbook/run_phases_1415.py": "77660e99edca19824b9cb3bdf20dc4ee49ffa1777d76268f5589206aa1e5f2e9",
+    "playbook/run_phases_15.py": "712128f8f6df401d3be130186d2b78c9c759d4b65b5dac316c3f5f9f59ab9eb9",
+    "playbook/runlog.jsonl": "2a9a227d08e08ed70230e6abc111c59f12cf524a9f1e20697e41cfde3cffdb8b",
+    "python-prod/REPORT.md": "2ce4d212c0fdbca04334e2378abc36d838e9d908011c045c1c68010d98b7aa07",
+    "website/HOMEPAGE_REPORT.md": "bede5e8fc505c608b6f8060ac9975df54a1c932c0a321cc959b34a3f99fd602b",
+    "website/TRUTH-UPDATE-2026-09-16.md": "a8bf548a9ad1f126e130aa47dba2185d4e1e92312b12e258aa33422fcc59320b",
+    "website/TRUTH_MATRIX.md": "25ace421ec0cc45c79abb6d583317364f3dd85e218adef1654daff978b0c6"
+  },
+  "website": {
+    "branch": "main",
+    "head": "f6386ee16473185a7089393aa44898a4521030d1",
+    "path": "/home/nolan/projects/ping",
+    "porcelain_lines": 21
+  },
+  "worktrees": [
+    {
+      "branch": "constitutional-convergence-v2",
+      "head": "099927152b93e0de7c1a120bc88d73fb939c1502",
+      "path": "/home/nolan/ping",
+      "porcelain": [
+        " M .env.base",
+        " M gateway/bootstrap/gateway_runtime.js",
+        " M gateway/bootstrap/wiring.js",
+        " M gateway/end_to_end_verifier.js",
+        " M gateway/generated/deployment_generator.js",
+        " M gateway/generated/deployment_manifest.json",
+        " M gateway/launch_bg.ps1",
+        " M gateway/launch_bg2.ps1",
+        " M gateway/start_bg.js",
+        " M gateway/test_pg_init.js",
+        "?? gateway/bootstrap/db_guard.js",
+        "?? worktrees/agent-exec/",
+        "?? worktrees/agent-smoke-abc123def456/",
+        "?? worktrees/oracle-assembly/",
+        "?? worktrees/playbook/",
+        "?? worktrees/python-prod/"
+      ],
+      "porcelain_lines": 16
+    },
+    {
+      "branch": "sprint/agent-exec",
+      "head": "5b102c66425a346bd3074df0822b5bed184d13ba",
+      "path": "/home/nolan/ping/worktrees/agent-exec",
+      "porcelain": [
+        "?? external-agent/"
+      ],
+      "porcelain_lines": 1
+    },
+    {
+      "branch": "recovery/agent-smoke-2026-09-16",
+      "head": "3e0c3ddd1ee48ed35ddc80283accea1958e3e71c",
+      "path": "/home/nolan/ping/worktrees/agent-smoke-abc123def456",
+      "porcelain": [
+        " M .env.base"
+      ],
+      "porcelain_lines": 1
+    },
+    {
+      "branch": "main",
+      "head": "5b102c66425a346bd3074df0822b5bed184d13ba",
+      "path": "/home/nolan/ping/worktrees/oracle-assembly",
+      "porcelain": [
+        " M infrastructure/oracle/docker-compose.oracle.yml",
+        "?? infrastructure/oracle/docker-compose.oracle.yml.pre-canonical-20260916",
+        "?? infrastructure/oracle/oracle.env.template",
+        "?? multiruntime-proof/",
+        "?? oracle-assembly-patches/"
+      ],
+      "porcelain_lines": 5
+    },
+    {
+      "branch": "sprint/playbook",
+      "head": "5b102c66425a346bd3074df0822b5bed184d13ba",
+      "path": "/home/nolan/ping/worktrees/playbook",
+      "porcelain": [
+        "?? playbook/"
+      ],
+      "porcelain_lines": 1
+    },
+    {
+      "branch": "sprint/python-prod",
+      "head": "5b102c66425a346bd3074df0822b5bed184d13ba",
+      "path": "/home/nolan/ping/worktrees/python-prod",
+      "porcelain": [
+        "?? prod/"
+      ],
+      "porcelain_lines": 1
+    }
+  ],
+  "manifest_markdown_sha256": "71cea33ed0d5d9319336d4a689fadfcc76431e4f57c1b785a53ad711a20c9551",
+  "manifest_markdown_path": "phase1/PHASE1_EVIDENCE_MANIFEST_2026-09-17.md"
+}

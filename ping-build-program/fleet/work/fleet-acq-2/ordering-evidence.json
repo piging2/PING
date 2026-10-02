@@ -1,0 +1,64 @@
+{
+ "case0_startup_order": {
+  "log": [
+   "start:postgres",
+   "start:qdrant",
+   "start:gateway",
+   "serve:gateway",
+   "start:workers"
+  ],
+  "order": [
+   "postgres",
+   "qdrant",
+   "gateway",
+   "workers"
+  ],
+  "pass": true
+ },
+ "case1_gates": {
+  "attempts": [
+   [
+    "postgres",
+    "started"
+   ],
+   [
+    "qdrant",
+    "started"
+   ],
+   [
+    "gateway",
+    "GATED: gateway: dep qdrant not healthy; gate holds"
+   ],
+   [
+    "workers",
+    "GATED: workers: dep qdrant not healthy; gate holds"
+   ]
+  ],
+  "gateway_blocked": true,
+  "pass": true
+ },
+ "case2_no_early_traffic": {
+  "gateway_serving": false,
+  "pass": true
+ },
+ "case3_shutdown_order": {
+  "stops": [
+   "gateway",
+   "workers",
+   "qdrant",
+   "postgres"
+  ],
+  "gateway_first": true,
+  "pass": true
+ },
+ "case4_no_orphans": {
+  "orphaned_inflight": 0,
+  "pass": true
+ },
+ "design_graphs": {
+  "graphs": 6,
+  "all_acyclic_ordered": true,
+  "pass": true
+ },
+ "all_50_pass": true
+}

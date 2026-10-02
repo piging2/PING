@@ -1,0 +1,45 @@
+{
+  "_comment": "Digest-pin lockfile for the Oracle host image inventory. All digests verified by three-way agreement: v3 matrix claim == live 'docker images --digests' 2026-09-24 ~05:15 UTC == independent observation 2026-09-24 ~02:33 UTC. Arch verified arm64/linux for all 8 (no x86-only layers). Owner: Nolan (PING Social). pins[] entries are machine-checkable 'repository:tag@sha256:digest' references; pull with 'docker pull <pin>'.",
+  "backup_artifacts": {
+    "pgdata-backup-2026-09-16.sql.gz": "sha256:10e315c3ef2570e210149db95b6f57ad4268b6a4816d37764a9bc40875d8f51e",
+    "ping-postgres-2026-09-19.dump": "sha256:64154ae2bb361bf5d1d1c410068f3d5c04ae0609878902796c9d6140771cc7f4",
+    "ping-source-clean-2026-09-16.tar.gz": "sha256:962beb7c53385c6771dd2197fbca86ac4f67867d9477cab81564d7aba8cb3ed6",
+    "qdrant-knowledge-2026-09-17.snapshot": "sha256:b0a0aa29aca7bc5abb98d4fd303070ba94d65eb106babbf2feef4143a04edfc5"
+  },
+  "evidence_sources": {
+    "arch": "docker image inspect arm64/linux, 2026-09-24 (v1 arch-compat evidence)",
+    "artifact_digests": "sha256sum of the 4 backup artifacts on ping-core-01, 2026-09-24 (read-only)",
+    "container_linkage": "docker inspect Config.Image for ping-gateway/ping-postgres/ping-qdrant, 2026-09-24 (read-only)",
+    "live_digests": "docker images --digests on ping-core-01, 2026-09-24 ~05:15 UTC (read-only ssh)",
+    "provenance_review": "fleet/work/fleet-ora-2/sandbox/image-provenance-review.md (ADOPT/REJECT per image)",
+    "v1_observation": "independent digest observation 2026-09-24 ~02:33 UTC (range-0101-0150 investigation)",
+    "v3_matrix": "matrix-oracle-v3.tsv titles (closure inventory digests)"
+  },
+  "generated": "2026-09-24",
+  "host": "ping-core-01 (129.146.60.17)",
+  "images": {
+    "node:18-alpine": "sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e",
+    "node:20-alpine": "sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293",
+    "node:24-alpine": "sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81",
+    "ollama/ollama:latest": "sha256:da6e0dc5651df159e45686fd663c4dbe1624a52c44d7280eeac1551d8f865532",
+    "ping-gateway:candidate-3c5d280dd": "sha256:4aa9d7f669bcd46ddfdf81e3baaf519bb3b3338d585e535b975d7f865cd0f8f2",
+    "ping-gateway:candidate-84486f056": "sha256:467af2dabc081dd09a8f26560ab8320073320005030bd3767afa8b40eadd970e",
+    "postgres:17-alpine": "sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73",
+    "qdrant/qdrant:v1.7.0": "sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f"
+  },
+  "pins": [
+    "node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e",
+    "node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293",
+    "node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81",
+    "ollama/ollama:latest@sha256:da6e0dc5651df159e45686fd663c4dbe1624a52c44d7280eeac1551d8f865532",
+    "ping-gateway:candidate-3c5d280dd@sha256:4aa9d7f669bcd46ddfdf81e3baaf519bb3b3338d585e535b975d7f865cd0f8f2",
+    "ping-gateway:candidate-84486f056@sha256:467af2dabc081dd09a8f26560ab8320073320005030bd3767afa8b40eadd970e",
+    "postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73",
+    "qdrant/qdrant:v1.7.0@sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f"
+  ],
+  "policy": {
+    "arch": "all arm64/linux; no x86-only layers",
+    "no_latest_tags": "VIOLATION: ollama/ollama:latest is a floating tag (digest pinned here as mitigation)",
+    "rule": "all future pulls must reference the pinned digest, never the tag"
+  }
+}

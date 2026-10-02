@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0075",
+ "verdict": "PROVEN",
+ "summary": "BEFORE per-query scan of 20k events for 20 hot keys: 0.72ms; AFTER partially materialized hot-key projection: ~0.00ms. Delta 99.9% vs noise 12.6%. Improvement proven; cold keys fall back to scan.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.7232,
+  "after_ms": 0.0004,
+  "metric": "hot_key_query_20_of_200",
+  "change": "partially materialized projection (20 hot keys of 200) instead of per-query scan",
+  "case": 74
+ }
+}

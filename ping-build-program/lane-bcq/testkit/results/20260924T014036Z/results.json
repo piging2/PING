@@ -1,0 +1,204 @@
+{
+  "harness": "ping-connector-contract-testkit",
+  "harness_version": "0.1.0",
+  "ran_at": "2026-09-24T01:40:36.782037+00:00",
+  "total": 18,
+  "passed": 18,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "declaration.complete",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "missing": [],
+        "capabilities": [
+          "read.widgets"
+        ],
+        "auth_scope": [
+          "read:widgets"
+        ]
+      },
+      "error": ""
+    },
+    {
+      "name": "auth.success",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "lifecycle": "AUTHORIZED",
+        "health": "AUTHORIZED"
+      },
+      "error": ""
+    },
+    {
+      "name": "auth.denial",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "connect_error": "AUTH_REQUIRED",
+        "discover_error": "AUTH_REQUIRED"
+      },
+      "error": ""
+    },
+    {
+      "name": "auth.expired",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "connect_error": "AUTH_EXPIRED",
+        "read_outcome": "FAILED"
+      },
+      "error": ""
+    },
+    {
+      "name": "discovery.initial",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "objects": [
+          "w1",
+          "w2"
+        ],
+        "checkpoint_set": true
+      },
+      "error": ""
+    },
+    {
+      "name": "refresh.incremental",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "first": [
+          "w1"
+        ],
+        "incremental": [
+          "w2"
+        ]
+      },
+      "error": ""
+    },
+    {
+      "name": "checkpoint.resume",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "saved_checkpoint_set": true,
+        "after_resume": []
+      },
+      "error": ""
+    },
+    {
+      "name": "input.duplicate",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "canonical_id": "obs_fake-widget-crm_cade67dfd829fd62bf05dd640edc0aaa",
+        "byte_identical": true
+      },
+      "error": ""
+    },
+    {
+      "name": "input.changed",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "canonical_id": "obs_fake-widget-crm_cade67dfd829fd62bf05dd640edc0aaa",
+        "v1": 1,
+        "v2": 2
+      },
+      "error": ""
+    },
+    {
+      "name": "input.deletion",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "deleted_flag": true,
+        "fields_after_delete": {}
+      },
+      "error": ""
+    },
+    {
+      "name": "ratelimit.exhaustion",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "error": "RATE_LIMITED",
+        "calls_remaining": 0
+      },
+      "error": ""
+    },
+    {
+      "name": "timeout.outcome_unknown",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "outcome": "OUTCOME_UNKNOWN",
+        "attempts_made": 1
+      },
+      "error": ""
+    },
+    {
+      "name": "payload.malformed",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "bad_error": "SCHEMA_CHANGED",
+        "good_outcome": "SUCCEEDED"
+      },
+      "error": ""
+    },
+    {
+      "name": "secrets.redaction",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "blobs_scanned": 4,
+        "hits": []
+      },
+      "error": ""
+    },
+    {
+      "name": "normalize.determinism",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "bytes": 271,
+        "identical": true
+      },
+      "error": ""
+    },
+    {
+      "name": "observation.provenance",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "provider": "fake-widget-crm",
+        "confidence": "DIRECT",
+        "connector_version": "0.1.0"
+      },
+      "error": ""
+    },
+    {
+      "name": "lifecycle.revoke",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "health": "REVOKED",
+        "read_outcome": "FAILED"
+      },
+      "error": ""
+    },
+    {
+      "name": "sanitize.hostile_html",
+      "passed": true,
+      "duration_ms": 0,
+      "evidence": {
+        "name": "Clean",
+        "desc": "x\"\"evil()"
+      },
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "fixture": "github-403-permission-denied",
+  "pass": true,
+  "gates": [
+    {
+      "name": "EXISTS",
+      "pass": true,
+      "evidence": "github-403-permission-denied@v1 parses"
+    },
+    {
+      "name": "IMPORTS",
+      "pass": true,
+      "evidence": "transport,harness,assert,taxonomy,lint,secret-scan import clean"
+    },
+    {
+      "name": "INITIALIZES",
+      "pass": true,
+      "evidence": "transport constructed; seed=105 clock=virtual"
+    },
+    {
+      "name": "REACHABLE",
+      "pass": true,
+      "evidence": "first step issues -> HTTP 403"
+    },
+    {
+      "name": "EXECUTES",
+      "pass": true,
+      "evidence": "terminal=FAILED records=0"
+    },
+    {
+      "name": "PERSISTS",
+      "pass": true,
+      "evidence": "report persisted; verdict=PASS digestOk=true"
+    },
+    {
+      "name": "RECOVERS",
+      "pass": true,
+      "evidence": "injection=dropAt terminal=FAILED codes=[TIMEOUT]"
+    },
+    {
+      "name": "REPLAYS",
+      "pass": true,
+      "evidence": "double-run byte-identical (573 bytes)"
+    },
+    {
+      "name": "PRESERVES PROVENANCE",
+      "pass": true,
+      "evidence": "digest ok sha256:59e3d3980540...; provenance fields present"
+    },
+    {
+      "name": "FAILS SAFELY",
+      "pass": true,
+      "evidence": "tampered-bytes -> exit 2 (want 2, digest fail-closed); all-steps-500 -> exit 1 (want 1, failed fetch with failure record, never silent)"
+    }
+  ]
+}

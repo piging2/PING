@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0072",
+ "verdict": "ADAPT",
+ "summary": "BEFORE name-keyed + rescan (100x 1MB blobs): 0.36ms; AFTER content-hash store: 19.13ms (hashing dominates). Space: 14745600 -> 8847360 bytes (40% saved, 60 unique of 100). Same pattern as BAC-0002: adopt for space/dedupe, not ingest speed.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.3552,
+  "after_ms": 19.1251,
+  "metric": "100_large_blobs",
+  "change": "content-hash store for 1MB blobs (hash cost amortized) vs name-keyed + rescan",
+  "case": 71,
+  "extra": {
+   "entries_before": 100,
+   "unique_after": 60,
+   "bytes_before": 14745600,
+   "bytes_after": 8847360
+  }
+ }
+}

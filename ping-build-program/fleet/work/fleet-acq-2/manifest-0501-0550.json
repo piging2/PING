@@ -1,0 +1,544 @@
+[
+ {
+  "case": 100,
+  "mission_no": 501,
+  "slug": "og-site-name",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "site_name verbatim",
+  "checks": {
+   "meta_present": {
+    "og:site_name": "Acme Inc"
+   }
+  }
+ },
+ {
+  "case": 101,
+  "mission_no": 502,
+  "slug": "sitename-vs-name",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "site_name vs title kept separate, no brand merge",
+  "checks": {}
+ },
+ {
+  "case": 102,
+  "mission_no": 503,
+  "slug": "article-author-url",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "author URL untrusted ref, never fetched",
+  "checks": {
+   "flags": [
+    "untrusted_ref"
+   ]
+  }
+ },
+ {
+  "case": 103,
+  "mission_no": 504,
+  "slug": "article-author-name",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "author name verbatim; no Person synthesis",
+  "checks": {}
+ },
+ {
+  "case": 104,
+  "mission_no": 505,
+  "slug": "article-section",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "section verbatim",
+  "checks": {}
+ },
+ {
+  "case": 105,
+  "mission_no": 506,
+  "slug": "article-tag-markup",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "markup in tag stays inert",
+  "checks": {
+   "flags": [
+    "markup_in_meta"
+   ]
+  }
+ },
+ {
+  "case": 106,
+  "mission_no": 507,
+  "slug": "book-isbn-nondigit",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "non-digit ISBN verbatim with flag",
+  "checks": {
+   "flags": [
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 107,
+  "mission_no": 508,
+  "slug": "brand-conflict",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "brand namespaces kept separate",
+  "checks": {}
+ },
+ {
+  "case": 108,
+  "mission_no": 509,
+  "slug": "availability-lower",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "lowercase availability verbatim, never normalized",
+  "checks": {}
+ },
+ {
+  "case": 109,
+  "mission_no": 510,
+  "slug": "condition-new",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "condition verbatim",
+  "checks": {}
+ },
+ {
+  "case": 110,
+  "mission_no": 511,
+  "slug": "retailer-id",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "retailer id verbatim",
+  "checks": {}
+ },
+ {
+  "case": 111,
+  "mission_no": 512,
+  "slug": "price-vs-original",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "price vs original kept separate; NO discount math performed",
+  "checks": {
+   "flags": [
+    "no_computed_discount"
+   ]
+  }
+ },
+ {
+  "case": 112,
+  "mission_no": 513,
+  "slug": "price-currency-meta",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "amount+currency pair verbatim",
+  "checks": {}
+ },
+ {
+  "case": 113,
+  "mission_no": 514,
+  "slug": "video-actor-array",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "two actors kept",
+  "checks": {
+   "flags": [
+    "dup_meta",
+    "untrusted_ref"
+   ]
+  }
+ },
+ {
+  "case": 114,
+  "mission_no": 515,
+  "slug": "video-director",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "director verbatim",
+  "checks": {}
+ },
+ {
+  "case": 115,
+  "mission_no": 516,
+  "slug": "video-duration",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duration verbatim; no time math",
+  "checks": {
+   "meta_present": {
+    "video:duration": "90"
+   }
+  }
+ },
+ {
+  "case": 116,
+  "mission_no": 517,
+  "slug": "video-release-words",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "release date words verbatim with flag",
+  "checks": {
+   "flags": [
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 117,
+  "mission_no": 518,
+  "slug": "video-tags-200",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200 video tags kept with count",
+  "checks": {
+   "flags": [
+    "multi_count=200"
+   ]
+  }
+ },
+ {
+  "case": 118,
+  "mission_no": 519,
+  "slug": "music-duration",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "music duration verbatim",
+  "checks": {}
+ },
+ {
+  "case": 119,
+  "mission_no": 520,
+  "slug": "music-album-disc",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "album disc verbatim",
+  "checks": {}
+ },
+ {
+  "case": 120,
+  "mission_no": 521,
+  "slug": "music-album-track",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "album track verbatim",
+  "checks": {}
+ },
+ {
+  "case": 121,
+  "mission_no": 522,
+  "slug": "profile-username",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "username verbatim; not a verified identity",
+  "checks": {}
+ },
+ {
+  "case": 122,
+  "mission_no": 523,
+  "slug": "profile-gender",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "gender verbatim",
+  "checks": {}
+ },
+ {
+  "case": 123,
+  "mission_no": 524,
+  "slug": "og-restrictions-age",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "age restriction verbatim",
+  "checks": {}
+ },
+ {
+  "case": 124,
+  "mission_no": 525,
+  "slug": "og-restrictions-country",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "country restriction verbatim",
+  "checks": {}
+ },
+ {
+  "case": 125,
+  "mission_no": 526,
+  "slug": "twitter-card",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "card type verbatim",
+  "checks": {}
+ },
+ {
+  "case": 126,
+  "mission_no": 527,
+  "slug": "twitter-site",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "twitter handle verbatim; not a verified identity",
+  "checks": {
+   "flags": [
+    "claimed_not_verified"
+   ]
+  }
+ },
+ {
+  "case": 127,
+  "mission_no": 528,
+  "slug": "twitter-site-vs-creator",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "site vs creator kept separate",
+  "checks": {}
+ },
+ {
+  "case": 128,
+  "mission_no": 529,
+  "slug": "twitter-desc-markup",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "markup in twitter description inert",
+  "checks": {
+   "flags": [
+    "markup_in_meta"
+   ]
+  }
+ },
+ {
+  "case": 129,
+  "mission_no": 530,
+  "slug": "twitter-app-iphone",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "app name verbatim",
+  "checks": {}
+ },
+ {
+  "case": 130,
+  "mission_no": 531,
+  "slug": "twitter-app-url-custom",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "custom-scheme app URL recorded, never followed",
+  "checks": {
+   "flags": [
+    "custom_scheme"
+   ]
+  }
+ },
+ {
+  "case": 131,
+  "mission_no": 532,
+  "slug": "keywords-200",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "200 keywords preserved with count note",
+  "checks": {
+   "flags": [
+    "keywords_count=200"
+   ]
+  }
+ },
+ {
+  "case": 132,
+  "mission_no": 533,
+  "slug": "news-keywords",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "news_keywords verbatim",
+  "checks": {}
+ },
+ {
+  "case": 133,
+  "mission_no": 534,
+  "slug": "author-vs-article-author",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "author variants kept separate",
+  "checks": {}
+ },
+ {
+  "case": 134,
+  "mission_no": 535,
+  "slug": "desc-triple",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "three descriptions separate, no merge",
+  "checks": {
+   "meta_present": {
+    "description": "D1",
+    "og:description": "D2",
+    "twitter:description": "D3"
+   }
+  }
+ },
+ {
+  "case": 135,
+  "mission_no": 536,
+  "slug": "robots-maxpreview",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "robots directive verbatim",
+  "checks": {}
+ },
+ {
+  "case": 136,
+  "mission_no": 537,
+  "slug": "googlebot-noindex",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "per-agent noindex recorded as policy signal",
+  "checks": {
+   "flags": [
+    "policy_noindex"
+   ]
+  }
+ },
+ {
+  "case": 137,
+  "mission_no": 538,
+  "slug": "google-verification",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "verification token REDACTED (secret-shaped), never a fact",
+  "checks": {
+   "flags": [
+    "secret_shaped_redacted"
+   ]
+  }
+ },
+ {
+  "case": 138,
+  "mission_no": 539,
+  "slug": "fb-verification",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "fb verification token redacted",
+  "checks": {
+   "flags": [
+    "secret_shaped_redacted"
+   ]
+  }
+ },
+ {
+  "case": 139,
+  "mission_no": 540,
+  "slug": "csrf-token",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "csrf token redacted, never extracted as content",
+  "checks": {
+   "flags": [
+    "secret_shaped_redacted"
+   ]
+  }
+ },
+ {
+  "case": 140,
+  "mission_no": 541,
+  "slug": "api-key-meta",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "api key redacted",
+  "checks": {
+   "flags": [
+    "secret_shaped_redacted"
+   ]
+  }
+ },
+ {
+  "case": 141,
+  "mission_no": 542,
+  "slug": "og-image-alt-phone",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "image alt extracted with alt provenance; phone alt-sourced only",
+  "checks": {}
+ },
+ {
+  "case": 142,
+  "mission_no": 543,
+  "slug": "twitter-image-alt",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "twitter image alt kept",
+  "checks": {}
+ },
+ {
+  "case": 143,
+  "mission_no": 544,
+  "slug": "og-desc-phone",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "phone in og:description recorded as meta-sourced observation, never canonical",
+  "checks": {}
+ },
+ {
+  "case": 144,
+  "mission_no": 545,
+  "slug": "contact-data-ns",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contact_data namespace verbatim",
+  "checks": {}
+ },
+ {
+  "case": 145,
+  "mission_no": 546,
+  "slug": "contact-phone-conflict",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contact_data phone kept separate from page phone; no canonical pick",
+  "checks": {
+   "meta_present": {
+    "business:contact_data:phone_number": "(555) 000-1111"
+   }
+  }
+ },
+ {
+  "case": 146,
+  "mission_no": 547,
+  "slug": "place-lat-na",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "N/A latitude: geo_unparsed + format_suspect, verbatim",
+  "checks": {
+   "flags": [
+    "geo_unparsed",
+    "format_suspect"
+   ]
+  }
+ },
+ {
+  "case": 147,
+  "mission_no": 548,
+  "slug": "geo-region",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "geo.region verbatim",
+  "checks": {}
+ },
+ {
+  "case": 148,
+  "mission_no": 549,
+  "slug": "x-ua-compatible",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "http-equiv verbatim",
+  "checks": {}
+ },
+ {
+  "case": 149,
+  "mission_no": 550,
+  "slug": "format-detection",
+  "bound": "META",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "format-detection recorded as policy signal",
+  "checks": {
+   "flags": [
+    "policy_signal"
+   ]
+  }
+ }
+]

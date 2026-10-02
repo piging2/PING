@@ -1,0 +1,15 @@
+==== jev absent from NAMESPACE_OWNERS ====
+55
+0
+==== rejection path ====
+      return this._reject('INVALID_NAMESPACE', canonicalNamespace.reason);
+    }
+
+    const namespaceValid = this._validateNamespace(policy.namespace, event);
+    if (!namespaceValid.valid) {
+      return this._reject('NAMESPACE_VIOLATION', namespaceValid.reason);
+    }
+==== retry policy: bounded, max_attempts 3, backoff 5000 ====
+110:    this._retryPolicy = options.retryPolicy || { max_attempts: 3, backoff_delay_ms: 5000 };
+==== JEV_DECISION_EVALUATED registered ====
+JEV_DECISION_EVALUATED

@@ -1,0 +1,47 @@
+function authorizeWorkOrder({ agentId, capability, namespace, constraints }) {
+  const profile = AGENT_PROFILES[agentId];
+  if (!profile) {
+    return { granted: false, reason: `Unknown exterior agent: ${agentId}` };
+  }
+  if (profile.blockedExternal) {
+    const _b = profile.blockedExternal;
+    const _until = (typeof _b === 'object' && _b.blockedUntil) ? Date.parse(_b.blockedUntil) : NaN;
+    if (Number.isNaN(_until) || Date.now() < _until) {
+      const _reason = (typeof _b === 'object' && _b.reason) ? _b.reason : String(_b);
+      return { granted: false, reason: `Agent unavailable: ${_reason}` };
+    }
+  }
+  if (profile.status === 'PENDING_AUTH') {
+    return { granted: false, reason: `Agent '${agentId}' is registered but pending one-time authorization; not grantable` };
+  }
+  if (!profile.allowedCapabilities.includes(capability)) {
+    return { granted: false, reason: `Capability '${capability}' not allowed for agent '${agentId}'` };
+  }
+  if (!NAMESPACE_RE.test(namespace || '')) {
+    return { granted: false, reason: `Invalid namespace '${namespace}' (must be core::<name> or tenant::<id>)` };
+  }
+  if (!constraints || typeof constraints !== 'object' || Array.isArray(constraints)) {
+    return { granted: false, reason: 'Constraints must be an object' };
+  }
+  // Constraints may only tighten relative to the profile maximum.
+  const max = profile.maxConstraints || {};
+  for (const [k, v] of Object.entries(max)) {
+    if (v === true && constraints[k] !== true) {
+      return { granted: false, reason: `Constraint '${k}' must be true for agent '${agentId}'` };
+    }
+  }
+  if (constraints.no_canonical_events !== true || constraints.no_mission_state_writes !== true) {
+    return { granted: false, reason: 'Work order must forbid canonical events and mission-state writes' };
+  }
+  return { granted: true, agentId, capability, namespace };
+==== check count: 8 early-return deny branches ====
+188:    return { granted: false, reason: `Unknown exterior agent: ${agentId}` };
+195:      return { granted: false, reason: `Agent unavailable: ${_reason}` };
+199:    return { granted: false, reason: `Agent '${agentId}' is registered but pending one-time authorization; not grantable` };
+202:    return { granted: false, reason: `Capability '${capability}' not allowed for agent '${agentId}'` };
+205:    return { granted: false, reason: `Invalid namespace '${namespace}' (must be core::<name> or tenant::<id>)` };
+208:    return { granted: false, reason: 'Constraints must be an object' };
+214:      return { granted: false, reason: `Constraint '${k}' must be true for agent '${agentId}'` };
+218:    return { granted: false, reason: 'Work order must forbid canonical events and mission-state writes' };
+bash: line 4: syntax error near unexpected token `('
+bash: line 4: `echo ==== Date.now usage (time dependence) ===='

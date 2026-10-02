@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0029",
+ "verdict": "PROVEN",
+ "summary": "BEFORE unchecked schema evolution deployed the breaking v2 (dropped required field 'age'); AFTER registry compatibility check rejected the deploy. Correctness claim proven; check cost sub-microsecond.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.95,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0005,
+  "after_ms": 0.0006,
+  "metric": "deploy_v2_schema",
+  "change": "schema-registry compatibility check gates deploy instead of unchecked evolution",
+  "case": 28,
+  "extra": {
+   "deploy_outcome_before": "deployed",
+   "deploy_outcome_after": "rejected",
+   "note": "correctness claim: breaking change rejected before deploy"
+  }
+ }
+}

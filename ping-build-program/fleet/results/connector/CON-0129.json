@@ -1,0 +1,11 @@
+{
+  "mission_id": "CON-0129",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "[Slack] idempotency: No native idempotency-key on chat.postMessage in retrieved docs. Client-side pattern: (channel, ts) is the stable identity: record ts from a successful post; on timeout, read recent history to check the post landed before re-posting. Event deliveries dedupe by event_id via X-Slack-Retry-Num. Native guidance UNVERIFIED in this pass.",
+  "evidence_files": [
+    "~/workspace/ping-build-program/fleet/work/fleet-con-1/chat-slack.md",
+    "https://docs.slack.dev/"
+  ],
+  "confidence": 0.65,
+  "followup": "Verify current Slack idempotency guidance (docs.slack.dev rate-limits/idempotency) at build time."
+}

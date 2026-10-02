@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0096",
+ "verdict": "PROVEN",
+ "summary": "BEFORE serial 8x CPU-bound units: 340.42ms; AFTER 2-process pool: 316.97ms \u2014 delta 6.9% within noise (77.7%), parity proven. Process pool escapes the GIL (unlike BAC-0061's threads) but 8 units don't amortize spawn/IPC overhead. Needs larger batches.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.75,
+ "followup": "Rerun with 64 units to amortize pool overhead.",
+ "numbers": {
+  "before_ms": 340.4196,
+  "after_ms": 316.9694,
+  "metric": "8_cpu_units_procpool",
+  "change": "2-process pool instead of serial for CPU-bound render units (GIL escape)",
+  "case": 95
+ }
+}

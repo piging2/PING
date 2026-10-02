@@ -1,0 +1,145 @@
+{
+  "capture": {
+    "incidentRef": null,
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling a provider that renames a field and changes a type mid-stream",
+    "sourceDigest": "sha256:e30adbf24ae867d37568458c9b644a30bf1c605503f7bcb20f5d5a990c5abcd0"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "checkpoints": [
+      "page-1",
+      "page-2"
+    ],
+    "duplicatesAbsorbed": 0,
+    "failureCodes": [
+      "SCHEMA_CHANGED"
+    ],
+    "fullResync": false,
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 3,
+    "schemaViolationsQuarantined": 2,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 3
+  },
+  "fixtureId": "schema-drift-quarantine",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "string",
+      "rating": "number",
+      "reviewer": "string",
+      "text": "string"
+    },
+    "idField": "id",
+    "versionField": null
+  },
+  "recordedAt": "2026-09-23T19:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T19:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 33,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer tokens never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "page 1 uses the documented schema: rating is a number, reviewer is a string",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/feedback?page=1&per_page=3"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "fb_1",
+            "rating": 5,
+            "reviewer": "sam",
+            "text": "Great work."
+          },
+          {
+            "id": "fb_2",
+            "rating": 4,
+            "reviewer": "jo",
+            "text": "On time."
+          },
+          {
+            "id": "fb_3",
+            "rating": 2,
+            "reviewer": "pat",
+            "text": "No callback."
+          }
+        ],
+        "headers": {},
+        "latencyMs": 90,
+        "nextPath": "/v1/feedback?page=2&per_page=3",
+        "status": 200
+      }
+    },
+    {
+      "id": "page-2",
+      "kind": "request",
+      "note": "page 2 drifts: rating became a string enum ('five'), reviewer became an object. The two drifted records must be QUARANTINED with envelope + raw payload (never silently dropped, never crashed on); the conforming record still emits. Lane-K code SCHEMA_CHANGED.",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/feedback?page=2&per_page=3"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "fb_4",
+            "rating": "five",
+            "reviewer": {
+              "name": "sam",
+              "tier": "gold"
+            },
+            "text": "Great work, again."
+          },
+          {
+            "id": "fb_5",
+            "rating": "one",
+            "reviewer": {
+              "name": "lee"
+            },
+            "text": "Missed the appointment."
+          }
+        ],
+        "headers": {},
+        "latencyMs": 92,
+        "status": 200
+      }
+    }
+  ],
+  "title": "Schema drift: provider renames/changes field types mid-stream; drifted records are quarantined with raw payload, conforming records still emit"
+}

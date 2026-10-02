@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0053",
+ "verdict": "PROVEN",
+ "summary": "BEFORE SQLite OFFSET 150000: 1.63ms; AFTER keyset (WHERE id > 150000): 0.03ms, same 100 rows. Delta 98.1% vs noise 52.7%. Improvement proven at the honest layer (SQLite, 200k rows) \u2014 contrasts with BAC-0018's REJECTED Python-list attempt.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 1.6285,
+  "after_ms": 0.0308,
+  "metric": "deep_page_sqlite_200k",
+  "change": "keyset pagination (WHERE id > last) vs OFFSET 150000 in SQLite",
+  "case": 52
+ }
+}

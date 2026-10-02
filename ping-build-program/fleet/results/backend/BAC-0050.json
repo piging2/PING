@@ -1,0 +1,23 @@
+{
+ "mission_id": "BAC-0050",
+ "verdict": "PROVEN",
+ "summary": "BEFORE re-plan every query vs AFTER cached plans (8 queries, 3 distinct): both ~0.00ms \u2014 delta -3.9% within noise (201%). Parity proven; plan cost here is a dict lookup either way. Cache pays when planning involves statistics/optimization passes.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.75,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0047,
+  "after_ms": 0.0049,
+  "metric": "8_repeated_queries",
+  "change": "cached query plans instead of re-planning every query",
+  "case": 49,
+  "extra": {
+   "plans_cached": 3
+  }
+ }
+}

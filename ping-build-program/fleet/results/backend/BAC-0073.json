@@ -1,0 +1,23 @@
+{
+ "mission_id": "BAC-0073",
+ "verdict": "REJECTED",
+ "summary": "BEFORE all-pairs Jaccard>0.5 found all 300 near-dup pairs (137.47ms); AFTER min-shingle band bucketing found 0 pairs (43.06ms) \u2014 faster but recall collapsed to zero. Bucketing by a single min-shingle is too lossy a partition. Claim false as implemented; proper minhash banding (multiple bands/rows) needed.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": "Rerun with k=8 minhash bands instead of single-min-shingle bucketing.",
+ "numbers": {
+  "before_ms": 137.4711,
+  "after_ms": 43.0565,
+  "metric": "near_dup_600_threshold_05",
+  "change": "shingle-band bucketing at Jaccard 0.5 instead of all-pairs",
+  "case": 72,
+  "extra": {
+   "pairs_before": 300,
+   "pairs_after": 0
+  }
+ }
+}

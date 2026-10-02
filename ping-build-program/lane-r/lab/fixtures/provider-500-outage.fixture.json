@@ -1,0 +1,113 @@
+{
+  "capture": {
+    "incidentRef": "lane-k-2.5",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling lane-K 2.5",
+    "sourceDigest": "sha256:f90c02986adb475fdd665d528df912e6659a97d181b2d5900f7e2866b5f0402e"
+  },
+  "connectorShape": "poll",
+  "expect": {
+    "checkpoints": [
+      "jobs"
+    ],
+    "duplicatesAbsorbed": 0,
+    "failureCodes": [
+      "SOURCE_UNAVAILABLE"
+    ],
+    "maxAttemptsPerStep": 3,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 2,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 2
+  },
+  "fixtureId": "provider-500-outage",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "string",
+      "status": "string",
+      "updated_at": "string"
+    },
+    "idField": "id",
+    "versionField": "updated_at"
+  },
+  "recordedAt": "2026-09-23T20:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T20:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 104,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer <redacted> never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "jobs",
+      "kind": "request",
+      "note": "provider outage, then recovery; the outage degrades source health, it is not weather",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/jobs"
+      },
+      "responses": [
+        {
+          "body": {
+            "error": "internal"
+          },
+          "headers": {},
+          "latencyMs": 60,
+          "status": 500
+        },
+        {
+          "body": {
+            "error": "service unavailable"
+          },
+          "headers": {},
+          "latencyMs": 55,
+          "status": 503
+        },
+        {
+          "body": [
+            {
+              "id": "job_1",
+              "status": "scheduled",
+              "updated_at": "2026-09-23T08:00:00Z"
+            },
+            {
+              "id": "job_2",
+              "status": "en_route",
+              "updated_at": "2026-09-23T08:40:00Z"
+            }
+          ],
+          "headers": {},
+          "latencyMs": 95,
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "title": "500/503 are SOURCE_UNAVAILABLE (provider down), not TRANSIENT; bounded retry then recovery"
+}

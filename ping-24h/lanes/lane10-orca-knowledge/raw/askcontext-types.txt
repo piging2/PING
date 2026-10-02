@@ -1,0 +1,68 @@
+=== AskContext (types.ts 407-470) ===
+export interface AskContext {
+  viewer: { id: string | null; displayName: string | null };
+  target: PingObject | null;
+  schemaLabel: string;
+  relatedObjects: PingObject[];
+  relationships: PingRelationship[];
+  evidenceRefs: AskEvidenceRef[];
+  plan: CapabilityPlan | null;
+  limits: { maxRelated: number; maxRelationships: number; maxFieldChars: number };
+  /** Per-object field epistemic classes, when the caller has them. */
+  fieldClasses: Record<string, Record<string, string>>;
+  /** Deduped source URLs behind the evidence (from object provenance refs). */
+  sourceUrls: string[];
+}
+
+/** Everything the Node page needs in one payload. */
+export interface NodePayload {
+  object: PingObject;
+  relationships: PingRelationship[];
+  related: PingObject[];
+  controller: PingIdentitySummary | null;
+  plan: CapabilityPlan;
+}
+=== AskEvidenceRef (types.ts 261-300) ===
+export interface AskEvidenceRef {
+  kind: "object" | "relationship" | "field";
+  id: string;
+  label: string;
+  detail?: string;
+}
+
+/** Per-claim epistemic status for the factual claims in an AskAnswer. */
+export interface AskClaimClassification {
+  /** The claim text as stated in the answer. */
+  claim: string;
+  /**
+   * Epistemic status. Reuses the extraction pipeline's FactClass vocabulary
+   * (DIRECT_FACT, DERIVED_FACT, INFERENCE, GENERATED_COPY, USER_OVERRIDE)
+   * when the ask context carries field classes; otherwise the object's own
+   * claim kind (e.g. "website_statement").
+   */
+  classification: string;
+  /** Ids into the answer's evidenceRefs supporting this claim. */
+  evidenceRefIds: string[];
+}
+
+export interface AskProposalBody {
+  kind: "object_update" | "object_create";
+  targetObjectId: string | null;
+  schema: string;
+  changes: Record<string, string>;
+}
+
+/** Deterministic agent-facing grant identifiers for FYD (Ask FYD). */
+export type FydGrant =
+  | "site.read"
+  | "site.propose"
+  | "site.publish"
+  | "message.send"
+  | "ad.buy"
+  | "purchase.make"
+  | "provider.call"
+  | "business.mutate"
+  | "object.reference";
+=== AskClaimClassification ===
+269:export interface AskClaimClassification {
+400:  claimClassifications: AskClaimClassification[];

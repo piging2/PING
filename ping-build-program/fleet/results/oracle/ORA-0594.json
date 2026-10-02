@@ -1,0 +1,10 @@
+{
+  "mission_id": "ORA-0594",
+  "verdict": "PROVEN",
+  "summary": "PROVEN (drift flagged): live gateway image runs node 18.20.8; the host Dockerfile says FROM node:20-alpine; presentping/package.json (2026-09-16 snapshot) has NO engines field and declares sharp ^0.35.1 (not installed in the image). The node-version skew is real and documented; the 'repo requires 24.x' claim needs a source pointer.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/arch-compat-evidence.json"
+  ],
+  "confidence": 0.88,
+  "followup": "Owner: point to the file that requires 24.x, or correct the matrix; then rebuild the gateway on the pinned node:24-alpine base per the design."
+}

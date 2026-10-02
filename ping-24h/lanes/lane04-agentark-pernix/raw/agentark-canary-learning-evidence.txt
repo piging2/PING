@@ -1,0 +1,87 @@
+### agentark: finalize_stale_provisional_experience_runs
+    pub async fn finalize_stale_provisional_experience_runs(
+        &self,
+        older_than_minutes: i64,
+        limit: u64,
+    ) -> Result<u64> {
+        let cutoff = (chrono::Utc::now() - chrono::Duration::minutes(older_than_minutes.max(1)))
+            .to_rfc3339();
+        let now = chrono::Utc::now().to_rfc3339();
+        let target_ids = experience_run::Entity::find()
+            .select_only()
+            .column(experience_run::Column::Id)
+            .filter(experience_run::Column::SuccessState.eq("provisional"))
+            .await?;
+        if target_ids.is_empty() {
+            return Ok(0);
+        }
+        let result = experience_run::Entity::update_many()
+            .col_expr(
+                experience_run::Column::SuccessState,
+                Expr::value("accepted".to_string()),
+            )
+            .col_expr(
+                experience_run::Column::AcceptedAt,
+                Expr::value(Some(now.clone())),
+            )
+
+### agentark: canary constants
+    #[serde(default = "default_max_sign_test_p")]
+    pub max_sign_test_p_value: f64,
+    #[serde(default)]
+    pub activated_at: Option<String>,
+}
+
+fn default_min_samples() -> usize {
+    25
+}
+
+fn default_min_success_gain() -> f64 {
+    0.03
+}
+
+fn default_max_sign_test_p() -> f64 {
+    0.10
+
+### agentark: sticky buckets
+    if rollout_percent >= 100 {
+        return true;
+    }
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    seed.hash(&mut hasher);
+    let bucket = (hasher.finish() % 100) as u8;
+    bucket < rollout_percent
+}
+
+### agentark: 72h cadence
+use anyhow::{Context, Result};
+use chrono::{DateTime, Duration, Utc};
+use serde::{Deserialize, Serialize};
+
+pub const STABLE_DEPLOYMENT_LEDGER_KEY: &str = "evolve_stable_deployment_ledger_v1";
+pub const STABLE_DEPLOYMENT_OBSERVATION_WINDOW_HOURS: i64 = 72;
+
+const STABLE_DEPLOYMENT_LEDGER_RETENTION_DAYS: i64 = 180;
+const STABLE_DEPLOYMENT_LEDGER_MAX_ENTRIES: usize = 256;
+
+
+### agentark: self_evolve tree (divergence check)
+benchmarks
+gates
+mod.rs
+opportunities
+optimizer
+prompts
+routing
+runtime
+
+### agentark: experience_run version binding
+    #[sea_orm(column_type = "JsonBinary")]
+    pub tool_sequence_json: Json,
+    #[sea_orm(nullable)]
+    pub strategy_version: Option<String>,
+    #[sea_orm(nullable)]
+    pub policy_version: Option<String>,
+    #[sea_orm(nullable)]
+    pub prompt_version: Option<String>,
+    #[sea_orm(nullable)]

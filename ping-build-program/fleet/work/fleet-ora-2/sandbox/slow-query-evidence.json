@@ -1,0 +1,18 @@
+{
+ "cancellation_no_orphan_backend": "after the timeout, pg_stat_activity showed only the counting query itself active - the cancelled statement left no orphan backend",
+ "engine": "postgres:17-alpine (the real engine) in a transient scratch container - no volumes, removed after",
+ "observed": "2026-09-24",
+ "query_plan_timing": "Parallel Seq Scan on 500k rows, Execution Time 69.165 ms (plan + timings recorded)",
+ "statement_timeout": "SET statement_timeout=500; SELECT pg_sleep(5) -> ERROR: canceling statement due to statement timeout (typed TIMEOUT)",
+ "worker": "fleet-ora-2",
+ "client_kill_test": {
+  "result": "server accepted a new query immediately after (server_alive); no wedged state",
+  "test": "pg_sleep(30) backend started, client backend terminated via pg_terminate_backend",
+  "victim_pid": 63
+ },
+ "timeout_budget_runbook": {
+  "OLTP reads": "statement_timeout 5s, p99 budget 200ms",
+  "analytics/reporting": "statement_timeout 60s, runs off-peak",
+  "migrations/DDL": "statement_timeout 300s, lock_timeout 30s"
+ }
+}

@@ -1,0 +1,164 @@
+=== visitor-answer.ts context assembly ===
+840 src/fyd/ask/visitor-answer.ts
+  };
+}
+
+/**
+ * Replace internal-facing guidance in the composed answer with
+ * visitor-facing wording. The evidence contract itself is untouched.
+ */
+function visitorizeAnswer(text: string): string {
+  return text.replace(
+    "Open an object to give me something concrete to answer from, or ask about what is listed below.",
+    "Try asking about the business, its services, contact details, or location.",
+  );
+}
+
+/**
+ * PROD-4: id stripping is the canonical stripInternalIds in
+ * lib/ping/ask-composer, shared by the visitor pipeline and the
+ * PingObjectReader.ask path (PROD-3+4-REPAIR). It runs on EVERY
+ * user-facing text surface this pipeline returns (answer, citation labels,
+ * proposal notes, unknowns, error messages) before it leaves
+ * answerAskFyd. Structured debugging refs (citation ids,
+ * objectRefs[].objectId) are not text surfaces and stay intact for the
+ * Why-this panel.
+ */
+
+/** Label map for error paths: no bundle was loaded, so no id has a title. */
+const NO_ID_LABELS: ReadonlyMap<string, string> = new Map();
+
+function basisForClassification(classification: string): string {
+  switch (classification) {
+    case "DIRECT_FACT":
+      return "Recorded fact from the site data";
+    case "DERIVED_FACT":
+    case "derived":
+      return "Derived from the site data";
+    case "INFERENCE":
+      return "Inferred from the site data";
+    case "GENERATED_COPY":
+      return "Site-generated copy (not verified fact)";
+    case "USER_OVERRIDE":
+    case "owner_override":
+      return "Owner-set value";
+    case "owner_authorship":
+      return "Owner-authored content";
+    case "DEMO_SYNTHETIC":
+      return "Demo content added by the site operator (not the website's own words)";
+    case "website_statement":
+      return "The site's own words (website statement, not verified fact)";
+    case "relationship_fact":
+      return "Recorded relationship in the site data";
+    default:
+      return "Site record";
+  }
+}
+
+function citationFor(
+  n: number,
+  ref: AskEvidenceRef,
+  objects: Map<string, PingObject>,
+  relationships: PingRelationship[],
+  classification: string | undefined,
+): AskFydCitation {
+  let source = "Site record";
+  let lastChecked: string | null = null;
+  // Note: AskEvidenceRef.id IS the cited object/relationship id (there is no
+  // separate objectId field on the ref).
+  if (ref.kind === "field") {
+    if (parseConflictObservationRefId(ref.id) !== null) {
+      // FYD-Q1: a conflict observation. Both evidence chains survive in
+      // the Why-this surface; the disputed value is never embedded.
+      const parsed = conflictObservationSource(ref);
+      source = parsed.source;
+      lastChecked = parsed.lastChecked;
+    } else {
+      // Field-level evidence: the ref itself is the provenance. The other
+      // producer of field refs is an owner field correction (the composer
+      // labels it as such), so the citation names the owner as the source
+      // instead of misattributing the value to the website.
+      source = "Owner correction";
+    }
+  } else if (ref.kind === "object") {
+=== tenant-graph head ===
+/**
+ * FYD tenant graph read (server-only).
+ *
+ * The authorized read seam between PING state and the FYD ask/bundle lane.
+ * Every Ask FYD graph read flows:
+ *
+ *   FYD -> PingObjectReader.queryFydSiteOverlays -> sanitized overlay ops
+ *       -> fixture base graph (rebuildable projection input)
+ *       -> deterministic overlay composition
+ *       -> digest verification at both layers -> ObjectGraph
+ *
+ * This module NEVER reads:
+ * - dump.py projection JSON on disk (no FYD_PROJECTION_DIR, no fs reads),
+ * - Postgres (no direct reads, no second canonical object store),
+ * - raw canonical journal envelopes (only sanitized op payloads cross the
+ *   PingObjectReader boundary).
+ *
+ * Freshness: the graph is rebuilt from fixture + journal on every call.
+ * There is deliberately no cache: Ask FYD re-reads on every serve, so a
+ * newly journaled overlay is visible to the next question immediately.
+ *
+ * Tenant scoping: the site id is validated against the pinned tenant
+ * registry here AND enforced inside the reader (queryFydSiteOverlays
+ * filters by siteId at the authority), so a call can never observe another
+ * tenant's overlays.
+ *
+ * Provenance vocabulary is unchanged from the dump-era contract:
+ * - fixture objects keep their original provenance (procedural-fixture),
+ * - overlay-added objects get { kind: "canonical-journal", ref:
+ *   "ping-event:<event_id>" },
+ * - overlay-touched objects accumulate "ping-event:<event_id>" in
+ *   provenance.updatedRefs.
+ *
+ * Overlay op validation is a faithful port of the dump.py overlay engine
+ * (tools/fyd-site-projection/dump.py :: apply_overlays): the same op kinds,
+ * the same strictness, the same fail-closed behavior on malformed ops.
+ * Moving the engine here changes WHERE the journal is read (governed
+ * reader instead of a Postgres query in a script), not WHAT the journal
+ * means.
+ */
+
+import { sha256Hex } from "@/lib/ping/digest";
+import { canonicalize } from "@/lib/ping/ask-composer";
+import {
+  getPingObjectReader,
+  type FydJournalOverlay,
+  type PingObjectReader,
+} from "@/lib/ping/ping-object-reader";
+import type { ObjectGraph } from "@/fyd/sitespec/types";
+import type { PingObject, PingRelationship } from "@/lib/ping/types";
+import type {
+  PresentationIntentBlock,
+  PresentationIntentDirective,
+} from "@/fyd/customize/types";
+import { HAPPY_PLACE_GRAPH } from "@/fyd/proceduralize/__fixtures__/happy-place-graph";
+import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
+
+/** Typed failure for the tenant graph seam. The ask lane maps every code to projection_unavailable. */
+export class FydTenantGraphError extends Error {
+  readonly code:
+    | "unknown_tenant"
+    | "base_digest_mismatch"
+    | "overlay_malformed"
+    | "reader_failed";
+  constructor(
+    code: FydTenantGraphError["code"],
+    message: string,
+    opts?: { cause?: unknown },
+  ) {
+    super(`fyd-tenant-graph[${code}]: ${message}`, opts);
+    this.name = "FydTenantGraphError";
+    this.code = code;
+  }
+}
+
+export interface FydTenantGraphMeta {
+  siteId: string;
+  /** sha256 of the canonicalized fixture base graph (pre-overlay). */
+  baseDigest: string;
+  /** sha256 of the canonicalized composed graph (post-overlay). */

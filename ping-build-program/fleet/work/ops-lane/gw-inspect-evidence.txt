@@ -1,0 +1,28 @@
+=== labels ===
+{}
+=== networks ===
+['oracle_ping_internal']
+=== ports ===
+{"8080/tcp":[{"HostIp":"127.0.0.1","HostPort":"8080"}]}
+=== mounts ===
+[]
+=== restart policy ===
+{"Name":"unless-stopped","MaximumRetryCount":0}
+=== env NAMES only ===
+LOG_LEVEL
+POSTGRES_PASSWORD
+QDRANT_HOST
+QDRANT_PORT
+QDRANT_URL
+POSTGRES_DB
+POSTGRES_USER
+OLLAMA_BASE_URL
+POSTGRES_PORT
+NODE_ENV
+POSTGRES_HOST
+PATH
+NODE_VERSION
+YARN_VERSION
+=== entrypoint/cmd/workdir/user ===
+entrypoint=["docker-entrypoint.sh"] cmd=["node","gateway/server.js"] workdir=/app user=nodejs
+=== env files present in compose dir ===

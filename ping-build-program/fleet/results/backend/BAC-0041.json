@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0041",
+ "verdict": "PROVEN",
+ "summary": "BEFORE clear-all + refill 2000 on schema change: 0.18ms; AFTER generation-stamp bump + lazy revalidate of 200 hot reads: 0.03ms (15-repeat followup). Delta 84.6% vs noise 14.4%. Improvement proven; first-read-after-bump pays the refill lazily.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.1949,
+  "after_ms": 0.0294,
+  "metric": "invalidate_after_schema_change",
+  "change": "generation-stamped lazy invalidation instead of clear-all + full refill",
+  "case": 40
+ }
+}

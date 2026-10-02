@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0017",
+ "verdict": "PROVEN",
+ "summary": "BEFORE full scan of 20 partitions (100k rows): 5.83ms; AFTER partition pruning (2 of 20 partitions): 0.53ms (15-repeat followup). Delta 90.9% vs noise 28.6%. Improvement proven.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 3.1732,
+  "after_ms": 0.6067,
+  "metric": "range_scan_100k_rows_20_parts",
+  "change": "partition pruning (scan 2 of 20 partitions) instead of full scan",
+  "case": 16
+ }
+}

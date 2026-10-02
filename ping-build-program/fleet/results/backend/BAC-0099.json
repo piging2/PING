@@ -1,0 +1,27 @@
+{
+ "mission_id": "BAC-0099",
+ "verdict": "PROVEN",
+ "summary": "BEFORE new-schema read of old data: CRASH (KeyError on added field); AFTER versioned reader with defaults: {'name':'acme','age':5,'email':''}. Correctness claim proven; read path parity.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.95,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0005,
+  "after_ms": 0.0008,
+  "metric": "read_old_data_new_schema",
+  "change": "versioned reader with field defaults instead of raw new-schema read of old data",
+  "case": 98,
+  "extra": {
+   "before": "CRASH",
+   "after": {
+    "name": "acme",
+    "age": 5,
+    "email": ""
+   }
+  }
+ }
+}

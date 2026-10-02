@@ -1,0 +1,38 @@
+--- /home/hatch/workspace/ping-overnight/drift-sources/mission_scheduler.js.HEAD-099927152	2026-09-17 11:37:37.635993625 +0000
++++ /home/hatch/workspace/ping-overnight/drift-sources/mission_scheduler.js.live-20260917	2026-09-17 11:37:30.494993648 +0000
+@@ -171,6 +171,19 @@
+         console.error('[MissionScheduler] Lease reaping failed (non-fatal):', reapErr.message);
+       }
+ 
++      // Arrow 1b: Reclaim due retries - moves retry_pending missions whose
++      // retry_at has elapsed back to created so they can be re-claimed and,
++      // on worker success, completed. Without this, retry-then-success
++      // missions could never complete (assign/complete only transition from
++      // created/running) and re-executed on every poll. Runs regardless of
++      // capacity - a retry must not stall behind a full dispatch window.
++      try {
++        const reclaimed = await this._missionRuntime.reclaimRetryPending();
++        if (reclaimed > 0) console.log(`[MissionScheduler] Reclaimed ${reclaimed} due retry(ies)`);
++      } catch (reclaimErr) {
++        console.error('[MissionScheduler] Retry reclaim failed (non-fatal):', reclaimErr.message);
++      }
++
+       // Arrow 2: Dispatch new missions — only when capacity available.
+       if (this._processing.size >= this._maxConcurrent) return;
+ 
+@@ -242,6 +255,7 @@
+           canonical_hash: payload.canonical_hash || null,
+           confidence: payload.confidence != null ? payload.confidence : null,
+           correlation_id: payload.correlation_id || payload.event_id || mission.mission_id,
++          originator: payload.originator || null,
+           causation_id: payload.event_id || null,
+         },
+       };
+@@ -306,6 +320,7 @@
+               job_type: mission.mission_type,
+               mission_id: mission.mission_id,
+               correlation_id: payload.correlation_id || payload.event_id || mission.mission_id,
++          originator: payload.originator || null,
+               causation_id: payload.event_id || mission.mission_id,
+               authority: 'MissionScheduler',
+               authority_version: '1.0.0',

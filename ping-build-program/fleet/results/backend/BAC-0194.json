@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0194",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE idempotent_consumer: 0.000ms; AFTER idempotent consumer (dedupe by event id) vs rework-on-redelivery: 1.067ms. Delta +463874.2%. before() measured len() (O(1)) instead of real per-event work, so the comparison is unfair; rerun with real processing in before.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench4.py",
+  "fleet/work/fleet-be-1/bench4b.py",
+  "fleet/work/fleet-be-1/bench4_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "rerun idempotent-consumer with real per-event work in the before path",
+ "numbers": {
+  "before_ms": 0.0002,
+  "after_ms": 1.0671,
+  "metric": "idempotent_consumer",
+  "change": "idempotent consumer (dedupe by event id) vs rework-on-redelivery",
+  "case": 193
+ }
+}

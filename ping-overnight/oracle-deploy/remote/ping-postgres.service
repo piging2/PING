@@ -1,0 +1,15 @@
+[Unit]
+Description=PING PostgreSQL
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml up -d postgres
+ExecStop=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml stop postgres
+ExecReload=/usr/bin/docker compose -f /opt/ping/infrastructure/oracle/docker-compose.oracle.yml restart postgres
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

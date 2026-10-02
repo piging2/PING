@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0215",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE proactive_refresh_v2: 0.068ms; AFTER proactive refresh at half-TTL vs TTL-only (corrected sim): 0.078ms. Delta +14.8%. corrected sim still shows 0 stale serves both paths: synchronous refresh cannot model the async stale-read window; needs an async reader model.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench5.py",
+  "fleet/work/fleet-be-1/bench5b.py",
+  "fleet/work/fleet-be-1/bench5_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "model async readers racing the TTL window to measure real stale serves",
+ "numbers": {
+  "before_ms": 0.0677,
+  "after_ms": 0.0777,
+  "metric": "proactive_refresh_v2",
+  "change": "proactive refresh at half-TTL vs TTL-only (corrected sim)",
+  "case": 214
+ }
+}

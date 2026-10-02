@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0124",
+ "verdict": "ADAPT",
+ "summary": "BEFORE crash_atomicity: 0.458ms; AFTER transactional cursor (cursor+batch atomic) vs separate cursor persist: 0.651ms. Delta +42.3%. cursor commit is atomic with the batch, closing the phantom-rework window, at 42% more commit cost; correctness win, small price.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.458,
+  "after_ms": 0.651,
+  "metric": "crash_atomicity",
+  "change": "transactional cursor (cursor+batch atomic) vs separate cursor persist",
+  "case": 123
+ }
+}

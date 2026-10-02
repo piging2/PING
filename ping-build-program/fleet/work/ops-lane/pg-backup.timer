@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily postgres backup timer (bounded, 7-day retention)
+
+[Timer]
+OnCalendar=03:30
+RandomizedDelaySec=600
+Persistent=true
+Unit=pg-backup.service
+
+[Install]
+WantedBy=timers.target

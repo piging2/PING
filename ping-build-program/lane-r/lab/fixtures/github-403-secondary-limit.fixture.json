@@ -1,0 +1,141 @@
+{
+  "capture": {
+    "incidentRef": "lane-k-appendix-a-1",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling lane-K Appendix A scenario 1",
+    "sourceDigest": "sha256:5ec4d388ec5a543f9e4cd857d48864b3bb97ccf7e05ca8463cf9bf51d1e454b3"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "checkpoints": [
+      "page-1",
+      "page-2"
+    ],
+    "duplicatesAbsorbed": 0,
+    "failureCodes": [
+      "RATE_LIMITED"
+    ],
+    "maxAttemptsPerStep": 2,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 3,
+    "retryAfterHonored": true,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 3
+  },
+  "fixtureId": "github-403-secondary-limit",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "string",
+      "title": "string",
+      "updated_at": "string"
+    },
+    "idField": "id",
+    "versionField": "updated_at"
+  },
+  "recordedAt": "2026-09-23T20:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T20:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 101,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer <redacted> never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "secondary rate limit on first attempt; retry-after honored, then the page succeeds",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues?state=open&per_page=3&page=1"
+      },
+      "responses": [
+        {
+          "body": {
+            "message": "API rate limit exceeded for user."
+          },
+          "headers": {
+            "retry-after": "2",
+            "x-ratelimit-remaining": "0"
+          },
+          "latencyMs": 30,
+          "status": 403
+        },
+        {
+          "body": [
+            {
+              "id": "i1",
+              "title": "Leaky faucet",
+              "updated_at": "2026-09-23T10:00:00Z"
+            },
+            {
+              "id": "i2",
+              "title": "No heat",
+              "updated_at": "2026-09-23T11:00:00Z"
+            }
+          ],
+          "headers": {
+            "link": "</repos/acme/widgets/issues?state=open&per_page=3&page=2>; rel=\"next\"",
+            "x-ratelimit-remaining": "58"
+          },
+          "latencyMs": 90,
+          "nextPath": "/repos/acme/widgets/issues?state=open&per_page=3&page=2",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "page-2",
+      "kind": "request",
+      "note": "terminal page",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues?state=open&per_page=3&page=2"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "i3",
+            "title": "Clogged drain",
+            "updated_at": "2026-09-23T12:00:00Z"
+          }
+        ],
+        "headers": {
+          "x-ratelimit-remaining": "57"
+        },
+        "latencyMs": 80,
+        "status": 200
+      }
+    }
+  ],
+  "title": "GitHub 403 with X-RateLimit-Remaining: 0 is RATE_LIMITED, not PERMISSION_DENIED (lane K scenario 1; the Airbyte infinite-loop bug)"
+}

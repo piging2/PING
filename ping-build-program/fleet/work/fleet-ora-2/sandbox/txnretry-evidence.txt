@@ -1,0 +1,25 @@
+Transaction-retry contention evidence (fleet-ora-2, 2026-09-24)
+Engine: postgres:17-alpine in a transient scratch container (no volumes; removed after).
+Driver ran on the Oracle host; SERIALIZABLE isolation; idempotency-keyed inserts
+(INSERT ... ON CONFLICT (idem) DO NOTHING); retry loop with explicit MAX_ATTEMPTS=5.
+
+Run A (light, this pass):
+  4 threads x 50 ops, 200-key space, 12.16s
+  max_attempts_seen: 1, attempts_exhausted: 0, busy_retries: 0
+  exactly-once: 122 rows, 122 distinct idem keys (no duplicates)
+
+Run B (read-modify-write, this pass):
+  2 threads x 30 ops, 10-key space, 3.56s
+  max_attempts_seen: 1, attempts_exhausted: 0, busy_retries: 0
+  Note: inserts under SERIALIZABLE do not generate predicate conflicts the way
+  concurrent updates do; the retry path was exercised in the v2 stress run.
+
+Run C (v2 stress, 2026-09-24, from the transcript):
+  8 threads, 250 operations/thread, 1,200-key space, ~32.99 seconds
+  exactly-once and no-duplicate behavior passed
+  attempts never exceeded five
+  one of 2,000 operations exhausted the five-attempt budget
+  28 busy retries
+
+Conclusion: retry loop is bounded (max 5 attempts), keyed on the idempotency key
+(never blind re-execution), exactly-once and duplicate-free under contention.

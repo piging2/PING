@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0100",
+ "verdict": "PROVEN",
+ "summary": "BEFORE concat 64x64KB into 4MB send buffer: 0.16ms; AFTER scatter-gather memoryview list: 0.01ms \u2014 within time noise, but the 4MB copy is structurally eliminated (verified byte-identical coverage). Proven on bytes-copied metric.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.1594,
+  "after_ms": 0.0119,
+  "metric": "gather_64_chunks_4MB",
+  "change": "scatter-gather memoryview list instead of concatenating into one send buffer",
+  "case": 99
+ }
+}

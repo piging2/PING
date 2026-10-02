@@ -1,0 +1,34 @@
+PASS A1 manifest validates at admission
+PASS A1b manifest with maxAttempts>3 is rejected
+PASS A2a check() SUCCEEDED on healthy provider
+PASS A2b check() classifies 401 as user_error (bad credential, not connector bug)
+PASS A2c check() classifies 500 as connector_error
+PASS A3 discover() lists streams in deterministic order; incremental declares its cursor
+PASS A4a read() against undeclared stream fails closed (PERMANENT)
+PASS A4b write.* not declared → no usable write surface
+PASS B1 same-external-object-twice → no duplicate canonical knowledge
+PASS B2 same-webhook-twice → second absorbed
+PASS B3 connector restart → resumes from watermark; knowledge unchanged
+PASS B4 cursor invalidation → FULL_RESYNC, no duplicate knowledge
+PASS B5 timeout → OUTCOME_UNKNOWN + one reconciliation pass, no duplicate knowledge
+PASS B6 partial batch → checkpoint holds at contiguous success; retry dedupes
+PASS C1 429 → honors Retry-After before retrying; then SUCCEEDS
+PASS C2 retries bounded at declared maxAttempts; no retry storm
+PASS C3 client budget exhausted → NOT_STARTED, provider never sees call 3
+PASS C4 breaker opens after sustained 5xx; next read fails fast without provider calls
+PASS D1-401 taxonomy: 401→AUTH_EXPIRED
+PASS D1-403 taxonomy: 403→PERMISSION_DENIED
+PASS D1-404 taxonomy: 404→INVALID_PAYLOAD (non-retryable)
+PASS D1-500 taxonomy: 500→TRANSIENT
+PASS E1 HTML/JS injection stripped at ingestion; mixed-script name flagged
+PASS E2 oversized response rejected; nothing ingested
+PASS E3 redirect chain over cap rejected
+PASS E4 SSRF final URL refused before parse
+PASS E5 secret canary in provider payload never reaches events/logs/evidence
+PASS E6 cross-tenant isolation: B's run never sees A's data or connection
+PASS F1 webhook: valid signature accepted, forged signature rejected (fail closed)
+PASS F2 webhook: unknown shapes preserved opaque, never dropped or crashed on
+PASS G1 provenance envelope complete: external id/ts, observed ts, raw ref, key, grade
+PASS A6 secret broker hands out capability handles, never raw tokens
+
+32/32 checks passed (0 failed)

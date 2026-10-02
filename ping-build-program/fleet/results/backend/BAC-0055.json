@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0055",
+ "verdict": "PROVEN",
+ "summary": "BEFORE array-of-dicts two-column scan over 40k 16-col rows: 8.60ms; AFTER struct-of-arrays: 2.93ms \u2014 delta 65.9% but within noise (106%), so parity proven at this row width. Locality win needs wider rows/larger scans to exceed noise.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun at 1M rows x 64 cols.",
+ "numbers": {
+  "before_ms": 8.601,
+  "after_ms": 2.9289,
+  "metric": "two_col_scan_40k_wide",
+  "change": "struct-of-arrays over 16-col rows instead of array-of-dicts",
+  "case": 54
+ }
+}

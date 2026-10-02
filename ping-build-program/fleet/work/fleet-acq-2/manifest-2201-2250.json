@@ -1,0 +1,588 @@
+[
+ {
+  "case": 0,
+  "mission_no": 2201,
+  "slug": "dynamic-import",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "dynamic import URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 1,
+  "mission_no": 2202,
+  "slug": "service-worker",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "service worker registration inert; /sw.js not a URL claim",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 2,
+  "mission_no": 2203,
+  "slug": "shadow-dom",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "shadow DOM never rendered",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 3,
+  "mission_no": 2204,
+  "slug": "blob-url",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "blob URL inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 4,
+  "mission_no": 2205,
+  "slug": "hash-routing",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "hash routes never resolved",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 5,
+  "mission_no": 2206,
+  "slug": "postmessage",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "postMessage target not harvested; secret-shaped value never extracted",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 6,
+  "mission_no": 2207,
+  "slug": "mutation-observer",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "mutation observer inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 7,
+  "mission_no": 2208,
+  "slug": "hydration-marker",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "SSR text extracted; hydration code inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 8,
+  "mission_no": 2209,
+  "slug": "json-in-comment",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JSON inside JS comment is not a data block",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 9,
+  "mission_no": 2210,
+  "slug": "data-uri-img-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data: assigned in JS inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 10,
+  "mission_no": 2211,
+  "slug": "trusted-types",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "trusted types inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 11,
+  "mission_no": 2212,
+  "slug": "amd-define",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "AMD dep URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 12,
+  "mission_no": 2213,
+  "slug": "require-call",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "require URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 13,
+  "mission_no": 2214,
+  "slug": "css-in-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CSS url() inside JS not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 2215,
+  "slug": "anchor-click-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "real anchor extracted; JS click() changes nothing",
+  "expect_flags": [
+   "script_inert",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 15,
+  "mission_no": 2216,
+  "slug": "form-submit-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "form action recorded as claimed endpoint, not submitted",
+  "expect_flags": [
+   "script_inert",
+   "form_action_claimed"
+  ]
+ },
+ {
+  "case": 16,
+  "mission_no": 2217,
+  "slug": "ajax-html",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "AJAX HTML never materialized",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 17,
+  "mission_no": 2218,
+  "slug": "graphql-query",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "GraphQL endpoint not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 18,
+  "mission_no": 2219,
+  "slug": "beacon",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "beacon URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 19,
+  "mission_no": 2220,
+  "slug": "pixel-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS pixel not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 20,
+  "mission_no": 2221,
+  "slug": "open-window",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "window.open URL not harvested, never followed",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 21,
+  "mission_no": 2222,
+  "slug": "location-replace",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "location.replace: claimed intent, never followed",
+  "expect_flags": [
+   "script_inert",
+   "js_redirect_claimed"
+  ]
+ },
+ {
+  "case": 22,
+  "mission_no": 2223,
+  "slug": "meta-refresh-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS-created refresh never honored",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 23,
+  "mission_no": 2224,
+  "slug": "cookie-read",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cookie read inert; no secret extraction",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 24,
+  "mission_no": 2225,
+  "slug": "localstorage",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "storage inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 25,
+  "mission_no": 2226,
+  "slug": "intersection-lazy",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "lazy image claimed not loaded",
+  "expect_flags": [
+   "script_inert",
+   "lazy_ref"
+  ]
+ },
+ {
+  "case": 26,
+  "mission_no": 2227,
+  "slug": "infinite-scroll",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "infinite scroll endpoint not followed",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 27,
+  "mission_no": 2228,
+  "slug": "json-ld-string-concat",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "concatenated JSON string not a data block",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 28,
+  "mission_no": 2229,
+  "slug": "script-error-attr",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "onerror handler inert; src unfetched",
+  "expect_flags": [
+   "script_inert",
+   "script_src_unfetched",
+   "event_handler_inert"
+  ]
+ },
+ {
+  "case": 29,
+  "mission_no": 2230,
+  "slug": "nomodule",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nomodule src unfetched",
+  "expect_flags": [
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 30,
+  "mission_no": 2231,
+  "slug": "async-order",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "execution order never simulated",
+  "expect_flags": [
+   "script_inert",
+   "script_src_unfetched"
+  ]
+ },
+ {
+  "case": 31,
+  "mission_no": 2232,
+  "slug": "iife-dom",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "IIFE DOM rewrite never applied",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 32,
+  "mission_no": 2233,
+  "slug": "framework-state",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "framework state never rendered",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 33,
+  "mission_no": 2234,
+  "slug": "template-engine",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "template engine output never produced",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 34,
+  "mission_no": 2235,
+  "slug": "markdown-js",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "JS markdown never rendered",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 35,
+  "mission_no": 2236,
+  "slug": "sanitizer-bypass",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "sanitized output still never materialized",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 36,
+  "mission_no": 2237,
+  "slug": "event-delegation",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "delegated handlers inert; data-id not a fact claim",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 37,
+  "mission_no": 2238,
+  "slug": "dataset-facts",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data-* attrs recorded as claimed attrs, not facts",
+  "expect_flags": [
+   "data_attr_claimed"
+  ]
+ },
+ {
+  "case": 38,
+  "mission_no": 2239,
+  "slug": "aria-live",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "aria-live updates never applied",
+  "expect_flags": [
+   "script_inert",
+   "dom_mutation_guess"
+  ]
+ },
+ {
+  "case": 39,
+  "mission_no": 2240,
+  "slug": "web-component-fetch",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "custom element lifecycle never runs",
+  "expect_flags": [
+   "script_inert",
+   "custom_element_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 40,
+  "mission_no": 2241,
+  "slug": "import-attributes",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "import-attribute URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 41,
+  "mission_no": 2242,
+  "slug": "worker-src",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "worker URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 42,
+  "mission_no": 2243,
+  "slug": "shared-worker",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "shared worker inert",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 43,
+  "mission_no": 2244,
+  "slug": "eventsource",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "EventSource URL not harvested",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js"
+  ]
+ },
+ {
+  "case": 44,
+  "mission_no": 2245,
+  "slug": "rtc",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "RTC config inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 45,
+  "mission_no": 2246,
+  "slug": "payment-request",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "payment request inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 46,
+  "mission_no": 2247,
+  "slug": "credential-api",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "credential API inert; no secret handling",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 47,
+  "mission_no": 2248,
+  "slug": "geolocation",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "geolocation inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 48,
+  "mission_no": 2249,
+  "slug": "notification",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "notification inert",
+  "expect_flags": [
+   "script_inert"
+  ]
+ },
+ {
+  "case": 49,
+  "mission_no": 2250,
+  "slug": "kitchen-sink",
+  "bound": "JSHEAVY",
+  "expect": "BOUNDED_SUCCESS",
+  "note": "combined: SSR kept, dynamic import/fetch inert, noscript fallback, JSON data block",
+  "expect_flags": [
+   "script_inert",
+   "no_url_harvest_from_js",
+   "dom_mutation_guess",
+   "noscript_provenance",
+   "json_data_block"
+  ]
+ }
+]

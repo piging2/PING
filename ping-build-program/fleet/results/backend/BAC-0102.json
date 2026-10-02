@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0102",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE cache_1000_reqs_scan_pollution: 0.117ms; AFTER protected/probationary tiering (scan-resistant) vs single fixed LRU: 4.916ms. Delta +4115.1%. deque membership is O(n) in Python so the tiered path measured 40x slower; the scan-resistance claim needs a set+LRU structure before any verdict.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "remeasure scan-resistance with set+LRU structure before any verdict",
+ "numbers": {
+  "before_ms": 0.117,
+  "after_ms": 4.916,
+  "metric": "cache_1000_reqs_scan_pollution",
+  "change": "protected/probationary tiering (scan-resistant) vs single fixed LRU",
+  "case": 101
+ }
+}

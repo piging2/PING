@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0034",
+ "verdict": "REJECTED",
+ "summary": "BEFORE replay 20k events incl. no-ops: 2.44ms; AFTER skip fingerprinted no-ops: 31.58ms \u2014 13x slower. Hashing repr() of every event at replay time costs more than replaying. Claim false as implemented; the fix is to tag no-ops by event type at WRITE time (O(1) check) instead of fingerprinting at replay.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": "Rerun with write-time 'noop' tagging; expect replay to skip 4k events at near-zero cost.",
+ "numbers": {
+  "before_ms": 2.4398,
+  "after_ms": 31.5755,
+  "metric": "replay_20k_events",
+  "change": "skip fingerprinted no-op events instead of replaying all 20k",
+  "case": 33
+ }
+}

@@ -1,0 +1,53 @@
+=== existing backup artifacts ===
+---
+total 368
+drwxr-xr-x 9 ubuntu ubuntu   4096 Sep 22 16:19 ..
+-rw-rw-r-- 1 ubuntu ubuntu 368338 Sep 19 12:10 ping-postgres-2026-09-19.dump
+drwxrwxr-x 2 ubuntu ubuntu   4096 Sep 19 12:10 .
+---
+/opt/ping/database/events.sql
+/opt/ping/database/canonical_events.sql
+/opt/ping/database/migration_001_add_causation_id.sql
+/opt/ping/database/migration_002_add_events_causation_id.sql
+/opt/ping/database/fix_pipeline_blockers.sql
+/opt/ping/releases/pgdata-backup-2026-09-16.sql.gz
+/opt/ping/backups/ping-postgres-2026-09-19.dump
+=== crontab ===
+bash: line 7: crontab: command not found
+--- root crontab:
+sudo: crontab: command not found
+=== pg tools ===
+pg_dump (PostgreSQL) 17.11
+=== DB size ===
+14 MB
+=== table/row counts (top tables) ===
+ping_events:2557
+capability_requests
+exterior_agent_credentials
+agent_workspaces
+canonical_events
+commits
+tenant_registry
+deployment_registry
+runtime_registry
+repository_store_migrations
+repository_objects
+event_outbox
+repository_events
+event_processing
+execution_graphs
+graph_node_states
+repository_snapshots
+mission_events
+mission_executions
+telemetry_metrics
+ai_workspace_results
+=== disk space ===
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        45G   17G   28G  39% /
+/dev/sda1        45G   17G   28G  39% /
+=== off-host infra? (existing rsync targets, rclone, s3 config) ===
+no rclone config
+=== docker images available for isolated restore ===
+postgres:17-alpine
+qdrant/qdrant:v1.7.0

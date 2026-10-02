@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-0147",
+  "verdict": "NEEDS-FOLLOWUP",
+  "summary": "NEEDS-FOLLOWUP: registry-side digest for 'node:18-alpine' unverified (no docker in sandbox; no pull performed on the live host). Local side is three-way pinned. [registry digest equals local image digest after pull]",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox/digest-pin-lockfile.json",
+    "fleet/work/fleet-ora-2/sandbox/reproducibility-designs.md"
+  ],
+  "confidence": 0.8,
+  "followup": "docker pull node:18-alpine@<pinned digest> on a scratch host; compare pulled digest to the lockfile pin."
+}

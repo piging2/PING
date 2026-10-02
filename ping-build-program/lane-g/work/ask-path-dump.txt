@@ -1,0 +1,838 @@
+===== FILE: answer.ts =====
+/**
+ * Ask FYD answer composer: deterministic, evidence-backed, never
+ * authorizing. Site-change intents become site_patch proposals; everything
+ * else delegates to the existing composer. The composer drafts only: the
+ * human approves the exact digest.
+ */
+
+import { composeAnswer } from "../../lib/ping/ask-composer";
+import type { AskAnswer } from "../../lib/ping/types";
+import {
+  buildSitePatchCard,
+  detectSitePatchIntent,
+  draftSitePatchProposal,
+  sitePatchRefusal,
+} from "./site-patch";
+import type { AskFydAnswer, AskFydContext } from "./types";
+
+const SITE_PATCH_ACTION_KINDS = new Set([
+  "follow",
+  "unfollow",
+  "like",
+  "unlike",
+  "open",
+  "open_site",
+  "open_website",
+  "reply",
+  "propose_update",
+  "propose_site_patch",
+]);
+
+function baseFields(
+  ctx: AskFydContext,
+): Pick<
+  AskAnswer,
+  | "evidenceRefs"
+  | "relatedObjects"
+  | "suggestedActions"
+  | "claimClassifications"
+  | "unknowns"
+  | "sourceUrls"
+> {
+  return {
+    evidenceRefs: ctx.base.evidenceRefs,
+    claimClassifications: [],
+    unknowns: [],
+    sourceUrls: ctx.base.sourceUrls,
+    relatedObjects: ctx.base.relatedObjects
+      .slice(0, 5)
+      .map((o) => ({ id: o.id, schema: o.schema, title: o.title || o.id })),
+    suggestedActions: (ctx.base.plan?.actions ?? []).filter((a) => SITE_PATCH_ACTION_KINDS.has(a.kind)),
+  };
+}
+
+function refusalAnswer(ctx: AskFydContext, text: string): AskFydAnswer {
+  return { ...baseFields(ctx), answer: text, proposal: null, partial: true, sitePatchCard: null };
+}
+
+/**
+ * Compose the Ask FYD answer. Site-patch intents are detected first; when
+ * the viewer may propose, a digest-bound draft is returned with its review
+ * card. All other questions use the existing evidence-backed composer.
+ */
+export function composeAskFyd(ctx: AskFydContext, question: string): AskFydAnswer {
+  const intent = detectSitePatchIntent(ctx, question);
+  if (intent) {
+    const refusal = sitePatchRefusal(ctx);
+    if (refusal) return refusalAnswer(ctx, refusal);
+    const drafted = draftSitePatchProposal(ctx, intent);
+    if ("refusal" in drafted) return refusalAnswer(ctx, drafted.refusal);
+    const proposal = drafted.proposal;
+    return {
+      ...baseFields(ctx),
+      answer: proposal.note,
+      proposal,
+      partial: false,
+      sitePatchCard: buildSitePatchCard(ctx, proposal),
+    };
+  }
+  const base = composeAnswer(ctx.base, question);
+  return { ...base, sitePatchCard: null };
+}
+
+===== FILE: ask-pipeline.ts =====
+/**
+ * Tenant-safe Ask FYD request handling, shared by POST /api/fyd/ask and
+ * POST /api/fyd/ask/[siteId].
+ *
+ * G3 (tenant from the trusted path): the nested /ask/[siteId] route derives
+ * the tenant from the route path param, never from the request body or URL
+ * query. A TenantContext is constructed server-side via requireTenantContext
+ * (which also enforces the DNS-safe slug pattern, killing path traversal).
+ * Any body-supplied tenant identity (siteId / tenantId / tenant keys) that
+ * disagrees with the route tenant is REFUSED with 400 tenant_mismatch: the
+ * request is served for the route tenant or refused, never for the
+ * body-claimed tenant.
+ *
+ * The legacy flat POST /api/fyd/ask keeps its body contract ({ siteId,
+ * objectId?, question, mode }) but now constructs the TenantContext
+ * server-side from
+ * the validated body siteId (previously: no tenant context at all). The
+ * nested route is the trusted-path surface; prefer it for new callers.
+ *
+ * 3-class response contract: every 200 response carries
+ * answerClass ("supported" | "derived" | "unknown"), every citation
+ * carries claimClass ("supported" | "derived"), and the 200 body also
+ * carries unknowns (string[]), suggestedActions (available actions,
+ * [] when none), and proposal (draft AskProposal or null).
+ * A refusal (no cited evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
+ * GENERATED_COPY claims make the answer "derived" and are explicitly
+ * labeled in the citation basis.
+ *
+ * Object-scoped ask: the optional body objectId selects the target
+ * object INSIDE the route tenant's public graph; the tenant is still
+ * chosen by the route path (or the validated body siteId on the legacy
+ * flat route), never by objectId. Unknown ids -> 404 unknown_object;
+ * non-public objects never enter the public graph, so they fail closed
+ * the same way. objectId is object identity only, never a tenant key.
+ *
+ * Visitor vs owner scope: mode "visitor" (default) answers from PUBLIC
+ * facts only. mode "owner" is accepted for a future authenticated lane but
+ * until that lane exists it is treated as visitor-safe: it grants nothing
+ * and changes nothing. There is deliberately no code path here that serves
+ * owner-private facts.
+ */
+import { NextRequest, NextResponse } from "next/server";
+import {
+  answerAskFyd,
+  type AnswerAskFydDeps,
+  type AskFydCitation,
+  type AskFydMode,
+  type AskFydOutcome,
+} from "@/fyd/ask/visitor-answer";
+import {
+  requireTenantContext,
+  TenantContextError,
+} from "@/fyd/tenant/tenant-context";
+import { getSiteBundle, type SiteBundle } from "@/fyd/media/site-bundle";
+import type { FydOverlayReader } from "@/fyd/data/fyd-tenant-graph";
+import { applyOwnerFieldCorrections } from "@/fyd/object/owner-overlay";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/** Answer-level class for the 3-class contract. */
+export type AskAnswerClass = "supported" | "derived" | "unknown";
+
+const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
+
+/**
+ * Bundle loader for Ask FYD: loads the site bundle through the authorized
+ * application read seam (fixture base graph + journal overlays via the
+ * governed PingObjectReader, digest-verified) and composes the tenant's
+ * owner overlay (field corrections) over it, ABOVE the read seam. The read
+ * model is the authorized graph read, so a correction the owner approved is
+ * reflected in Ask FYD answers, cited as an owner override while the
+ * source's value stays recorded as what the source says. Fail closed: on
+ * overlay failure the raw bundle is served, never an invented value.
+ *
+ * The reader override exists for tests only; production always uses the
+ * governed reader.
+ */
+export async function loadBundleWithOwnerOverlay(
+  siteId: string,
+  reader?: FydOverlayReader,
+): Promise<SiteBundle | null> {
+  const bundle = await getSiteBundle(siteId, reader ? { reader } : undefined);
+  if (!bundle) return null;
+  try {
+    const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
+    return { ...bundle, graph: overlaid.graph };
+  } catch {
+    return bundle;
+  }
+}
+
+/** Body keys that claim a tenant identity. Only the route path may do that. */
+const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
+
+/**
+ * Reduce one answered outcome to its 3-class label. A refusal (or an answer
+ * with no citations) is "unknown": the pipeline had nothing to stand on.
+ * Any derived/inferred/generated claim makes the whole answer "derived".
+ */
+export function answerClassFor(
+  refusal: boolean,
+  citations: AskFydCitation[],
+): AskAnswerClass {
+  if (refusal || citations.length === 0) return "unknown";
+  return citations.some((c) => c.claimClass === "derived") ? "derived" : "supported";
+}
+
+function tenantMismatchResponse(
+  routeTenantId: string,
+  key: string,
+  claimed: string,
+): NextResponse {
+  return NextResponse.json(
+    {
+      ok: false,
+      code: "tenant_mismatch",
+      error:
+        "Tenant identity comes from the request route, not the request body: " +
+        "the body claimed tenant \"" +
+        claimed +
+        "\" under key \"" +
+        key +
+        "\" while the route serves tenant \"" +
+        routeTenantId +
+        "\". The request was refused; nothing was served for the claimed tenant.",
+      routeTenantId,
+      rejectedKey: key,
+    },
+    { status: 400 },
+  );
+}
+
+function invalidTenantResponse(raw: string): NextResponse {
+  return NextResponse.json(
+    {
+      ok: false,
+      code: "invalid_tenant",
+      error:
+        "Refusing to act: \"" +
+        raw +
+        "\" is not a valid tenant id. Tenant ids are DNS-safe slugs.",
+    },
+    { status: 400 },
+  );
+}
+
+/**
+ * Handle one Ask FYD POST.
+ *
+ * @param routeTenantId the tenant from the trusted route path
+ *   (/api/fyd/ask/[siteId]), or null for the legacy flat route where the
+ *   subject tenant comes from the validated body siteId.
+ */
+export async function handleAskRequest(
+  routeTenantId: string | null,
+  request: NextRequest,
+): Promise<NextResponse> {
+  let body: unknown = null;
+  try {
+    body = await request.json();
+  } catch {
+    body = null;
+  }
+  const record =
+    typeof body === "object" && body !== null ? (body as Record<string, unknown>) : ({} as Record<string, unknown>);
+
+  let siteId: string;
+  if (routeTenantId !== null) {
+    // Trusted path: the tenant is the route param, constructed server-side.
+    try {
+      siteId = requireTenantContext({ tenantId: routeTenantId });
+    } catch (err) {
+      if (err instanceof TenantContextError) return invalidTenantResponse(routeTenantId);
+      throw err;
+    }
+    // Reject body-supplied tenant identity that disagrees with the route.
+    // A matching claim is harmless and ignored; a mismatch is refused.
+    for (const key of TENANT_CLAIM_KEYS) {
+      const claimed = record[key];
+      if (typeof claimed === "string" && claimed.trim().length > 0 && claimed.trim() !== siteId) {
+        return tenantMismatchResponse(siteId, key, claimed.trim());
+      }
+    }
+  } else {
+    // Legacy flat route: subject tenant from the validated body siteId,
+    // constructed server-side (previously no tenant context existed here).
+    const raw = typeof record.siteId === "string" ? record.siteId.trim() : "";
+    if (!raw) {
+      return NextResponse.json({ ok: false, error: "Unknown site." }, { status: 404 });
+    }
+    try {
+      siteId = requireTenantContext({ tenantId: raw });
+    } catch (err) {
+      if (err instanceof TenantContextError) return invalidTenantResponse(raw);
+      throw err;
+    }
+  }
+
+  const question = typeof record.question === "string" ? record.question : "";
+  const rawObjectId = typeof record.objectId === "string" ? record.objectId.trim() : "";
+  const mode = record.mode === undefined ? "visitor" : record.mode;
+  if (!VALID_MODES.includes(mode as AskFydMode)) {
+    return NextResponse.json(
+      { ok: false, error: "mode must be 'visitor' or 'owner'." },
+      { status: 400 },
+    );
+  }
+
+  // The bundle loads through the authorized graph read on every request
+  // (re-read on every serve). A load or verification failure is the same
+  // honest unknown as a missing projection: never an answer, never a leak.
+  let bundle: SiteBundle | null;
+  try {
+    bundle = await loadBundleWithOwnerOverlay(siteId);
+  } catch (err) {
+    console.error(
+      `answerAskFyd: projection load failed for site "${siteId}":`,
+      err instanceof Error ? err.message : err,
+    );
+    return NextResponse.json(
+      {
+        ok: false,
+        kind: "projection_unavailable",
+        error:
+          "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+        attempted: "load the site's verified data projection",
+        answerUnknown: true,
+      },
+      { status: 503 },
+    );
+  }
+
+  const deps: AnswerAskFydDeps = {
+    // Tenant-scoped: the answer engine can only ever load this request's
+    // tenant bundle, never another tenant's graph.
+    loadBundle: (id) => (id === siteId ? bundle : null),
+  };
+
+  let outcome: AskFydOutcome;
+  try {
+    outcome = answerAskFyd(
+      {
+        siteId,
+        objectId: rawObjectId.length > 0 ? rawObjectId : undefined,
+        question,
+        mode: mode as AskFydMode,
+      },
+      deps,
+    );
+  } catch {
+    // The pipeline never throws by contract, but a route handler must never
+    // leak an empty 500 if anything ever does: fail honestly and structurally.
+    return NextResponse.json(
+      {
+        ok: false,
+        kind: "internal_error",
+        error: "Ask FYD hit an unexpected problem. The answer is unknown.",
+        answerUnknown: true,
+      },
+      { status: 500 },
+    );
+  }
+  if (!outcome.ok) {
+    switch (outcome.error.kind) {
+      case "unknown_site":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
+      case "bad_question":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+      case "bad_mode":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+      case "unknown_object":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
+      case "projection_unavailable":
+        return NextResponse.json(
+          {
+            ok: false,
+            kind: outcome.error.kind,
+            error: outcome.error.message,
+            attempted: "load the site's verified data projection",
+            answerUnknown: true,
+          },
+          { status: 503 },
+        );
+      default:
+        return NextResponse.json(
+          { ok: false, error: "This site is not available right now." },
+          { status: 500 },
+        );
+    }
+  }
+  return NextResponse.json({
+    ok: true,
+    answer: outcome.answer,
+    answerClass: answerClassFor(outcome.refusal, outcome.citations),
+    refusal: outcome.refusal,
+    citations: outcome.citations,
+    // Carried from the internal AskAnswer: unknowns and suggestedActions
+    // are [] when the composer found none; proposal is null unless the
+    // answer drafted one. Nothing here is ever invented.
+    unknowns: outcome.unknowns,
+    suggestedActions: outcome.suggestedActions,
+    proposal: outcome.proposal,
+    tenantId: siteId,
+  });
+}
+
+===== FILE: ask-route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { handleAskRequest } from "./ask-pipeline";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/**
+ * POST /api/fyd/ask (legacy flat route).
+ *
+ * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+ *
+ * Body: { siteId: string, objectId?: string, question: string, mode?: "visitor" | "owner" }
+ *
+ * - mode "visitor" (default): anonymous, public objects only, no grants.
+ * - mode "owner": accepted for a future authenticated lane; until that lane
+ *   exists it is treated as visitor-safe and grants nothing.
+ *
+ * The subject tenant is constructed server-side into a TenantContext from
+ * the validated body siteId (G3 hardening: previously no tenant context
+ * existed on this route). New callers should prefer the trusted-path route
+ * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
+ * and any body-supplied tenant identity is refused on mismatch.
+ *
+ * Response: { ok: true, answer, answerClass, refusal, citations,
+ *   unknowns, suggestedActions, proposal, tenantId }
+ *   unknowns is string[]; suggestedActions is the available-actions list
+ *   ([] when none); proposal is a draft AskProposal or null.
+ *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+ *   Every citation carries claimClass ("supported" | "derived").
+ * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /
+ * invalid_tenant, 503 projection unavailable (answer unknown), 500 bundle
+ * invalid or unexpected internal failure. Every failure is structured JSON
+ * naming the failure kind; the answer is unknown in every failure case
+ * (answerUnknown: true), never an empty body.
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  return handleAskRequest(null, request);
+}
+
+===== FILE: capabilities.ts =====
+/**
+ * Ask FYD agent capability boundary.
+ *
+ * Builds on the user-facing grant authority (lib/ping/grants) and adds the
+ * agent-side law: the agent sees only agentGrants, the forbidden effects
+ * stripped. Agent suggestions never authorize publishing, messages,
+ * purchases, advertising, provider actions, or business-data mutations.
+ * The check is fail-closed: unknown grants are denied, not allowed.
+ */
+
+import { MAINTAIN_SITE_GRANTS } from "../../lib/ping/grants";
+import type { FydGrant } from "../../lib/ping/types";
+
+/**
+ * Effects an agent suggestion can NEVER authorize. This list is the
+ * enforcement point; agentGrants strips these before the agent sees them.
+ */
+export const FORBIDDEN_AGENT_EFFECTS: readonly FydGrant[] = [
+  "site.publish",
+  "message.send",
+  "purchase.make",
+  "ad.buy",
+  "provider.call",
+  "business.mutate",
+];
+
+/** True when an agent suggestion may authorize this grant. Fail-closed. */
+export function canAgentAuthorize(grant: FydGrant): boolean {
+  return !FORBIDDEN_AGENT_EFFECTS.includes(grant);
+}
+
+/** Throw when an agent path touches a forbidden effect. Defense in depth. */
+export function assertAgentEffectAllowed(grant: FydGrant): void {
+  if (!canAgentAuthorize(grant)) {
+    throw new Error(`Ask FYD agent boundary: '${grant}' is never agent-authorized.`);
+  }
+}
+
+/** Grants as the agent sees them: forbidden effects stripped, stable order. */
+export function agentGrants(grants: FydGrant[]): FydGrant[] {
+  return grants.filter(canAgentAuthorize);
+}
+
+/** Human-readable permission set shown at consent time. */
+export interface PermissionSet {
+  id: string;
+  title: string;
+  summary: string;
+  /** Exact granular grants; expansion is closed (nothing more, nothing less). */
+  grants: FydGrant[];
+}
+
+/**
+ * "Help maintain my site": the bundle an owner grants. Expands to site.read,
+ * site.propose, and object.reference. It never includes site.publish.
+ */
+export const PERMISSION_SETS: Record<string, PermissionSet> = {
+  maintain_site: {
+    id: "maintain_site",
+    title: "Help maintain my site",
+    summary:
+      "Let Ask FYD read your site and draft site changes for your approval. It cannot publish anything on its own.",
+    grants: [...MAINTAIN_SITE_GRANTS],
+  },
+};
+
+/** Expand a permission set to its exact granular grants. Unknown ids throw. */
+export function expandPermissionSet(id: string): FydGrant[] {
+  const set = PERMISSION_SETS[id];
+  if (!set) throw new Error(`capabilities: unknown permission set '${id}'.`);
+  return [...set.grants];
+}
+
+===== FILE: circle-actions.ts =====
+/**
+ * Capability-gated action mapping for the Circle card.
+ *
+ * The Circle is the portable doorway into an FYD Node. Every rendered
+ * action binds to a real capability from the plan: actions the plan does
+ * not contain are hidden, never rendered dead. Unknown future kinds are
+ * skipped (fail closed), so a planner change can never surface a button
+ * that does nothing.
+ */
+
+import type { CapabilityPlan, PlannedAction } from "../../lib/ping/types";
+
+export type CircleUiAction =
+  | { kind: "follow" | "unfollow"; action: PlannedAction }
+  | { kind: "open" | "open_site"; action: PlannedAction }
+  | { kind: "ask"; action: PlannedAction; label: string }
+  | { kind: "propose_site_patch"; action: PlannedAction; label: string }
+  | { kind: "open_website"; action: PlannedAction };
+
+/**
+ * Map a capability plan to the Circle's action row. Pure function.
+ * like/unlike/reply/reference never render on identity cards; they stay
+ * available in the Ask panel's suggested actions where they belong.
+ */
+export function circleUiActions(plan: CapabilityPlan | null, askLabel: string): CircleUiAction[] {
+  if (!plan) return [];
+  const out: CircleUiAction[] = [];
+  for (const action of plan.actions) {
+    switch (action.kind) {
+      case "follow":
+      case "unfollow":
+      case "open":
+      case "open_site":
+      case "open_website":
+        out.push({ kind: action.kind, action });
+        break;
+      case "ask":
+        out.push({ kind: "ask", action, label: askLabel });
+        break;
+      case "propose_site_patch":
+        out.push({ kind: "propose_site_patch", action, label: "Propose site change" });
+        break;
+      default:
+        break;
+    }
+  }
+  return out;
+}
+
+===== FILE: context-builder.ts =====
+/**
+ * Ask FYD bounded context builder: ONE builder, not prompts scattered
+ * through React.
+ *
+ * Takes the object graph plus the SiteSpec summary plus evidence plus
+ * capabilities plus the request and produces the deterministic agent
+ * context. Pure function: same inputs always produce the same context.
+ *
+ * Agent boundary law (enforced here, not in prompts):
+ * - Agent suggestions NEVER authorize publishing, messages, purchases,
+ *   advertising, provider actions, or business-data mutations.
+ * - The agent sees only agentGrants, the forbidden effects stripped.
+ * - The context binds the exact SiteSpec digest the agent reasoned over.
+ */
+
+import { buildAskContext } from "../../lib/ping/ask-composer";
+import { agentGrants, assertAgentEffectAllowed, FORBIDDEN_AGENT_EFFECTS } from "./capabilities";
+import type { AskFydContext, AskFydContextInput } from "./types";
+
+export function buildAskFydContext(input: AskFydContextInput): AskFydContext {
+  const base = buildAskContext({
+    viewer: input.viewer,
+    target: input.target,
+    relatedObjects: input.relatedObjects,
+    relationships: input.relationships,
+    plan: input.plan,
+  });
+  const grants = [...new Set(input.grants)];
+  const agentGrantList = agentGrants(grants);
+  for (const grant of agentGrantList) assertAgentEffectAllowed(grant);
+  return {
+    base,
+    siteSpec: input.siteSpec,
+    siteSpecDigest: input.siteSpec ? input.siteSpec.digest : null,
+    grants,
+    agentGrantList,
+    capabilitiesLine: agentGrantList.join(","),
+    forbiddenEffects: FORBIDDEN_AGENT_EFFECTS,
+    request: { question: input.question },
+  };
+}
+
+===== FILE: envelope.ts =====
+/**
+ * FYD canonical envelope kit (Ask FYD signing path).
+ *
+ * Port of the PING canonical envelope construction (A1 harvest):
+ * Ed25519 signing with the payload hash bound into the signed bytes.
+ *
+ * Construction:
+ *   1. stripped = body minus `proof` minus `payload_hash`
+ *   2. payload_hash = raw SHA-256 hex of canonicalBytes(stripped)
+ *   3. signature = Ed25519 over canonicalBytes({ ...stripped, payload_hash })
+ *      (the signed bytes commit to the hash binding)
+ *   4. attach proof = { verification_method, signature, public_key }
+ *      (public_key is SPKI DER hex; the proof is never part of the signed bytes)
+ *
+ * Serializer pin (FYD decision, 2026-09-21): sha256-canonical-json-v1, the
+ * same canonicalizer the proposal digest law uses. One serializer for
+ * digests and signatures, so a signed proposal's payload_hash always equals
+ * its proposal digest. The PING-side duality (HashAuthority UTF-16 sort vs
+ * RFC-8785) is documented in the harvest and stays out of this module:
+ * FYD pins this one rule and does not combine it with another.
+ *
+ * Key custody: this module never sees private keys. Callers pass a signing
+ * function they already hold; the module only shapes bytes. node:crypto
+ * only, zero npm dependencies.
+ */
+
+import { createHash, createPublicKey, verify } from "node:crypto";
+import { canonicalize } from "../../lib/ping/ask-composer";
+import type { SitePatchEnvelope } from "../../lib/ping/types";
+
+/** Canonical bytes for the pinned serializer. Shared with the digest law. */
+export function canonicalBytes(value: unknown): string {
+  return canonicalize(value);
+}
+
+/** Raw SHA-256 hex of the canonical bytes of the stripped body. */
+export function payloadHash(stripped: Record<string, unknown>): string {
+  return createHash("sha256").update(canonicalBytes(stripped), "utf8").digest("hex");
+}
+
+/** A signing function the caller holds; the module never sees private keys. */
+export interface Signer {
+  /** Sign the exact canonical bytes; returns the signature as hex. */
+  sign: (bytes: string) => string;
+  /** SPKI DER hex of the Ed25519 public key matching the signer. */
+  publicKeyDerHex: string;
+}
+
+/**
+ * Sign an envelope body per the construction above. Throws when the signer
+ * misbehaves; never silently produces an unsigned envelope.
+ */
+export function signEnvelope(body: Record<string, unknown>, signer: Signer): SitePatchEnvelope {
+  const stripped: Record<string, unknown> = { ...body };
+  delete stripped.proof;
+  delete stripped.payload_hash;
+  const hash = payloadHash(stripped);
+  const signature = signer.sign(canonicalBytes({ ...stripped, payload_hash: hash }));
+  if (typeof signature !== "string" || signature.length === 0) {
+    throw new Error("envelope: signer returned an empty signature.");
+  }
+  return {
+    // By construction the canonical bytes hash of the stripped body IS the
+    // payload hash; the field names the harvested envelope law explicitly.
+    canonical_bytes_hash: hash,
+    body: stripped,
+    payload_hash: hash,
+    proof: {
+      verification_method: "ed25519",
+      signature,
+      public_key: signer.publicKeyDerHex,
+    },
+  };
+}
+
+/**
+ * Verify an envelope. Returns false (never throws) when anything is
+ * malformed, the hash binding breaks, or the signature does not verify.
+ */
+export function verifyEnvelope(envelope: SitePatchEnvelope): boolean {
+  try {
+    const { body, payload_hash, proof, canonical_bytes_hash } = envelope;
+    if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+    if (typeof payload_hash !== "string" || !/^[0-9a-f]{64}$/.test(payload_hash)) return false;
+    if (typeof canonical_bytes_hash !== "string" || canonical_bytes_hash !== payloadHash(body)) return false;
+    if (!proof || proof.verification_method !== "ed25519") return false;
+    if (typeof proof.signature !== "string" || proof.signature.length === 0) return false;
+    if (typeof proof.public_key !== "string" || proof.public_key.length === 0) return false;
+    if (payloadHash(body) !== payload_hash) return false;
+    const publicKey = createPublicKey({
+      key: Buffer.from(proof.public_key, "hex"),
+      format: "der",
+      type: "spki",
+    });
+    const signedBytes = Buffer.from(canonicalBytes({ ...body, payload_hash }), "utf8");
+    return verify(null, signedBytes, publicKey, Buffer.from(proof.signature, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+===== FILE: site-spec.ts =====
+/**
+ * Ask FYD site-spec surface contract.
+ *
+ * The SiteSpec generator lives in the sibling lane (src/fyd/sitespec); this
+ * module defines the MINIMAL digest-bound summary Ask FYD needs to draft
+ * site-patch proposals, plus the provider seam the generator plugs into.
+ * Ask FYD never imports the generator directly (one-writer rule): the
+ * generator registers a provider here.
+ *
+ * The summary binds the exact spec digest the agent reasoned over, so a
+ * proposal's siteSpecDigest can be re-verified against the current spec
+ * before anything is applied.
+ */
+
+import type { FYDPage } from "../sitespec/types";
+
+/** The digest-bound page summary Ask FYD reasons over. */
+export interface SiteSpecSummary {
+  /** Stable site id (the owning business/organization object id). */
+  siteId: string;
+  /** Page slug from the sibling spec, e.g. "home". */
+  pageSlug: string;
+  /** SHA-256 hex of the canonical SiteSpec JSON this summary was cut from. */
+  digest: string;
+  /** The sibling lane's page: sections, queries, presentation. Read-only here. */
+  page: FYDPage;
+  /** sectionId -> object ids in current display order. */
+  sectionObjects: Record<string, string[]>;
+  /**
+   * sectionId -> current presentation values the agent may propose changes
+   * to (heading, copy, featuredIds, tone, ...). The sibling lane decides how
+   * these persist; Ask FYD only drafts transitions between stated values.
+   */
+  presentation: Record<string, Record<string, string | string[] | boolean | null>>;
+}
+
+/** The seam the SiteSpec lane implements. */
+export interface SiteSpecProvider {
+  getSummary(siteId: string): Promise<SiteSpecSummary | null>;
+}
+
+const nullProvider: SiteSpecProvider = {
+  async getSummary() {
+    return null;
+  },
+};
+
+let provider: SiteSpecProvider = nullProvider;
+
+/**
+ * The SiteSpec lane registers its generator-backed provider here.
+ * Default is the null provider: Ask FYD honestly reports it has no spec.
+ */
+export function registerSiteSpecProvider(next: SiteSpecProvider): void {
+  provider = next;
+}
+
+export function getSiteSpecProvider(): SiteSpecProvider {
+  return provider;
+}
+
+===== FILE: types.ts =====
+/**
+ * Ask FYD agent-layer types. The agent context, intents, and review card.
+ * Graph and proposal primitives stay in lib/ping/types.
+ */
+
+import type {
+  AskAnswer,
+  AskContext,
+  CapabilityPlan,
+  FydGrant,
+  PingObject,
+  PingRelationship,
+} from "../../lib/ping/types";
+import type { SiteSpecSummary } from "./site-spec";
+
+export type { SiteSpecSummary };
+export type { FydGrant };
+
+export interface AskFydContextInput {
+  viewer: { id: string | null; displayName: string | null };
+  target: PingObject | null;
+  relatedObjects: PingObject[];
+  relationships: PingRelationship[];
+  plan: CapabilityPlan | null;
+  grants: FydGrant[];
+  siteSpec: SiteSpecSummary | null;
+  question: string;
+}
+
+/**
+ * The bounded agent context: the object-graph context plus the SiteSpec
+ * summary, the digest binding, and the capability line the agent reasons
+ * under. Built by exactly one builder (context-builder.ts).
+ */
+export interface AskFydContext {
+  base: AskContext;
+  siteSpec: SiteSpecSummary | null;
+  /** Digest of the spec the agent reasoned over; proposals bind it. */
+  siteSpecDigest: string | null;
+  /** Grants for this viewer on this target (human/UI view). */
+  grants: FydGrant[];
+  /** Grants as the agent sees them: forbidden effects stripped. */
+  agentGrantList: FydGrant[];
+  /** Deterministic capability line for the agent context. */
+  capabilitiesLine: string;
+  /** Effects the agent may never authorize. */
+  forbiddenEffects: readonly FydGrant[];
+  request: { question: string };
+}
+
+/**
+ * Site-change intents Ask FYD can draft. Detection is keyword-anchored and
+ * deterministic; authority is checked separately.
+ */
+export type SitePatchIntent =
+  | { kind: "reorder_services_first"; serviceName: string }
+  | { kind: "professionalize" }
+  | { kind: "feature_object"; objectId: string; objectTitle: string };
+
+/** Human review card for a site_patch proposal. Rendered before approval. */
+export interface SitePatchCard {
+  title: string;
+  before: string[];
+  after: string[];
+  evidenceReason: string;
+  affectedObjects: { id: string; title: string }[];
+  operationCount: number;
+  siteSpecDigest: string;
+}
+
+/** Ask FYD answer: the base answer plus the site-patch review card. */
+export interface AskFydAnswer extends AskAnswer {
+  sitePatchCard: SitePatchCard | null;
+}
+

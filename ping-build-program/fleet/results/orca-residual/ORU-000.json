@@ -1,0 +1,27 @@
+{
+  "mission_id": "ORU-000",
+  "verdict": "FALSIFIED",
+  "summary": "FALSIFIED (control): old timeout->assume-failed->retry path produced 3 consequential effects for ONE logical operation (attempts=3). The invariant is violated under the pre-fix behavior, exactly the T2 chain proven live on the Pig.",
+  "evidence_files": [
+    "fleet/work/orca-residual/evidence/ORU-000-events.jsonl"
+  ],
+  "confidence": 1,
+  "detail": {
+    "effects": 3,
+    "attempts": 3,
+    "opKey": "9a9d94b77acbd34667102ce5813f7a16ece6946db235cc7245a099a294ac274a",
+    "eventCounts": {
+      "MISSION_FAILED": 3
+    },
+    "journalStats": {
+      "emitted": 3,
+      "persisted": 3,
+      "deduplicated": 0,
+      "failed": 0,
+      "collisions": 0
+    }
+  },
+  "followup": "None: control behaved as the T2 finding predicts. The fix (ORU-001..006) must hold the invariant where this control breaks it.",
+  "matrix": "orca-residual",
+  "at": "2026-09-24T11:43:44.716Z"
+}

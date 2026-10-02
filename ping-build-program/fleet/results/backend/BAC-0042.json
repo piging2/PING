@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0042",
+ "verdict": "PROVEN",
+ "summary": "BEFORE deepcopy snapshot per snapshot (4k keys): 2.68ms; AFTER diff-chain append: ~0.00ms. Delta 100% vs noise 44.4%. Take-path improvement proven; restore-by-replay cost not measured (see BAC-0007 followup).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 2.676,
+  "after_ms": 0.0006,
+  "metric": "take_snapshot_4k_keys",
+  "change": "incremental diff-chain snapshot instead of full deepcopy per snapshot",
+  "case": 41
+ }
+}

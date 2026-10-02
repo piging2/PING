@@ -1,0 +1,43 @@
+{
+ "case0_crash_before_ack": {
+  "applied_before_crash": false,
+  "after_retry": "v0",
+  "retry_safe": true,
+  "pass": true
+ },
+ "case1_crash_after_ack": {
+  "value": "v1",
+  "replayed": false,
+  "exactly_once": true,
+  "pass": true
+ },
+ "case2_journal_diff": {
+  "values": {
+   "a": "1",
+   "b": "2",
+   "c": "3",
+   "d": "4"
+  },
+  "acked": [
+   "a",
+   "b",
+   "c",
+   "d"
+  ],
+  "zero_loss": true,
+  "zero_dup": true,
+  "pass": true
+ },
+ "case3_no_torn": {
+  "final_after_kill": "old-version",
+  "pass": true
+ },
+ "case4_partial_refused": {
+  "refused": [
+   "dump.sql.gz",
+   "snap.bin"
+  ],
+  "pass": true
+ },
+ "all_50_pass": true
+}

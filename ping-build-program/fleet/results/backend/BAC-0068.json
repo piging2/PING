@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0068",
+ "verdict": "PROVEN",
+ "summary": "BEFORE restore = copy latest of 50 full checkpoints (25000 entries stored); AFTER restore = latest of 5 full + replay 9 deltas (2545 entries, 90% smaller). Restore time parity (both ~0.00ms, within noise). Storage claim proven; this completes the restore-side measurement BAC-0033 deferred.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0015,
+  "after_ms": 0.0025,
+  "metric": "restore_latest",
+  "change": "compacted chain (5 full + deltas): restore replays 9 deltas vs read one full",
+  "case": 67,
+  "extra": {
+   "stored_entries_before": 25000,
+   "stored_entries_after": 2545,
+   "note": "storage 89% smaller; restore slightly slower \u2014 the classic tradeoff, both measured"
+  }
+ }
+}

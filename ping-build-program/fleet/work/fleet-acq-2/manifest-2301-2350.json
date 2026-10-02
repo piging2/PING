@@ -1,0 +1,616 @@
+[
+ {
+  "case": 0,
+  "mission_no": 2301,
+  "slug": "utf16le-bom",
+  "bound": "MALFORMED",
+  "binary": true,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "UTF-16LE BOM: decoded, flagged",
+  "expect_flags": [
+   "utf16_bom"
+  ]
+ },
+ {
+  "case": 1,
+  "mission_no": 2302,
+  "slug": "utf16be-bom",
+  "bound": "MALFORMED",
+  "binary": true,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "UTF-16BE BOM: decoded, flagged",
+  "expect_flags": [
+   "utf16_bom"
+  ]
+ },
+ {
+  "case": 2,
+  "mission_no": 2303,
+  "slug": "charset-meta",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "declared utf-8, content matches",
+  "expect_flags": []
+ },
+ {
+  "case": 3,
+  "mission_no": 2304,
+  "slug": "charset-conflict",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "conflicting charsets: first wins, conflict flagged",
+  "expect_flags": [
+   "charset_conflict"
+  ]
+ },
+ {
+  "case": 4,
+  "mission_no": 2305,
+  "slug": "bom-vs-meta",
+  "bound": "MALFORMED",
+  "binary": true,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "BOM wins over meta, flagged",
+  "expect_flags": [
+   "bom_wins"
+  ]
+ },
+ {
+  "case": 5,
+  "mission_no": 2306,
+  "slug": "http-equiv-ct",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "http-equiv content type recorded",
+  "expect_flags": [
+   "charset_declared"
+  ]
+ },
+ {
+  "case": 6,
+  "mission_no": 2307,
+  "slug": "svg-script",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "script inside SVG still inert",
+  "expect_flags": [
+   "script_inert",
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 7,
+  "mission_no": 2308,
+  "slug": "svg-a-xlink",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "SVG xlink:href recorded as untrusted ref",
+  "expect_flags": [
+   "untrusted_ref",
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 8,
+  "mission_no": 2309,
+  "slug": "svg-a-href",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "SVG2 href recorded",
+  "expect_flags": [
+   "untrusted_ref",
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 9,
+  "mission_no": 2310,
+  "slug": "mathml",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "MathML inert, text extracted",
+  "expect_flags": [
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 10,
+  "mission_no": 2311,
+  "slug": "svg-image",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "SVG image href unfetched",
+  "expect_flags": [
+   "untrusted_ref",
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 11,
+  "mission_no": 2312,
+  "slug": "svg-foreignobject",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "foreignObject HTML parsed as HTML",
+  "expect_flags": [
+   "foreign_content"
+  ]
+ },
+ {
+  "case": 12,
+  "mission_no": 2313,
+  "slug": "hidden-token",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "secret-shaped hidden value redacted",
+  "expect_flags": [
+   "secret_redacted"
+  ]
+ },
+ {
+  "case": 13,
+  "mission_no": 2314,
+  "slug": "hidden-page",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "non-secret hidden value kept verbatim",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 2315,
+  "slug": "password-input",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "password field noted, no value captured",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 15,
+  "mission_no": 2316,
+  "slug": "apikey-value",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "api_key value redacted by name shape",
+  "expect_flags": [
+   "secret_redacted"
+  ]
+ },
+ {
+  "case": 16,
+  "mission_no": 2317,
+  "slug": "textarea-notes",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "plain textarea kept",
+  "expect_flags": [
+   "form_field_recorded",
+   "rawtext_element"
+  ]
+ },
+ {
+  "case": 17,
+  "mission_no": 2318,
+  "slug": "base-single",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "single absolute base: relative resolved, flagged",
+  "expect_flags": [
+   "base_applied",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 18,
+  "mission_no": 2319,
+  "slug": "base-relative",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative base: refs stay unresolved",
+  "expect_flags": [
+   "base_recorded",
+   "unresolved_ref"
+  ]
+ },
+ {
+  "case": 19,
+  "mission_no": 2320,
+  "slug": "base-multiple",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "multiple bases: conflict, unresolved",
+  "expect_flags": [
+   "base_conflict",
+   "unresolved_ref"
+  ]
+ },
+ {
+  "case": 20,
+  "mission_no": 2321,
+  "slug": "base-target",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "base target recorded",
+  "expect_flags": [
+   "base_recorded",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 21,
+  "mission_no": 2322,
+  "slug": "base-js",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript base dropped",
+  "expect_flags": [
+   "scheme_dropped",
+   "unresolved_ref"
+  ]
+ },
+ {
+  "case": 22,
+  "mission_no": 2323,
+  "slug": "zw-text",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "zero-width chars kept verbatim, flagged",
+  "expect_flags": [
+   "zw_chars"
+  ]
+ },
+ {
+  "case": 23,
+  "mission_no": 2324,
+  "slug": "bidi-text",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bidi override neutralized in normalized view",
+  "expect_flags": [
+   "bidi_neutralized"
+  ]
+ },
+ {
+  "case": 24,
+  "mission_no": 2325,
+  "slug": "soft-hyphen",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "soft hyphen kept verbatim, flagged",
+  "expect_flags": [
+   "soft_hyphen"
+  ]
+ },
+ {
+  "case": 25,
+  "mission_no": 2326,
+  "slug": "homoglyph-domain",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "cyrillic-a domain flagged",
+  "expect_flags": [
+   "idn_suspect",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 26,
+  "mission_no": 2327,
+  "slug": "punycode",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "punycode recorded verbatim",
+  "expect_flags": [
+   "punycode_noted",
+   "untrusted_ref"
+  ]
+ },
+ {
+  "case": 27,
+  "mission_no": 2328,
+  "slug": "contenteditable",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "contenteditable recorded as attr, no behavior",
+  "expect_flags": [
+   "attr_recorded"
+  ]
+ },
+ {
+  "case": 28,
+  "mission_no": 2329,
+  "slug": "dialog-open",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "dialog text extracted, no modal semantics",
+  "expect_flags": []
+ },
+ {
+  "case": 29,
+  "mission_no": 2330,
+  "slug": "details",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "details content extracted regardless of open state",
+  "expect_flags": [
+   "details_present"
+  ]
+ },
+ {
+  "case": 30,
+  "mission_no": 2331,
+  "slug": "input-types",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "input types recorded verbatim",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 31,
+  "mission_no": 2332,
+  "slug": "file-input",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "file input recorded, no file interaction",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 32,
+  "mission_no": 2333,
+  "slug": "select",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "options extracted as text",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 33,
+  "mission_no": 2334,
+  "slug": "label",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "label text extracted",
+  "expect_flags": [
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 34,
+  "mission_no": 2335,
+  "slug": "button-formaction",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "button formaction recorded as claimed endpoint",
+  "expect_flags": [
+   "form_action_claimed"
+  ]
+ },
+ {
+  "case": 35,
+  "mission_no": 2336,
+  "slug": "object-data",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "object data unfetched",
+  "expect_flags": [
+   "plugin_data_unfetched"
+  ]
+ },
+ {
+  "case": 36,
+  "mission_no": 2337,
+  "slug": "embed-src",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "embed src unfetched",
+  "expect_flags": [
+   "plugin_data_unfetched"
+  ]
+ },
+ {
+  "case": 37,
+  "mission_no": 2338,
+  "slug": "applet",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "applet ignored as legacy",
+  "expect_flags": [
+   "legacy_plugin_ignored"
+  ]
+ },
+ {
+  "case": 38,
+  "mission_no": 2339,
+  "slug": "marquee",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "marquee text extracted",
+  "expect_flags": [
+   "legacy_tag"
+  ]
+ },
+ {
+  "case": 39,
+  "mission_no": 2340,
+  "slug": "blink",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "blink text extracted",
+  "expect_flags": [
+   "legacy_tag"
+  ]
+ },
+ {
+  "case": 40,
+  "mission_no": 2341,
+  "slug": "keygen",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "keygen ignored",
+  "expect_flags": [
+   "legacy_tag"
+  ]
+ },
+ {
+  "case": 41,
+  "mission_no": 2342,
+  "slug": "ruby",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "ruby text extracted",
+  "expect_flags": []
+ },
+ {
+  "case": 42,
+  "mission_no": 2343,
+  "slug": "wbr",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "wbr: text joined",
+  "expect_flags": []
+ },
+ {
+  "case": 43,
+  "mission_no": 2344,
+  "slug": "template-nested",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested templates inert",
+  "expect_flags": [
+   "template_inert"
+  ]
+ },
+ {
+  "case": 44,
+  "mission_no": 2345,
+  "slug": "slot",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "slot fallback text extracted",
+  "expect_flags": [
+   "shadow_slot"
+  ]
+ },
+ {
+  "case": 45,
+  "mission_no": 2346,
+  "slug": "noscript-css",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "noscript stylesheet ref recorded unfetched",
+  "expect_flags": [
+   "noscript_provenance",
+   "stylesheet_ref"
+  ]
+ },
+ {
+  "case": 46,
+  "mission_no": 2347,
+  "slug": "draggable",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "drag handlers inert",
+  "expect_flags": [
+   "event_handler_inert",
+   "attr_recorded"
+  ]
+ },
+ {
+  "case": 47,
+  "mission_no": 2348,
+  "slug": "spellcheck",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "attrs recorded verbatim",
+  "expect_flags": [
+   "attr_recorded",
+   "rawtext_element"
+  ]
+ },
+ {
+  "case": 48,
+  "mission_no": 2349,
+  "slug": "autocapitalize",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "input attrs recorded",
+  "expect_flags": [
+   "attr_recorded",
+   "form_field_recorded"
+  ]
+ },
+ {
+  "case": 49,
+  "mission_no": 2350,
+  "slug": "everything2",
+  "bound": "MALFORMED",
+  "binary": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "kitchen sink: base applied, foreign links kept, secret redacted, zw/shy flagged",
+  "expect_flags": [
+   "base_applied",
+   "untrusted_ref",
+   "foreign_content",
+   "secret_redacted",
+   "zw_chars",
+   "soft_hyphen",
+   "charset_declared"
+  ]
+ }
+]

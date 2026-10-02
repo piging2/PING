@@ -1,0 +1,59 @@
+--- /home/hatch/workspace/ping-overnight/drift-sources/mission_runtime.js.HEAD-099927152	2026-09-17 11:37:35.918993631 +0000
++++ /home/hatch/workspace/ping-overnight/drift-sources/mission_runtime.js.live-20260917	2026-09-17 11:37:27.928993656 +0000
+@@ -225,7 +225,7 @@
+       const retryAt = new Date(Date.now() + backoffMs);
+       const result = await this._pool.query(
+         `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3
+-         WHERE mission_id = $4 AND status IN ('running', 'assigned')`,
++         WHERE mission_id = $4 AND status IN ('running', 'assigned', 'retry_pending')`,
+         [error, nextRetry, retryAt.toISOString(), missionId]
+       );
+       affectedRows = result.rowCount || 0;
+@@ -239,6 +239,47 @@
+   }
+ 
+   /**
++   * Reclaim due retries - P0-4 fix (2026-09-16).
++   *
++   * Moves `retry_pending` missions whose `retry_at` has elapsed back to
++   * `created` (AVAILABLE), clearing the stale claim/lease fields left by the
++   * failed attempt. This is the method `failWithRetry()`'s docstring has
++   * always referenced: without it, a retried mission could never be
++   * re-claimed (`assign()` only transitions from `created`) and could never
++   * complete (`complete()` only transitions from `running`) - so any mission
++   * that failed once and succeeded on retry was stuck in `retry_pending`
++   * forever and re-executed on every scheduler poll.
++   *
++   * Conditional and idempotent: only due `retry_pending` rows are touched.
++   * Safe to call on every scheduler poll.
++   *
++   * @returns {Promise<number>} count of reclaimed missions
++   */
++  async reclaimRetryPending() {
++    const result = await this._pool.query(
++      `UPDATE ping_missions
++       SET status = 'created', assigned_to = NULL, lease_until = NULL,
++           claimed_at = NULL, retry_at = NULL
++       WHERE status = 'retry_pending'
++         AND retry_at IS NOT NULL
++         AND retry_at <= NOW()
++       RETURNING mission_id`
++    );
++
++    const reclaimed = result.rowCount || 0;
++    if (reclaimed > 0) {
++      console.log(`[MissionRuntime] Reclaimed ${reclaimed} due retry_pending mission(s)`);
++      for (const row of result.rows) {
++        if (this._eventRuntime) {
++          await this._eventRuntime.emit('MISSION_RETRY_RECLAIMED', 'mission-runtime', { missionId: row.mission_id });
++        }
++      }
++    }
++
++    return reclaimed;
++  }
++
++  /**
+    * Renew a lease for a mission still being processed by the scheduler.
+    *
+    * Extends lease_until by `durationSeconds` from now. Only renews missions

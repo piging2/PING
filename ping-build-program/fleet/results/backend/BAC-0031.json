@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0031",
+ "verdict": "REJECTED",
+ "summary": "BEFORE raw JSON bytes: 129780 bytes / 0.08ms; AFTER zlib per-doc: 130878 bytes (GREW) / 13.11ms (164x CPU). Per-doc framing overhead exceeds savings on small docs. Claim false for small documents; compression pays only above a per-unit size threshold or when batching docs into one stream.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": "Rerun compressing the concatenated 2000-doc stream as one unit.",
+ "numbers": {
+  "before_ms": 0.0762,
+  "after_ms": 13.1097,
+  "metric": "store_2000_docs",
+  "change": "zlib-compressed storage instead of raw JSON bytes",
+  "case": 30,
+  "extra": {
+   "bytes_before": 129780,
+   "bytes_after": 130878,
+   "note": "space claim: CPU cost accepted, bytes are the metric"
+  }
+ }
+}

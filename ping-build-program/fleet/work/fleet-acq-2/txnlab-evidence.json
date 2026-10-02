@@ -1,0 +1,56 @@
+{
+ "max_attempts": 5,
+ "case0_bounded": {
+  "max_attempts": 5,
+  "attempt_histogram": {
+   "1": 754,
+   "2": 18,
+   "3": 13,
+   "4": 7,
+   "5": 1,
+   "EXHAUSTED": 7
+  },
+  "max_observed_attempts": 5,
+  "bounded": true,
+  "exhausted_typed_failures": 7,
+  "exhaustion_handling": "typed False returned to caller; must surface/requeue, never silently drop"
+ },
+ "case1_exactly_once": {
+  "distinct_submitted": 120,
+  "rows": 120,
+  "exactly_once": true
+ },
+ "case2_no_dupes": {
+  "rows": 120,
+  "distinct_keys": 120,
+  "duplicates": 0,
+  "no_duplicate_side_effects": true
+ },
+ "case3_keyed_not_blind": {
+  "blind_retries": 3,
+  "blind_side_effects": 3,
+  "keyed_side_effects_per_key": 1,
+  "never_blind": true
+ },
+ "case4_contention": {
+  "clients": 16,
+  "ops": 800,
+  "lock_conflicts": 104,
+  "p99_ms": 2861.72,
+  "wall_s": 5.42,
+  "measured_locally": true
+ },
+ "design_mechanisms": {
+  "atomic_rename_partial_reads": 0,
+  "atomic_rename_ok": true,
+  "symlink_swap_ok": true,
+  "applies_to": [
+   "env-rotation",
+   "backup-rotation-rename",
+   "journald-config",
+   "qdrant-snapshot-copy",
+   "witness-journal-append",
+   "projection-handoff"
+  ]
+ }
+}

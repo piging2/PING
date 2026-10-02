@@ -1,0 +1,37 @@
+# Oracle deployment inventory — read-only probe
+# Worker: fleet-ora-1. Date: 2026-09-24T03:20:07Z. Method: ./oracle-ssh.sh -s < probe_deployed.sh (read-only; docker ps + systemctl list-units)
+
+=== hostname ===
+ping-core-01
+=== docker ps ===
+ping-gateway|ping-gateway:candidate-3c5d280dd
+ping-postgres|postgres:17-alpine
+ping-qdrant|qdrant/qdrant:v1.7.0
+=== compose files ===
+=== running systemd services (non-systemd-core) ===
+  containerd.service                                         loaded active running containerd container runtime
+  dbus.service                                               loaded active running D-Bus System Message Bus
+  docker.service                                             loaded active running Docker Application Container Engine
+  fwupd.service                                              loaded active running Firmware update daemon
+  getty@tty1.service                                         loaded active running Getty on tty1
+  iscsid.service                                             loaded active running iSCSI initiator daemon (iscsid)
+  ModemManager.service                                       loaded active running Modem Manager
+  polkit.service                                             loaded active running Authorization Manager
+  rpcbind.service                                            loaded active running RPC bind portmap service
+  serial-getty@ttyAMA0.service                               loaded active running Serial Getty on ttyAMA0
+  snap.oracle-cloud-agent.oracle-cloud-agent-updater.service loaded active running Service for snap application oracle-cloud-agent.oracle-cloud-agent-updater
+  snap.oracle-cloud-agent.oracle-cloud-agent.service         loaded active running Service for snap application oracle-cloud-agent.oracle-cloud-agent
+  snapd.service                                              loaded active running Snap Daemon
+  ssh.service                                                loaded active running OpenBSD Secure Shell server
+  systemd-journald.service                                   loaded active running Journal Service
+  systemd-logind.service                                     loaded active running User Login Management
+  systemd-networkd.service                                   loaded active running Network Configuration
+  systemd-resolved.service                                   loaded active running Network Name Resolution
+  systemd-timesyncd.service                                  loaded active running Network Time Synchronization
+  systemd-udevd.service                                      loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service                                            loaded active running Disk Manager
+  unattended-upgrades.service                                loaded active running Unattended Upgrades Shutdown
+  unified-monitoring-agent.service                           loaded active running unified-monitoring-agent: Fluentd based data collector for Oracle Cloud Infrastructure
+  user@1001.service                                          loaded active running User Manager for UID 1001
+
+Conclusion: deployed = ping-postgres, ping-qdrant, ping-gateway (ping-gateway:candidate-3c5d280dd, postgres:17-alpine, qdrant/qdrant:v1.7.0). Not deployed: ollama, js-worker-a, js-worker-b, python-adapter, event-ingest, witness, scheduler, backup-agent, health-monitor, log-shipper, reverse-proxy, cert-renewer.

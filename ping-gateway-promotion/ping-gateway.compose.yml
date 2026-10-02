@@ -1,0 +1,54 @@
+# ping-gateway compose service definition (promotion prep, 2026-09-24)
+#
+# Finalized from the connectors-lane reconstruction (workspace repo commit ab71dd1,
+# connectors/ping-gateway.compose.yml). Retires the 2026-09-16 `docker run`
+# deployment: the gateway becomes compose-managed with a real Docker healthcheck.
+#
+# IMAGE: pinned to the 2026-09-23 certified candidate
+#   jev/verdict-authority-hardening @ fffe99f7a4174cc694c65c9ac1b0b00b4332bf2f
+#   digest pinned 2026-09-24: sha256:aa1f085a067383fb6226ffa00d13b70e63be17a5b67ca9810a493c23c5cd6d42
+#   (built from clean clone at fffe99f7a; OCI label revision confirmed; see RUNBOOK.md section 4)
+#
+# SECRETS: MUSE_LEVEL_1_KEY, MUSE_LEVEL_2_KEY, POSTGRES_PASSWORD come from a
+# Pig-side .env file in this same directory (values re-resolved from the live
+# container env via SSH at cutover time). They are NEVER committed.
+#
+# Env values below are the observed live defaults from `docker inspect
+# ping-gateway` (2026-09-24, read-only).
+
+services:
+  ping-gateway:
+    image: ping-gateway:candidate-fffe99f7a@sha256:aa1f085a067383fb6226ffa00d13b70e63be17a5b67ca9810a493c23c5cd6d42
+    container_name: ping-gateway
+    working_dir: /app
+    command: ["node", "gateway/server.js"]
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PORT: 8080
+      QDRANT_HOST: ${QDRANT_HOST:-ping-qdrant}
+      QDRANT_PORT: ${QDRANT_PORT:-6333}
+      QDRANT_URL: ${QDRANT_URL:-http://host.docker.internal:6333}
+      POSTGRES_HOST: ${POSTGRES_HOST:-host.docker.internal}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+      MUSE_LEVEL_1_KEY: ${MUSE_LEVEL_1_KEY:?set in Pig-side .env}
+      MUSE_LEVEL_2_KEY: ${MUSE_LEVEL_2_KEY:?set in Pig-side .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in Pig-side .env}
+    volumes:
+      - muse-workspace:/app/workspace/muse
+    restart: unless-stopped
+    healthcheck:
+      # Proven pattern: node exists in the gateway image; /health 200 = ready.
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:8080/health', (r) => {if (r.statusCode !== 200) console.error('health status: ' + r.statusCode); process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  muse-workspace:
+    external: true

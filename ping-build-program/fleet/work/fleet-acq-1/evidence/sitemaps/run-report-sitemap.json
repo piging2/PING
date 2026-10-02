@@ -1,0 +1,2083 @@
+{
+  "lab": "sitemaps",
+  "worker": "fleet-acq-1",
+  "parser": "sitemap-harness@1.0.0",
+  "generated_at": "2026-09-24T03:30:56.016Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-400",
+      "mission": "ACQ-0601",
+      "title": "clean urlset, 3 URLs -> 3 discovered_url claims",
+      "threat": "Baseline: absolute http(s) locs claim with per-entry provenance.",
+      "fixture_sha256": "a38cc5eca70f79439cbf6531314960c9d1ae888b3d18ff543db453239fbae206",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-412",
+      "mission": "ACQ-0602",
+      "title": "urlset without namespace -> accepted",
+      "threat": "The namespace is not required for extraction (documented leniency).",
+      "fixture_sha256": "eb421c79feebcfb74c0f457f34ae83364ebf0d27a7dc4fa186b4ab550d2cd068",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-414",
+      "mission": "ACQ-0603",
+      "title": "empty urlset -> legitimate empty, not a failure",
+      "threat": "Zero entries is an observation with absent fields, never a failure record.",
+      "fixture_sha256": "68ab08991efaca902bcb8a6518106d8b29964c5651f39abbb7eb7c9713ca2770",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "expect-no-claims",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-432",
+      "mission": "ACQ-0604",
+      "title": "XML declaration with encoding -> accepted",
+      "threat": "Prolog processing instructions are skipped, not parsed.",
+      "fixture_sha256": "0e2ca95b13f74d7d5ced8be74510f3eb68934a9f2375744f6c6d6d84807f07c4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-433",
+      "mission": "ACQ-0605",
+      "title": "UTF-8 BOM -> stripped, accepted",
+      "threat": "A leading BOM does not break root detection.",
+      "fixture_sha256": "bab1b73b31e38385ae910f0b46fad9f0cf060f6928536b75ab8a96347e6b7a72",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-401",
+      "mission": "ACQ-0606",
+      "title": "XXE doctype -> typed INVALID_PAYLOAD, zero claims",
+      "threat": "Fail closed before any entity is processed: the doctype never reaches expansion.",
+      "fixture_sha256": "b0f4aa06b1f5f8a478d1b8acff2a622f0f0de66cdc9adae8848a5c341fdfc0ce",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "doctype-decl-not-processed"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-402",
+      "mission": "ACQ-0607",
+      "title": "billion-laughs doctype -> typed INVALID_PAYLOAD",
+      "threat": "Entity-declaration attacks die at the doctype gate; expansion is never attempted.",
+      "fixture_sha256": "12844ff9d2c68265299019eb9083469c9493f585f27bfc746f6851b841178ccf",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "doctype-decl-not-processed"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-413",
+      "mission": "ACQ-0608",
+      "title": "HTML document as sitemap -> typed UNSUPPORTED",
+      "threat": "A non-sitemap root is classified, never parsed as tag soup.",
+      "fixture_sha256": "8bc10bbe7a77209009b80196e6375fc22e7687cfb1e46c4c9d134490cb0e1a7c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unsupported-root"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-418",
+      "mission": "ACQ-0609",
+      "title": "6MB document -> typed PERMANENT (doc-bytes cap)",
+      "threat": "Bound violation is a typed terminal failure, not a silent truncation.",
+      "fixture_sha256": "1aef6d74f618563bdbb17922bacdfe0f38165ab513d0c8bd6ab014924c67cbba",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "PERMANENT"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "doc-bytes-over-cap"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-446",
+      "mission": "ACQ-0610",
+      "title": "gzip-magic bytes -> typed UNSUPPORTED, never decompressed",
+      "threat": "Binary input is classified; the lab never shells to a decompressor.",
+      "fixture_sha256": "5ff10563819d4b13eb706ec20c3a934bfd824faa28de5cefcd6575265100e72c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "gzip-magic-not-decompressed"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-404",
+      "mission": "ACQ-0611",
+      "title": "relative locs quarantined; absolute still claims",
+      "threat": "Field isolation: the bad entries die, the good one claims.",
+      "fixture_sha256": "278c0877ce47cbdaec070a96fa97503ccb17a827dbf541e16cf63ab6fa258b0c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:relative-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-419",
+      "mission": "ACQ-0612",
+      "title": "javascript: loc -> bad-scheme quarantine",
+      "threat": "Non-http(s) schemes are never navigation candidates.",
+      "fixture_sha256": "806d048cfb72727fa795aaa634d749272e298ba1d184a40969dc860c94daefc7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"javascript:alert(1)\""
+        },
+        {
+          "name": "quarantined:undefined:bad-scheme-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-420",
+      "mission": "ACQ-0613",
+      "title": "credential-bearing loc -> quarantined with redaction",
+      "threat": "user:pass@ is secret-shaped: quarantined, and the detail is redacted per the credentials rule.",
+      "fixture_sha256": "84cb86107dd58b1198c3a6259a6585cb53e150dda3e588f675a3f4abcc83370e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"s3cret\""
+        },
+        {
+          "name": "quarantined:undefined:credential-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-428",
+      "mission": "ACQ-0614",
+      "title": "empty loc -> missing-loc quarantine",
+      "threat": "An empty loc is not a URL.",
+      "fixture_sha256": "9a0d39eada631afad547836b87f4905e0ee083a0b23871c75b81b03dd71ce35f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:missing-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-429",
+      "mission": "ACQ-0615",
+      "title": "url entry with lastmod but no loc -> missing-loc quarantine",
+      "threat": "Metadata without an identity is quarantined, not attached to a neighbor.",
+      "fixture_sha256": "3bb5374aaedb5310d6d7c945691bde3f0a0d7edee5a7935bed33de829ba7dabe",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:missing-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-430",
+      "mission": "ACQ-0616",
+      "title": "orphan loc outside any url -> ignored with note",
+      "threat": "A loc with no entry is not a discovery; counted, never claimed.",
+      "fixture_sha256": "b4c643e099fff95c6265dc03ac2b170e582bc22885d81fd0bca7effeb8a2b59b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"https://a.example/orphan\""
+        },
+        {
+          "name": "note-eq:orphanLocs",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-421",
+      "mission": "ACQ-0617",
+      "title": "uppercase tags are not recognized (XML case-sensitivity)",
+      "threat": "Strict per XML: <URL>/<LOC> are not entries; nothing is claimed, nothing crashes.",
+      "fixture_sha256": "6b812f5bcb4eaecf7a2b7fbda2662279896a7c242580c714175b8337c7a9567d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"https://a.example/\""
+        },
+        {
+          "name": "expect-no-claims",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-405",
+      "mission": "ACQ-0618",
+      "title": "bad lastmod quarantined; loc still claims",
+      "threat": "lastmod validation failure does not poison the URL discovery.",
+      "fixture_sha256": "1a6f53c80ae53ee7ab6906f3100af638ad27188619e251386530eb57aa08c174",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-lastmod",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-406",
+      "mission": "ACQ-0619",
+      "title": "bad changefreq quarantined; loc still claims",
+      "threat": "The enum is pinned; 'sometimes' is not in it.",
+      "fixture_sha256": "d48d7a0b0c655db5bf72e2244e7d168233ef6f85c62ee9ec3f9092826a20578c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-changefreq",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-407",
+      "mission": "ACQ-0620",
+      "title": "bad priority quarantined; loc still claims",
+      "threat": "Priority outside 0.0-1.0 is quarantined per-entry.",
+      "fixture_sha256": "f1b1d27c6468fd6d191b02d9e04590bd50f03c739bba5e5c0d909e6b7d69676e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-priority",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-422",
+      "mission": "ACQ-0621",
+      "title": "date-only lastmod accepted",
+      "threat": "W3C allows YYYY-MM-DD; the pin covers it.",
+      "fixture_sha256": "8a1a920f5fc35dac8e625c4b3b33cc9a6fb3b12e230f77eb36b2c391d005e29d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-423",
+      "mission": "ACQ-0622",
+      "title": "lastmod with timezone accepted",
+      "threat": "Full datetime with offset validates.",
+      "fixture_sha256": "d79543e303e895dcda21ad9e79187bd7c583d88026086fbf52a4331a4b01e74f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-424",
+      "mission": "ACQ-0623",
+      "title": "priority '1' accepted",
+      "threat": "Integer 1 is within 0.0-1.0.",
+      "fixture_sha256": "9e2e22058bb0046132c715cb8b9bd67c4d4c1ad6b115a96019d6834b1845ae70",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-425",
+      "mission": "ACQ-0624",
+      "title": "priority '1.5' quarantined",
+      "threat": "Above the 1.0 ceiling: quarantined.",
+      "fixture_sha256": "5228f65f01e696bb26406c32d6746740c69641bd86871a24334d24ff1f35ab5a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-priority",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-426",
+      "mission": "ACQ-0625",
+      "title": "changefreq 'sometimes' quarantined (explicit)",
+      "threat": "Only the seven pinned values pass.",
+      "fixture_sha256": "8a1b6aa49534fdaae49769e4bbb5619367bb261a920c70f6cf91bc19447b2214",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-changefreq",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-440",
+      "mission": "ACQ-0626",
+      "title": "future lastmod accepted with note",
+      "threat": "Future dates are unusual but legal; noted, not rejected.",
+      "fixture_sha256": "85dcd98fc51424a20d4bf889b13990575f65df73131f4a099c91c814e9af7bca",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "note-eq:futureLastmod",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-408",
+      "mission": "ACQ-0627",
+      "title": "triple duplicate loc -> one claim, duplicates counted",
+      "threat": "Dedupe is not a conflict: one claim, extras noted.",
+      "fixture_sha256": "07b1777f2fe87803d6d43dc890545146e1962b89c7281f6a778d0ad7f888a3f7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "note-eq:duplicateLocs",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-409",
+      "mission": "ACQ-0628",
+      "title": "same loc, two lastmods -> unresolved lastmod, one URL claim",
+      "threat": "The URL is discovered once; no canonical lastmod is picked.",
+      "fixture_sha256": "57c9089cf8051fc93c83e3ceb99cef88c0c639937cdca863f24ae9e5242d8edc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "unresolved:lastmod",
+          "ok": true,
+          "detail": "conflicting-candidates-no-guess"
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-403",
+      "mission": "ACQ-0629",
+      "title": "unclosed url entry swallows tail -> missing-loc quarantine",
+      "threat": "The well-formed entry claims; the unclosed entry has no loc and is quarantined.",
+      "fixture_sha256": "2869e99ac7e9a53564e9d23ba911f62b57f678402824073a5a1d8fc14784cdff",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:missing-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-411",
+      "mission": "ACQ-0630",
+      "title": "nested url inside url -> nested-entry quarantine",
+      "threat": "Nesting is not a second entry; the inner region is quarantined.",
+      "fixture_sha256": "6b108b9bef7e5f5c491d2f4daac1e22d16b041c48d83a6e2773a184f0069809e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "note:nestedUrl",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "quarantined:undefined:nested-entry",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-415",
+      "mission": "ACQ-0631",
+      "title": "CDATA loc extracted literally",
+      "threat": "CDATA content is literal text, then entity-decoded.",
+      "fixture_sha256": "06cbfeb766b4886e39f43892c6b81378d026162d94fad54da712a2966c706f0e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-416",
+      "mission": "ACQ-0632",
+      "title": "comment with fake entries ignored",
+      "threat": "Comments never become entries, even when they look like entries.",
+      "fixture_sha256": "2c4d49284bb70a881b33d59f18dd6d57a1260f59b4a62315815a6659fe639ced",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"https://evil.example/\""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-427",
+      "mission": "ACQ-0633",
+      "title": "loc with surrounding whitespace -> trimmed, claimed",
+      "threat": "Whitespace is normalized, never part of the URL.",
+      "fixture_sha256": "37120f0e5e23a56ab1751d7befdec6c92a88aeefa62ae867db48c17b881fa368",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-434",
+      "mission": "ACQ-0634",
+      "title": "entity-encoded loc decoded once",
+      "threat": "&amp; decodes to &; the claimed URL is the decoded form.",
+      "fixture_sha256": "042447a93ff5364c23be99ac912becd2c8c4e16700dbcaf88c37493c41290b94",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-435",
+      "mission": "ACQ-0635",
+      "title": "double-encoded entity decoded exactly once",
+      "threat": "Single-pass decoding: &amp;amp; becomes &amp;, not & (documented).",
+      "fixture_sha256": "cf4a085db4e84ad349c38b97c1ea050cfdb91c7d4fe01901ef0961b6120be13a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-410",
+      "mission": "ACQ-0636",
+      "title": "sitemapindex -> index entries are evidence, not URL claims",
+      "threat": "An index lists sitemaps, not pages: zero discovered_url claims, two index notes.",
+      "fixture_sha256": "5968812b3bcd46c2fc70cb91b17c4044f591a7049c939d45e8617211e35f3f80",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "note:indexEntries",
+          "ok": true,
+          "detail": "2 item(s)"
+        },
+        {
+          "name": "expect-no-claims",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-431",
+      "mission": "ACQ-0637",
+      "title": "sitemapindex entry without loc -> index-missing-loc quarantine",
+      "threat": "A sitemap entry with no loc is quarantined, not skipped silently.",
+      "fixture_sha256": "720f809e06f5a5304593be78789ee6c24dee6fca4f4370d987eb551598fddfbf",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:index-missing-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "expect-no-claims",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-438",
+      "mission": "ACQ-0638",
+      "title": "news extension tags ignored; core entries claim",
+      "threat": "Extension namespaces are not parsed (documented); url/loc still extract.",
+      "fixture_sha256": "097d1365a09ef18095a4c0e792b9bd8e5509c6716fb7c98fead2c9f057c9a82b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-439",
+      "mission": "ACQ-0639",
+      "title": "xhtml:link hreflang ignored",
+      "threat": "Alternate-link annotations are not identity signals.",
+      "fixture_sha256": "caf0c97bed3f4cd70217dfe56e8e5f3e764555d694f51a2b83d61e9800b9cfe7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"https://a.example/es\""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-441",
+      "mission": "ACQ-0640",
+      "title": "trailing-slash variants are distinct URLs",
+      "threat": "No slash normalization is guessed: /about and /about/ are two claims.",
+      "fixture_sha256": "af3f3161845155b2d474df44213020824520d2b7fb54457ed4d95044d0da1ae4",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-442",
+      "mission": "ACQ-0641",
+      "title": "http vs https are distinct URLs",
+      "threat": "No scheme upgrade is guessed.",
+      "fixture_sha256": "cabd2c9f5ed9c75a2552b8d46196fba6687aef8032a24fad91996a6a9913e4af",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-443",
+      "mission": "ACQ-0642",
+      "title": "fragment kept verbatim (documented)",
+      "threat": "The loc is claimed as written; no fragment stripping is guessed.",
+      "fixture_sha256": "cf2f5f55e430586924ad952496cf1ad7874b0b7ed55cefd5ca5e8989a9b34589",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-444",
+      "mission": "ACQ-0643",
+      "title": "query string kept verbatim",
+      "threat": "Query strings are part of the claimed URL as written.",
+      "fixture_sha256": "6c33337b3541284c4ee902c42ec70cf3091c2c3bf15c1da2184c2003fda59f22",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-445",
+      "mission": "ACQ-0644",
+      "title": "punycode vs unicode domains are distinct, verbatim",
+      "threat": "No IDNA normalization is guessed; both forms claim as written.",
+      "fixture_sha256": "800b59fcd367044542d6f4a3adc5b77eb49075024a19172784bbe905d4036ec6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-447",
+      "mission": "ACQ-0645",
+      "title": "loc with port claimed verbatim",
+      "threat": "Ports are part of the URL as written.",
+      "fixture_sha256": "c6814df18b2a91d55e66506c7f91a891193966613c47a3ab0c64c9bf71d10741",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-448",
+      "mission": "ACQ-0646",
+      "title": "uppercase scheme accepted (RFC: scheme is case-insensitive)",
+      "threat": "HTTP:// matches the http(s) gate case-insensitively; the value claims verbatim.",
+      "fixture_sha256": "f0647ca9728c34e7052a190932bf6db3ba45b1a0eaf49ab6678ae6732eeb8c4a",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:discovered_url",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-449",
+      "mission": "ACQ-0647",
+      "title": "urlset with extra attributes accepted",
+      "threat": "Foreign attributes on the root do not block parsing.",
+      "fixture_sha256": "efbca4cb3a5d19d20da511047845d68fd4f7e54a4eda921ed8e8934c99dedcca",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "min-claims:discovered_url",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "1 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-417",
+      "mission": "ACQ-0648",
+      "title": "10001 entries -> entry cap fires, first 10k claim",
+      "threat": "Over the 10k cap: truncation flagged, head entries honored.",
+      "fixture_sha256": "adcc617ff5081e433bdd96b5d3eea4d5beee6fa4378a73e04b2dde8d1805f805",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:entries",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "10000"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "10000 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-436",
+      "mission": "ACQ-0649",
+      "title": "60000 entries -> cap holds at 10k",
+      "threat": "Well under the 5MB doc cap but over the entry cap: truncation, not failure.",
+      "fixture_sha256": "ce49090432573e81e8d008d5b635d4b68f7b46e8297e2586148612cf337e66a8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:entries",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "10000"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "10000 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-437",
+      "mission": "ACQ-0650",
+      "title": "sitemap kitchen sink -> exact claim set",
+      "threat": "Valid, relative, bad-lastmod, duplicate, CDATA, comment-fake, and bad-scheme entries at once: exactly the valid absolute locs claim.",
+      "fixture_sha256": "c619aea0791082aa5ae6ca9b7dcaecf9c0e9d1a58cc0c811fa9f6b45349661c0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"https://evil.example/\""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"ftp://a.example/file\""
+        },
+        {
+          "name": "note-eq:duplicateLocs",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "quarantined:undefined:relative-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "quarantined:undefined:bad-lastmod",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "quarantined:undefined:bad-scheme-loc",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "exact-claims:discovered_url",
+          "ok": true,
+          "detail": "3"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "3 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

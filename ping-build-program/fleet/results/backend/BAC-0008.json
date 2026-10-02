@@ -1,0 +1,20 @@
+{
+ "mission_id": "BAC-0008",
+ "verdict": "PROVEN",
+ "summary": "BEFORE per-item writes (2000 items): 0.13ms; AFTER batches of 100: 0.10ms. Delta 22.7% vs noise 13.7%. Improvement proven (per-call overhead amortized).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.128,
+  "after_ms": 0.099,
+  "metric": "write_2000_items",
+  "change": "batch writes in groups of 100 instead of per-item calls",
+  "case": 7
+ }
+}

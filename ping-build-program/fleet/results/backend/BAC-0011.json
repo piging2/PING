@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0011",
+ "verdict": "PROVEN",
+ "summary": "BEFORE global FIFO with one flooding tenant (300 jobs vs 20+20): worst quiet-tenant wait 658 time units; AFTER round-robin per-tenant queues: 117 units (82% reduction). Fairness claim proven in deterministic simulation.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0295,
+  "after_ms": 0.091,
+  "metric": "schedule_340_jobs",
+  "change": "round-robin per-tenant queues instead of global FIFO",
+  "case": 10,
+  "extra": {
+   "worst_quiet_tenant_wait_before": 658,
+   "worst_quiet_tenant_wait_after": 117,
+   "unit_note": "metric is time units; fairness gain measured in wait reduction"
+  }
+ }
+}

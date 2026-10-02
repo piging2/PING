@@ -1,0 +1,22 @@
+{
+ "gateway_health_2026_09_24": {
+  "integrations": "3/3 healthy (posthog, email, +1)",
+  "status": "healthy",
+  "uptime_s": 230148
+ },
+ "healthcheck_params_design": {
+  "gateway": "interval 30s, timeout 5s, retries 3, start_period 30s (curl /health)",
+  "postgres": "interval 10s, timeout 5s, retries 5, start_period 20s (pg_isready)",
+  "qdrant": "interval 30s, timeout 5s, retries 3, start_period 30s (TCP 6333 today; /readyz after the fix)"
+ },
+ "observed": "2026-09-24",
+ "postgres_pg_isready": "/var/run/postgresql:5432 - accepting connections (trust auth, no password inside)",
+ "serving_capability_note": "health reflects serving capability (dep checks), not mere process aliveness; no container healthchecks are configured today (design gap)",
+ "worker": "fleet-ora-2",
+ "host_health_2026_09_24": {
+  "ram_available_gb": 5,
+  "ram_criterion": "> 1 GB available: PASS",
+  "disk": "45G total, 17G used, 39%",
+  "disk_criterion": "< 80% used: PASS"
+ }
+}

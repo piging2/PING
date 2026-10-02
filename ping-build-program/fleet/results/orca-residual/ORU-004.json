@@ -1,0 +1,28 @@
+{
+  "mission_id": "ORU-004",
+  "verdict": "PROVEN",
+  "summary": "PROVEN: duplicate dispatch of the same logical operation (scheduler race). Both coordinators derived the same op_key; the effector's idempotency gate served the second dispatch from the executed-op log without re-running the effect; the duplicate EFFECT_DISPATCHED deduplicated at the event layer via logical_id. Effects for op: 1.",
+  "evidence_files": [
+    "fleet/work/orca-residual/evidence/ORU-004-events.jsonl"
+  ],
+  "confidence": 0.99,
+  "detail": {
+    "effects": 1,
+    "sameOpKey": true,
+    "secondWasDuplicate": true,
+    "eventCounts": {
+      "EFFECT_DISPATCHED": 2,
+      "EFFECT_SUCCEEDED": 1
+    },
+    "journalStats": {
+      "emitted": 3,
+      "persisted": 3,
+      "deduplicated": 0,
+      "failed": 0,
+      "collisions": 0
+    }
+  },
+  "followup": "None.",
+  "matrix": "orca-residual",
+  "at": "2026-09-24T11:43:44.731Z"
+}

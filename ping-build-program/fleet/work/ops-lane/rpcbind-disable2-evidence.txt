@@ -1,0 +1,32 @@
+=== DISABLING (sudo) ===
+Synchronizing state of rpcbind.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install disable rpcbind
+Removed "/etc/systemd/system/sockets.target.wants/rpcbind.socket".
+Removed "/etc/systemd/system/multi-user.target.wants/rpcbind.service".
+Disabling 'rpcbind.service', but its triggering units are still active:
+rpcbind.socket
+disable_exit=0
+=== state after ===
+inactive
+disabled
+inactive
+disabled
+=== :111 now? ===
+NOTHING on :111
+=== rpcinfo after ===
+rpcinfo: can't contact portmapper: RPC: Remote system error - Connection refused
+=== boot persistence proof ===
+no rpcbind symlink in multi-user wants
+no rpcbind symlink in sockets wants
+=== RESTART-BOUNDARY: try to start it manually, confirm disable semantics ===
+active
+(note: manual start works by design; enablement is what gates boot)
+Stopping 'rpcbind.service', but its triggering units are still active:
+rpcbind.socket
+inactive
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*          
+LISTEN 0      4096            [::]:111           [::]:*          
+=== docker sanity ===
+ping-gateway Up 3 days
+ping-postgres Up 3 days (healthy)
+ping-qdrant Up 4 days (healthy)

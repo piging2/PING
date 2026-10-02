@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0010",
+ "verdict": "PROVEN",
+ "summary": "BEFORE unbounded queue: peak depth 5000 (drain 0.43ms); AFTER bounded cap-64 paced producer: peak depth 64 (drain 0.67ms, time cost of pacing). Boundedness claim proven: memory is O(cap) regardless of producer burst.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.4283,
+  "after_ms": 0.6657,
+  "metric": "drain_5000_items",
+  "change": "bounded queue (cap 64) with paced producer instead of unbounded buffer",
+  "case": 9,
+  "extra": {
+   "peak_depth_before": 0,
+   "peak_depth_after": 64
+  }
+ }
+}

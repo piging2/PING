@@ -1,0 +1,181 @@
+{
+  "capture": {
+    "incidentRef": null,
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling a provider cursor that becomes garbage mid-read (token rotation / opaque-format change)",
+    "sourceDigest": "sha256:67b847cd509b968f131d553c29820b3126724f797d5ea5d9f2dc30eb2bffa717"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "checkpoints": [
+      "resync-page-1",
+      "resync-page-2"
+    ],
+    "duplicatesAbsorbed": 2,
+    "failureCodes": [
+      "SOURCE_CHANGED"
+    ],
+    "fullResync": true,
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 4,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 4
+  },
+  "fixtureId": "cursor-corruption-full-resync",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "string",
+      "status": "string",
+      "updated_at": "string"
+    },
+    "idField": "id",
+    "versionField": "updated_at"
+  },
+  "recordedAt": "2026-09-23T19:30:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T19:30:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 21,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer tokens never appear in fixtures",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "first page fine; nextPath is the echoed opaque cursor, stored verbatim",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/jobs?cursor=start&per_page=2"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_1",
+            "status": "scheduled",
+            "updated_at": "2026-09-23T08:00:00Z"
+          },
+          {
+            "id": "job_2",
+            "status": "en_route",
+            "updated_at": "2026-09-23T08:40:00Z"
+          }
+        ],
+        "headers": {},
+        "latencyMs": 100,
+        "nextPath": "/v1/jobs?cursor=CURSOR_PAGE_1_OPAQUE&per_page=2",
+        "status": 200
+      }
+    },
+    {
+      "id": "page-2-corrupt",
+      "kind": "request",
+      "note": "provider changed its opaque cursor format overnight; the echoed cursor is rejected. Not a retryable fetch error: a typed FULL_RESYNC. Re-emitted page-1 records must be deduped by idempotency key.",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/jobs?cursor=CURSOR_PAGE_1_OPAQUE&per_page=2"
+      },
+      "response": {
+        "body": {
+          "code": "invalid_cursor",
+          "error": "cursor format unrecognized; tokens rotated at provider deploy"
+        },
+        "headers": {},
+        "latencyMs": 60,
+        "status": 400
+      }
+    },
+    {
+      "id": "resync-page-1",
+      "kind": "request",
+      "note": "after FULL_RESYNC the harness restarts from the provider root cursor; job_1 and job_2 re-emit and are absorbed by idempotency keys",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/jobs?cursor=start&per_page=2"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_1",
+            "status": "scheduled",
+            "updated_at": "2026-09-23T08:00:00Z"
+          },
+          {
+            "id": "job_2",
+            "status": "en_route",
+            "updated_at": "2026-09-23T08:40:00Z"
+          }
+        ],
+        "headers": {},
+        "latencyMs": 105,
+        "nextPath": "/v1/jobs?cursor=NEW_FMT_Z9&per_page=2",
+        "status": 200
+      }
+    },
+    {
+      "id": "resync-page-2",
+      "kind": "request",
+      "note": "new-format cursor works; no nextPath, terminal",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/json"
+        },
+        "method": "GET",
+        "path": "/v1/jobs?cursor=NEW_FMT_Z9&per_page=2"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_3",
+            "status": "on_site",
+            "updated_at": "2026-09-23T09:25:00Z"
+          },
+          {
+            "id": "job_4",
+            "status": "done",
+            "updated_at": "2026-09-23T10:10:00Z"
+          }
+        ],
+        "headers": {},
+        "latencyMs": 98,
+        "status": 200
+      }
+    }
+  ],
+  "title": "Cursor corruption: provider rotates opaque cursor format mid-read; harness must emit typed FULL_RESYNC and dedupe re-emission, never crash or duplicate"
+}

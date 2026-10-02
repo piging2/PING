@@ -1,0 +1,56 @@
+{
+  "fixture": "webhook-duplicate-delivery",
+  "pass": true,
+  "gates": [
+    {
+      "name": "EXISTS",
+      "pass": true,
+      "evidence": "webhook-duplicate-delivery@v1 parses"
+    },
+    {
+      "name": "IMPORTS",
+      "pass": true,
+      "evidence": "transport,harness,assert,taxonomy,lint,secret-scan import clean"
+    },
+    {
+      "name": "INITIALIZES",
+      "pass": true,
+      "evidence": "transport constructed; seed=11 clock=virtual"
+    },
+    {
+      "name": "REACHABLE",
+      "pass": true,
+      "evidence": "5 deliveries reachable"
+    },
+    {
+      "name": "EXECUTES",
+      "pass": true,
+      "evidence": "terminal=SUCCEEDED records=3"
+    },
+    {
+      "name": "PERSISTS",
+      "pass": true,
+      "evidence": "report persisted; verdict=PASS digestOk=true"
+    },
+    {
+      "name": "RECOVERS",
+      "pass": true,
+      "evidence": "injection=reorderSeed terminal=SUCCEEDED codes=[]"
+    },
+    {
+      "name": "REPLAYS",
+      "pass": true,
+      "evidence": "double-run byte-identical (1010 bytes)"
+    },
+    {
+      "name": "PRESERVES PROVENANCE",
+      "pass": true,
+      "evidence": "digest ok sha256:7b1b15b86913...; provenance fields present"
+    },
+    {
+      "name": "FAILS SAFELY",
+      "pass": true,
+      "evidence": "tampered-bytes -> exit 2 (want 2, digest fail-closed)"
+    }
+  ]
+}

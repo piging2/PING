@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0285",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE async_stale_sim: 0.570ms; AFTER proactive refresh vs TTL-only under async Poisson readers: 0.589ms. Delta +3.4%. stale serves 0 in both arms: the async-reader simulation never produced staleness, so proactive refresh vs TTL-only is untested.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench6.py",
+  "fleet/work/fleet-be-1/bench6b.py",
+  "fleet/work/fleet-be-1/bench6_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "redesign fixture so expiry actually lapses under Poisson readers",
+ "numbers": {
+  "before_ms": 0.5696,
+  "after_ms": 0.5891,
+  "metric": "async_stale_sim",
+  "change": "proactive refresh vs TTL-only under async Poisson readers",
+  "case": 284
+ }
+}

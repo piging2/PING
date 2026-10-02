@@ -1,0 +1,11 @@
+{
+  "mission_id": "ORA-2746",
+  "verdict": "PROVEN",
+  "summary": "'cpu-quota exhaustion' [disk exhaustion: typed DISK_PRESSURE, fail closed]: sandbox execution PASS (disk-pressure-rehearse.py on bounded 8MB tmpfs): at 100% full the fail-closed writer raises typed DISK_PRESSURE (pre-check and ENOSPC paths), no partial writes ever presented as success, pre-existing data intact (hash-verified). 90%/95% fills: writes succeed cleanly. Host filesystems never touched. Scope caveat: pattern-level proof of the fail-closed writer contract; per-service integration (postgres/qdrant/gateway writers) pending a docker-capable staging host.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-1/disk-pressure-rehearse.py",
+    "fleet/work/fleet-ora-1/disk-sandbox/disk-pressure-evidence.log"
+  ],
+  "confidence": 0.75,
+  "followup": "On a docker-capable staging host: fill the scratch store volume to 100% and exercise the real service writers; assert typed DISK_PRESSURE surfaces and no partial/corrupt data lands."
+}

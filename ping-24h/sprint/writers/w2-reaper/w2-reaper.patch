@@ -1,0 +1,34 @@
+--- /home/hatch/workspace/ce002/src/mission_runtime.js	2026-09-20 03:45:13.321633103 +0000
++++ /home/hatch/workspace/ping-24h/sprint/writers/w2-reaper/ce002-port/src/mission_runtime.js	2026-09-29 01:47:00.861712229 +0000
+@@ -469,13 +469,15 @@
+   }
+ 
+   /**
+-   * Reclaim expired leases — P0-6.
++   * Reclaim expired leases — P0-6 (narrowed reaper, predicate ported from f01).
+    *
+-   * Finds missions with status IN ('running', 'assigned') whose `lease_until`
+-   * has passed, resets them to `created` (AVAILABLE) so the scheduler can
+-   * re-claim them. Only catches missions NOT being actively renewed by the
+-   * scheduler (orphans from crashed schedulers or stuck workers beyond the
+-   * lease renewal window).
++   * Reclaims ONLY missions that never started: status 'assigned' with
++   * started_at IS NULL whose `lease_until` has passed. A mission that reached
++   * 'running' (started_at set) MAY have produced an external effect, so lease
++   * expiry NEVER turns it back into `created`: that would be an automatic
++   * retry of an unknown-outcome execution. Orphaned running missions are
++   * surfaced for HOLD/reconciliation by the reconciler, never silently
++   * re-dispatched.
+    *
+    * @returns {Promise<number>} count of reclaimed missions
+    */
+@@ -483,7 +485,8 @@
+     const result = await this._pool.query(
+       `UPDATE ping_missions
+        SET status = 'created', assigned_to = NULL, lease_until = NULL, claimed_at = NULL, retry_at = NOW()
+-       WHERE status IN ('running', 'assigned')
++       WHERE status = 'assigned'
++         AND started_at IS NULL
+          AND lease_until IS NOT NULL
+          AND lease_until < NOW()
+        RETURNING mission_id`

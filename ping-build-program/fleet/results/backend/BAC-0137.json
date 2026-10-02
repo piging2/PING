@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0137",
+ "verdict": "ADAPT",
+ "summary": "BEFORE 3000_writes_tiered: 0.156ms; AFTER write-back (6 batched flushes) vs write-through (3000 cold writes): 0.351ms. Delta +125.6%. cold writes fell from 3000 to 6 flushes, but batching overhead doubled time in Python; the win is in real cold-store I/O, not this simulation.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench3.py",
+  "fleet/work/fleet-be-1/bench3b.py",
+  "fleet/work/fleet-be-1/bench3_results.json"
+ ],
+ "confidence": 0.6,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.156,
+  "after_ms": 0.351,
+  "metric": "3000_writes_tiered",
+  "change": "write-back (6 batched flushes) vs write-through (3000 cold writes)",
+  "case": 136
+ }
+}

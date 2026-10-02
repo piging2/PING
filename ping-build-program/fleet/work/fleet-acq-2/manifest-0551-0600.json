@@ -1,0 +1,632 @@
+[
+ {
+  "case": 0,
+  "mission_no": 551,
+  "slug": "valid-urlset",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid urlset: locs recorded as untrusted refs",
+  "expect_flags": [
+   "untrusted_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 1,
+  "mission_no": 552,
+  "slug": "valid-index",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid sitemapindex: child sitemap refs recorded, not fetched",
+  "expect_flags": [
+   "child_unfetched"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 2,
+  "mission_no": 553,
+  "slug": "xxe-file",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "XXE: DOCTYPE/entity rejected, whole doc quarantined",
+  "expect_flags": [
+   "entity_rejected"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 3,
+  "mission_no": 554,
+  "slug": "billion-laughs",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "entity expansion bomb rejected at DOCTYPE",
+  "expect_flags": [
+   "entity_rejected"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 4,
+  "mission_no": 555,
+  "slug": "param-entity",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "parameter entities rejected",
+  "expect_flags": [
+   "entity_rejected"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 5,
+  "mission_no": 556,
+  "slug": "malformed-xml",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "truncated XML: no partial URL claims",
+  "expect_flags": [
+   "quarantined"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 6,
+  "mission_no": 557,
+  "slug": "not-xml-html",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "HTML served as sitemap: rejected, not parsed as tag soup",
+  "expect_flags": [
+   "not_xml"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 7,
+  "mission_no": 558,
+  "slug": "empty-doc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "empty doc: INVALID_PAYLOAD, not silent empty success",
+  "expect_flags": [
+   "empty_input"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 8,
+  "mission_no": 559,
+  "slug": "whitespace-only",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "whitespace-only: INVALID_PAYLOAD",
+  "expect_flags": [
+   "empty_input"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 9,
+  "mission_no": 560,
+  "slug": "js-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "javascript: loc dropped per scheme allowlist",
+  "expect_flags": [
+   "scheme_dropped"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 10,
+  "mission_no": 561,
+  "slug": "data-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "data: loc dropped",
+  "expect_flags": [
+   "scheme_dropped"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 11,
+  "mission_no": 562,
+  "slug": "relative-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative loc: unresolved_ref, never resolved by guess",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 12,
+  "mission_no": 563,
+  "slug": "loc-whitespace",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "loc whitespace preserved verbatim with flag",
+  "expect_flags": [
+   "whitespace_value"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 13,
+  "mission_no": 564,
+  "slug": "loc-uppercase-scheme",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "uppercase scheme recorded verbatim",
+  "expect_flags": [],
+  "verbatim": [
+   "HTTPS://a.example/"
+  ]
+ },
+ {
+  "case": 14,
+  "mission_no": 565,
+  "slug": "lastmod-words",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "lastmod verbatim, never parsed to datetime",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 15,
+  "mission_no": 566,
+  "slug": "lastmod-valid",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid lastmod kept as claimed string",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 16,
+  "mission_no": 567,
+  "slug": "priority-2",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "priority 2.5 out of range: flagged, verbatim",
+  "expect_flags": [
+   "range_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 17,
+  "mission_no": 568,
+  "slug": "priority-words",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "priority words verbatim",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 18,
+  "mission_no": 569,
+  "slug": "changefreq-bogus",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bogus changefreq verbatim, never normalized",
+  "expect_flags": [
+   "invalid_enum"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 19,
+  "mission_no": 570,
+  "slug": "changefreq-valid",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "valid changefreq kept as claimed",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 20,
+  "mission_no": 571,
+  "slug": "url-60k",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "60k urls capped at 50000 per spec with flag",
+  "expect_flags": [
+   "url_cap"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 21,
+  "mission_no": 572,
+  "slug": "nested-index",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "nested sitemapindex element ignored with flag",
+  "expect_flags": [
+   "nested_index_ignored"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 22,
+  "mission_no": 573,
+  "slug": "index-in-urlset",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "sitemap entry inside urlset ignored with flag",
+  "expect_flags": [
+   "misplaced_entry"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 23,
+  "mission_no": 574,
+  "slug": "url-in-index",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "url entry inside sitemapindex ignored with flag",
+  "expect_flags": [
+   "misplaced_entry"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 24,
+  "mission_no": 575,
+  "slug": "wrong-namespace",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "wrong namespace: entries still extracted with flag, not silently dropped",
+  "expect_flags": [
+   "namespace_mismatch"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 25,
+  "mission_no": 576,
+  "slug": "no-namespace",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "missing namespace: parsed leniently with flag",
+  "expect_flags": [
+   "namespace_missing"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 26,
+  "mission_no": 577,
+  "slug": "image-extension",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "image extension loc recorded as untrusted ref",
+  "expect_flags": [
+   "untrusted_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 27,
+  "mission_no": 578,
+  "slug": "image-loc-relative",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "relative image loc: unresolved_ref",
+  "expect_flags": [
+   "unresolved_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 28,
+  "mission_no": 579,
+  "slug": "video-extension",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "video extension verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 29,
+  "mission_no": 580,
+  "slug": "news-extension",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "news publication_date verbatim with flag",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 30,
+  "mission_no": 581,
+  "slug": "xhtml-alternate",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "xhtml alternates recorded as untrusted refs",
+  "expect_flags": [
+   "untrusted_ref"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 31,
+  "mission_no": 582,
+  "slug": "loc-xss",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "markup inside loc stays inert string data",
+  "expect_flags": [
+   "markup_in_loc"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 32,
+  "mission_no": 583,
+  "slug": "loc-bidi",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "bidi in loc neutralized in normalized view, verbatim preserved",
+  "expect_flags": [
+   "bidi_neutralized"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 33,
+  "mission_no": 584,
+  "slug": "loc-credentials",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "credential-bearing loc: rejected entry, no secret in record",
+  "expect_flags": [
+   "credential_url_rejected"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 34,
+  "mission_no": 585,
+  "slug": "loc-localhost",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "localhost loc flagged (SSRF-adjacent), kept as claimed",
+  "expect_flags": [
+   "ssrf_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 35,
+  "mission_no": 586,
+  "slug": "loc-169254",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "link-local loc flagged ssrf_suspect",
+  "expect_flags": [
+   "ssrf_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 36,
+  "mission_no": 587,
+  "slug": "dup-locs",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "duplicate locs both recorded with flag, no silent dedup",
+  "expect_flags": [
+   "duplicate_loc"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 37,
+  "mission_no": 588,
+  "slug": "loc-case-dup",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "case-variant locs kept as distinct (no case-fold guess)",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 38,
+  "mission_no": 589,
+  "slug": "trailing-slash-dup",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "trailing-slash variants kept distinct, no normalization guess",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 39,
+  "mission_no": 590,
+  "slug": "query-frag",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "query+fragment preserved verbatim",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 40,
+  "mission_no": 591,
+  "slug": "huge-loc-10k",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "10KB loc kept with length note (no per-loc cap in spec; recorded)",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 41,
+  "mission_no": 592,
+  "slug": "control-chars",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "control chars in XML: not well-formed, quarantined",
+  "expect_flags": [
+   "quarantined"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 42,
+  "mission_no": 593,
+  "slug": "bom-present",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "BOM tolerated, stripped with encoding note",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 43,
+  "mission_no": 594,
+  "slug": "encoding-lie",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "declared encoding vs content flagged, not re-decoded by guess",
+  "expect_flags": [
+   "encoding_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 44,
+  "mission_no": 595,
+  "slug": "comment-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "commented loc never becomes a URL claim",
+  "expect_flags": [],
+  "verbatim": [
+   "https://a.example/"
+  ]
+ },
+ {
+  "case": 45,
+  "mission_no": 596,
+  "slug": "pi-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "processing instruction ignored",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 46,
+  "mission_no": 597,
+  "slug": "cdata-loc",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "CDATA loc extracted as text",
+  "expect_flags": [],
+  "verbatim": []
+ },
+ {
+  "case": 47,
+  "mission_no": 598,
+  "slug": "entity-defined-benign",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "TYPED_FAILURE:INVALID_PAYLOAD",
+  "note": "even benign entities rejected: no DTD at all",
+  "expect_flags": [
+   "entity_rejected"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 48,
+  "mission_no": 599,
+  "slug": "sitemap-lastmod",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "invalid sitemap lastmod verbatim with flag",
+  "expect_flags": [
+   "format_suspect"
+  ],
+  "verbatim": []
+ },
+ {
+  "case": 49,
+  "mission_no": 600,
+  "slug": "mixed-content",
+  "bound": "SITEMAP",
+  "raw": false,
+  "expect": "BOUNDED_SUCCESS",
+  "note": "unknown elements ignored with flag, known urls kept",
+  "expect_flags": [
+   "unknown_element"
+  ],
+  "verbatim": []
+ }
+]

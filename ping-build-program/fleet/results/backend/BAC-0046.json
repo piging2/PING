@@ -1,0 +1,33 @@
+{
+ "mission_id": "BAC-0046",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE equal round-robin vs AFTER weighted fair queuing (4:2:1): both served gold=60/silver=60/bronze=60 \u2014 the test drained all queues fully, so shares were equal by construction and the policy difference was unmeasurable. Experiment design flaw.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun under saturation (arrival rate > service rate, finite window) and measure per-tenant throughput shares.",
+ "numbers": {
+  "before_ms": 0.0346,
+  "after_ms": 0.076,
+  "metric": "schedule_180_weighted_jobs",
+  "change": "weighted fair queuing (4:2:1) instead of equal round-robin",
+  "case": 45,
+  "extra": {
+   "served_before": {
+    "gold": 60,
+    "silver": 60,
+    "bronze": 60
+   },
+   "served_after": {
+    "gold": 60,
+    "silver": 60,
+    "bronze": 60
+   },
+   "note": "policy claim: gold gets ~4x share; measured shares in served_after"
+  }
+ }
+}

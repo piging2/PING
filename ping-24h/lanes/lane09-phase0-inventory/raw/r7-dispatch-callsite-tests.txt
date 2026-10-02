@@ -1,0 +1,77 @@
+=== dispatch route.ts: 300-330 (read only) ===
+    }
+    idempotencyKey = rawKey;
+  }
+
+  // ---- Identity set (deterministic ids) ----
+  // P0 idempotency: missionId derives from the idempotency key, NEVER from
+  // the clock. Byte-identical retries (double-click, concurrent identical
+  // POSTs) mint the same id, so the journal lookup below catches them.
+  const promptDigest = sha256hex(prompt);
+  const missionId = 'mc-m-' + sha256hex(['mission', agent, tenant, capability, promptDigest, idempotencyKey].join('|')).slice(0, 12);
+  const runId = `${missionId}-r1`;
+  const executionId = `${missionId}-x1`;
+  const taskId = `${missionId}:task:1`;
+  const correlationId = missionId;
+  const contextPackId = `mc-ctx-${missionId}`;
+  const namespace = `tenant::${tenant}`;
+  if (!NAMESPACE_RE.test(namespace)) return bad(400, 'bad_namespace', namespace);
+  const deadlineS = DEADLINES[agent as SliceAgent];
+  const deadline = new Date(Date.now() + deadlineS * 1000).toISOString();
+  const resultPath = `/home/nolan/workspace/mission-control/artifacts/${missionId}/result.json`;
+
+  // ---- Idempotency: lookup-before-mint (no new authority, no new store) ----
+  // Runs BEFORE any adapter call: a duplicate POST never touches the
+  // adapter, emits nothing, publishes nothing. If the aggregate already has
+  // a terminal event (SUCCEEDED/FAILED/DENIED) the original record is
+  // returned with duplicate_suppressed:true. If the original is in-flight
+  // (CREATED/QUEUED/RUNNING/UNKNOWN, no terminal) the duplicate is refused
+  // with 409 HOLD: the outcome is unknown and must never be re-dispatched
+  // blindly.
+  const prior = findPriorMission(missionId);
+  if (prior !== null) {
+    if (MISSION_TERMINAL_STATUSES.has(prior.status)) {
+      const denied = prior.status === 'DENIED';
+      return Response.json({
+        ok: !denied,
+        status: prior.status,
+=== does current source have compileAskContext in route.ts? ===
+=== dirty diff of route.ts (stat + first 30 lines) ===
+ src/app/api/mc/dispatch/route.ts | 140 +++++++++++++++++++++++++++++++++------
+ 1 file changed, 121 insertions(+), 19 deletions(-)
+diff --git a/src/app/api/mc/dispatch/route.ts b/src/app/api/mc/dispatch/route.ts
+index b5215711..031522cf 100644
+--- a/src/app/api/mc/dispatch/route.ts
++++ b/src/app/api/mc/dispatch/route.ts
+@@ -31,6 +31,9 @@ import {
+   BROKER_STATE,
+   DEADLINES,
+   FIXED_CONSTRAINTS,
++  IDEMPOTENCY_KEY_DEFAULT,
++  IDEMPOTENCY_KEY_RE,
++  MISSION_TERMINAL_STATUSES,
+   NAMESPACE_RE,
+   OLLAMA_MODEL,
+   OLLAMA_URL,
+@@ -40,12 +43,18 @@ import {
+   SliceAgent,
+   adapterCall,
+   appendDispatchEvent,
++  findPriorMission,
+   loadProfiles,
+   mintEventId,
+   nowIso,
+   publishArtifact,
+   sha256hex,
+ } from '../_lib/mc-dispatch';
++import {
++  CALLER_KEY_HEADER,
++  loadCallerRegistry,
++  type CallerRegistry,
++} from '../_lib/mc-dispatch-identity';
+=== src/app/mission-control ===
+page.tsx
+=== recent test-run evidence (read only) ===
+step5-hostile.ts
+shell-less.tsx
+=== embedding/Qdrant init state (config files only) ===

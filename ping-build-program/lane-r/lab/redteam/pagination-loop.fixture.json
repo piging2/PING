@@ -1,0 +1,82 @@
+{
+  "capture": {
+    "incidentRef": "redteam-5",
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "redteam",
+    "sourceDigest": "sha256:ae14378fe0ff0200ee73716fd0e41c6736a295f050b50d7bcfbe60041c1b4333"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "terminalState": "FAILED"
+  },
+  "fixtureId": "redteam-pagination-loop",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordedAt": "2026-09-23T21:00:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T21:00:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 668,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [],
+      "present": false
+    },
+    "redactions": [],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "provider points at page 2",
+      "request": {
+        "body": null,
+        "headers": {},
+        "method": "GET",
+        "path": "/v1/jobs?cursor=start"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_1"
+          }
+        ],
+        "headers": {},
+        "latencyMs": 10,
+        "nextPath": "/v1/jobs?cursor=aaa",
+        "status": 200
+      }
+    },
+    {
+      "id": "page-2",
+      "kind": "request",
+      "note": "provider points back at page 1: infinite loop without a guard",
+      "request": {
+        "body": null,
+        "headers": {},
+        "method": "GET",
+        "path": "/v1/jobs?cursor=aaa"
+      },
+      "response": {
+        "body": [
+          {
+            "id": "job_2"
+          }
+        ],
+        "headers": {},
+        "latencyMs": 10,
+        "nextPath": "/v1/jobs?cursor=start",
+        "status": 200
+      }
+    }
+  ],
+  "title": "REDTEAM: provider nextPath cursors loop forever"
+}

@@ -1,0 +1,162 @@
+{
+ "subjects": {
+  "health_2of3": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "hung check bounded by check deadline, labeled down (check timeout)",
+   "sample": {
+    "health": {
+     "status": "degraded",
+     "integrations": {
+      "postgres": "up",
+      "qdrant": "up",
+      "ollama": "down"
+     },
+     "freshness": "FRESH",
+     "canonical": true,
+     "source": "gateway-self"
+    },
+    "freshness": "FRESH",
+    "canonical": true,
+    "source": "gateway-self"
+   }
+  },
+  "cold_boot": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<generic-fallback>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "generic-fallback"
+   }
+  },
+  "postgres_down": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<generic-fallback>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "generic-fallback"
+   }
+  },
+  "qdrant_down": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<postgres-text-search>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "postgres-text-search"
+   }
+  },
+  "empty_collection": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<empty-index>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "empty-index",
+    "note": "0 points"
+   }
+  },
+  "pg_isready_false": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<generic-fallback>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "generic-fallback"
+   }
+  },
+  "qdrant_tcp_fallback": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "hung check bounded by check deadline, labeled down (check timeout)",
+   "sample": {
+    "data": "<canonical>",
+    "freshness": "FRESH",
+    "canonical": true,
+    "source": "postgres",
+    "qdrant_check": {
+     "tcp": "failed",
+     "used": "http-version-fallback"
+    }
+   }
+  },
+  "snapshot_stale": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<qdrant-snapshot>",
+    "freshness": "STALE",
+    "canonical": false,
+    "source": "qdrant-snapshot",
+    "as_of": "2026-09-17T00:00:00Z"
+   }
+  },
+  "dump_stale": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<pg-dump>",
+    "freshness": "STALE",
+    "canonical": false,
+    "source": "pg-dump",
+    "as_of": "2026-09-19T00:00:00Z"
+   }
+  },
+  "worker_projection": {
+   "case0_derived_not_canonical": true,
+   "case1_stale_has_asof": true,
+   "case2_never_silent_fresh": true,
+   "case3_health_honest": true,
+   "case4_fallback_deadline": true,
+   "detail": "typed FallbackTimeout",
+   "sample": {
+    "data": "<last-materialized-projection>",
+    "freshness": "DERIVED",
+    "canonical": false,
+    "source": "last-materialized-projection"
+   }
+  }
+ },
+ "all_50_pass": true
+}

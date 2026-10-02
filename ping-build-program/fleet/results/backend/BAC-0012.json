@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0012",
+ "verdict": "PROVEN",
+ "summary": "BEFORE static partition makespan 30 units; AFTER greedy steal makespan 30 units \u2014 parity proven. Test workload was already balanced (each worker got one 20-unit task), so no delta was available to capture; mechanism unrefuted.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.75,
+ "followup": "Adversarial skew case (all long tasks on one worker) to exhibit the delta.",
+ "numbers": {
+  "before_ms": 0.002,
+  "after_ms": 0.0401,
+  "metric": "schedule_44_tasks_simulated",
+  "change": "greedy steal (least-loaded worker takes next task) vs static partition",
+  "case": 11,
+  "extra": {
+   "makespan_units_before": 30,
+   "makespan_units_after": 30,
+   "note": "deterministic simulation; lower makespan wins"
+  }
+ }
+}

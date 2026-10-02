@@ -1,0 +1,23 @@
+=== GET /health ===
+HTTP 200 in 0.005383s
+{"status":"healthy","uptime":257824.308277899,"components":{"gateway":{"status":"healthy","uptime":257824.308282819,"memory":{"rss":158461952,"heapTotal":100818944,"heapUsed":97175488,"external":20250944,"arrayBuffers":533102}},"generated_artifacts":{"status":"healthy","artifacts":5},"integrations":{"status":"healthy","integrations":{"total":3,"healthy":3,"error":0,"integrations":{"posthog":{"stat
+=== GET / ===
+HTTP 404
+=== GET /ready /healthz /api/health ===
+/ready -> 404
+/healthz -> 404
+/api/health -> 404
+/api/v1/health -> 404
+=== unauth POST to P0-gated route (expect deny, proves gate path live) ===
+HTTP 200
+=== .env for compose ===
+-rw------- 1 ubuntu ubuntu 237 Sep 20 00:07 /opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/infrastructure/oracle/.env
+=== compose config check (does it resolve?) ===
+    container_name: ping-ollama
+    image: ollama/ollama:latest
+    container_name: ping-postgres
+    image: postgres:15-alpine
+    container_name: ping-qdrant
+    image: qdrant/qdrant:latest
+    container_name: ping-vault
+    image: hashicorp/vault:latest

@@ -1,0 +1,30 @@
+== TASK 10: KG -> ContextCompiler loop ==
+  pack id: ctx_3c3fdc3152601e60 | knowledge_refs: ["node-b-inf","node-c-irr","node-e-stale"]
+  PASS pack contains knowledge_refs (query returned something)
+  PASS inference node at 0.8 boundary IS injected (node-b-inf)
+  PASS BREAKPOINT: business event node at 0.5 confidence is NOT injected (node-a-biz)
+  PASS IRRELEVANT same-namespace node IS injected (node-c-irr: price list in a review mission)
+  PASS no cross-namespace leakage (node-d-xns absent)
+  PASS STALE node injected with no freshness signal (node-e-stale, created 2024-01)
+  PASS knowledge ref shape carries no timestamp (staleness invisible to consumers)
+== TASK 10: worker consumption ==
+[ObservationWorker] Processing REVIEW_RECEIVED for unknown
+[ObservationWorker] Processing REVIEW_RECEIVED for unknown
+  PASS ObservationWorker emits OBSERVATION_CREATED
+  PASS observation carries context_pack_id + knowledge_refs (passthrough)
+  PASS worker EXTRACTION behavior is identical with/without knowledge (no behavioral consumption)
+[ClaimWorker] Processing OBSERVATION_CREATED for unknown
+  PASS pack ID does not cover knowledge_refs (staleness hazard per sprint report)
+  PASS ClaimWorker emits CLAIM_CREATED
+  PASS claim carries all three lineage fields end to end
+== TASK 11: propagation fields ==
+  PASS namespace survives observation hop
+  PASS namespace survives claim hop
+  PASS correlation_id survives both hops
+  PASS causation forms a strict parent chain (obs->review, claim->obs)
+  PASS originator (source) is the worker at each hop
+  PASS confidence inherited with provenance tag at each hop
+  PASS compiler rejects namespace-mixed correlation group (fail-closed, no silent mixing)
+  PASS knowledge read itself is namespace-scoped (queryNodes receives namespace)
+
+FINAL: 21 passed, 0 failed

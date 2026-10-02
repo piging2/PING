@@ -1,0 +1,2023 @@
+{
+  "lab": "public-apis",
+  "worker": "fleet-acq-1",
+  "parser": "api-harness@1.0.0",
+  "generated_at": "2026-09-24T03:54:55.107Z",
+  "cases_total": 50,
+  "cases_passed": 50,
+  "cases_failed": 0,
+  "doctrine": "NEVER turn parser guess into fact: hostile inputs get typed lane-K failure records or bounded extraction with per-claim provenance; conflicts stay unresolved; uncorroborated identity signals stay unclaimed.",
+  "contract_ref": "lane-d HOSTILE-INPUT-CONTRACT.md parse bounds P1-P8; lane-k FAILURE-TAXONOMY.md v1.0.0 (13 classes)",
+  "results": [
+    {
+      "case_id": "case-700",
+      "mission": "ACQ-0851",
+      "title": "5 clean records, batch 3 baseline",
+      "threat": "Every typed field claims per record.",
+      "fixture_sha256": "029e92dfea290d7ff98bfe9c2af1058ce2b660c215320bcb796eb04cdb010255",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "5"
+        },
+        {
+          "name": "exact-claims:place_website",
+          "ok": true,
+          "detail": "5"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "25 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-701",
+      "mission": "ACQ-0852",
+      "title": "record containing a results key is just a record",
+      "threat": "Unknown fields are ignored even when named like the envelope.",
+      "fixture_sha256": "47918d78cc93b4710284e0c525fccbaf53ca56aaf2e7c4f1fb25a5c7a8ce161f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-702",
+      "mission": "ACQ-0853",
+      "title": "website as array -> type-mismatch-website",
+      "threat": "Arrays never become URLs.",
+      "fixture_sha256": "4e05ead286b007c7364205e85cf22741b92bb989c1038ba72b681a17c01e9527",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_website",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-703",
+      "mission": "ACQ-0854",
+      "title": "null phone -> absent",
+      "threat": "Explicit null is no value.",
+      "fixture_sha256": "da75f7451d9b4a3e329cfc0e41c52005c30bd9aa3b2117a288be851f1910dce7",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-704",
+      "mission": "ACQ-0855",
+      "title": "null address -> absent",
+      "threat": "Explicit null is no value.",
+      "fixture_sha256": "b22d1b1cd4ac31b7e552c0cede2a1ccb5de2add24460f0e9d6e2f8181f8ecc19",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_address",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-705",
+      "mission": "ACQ-0856",
+      "title": "null website -> absent",
+      "threat": "Explicit null is no value.",
+      "fixture_sha256": "0258decc038971ba194aaf8044fd93f734c24885f7e3c7b0f688e82ec7bf4416",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_website",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-706",
+      "mission": "ACQ-0857",
+      "title": "name of only tags -> stripped-to-empty -> empty-name quarantine",
+      "threat": "Stripping that erases the value is malformed, not absent.",
+      "fixture_sha256": "7ccebac556b12f105e3c4fb718129a4c7567bdd20a8b379fd9cd34674656c5da",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:empty-name",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-707",
+      "mission": "ACQ-0858",
+      "title": "phone with tabs trimmed and claimed",
+      "threat": "Surrounding whitespace (tabs included) is normalized.",
+      "fixture_sha256": "7da974e656017c90f5abb2d9e2d11bcf62790f650409acd55153d59d0c8b63e2",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-708",
+      "mission": "ACQ-0859",
+      "title": "tiny rating 1e-7 claimed",
+      "threat": "Small positives are valid; no epsilon guessing.",
+      "fixture_sha256": "0aedacfb9f0497747f2e35f189ec7144beed31c45f151c11375670e00d427c8f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_rating",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-709",
+      "mission": "ACQ-0860",
+      "title": "rating as object -> type-mismatch",
+      "threat": "Objects never become ratings.",
+      "fixture_sha256": "5c32d896fa15b62f83e6f0ae5a85457c03f6032228efcf5176f72644cb0b5bfc",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_rating",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-rating",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-710",
+      "mission": "ACQ-0861",
+      "title": "rating as array -> type-mismatch",
+      "threat": "Arrays never become ratings.",
+      "fixture_sha256": "e24f38d818367bd16f514e2f21f69ee79c3305fd92eeea2c8b690a9eba4508d1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_rating",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-rating",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-711",
+      "mission": "ACQ-0862",
+      "title": "website as number -> type-mismatch-website",
+      "threat": "Numbers never become URLs.",
+      "fixture_sha256": "9fbc9af436f2cfb400c4a20cc1777667834ba6699c186a15d408c56fc3d48cef",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_website",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-712",
+      "mission": "ACQ-0863",
+      "title": "address as number -> type-mismatch-address",
+      "threat": "Numbers never become addresses.",
+      "fixture_sha256": "2d75d0e3a559e9856ecab994e7d384cb89bb3f48eb854cae7b6ec1f950e8cfa3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_address",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-address",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-713",
+      "mission": "ACQ-0864",
+      "title": "phone as boolean -> type-mismatch-phone",
+      "threat": "Booleans never become phones.",
+      "fixture_sha256": "7d937ffd7286552f2ada49f806e24dbc6768f519e450b97198298d79cec28542",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-phone",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-714",
+      "mission": "ACQ-0865",
+      "title": "name as array -> type-mismatch-name",
+      "threat": "Arrays never become names.",
+      "fixture_sha256": "295fed064f825b5d3e2ee36d1d04b3ad7c0f3fa7ffbb7c01efc87431e3836f6f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-name",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-715",
+      "mission": "ACQ-0866",
+      "title": "id with spaces tracked literally",
+      "threat": "Identity is byte-literal; spaced ids dedupe with spaced ids.",
+      "fixture_sha256": "751b6199ada7ab304205b499b531b89c7e957f8fc8606dddc8f3e0260b00d6fa",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-716",
+      "mission": "ACQ-0867",
+      "title": "same id, extra unknown field -> dedupe (unknowns ignored in identity)",
+      "threat": "Identity covers claim fields only; unknown extras do not fork identity (documented).",
+      "fixture_sha256": "d6f488412b5ed2bfdad09edaf146053f70fef59896da55f214924e51bbbfecc5",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-717",
+      "mission": "ACQ-0868",
+      "title": "website without trailing slash claimed",
+      "threat": "No path normalization is applied.",
+      "fixture_sha256": "1ba42b4c518026f48411472fffeca79157c87cb166bad2d5914c64568b2aff76",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_website",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-718",
+      "mission": "ACQ-0869",
+      "title": "website with port, query, fragment claimed verbatim",
+      "threat": "The URL claims exactly as written.",
+      "fixture_sha256": "17478e0b0ff5ec07d5e38bc1e8dc3e0a0d2345bb6d6e118a9be72cd3d96ca79e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_website",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-719",
+      "mission": "ACQ-0870",
+      "title": "phone without country code claimed",
+      "threat": "Local formats match the phone shape.",
+      "fixture_sha256": "1d0dc359ab56b951ef42bfa8ccfa722c6acce95b14a7516952c847f771c1a82d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-720",
+      "mission": "ACQ-0871",
+      "title": "dotted phone claimed",
+      "threat": "Dotted local format matches the phone shape.",
+      "fixture_sha256": "ff7b7619d564ab4a9337a1df244efd8efe1e8b9d27b3056345b17f84e86b11d1",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-721",
+      "mission": "ACQ-0872",
+      "title": "rating \"NaN\" (string) -> type-mismatch",
+      "threat": "Strings never become numbers, even when they spell one.",
+      "fixture_sha256": "037fe27a9afbe1dd486ccb2ac569d7ce8de0b95bcb77bfe625ff6f5a56e58153",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_rating",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:type-mismatch-rating",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-722",
+      "mission": "ACQ-0873",
+      "title": "30-digit phone -> bad-phone",
+      "threat": "Over the shape cap: not a phone.",
+      "fixture_sha256": "dc64d381e0e917480f0de6c91a1965dca7e57ec9eb0302c061753c646966daec",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-phone",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-723",
+      "mission": "ACQ-0874",
+      "title": "line separators in name collapsed",
+      "threat": "Unicode line separators collapse like other whitespace.",
+      "fixture_sha256": "f68aed74f07546a5973164b007cf64f7b0339cc4ffbe993a16448f1e547b6846",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_name",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-724",
+      "mission": "ACQ-0875",
+      "title": "whitespace-only input -> typed INVALID_PAYLOAD",
+      "threat": "Whitespace is not a document.",
+      "fixture_sha256": "186d8a49bb936701f533bf790dedebc4c2193eeb35fd449c600b2355f5fcdf0b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "INVALID_PAYLOAD"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "unparseable"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-725",
+      "mission": "ACQ-0876",
+      "title": "results null -> UNSUPPORTED",
+      "threat": "Null results is not a record array.",
+      "fixture_sha256": "7d1cbc7b086d21fa8e18b25a57b47a221c263a4879a26d8d718546bfbc0de041",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "no-record-array"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-726",
+      "mission": "ACQ-0877",
+      "title": "results as string -> UNSUPPORTED",
+      "threat": "A string results value is not coerced into an array.",
+      "fixture_sha256": "f21969a489063143d2012c6688cfe1b906d7a526ca49a68c197fa1f50b117562",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=typed_failure"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-record-shape",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-class-canonical",
+          "ok": true,
+          "detail": "UNSUPPORTED"
+        },
+        {
+          "name": "failure-class-expected",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-signal",
+          "ok": true,
+          "detail": "no-record-array"
+        },
+        {
+          "name": "no-claims-on-failure",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "failure-terminal",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "typed_failure"
+    },
+    {
+      "case_id": "case-727",
+      "mission": "ACQ-0878",
+      "title": "__proto__ field ignored, claims fine",
+      "threat": "JSON.parse creates own properties; the harness never walks the prototype.",
+      "fixture_sha256": "2262cb9948cd491c64efb669c1dd35dfde9f5e41c12648285f3fd0822a703052",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "exact-claims:place_rating",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-728",
+      "mission": "ACQ-0879",
+      "title": "constructor field ignored",
+      "threat": "Unknown fields are ignored regardless of name.",
+      "fixture_sha256": "ef63f1712f2f2ec89611439811b225308420fda000ec7c66ec0720d811351cac",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-729",
+      "mission": "ACQ-0880",
+      "title": "deep nesting in unknown field under cap parses",
+      "threat": "Unknown-field depth counts toward the cap but parses under it.",
+      "fixture_sha256": "050e112f2f21bf64abad04b60b12d1c4a6162d48f07893932bb39a790da63731",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-730",
+      "mission": "ACQ-0881",
+      "title": "combining-char name claimed verbatim",
+      "threat": "Unicode text claims as written; no normalization is guessed.",
+      "fixture_sha256": "7685c992269f740c8b72889d8d7195d8dce5b905769d7a7b0b56a37424b09e76",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-731",
+      "mission": "ACQ-0882",
+      "title": "bidi override in name claimed verbatim (documented)",
+      "threat": "Bidi analysis is out of scope; the text claims as written.",
+      "fixture_sha256": "40f679cd16bb2469d2074dcabf6362e38e516ea560e7ccaeb34daba4d6d4dce3",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-732",
+      "mission": "ACQ-0883",
+      "title": "address with script stripped",
+      "threat": "Markup stripping applies to addresses too.",
+      "fixture_sha256": "5a5c73602d1e5189befedf4ab7b197c82251cee8e158803676148fff46c2e985",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_address",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-733",
+      "mission": "ACQ-0884",
+      "title": "fullwidth digits -> bad-phone",
+      "threat": "The phone shape is ASCII digits only (documented).",
+      "fixture_sha256": "4cc8be5e159233094e11557a64670a7caff526f32190d968d2a4b81bc903c32b",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-phone",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-734",
+      "mission": "ACQ-0885",
+      "title": "internal tab in website claimed literally",
+      "threat": "The lab does not repair URLs.",
+      "fixture_sha256": "95f484dad4d0a217358943a66ede0304ecc9edaac516e3285970870e5736b616",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_website",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-735",
+      "mission": "ACQ-0886",
+      "title": "special-char id tracked",
+      "threat": "Identity is byte-literal.",
+      "fixture_sha256": "b1dcce08c4a88f5cc91f668147cccc1271dee384878069099e808162bdf08034",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-736",
+      "mission": "ACQ-0887",
+      "title": "exactly 10000 records -> no truncation flag",
+      "threat": "At-cap boundary: accepted without the flag.",
+      "fixture_sha256": "2fe54a82042559ec6a9d643a34f2d5e4625895216134f75ea5235cb7419d1ffa",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "not-truncated:records",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "10000"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "10000 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-737",
+      "mission": "ACQ-0888",
+      "title": "10001 minimal records -> truncation flagged",
+      "threat": "Over the record cap: truncation, not failure.",
+      "fixture_sha256": "15bceb2012a3aa4292ff0d884d15eec36f0eb66510427de3b870c0f837e762d6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:records",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "10000"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "10000 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-738",
+      "mission": "ACQ-0889",
+      "title": "rating -0 claimed (not less than zero)",
+      "threat": "-0 is not below the bound.",
+      "fixture_sha256": "f237f8544a9f28a8666a68475843c61f6e592ec3173f38d346430ed7844a920e",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_rating",
+          "ok": true,
+          "detail": "1"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-739",
+      "mission": "ACQ-0890",
+      "title": "envelope: one dup-key record quarantined, others claim",
+      "threat": "Record isolation holds inside the envelope.",
+      "fixture_sha256": "f10893280adb337203c7eeded90551c81b133ce4d40cc4cb4e69d5895b734f8c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:duplicate-key",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "10 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-740",
+      "mission": "ACQ-0891",
+      "title": "5KB address -> truncation flagged",
+      "threat": "Over the 4KiB text cap: truncation flagged, record still processed.",
+      "fixture_sha256": "3e1d596361a88d1cc09267c6e38b3dbbcaef8628d4e91b4c25719181f01809c8",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "truncated:fields",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-claims:place_address",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-741",
+      "mission": "ACQ-0892",
+      "title": "phone \"+\" only -> bad-phone",
+      "threat": "A bare plus is not a phone.",
+      "fixture_sha256": "7c3ed06bd6377e78add98a081d779ab19ee9dfba37612bfc88259e9c7feae1fd",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_phone",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:bad-phone",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-742",
+      "mission": "ACQ-0893",
+      "title": "\"https://\" -> degenerate-website quarantine",
+      "threat": "A scheme with no authority is not a navigation candidate.",
+      "fixture_sha256": "ad4098960e03cd59439b8319e384a365b16c44c616cb9262460029afc16ed691",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_website",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:degenerate-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-743",
+      "mission": "ACQ-0894",
+      "title": "\"https://?x=1\" -> degenerate-website quarantine",
+      "threat": "A scheme with no authority is not a navigation candidate.",
+      "fixture_sha256": "99027fe200fdcbe7d3e530140b66123eace12b49afc88d101e9024993f7c2de6",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_website",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:degenerate-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-744",
+      "mission": "ACQ-0895",
+      "title": "name of tags plus spaces -> empty-name quarantine",
+      "threat": "Stripping that erases the value is malformed.",
+      "fixture_sha256": "3220a3cf16d3b6141242d3b711ea53104a47eb28ba79421fee2868e7f095f6ba",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "absent:place_name",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:empty-name",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "4 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-746",
+      "mission": "ACQ-0896",
+      "title": "credential website in second record redacted",
+      "threat": "Secret-shaped: quarantined with redaction; first record claims.",
+      "fixture_sha256": "d52d678e8c3f879e49a7b57ba3d76d2b8c6b9920d0387f88e0bc07b21ab4dba0",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "forbidden-value",
+          "ok": true,
+          "detail": "\"pw@acme.example\""
+        },
+        {
+          "name": "quarantined:undefined:credential-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "2"
+        },
+        {
+          "name": "exact-claims:place_website",
+          "ok": true,
+          "detail": "1"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "9 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-747",
+      "mission": "ACQ-0897",
+      "title": "\"+1234567\" (7 digits with plus) claimed",
+      "threat": "At the digit boundary with a plus: valid.",
+      "fixture_sha256": "2cfc6507c0eaaee1ab1574a802bc33bd2c854bebee7f12c5888e9637003d4d4f",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_phone",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "5 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-748",
+      "mission": "ACQ-0898",
+      "title": "rating 2.5e-1 claimed as 0.25",
+      "threat": "Exponent notation parses to its value.",
+      "fixture_sha256": "dbb191ed247c697e8037c8930084cf3feaacb66787042c86d82d7d887330a28d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "claim:place_rating",
+          "ok": true,
+          "detail": "1 candidate(s)"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "2 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-749",
+      "mission": "ACQ-0899",
+      "title": "single record with only unknown fields -> no claims",
+      "threat": "Unknown fields never produce claims.",
+      "fixture_sha256": "2adc23a045a64af7a76b24a50e80888d5ed3dd292c69ed979d53af2bf3a0979d",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "expect-no-claims",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "zero claims (legitimate empty or failure path)"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    },
+    {
+      "case_id": "case-745",
+      "mission": "ACQ-0900",
+      "title": "api kitchen sink 3 -> exact claim set",
+      "threat": "Degenerate site, stripped-empty name, bad phone, numeric ids, empty record.",
+      "fixture_sha256": "b030d856da2fd5b1ac87659173f444c792786b2a8071bcb46643e7a10ebfbb3c",
+      "assertions": [
+        {
+          "name": "harness-executed",
+          "ok": true,
+          "detail": "outcome=bounded_success"
+        },
+        {
+          "name": "outcome-matches",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "no-failure-record",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "quarantined:undefined:degenerate-website",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "quarantined:undefined:empty-name",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "quarantined:undefined:bad-phone",
+          "ok": true,
+          "detail": "undefined"
+        },
+        {
+          "name": "exact-claims:place_name",
+          "ok": true,
+          "detail": "3"
+        },
+        {
+          "name": "exact-claims:place_rating",
+          "ok": true,
+          "detail": "4"
+        },
+        {
+          "name": "invariant:claims-grounded",
+          "ok": true,
+          "detail": "17 claim(s), all with provenance"
+        }
+      ],
+      "pass": true,
+      "harness_outcome": "bounded_success"
+    }
+  ]
+}

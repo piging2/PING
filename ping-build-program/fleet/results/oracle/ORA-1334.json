@@ -1,0 +1,13 @@
+{
+  "mission_id": "ORA-1334",
+  "verdict": "ADAPT",
+  "summary": "ADAPTED (live wipe forbidden; sandbox execution): backup->wipe->rebuild->digest-verify drill executed sandbox-local (sqlite3 WAL stand-in, 5000 digest-chained events): wipe confirmed, rebuild from backup, 5000/5000 rows, full chain re-verified, RTO 238ms. Mechanics PROVEN; 'postgres'-engine-specific restore (WAL replay / snapshot restore) still requires staging rehearsal.",
+  "evidence_files": [
+    "fleet/work/fleet-ora-2/sandbox-execution-pass.md",
+    "fleet/work/fleet-ora-2/sandbox/tree/chaos-harness.js",
+    "fleet/work/fleet-ora-2/sandbox/tree/chaos-log.json",
+    "fleet/work/fleet-ora-2/sandbox/tree/store-loss-drill.sh"
+  ],
+  "confidence": 0.78,
+  "followup": "On staging: rehearse the 'postgres' restore from the real 09-16/09-19 backups (F3/F4/F18 runbooks); record rehearsal log + RTO."
+}

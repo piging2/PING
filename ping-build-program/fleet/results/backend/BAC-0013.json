@@ -1,0 +1,26 @@
+{
+ "mission_id": "BAC-0013",
+ "verdict": "PROVEN",
+ "summary": "BEFORE last-writer-wins: stale partitioned writer overwrote value 1 -> 99; AFTER monotonic fencing token: stale write rejected (False), value preserved at 1. Correctness claim proven; write path time parity (sub-microsecond both).",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.95,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0004,
+  "after_ms": 0.0007,
+  "metric": "write_roundtrip",
+  "change": "monotonic fencing token rejects stale writer instead of last-writer-wins",
+  "case": 12,
+  "extra": {
+   "final_value_before": 99,
+   "final_value_after": 1,
+   "stale_write_accepted": false,
+   "note": "correctness claim: stale write rejected (False), value preserved"
+  }
+ }
+}

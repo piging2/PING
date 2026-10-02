@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0032",
+ "verdict": "PROVEN",
+ "summary": "BEFORE 500 hot queries scanned 20k-item list: 403.72ms; AFTER hot/cold tiered dicts (2k hot): 0.04ms. Delta ~100% vs noise 47.3%. Improvement proven; cold-tier miss path is the known tradeoff.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.95,
+ "followup": null,
+ "numbers": {
+  "before_ms": 403.7195,
+  "after_ms": 0.0447,
+  "metric": "500_hot_queries",
+  "change": "hot/cold tiering: queries served from 2k hot dict instead of scanning 20k",
+  "case": 31,
+  "extra": {
+   "hot_tier_size": 2000,
+   "cold_tier_size": 18000
+  }
+ }
+}

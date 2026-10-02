@@ -1,0 +1,40 @@
+[2026-09-24T02:53:22Z] network=ora-depcheck
+[2026-09-24T02:53:22Z] --- postgres ---
+[2026-09-24T02:53:24Z] postgres: pg_isready OK after 2x2s
+[2026-09-24T02:53:24Z] postgres VERDICT=PROVEN (isolated start, zero declared deps needed)
+[2026-09-24T02:53:24Z] --- qdrant ---
+[2026-09-24T02:54:26Z] qdrant VERDICT=FAIL (no HTTP on :6333)
+2026-09-24T02:53:25.129268Z  INFO qdrant::actix: Qdrant HTTP listening on 6333    
+2026-09-24T02:53:25.129281Z  INFO actix_server::builder: Starting 1 workers
+2026-09-24T02:53:25.130171Z  INFO actix_server::server: Actix runtime found; starting in Actix runtime
+2026-09-24T02:53:25.139458Z  INFO qdrant::tonic: Qdrant gRPC listening on 6334    
+2026-09-24T02:53:25.139847Z  INFO qdrant::tonic: TLS disabled for gRPC API    
+[2026-09-24T02:54:26Z] --- gateway (candidate-84486f056) ---
+[2026-09-24T02:55:59Z] gateway_runtime processes=0
+[2026-09-24T02:55:59Z] gateway: :8080 (1F90) listening
+[2026-09-24T02:55:59Z] gateway VERDICT=NEEDS-REVIEW (no HTTP on :8080 within 90s; proc=0)
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission ec2366269fe8d7f9 (PROJECTION_CREATE)
+[RecommendationWorker] Recommending for general
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission 133e5868ba5f9430 (PROJECTION_CREATE)
+[RecommendationWorker] Recommending for general
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission 7004a23f5cb1da60 (PROJECTION_CREATE)
+[EventBridge] _poll() START
+[EventBridge] DEBUG canonical_events unprocessed count: 0
+[EventBridge] DEBUG canonical query returned 0 rows
+[EventBridge] Poll cycle complete. Stats: repo=0, canonical=0, errors=0
+[RecommendationWorker] Recommending for general
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission 1ebc5af43f13bd31 (PROJECTION_CREATE)
+[RecommendationWorker] Recommending for general
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission b4120f5c2583ded6 (PROJECTION_CREATE)
+[RecommendationWorker] Recommending for general
+[EventToMissionBridge] RECOMMENDATION_CREATED → mission 89ea4c3da2db395e (PROJECTION_CREATE)
+[2026-09-24T02:55:59Z] --- ollama (image-only, not in baseline compose) ---
+[2026-09-24T02:57:01Z] ollama VERDICT=FAIL (no API on :11434)
+time=2026-09-24T02:56:00.146Z level=INFO source=routes.go:2000 msg="Listening on [::]:11434 (version 0.34.2)"
+time=2026-09-24T02:56:00.151Z level=INFO source=runner.go:60 msg="discovering available GPUs..."
+time=2026-09-24T02:56:00.493Z level=INFO source=types.go:50 msg="inference compute" id=cpu library=cpu compute="" name=cpu description=cpu libdirs=ollama driver="" pci_id="" type="" total="5.8 GiB" available="5.7 GiB"
+time=2026-09-24T02:56:00.493Z level=INFO source=routes.go:2050 msg="vram-based default context" total_vram="0 B" default_num_ctx=4096
+time=2026-09-24T02:56:00.606Z level=INFO source=model_recommendations.go:177 msg="model recommendations cache sleep scheduled" wait=4h0m13.222735664s consecutive_failures=0
+[2026-09-24T02:57:01Z] --- cleanup ---
+[2026-09-24T02:57:02Z] cleanup done; baseline containers untouched
+[2026-09-24T02:57:02Z] DONE

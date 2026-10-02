@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0028",
+ "verdict": "PROVEN",
+ "summary": "BEFORE line diff on reordered JSON config: 0.033ms, noisy output; AFTER semantic key-level diff: 0.001ms, exactly 1 op (port 80->8080). Followup (15 repeats): delta 95.7% vs noise 71%. Improvement + noise-reduction proven.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.9,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0335,
+  "after_ms": 0.0014,
+  "metric": "diff_reordered_config",
+  "change": "semantic key-level diff instead of line diff on reordered JSON",
+  "case": 27,
+  "extra": {
+   "diff_lines_before": 21,
+   "semantic_ops_after": 1
+  }
+ }
+}

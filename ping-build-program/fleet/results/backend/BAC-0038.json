@@ -1,0 +1,24 @@
+{
+ "mission_id": "BAC-0038",
+ "verdict": "REJECTED",
+ "summary": "BEFORE all-pairs Jaccard vs AFTER min-hash band bucketing: both found 0 near-duplicate pairs \u2014 the 0.8 Jaccard threshold was too strict for the test variants (single '!' + number change), so the experiment measured nothing. Method flaw, not a technique verdict.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.7,
+ "followup": "Rerun with threshold 0.5 or near-dup variants differing by one token.",
+ "numbers": {
+  "before_ms": 584.7786,
+  "after_ms": 7.5449,
+  "metric": "near_dup_detect_800_docs",
+  "change": "min-hash band bucketing (compare within buckets) instead of all-pairs Jaccard",
+  "case": 37,
+  "extra": {
+   "pairs_found_before": 0,
+   "pairs_found_after": 0
+  }
+ }
+}

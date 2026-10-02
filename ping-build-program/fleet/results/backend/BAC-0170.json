@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0170",
+ "verdict": "REJECTED",
+ "summary": "BEFORE sendfile_4MB: 11.726ms; AFTER os.sendfile vs userspace read/write loop: 24.544ms. Delta +109.3%. 11.73ms vs 24.54ms (+109%): os.sendfile was slower than the userspace read/write loop at 4MB; no zero-copy gain observed.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench4.py",
+  "fleet/work/fleet-be-1/bench4b.py",
+  "fleet/work/fleet-be-1/bench4_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 11.726,
+  "after_ms": 24.5444,
+  "metric": "sendfile_4MB",
+  "change": "os.sendfile vs userspace read/write loop",
+  "case": 169
+ }
+}

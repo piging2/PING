@@ -1,0 +1,109 @@
+{
+  "at": "2026-09-24T02:20:51.016Z",
+  "results": [
+    {
+      "name": "fixture-generation",
+      "ok": true,
+      "detail": "fixture generator ready; clean bases must exist first\nfixtures written"
+    },
+    {
+      "name": "happy-path",
+      "ok": true,
+      "detail": {
+        "digest": "9eecddfce418e9e5...",
+        "meta": {
+          "exif": false,
+          "gps": false,
+          "keys": []
+        },
+        "derivMs": 423,
+        "blurPrefix": "data:image/png;base64,iVBORw0K"
+      }
+    },
+    {
+      "name": "exif-gps-strip",
+      "ok": true,
+      "detail": {
+        "gpsBefore": true,
+        "exifAfter": false,
+        "beforeBytes": 2163,
+        "afterBytes": 630
+      }
+    },
+    {
+      "name": "polyglot-neutralized",
+      "ok": true,
+      "detail": {
+        "sniffed": "image/jpeg",
+        "inBytes": 2136,
+        "outBytes": 630,
+        "payloadGone": true
+      }
+    },
+    {
+      "name": "svg-rejected",
+      "ok": true,
+      "detail": {
+        "sniffed": null,
+        "allowed": false,
+        "note": "file-type does not even claim image/svg+xml here; unrecognized/non-allowlisted MIME -> QUARANTINE. Policy: SVG never enters the raster pipeline; rasterize-from-SVG is a separate authorized flow, never raw serve"
+      }
+    },
+    {
+      "name": "decompression-bomb-blocked",
+      "ok": true,
+      "detail": {
+        "fileBytes": 316190,
+        "declaredPixels": 100000000,
+        "threw": true,
+        "msg": "Error: Input image exceeds pixel limit"
+      }
+    },
+    {
+      "name": "mime-mismatch-caught",
+      "ok": true,
+      "detail": {
+        "sniffed": "image/png",
+        "ext": "image/jpeg",
+        "claimed": "image/jpeg",
+        "verdict": "QUARANTINE"
+      }
+    },
+    {
+      "name": "corrupt-input-rejected",
+      "ok": true,
+      "detail": {
+        "metadataOnlyThrew": false,
+        "fullDecodeThrew": true,
+        "msg": "Error: VipsJpeg: premature end of JPEG image",
+        "lesson": "the verify chain MUST full-decode; metadata() alone passes truncated scans"
+      }
+    },
+    {
+      "name": "source-swap-detected",
+      "ok": true,
+      "detail": {
+        "stored": "9eecddfce418e9e5...",
+        "served": "216981685bc64826...",
+        "action": "QUARANTINE + re-acquire, provenance event emitted"
+      }
+    },
+    {
+      "name": "hash-benchmark",
+      "ok": true,
+      "detail": {
+        "sha256_ms_256MB": 2719,
+        "blake2s256_ms_256MB": 1370,
+        "winner": "blake2s256",
+        "note": "PING pins sha256 (contentHash, envelope, SubtleCrypto); hardware-accelerated SHA-256 makes BLAKE3's speed moot, and BLAKE3 needs a non-native dep"
+      }
+    },
+    {
+      "name": "gif-policy",
+      "ok": true,
+      "detail": {
+        "policy": "animated:false (first frame only); animated derivatives are a separate authorized flow"
+      }
+    }
+  ]
+}

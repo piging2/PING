@@ -1,0 +1,47 @@
+[
+  {
+    "test": "404_repo",
+    "passed": true,
+    "detail": "classified ErrorClass.PERMANENT; connector must not retry a non-existent repo"
+  },
+  {
+    "test": "403_rate_limited",
+    "passed": true,
+    "detail": "classified ErrorClass.RATE_LIMITED, remaining=0; must back off until reset, never hammer; 4xx except 408/429 are non-retryable per contract"
+  },
+  {
+    "test": "403_permission_denied",
+    "passed": true,
+    "detail": "classified ErrorClass.PERMISSION_DENIED; scope gaps must not look like rate limits"
+  },
+  {
+    "test": "malformed_payload",
+    "passed": true,
+    "detail": "payload coerced to list and normalized"
+  },
+  {
+    "test": "malformed_record",
+    "passed": true,
+    "detail": "raised ErrorClass.INVALID_PAYLOAD for non-object record"
+  },
+  {
+    "test": "schema_drift",
+    "passed": true,
+    "detail": "missing deprecated field coerced safely, unknown new field does not crash normalizer, raw evidence retained verbatim for re-normalization; a production connector would additionally emit SCHEMA_CHANGED on the fetch outcome and log the unknown-field set for review"
+  },
+  {
+    "test": "duplicate_webhook",
+    "passed": true,
+    "detail": "redelivered provider event absorbed by delivery id; no duplicate knowledge (kit idempotency proof 2)"
+  },
+  {
+    "test": "out_of_order_events",
+    "passed": true,
+    "detail": "stale event dropped on external timestamp comparison; checkpoint stays at the highest contiguous success watermark"
+  },
+  {
+    "test": "idempotency_determinism",
+    "passed": true,
+    "detail": "canonical_id obs_github-connector_1b2... stable across runs"
+  }
+]

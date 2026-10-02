@@ -1,0 +1,214 @@
+{
+  "capture": {
+    "incidentRef": null,
+    "pipelineCommit": null,
+    "rawVaultRef": null,
+    "recordedBy": "lane-r lab, hand-built synthetic modeling api.github.com/repos/:owner/:repo/issues pagination",
+    "sourceDigest": "sha256:173ed5d3b18349bba6021a71f3aa568b4e6b4b1673739d631e9272beb5559387"
+  },
+  "connectorShape": "paginated-read",
+  "expect": {
+    "checkpoints": [
+      "page-1",
+      "page-2",
+      "page-3"
+    ],
+    "duplicatesAbsorbed": 0,
+    "failureCodes": [],
+    "maxAttemptsPerStep": 1,
+    "noDuplicateKnowledge": true,
+    "recordsEmitted": 7,
+    "terminalState": "SUCCEEDED",
+    "uniqueRecords": 7
+  },
+  "fixtureId": "github-issues-paginated",
+  "fixtureVersion": 1,
+  "format": "ping.ingest.fixture@1",
+  "recordSchema": {
+    "fields": {
+      "id": "number",
+      "number": "number",
+      "state": "string",
+      "title": "string",
+      "updated_at": "string"
+    },
+    "idField": "id",
+    "versionField": "updated_at"
+  },
+  "recordedAt": "2026-09-23T19:00:00Z",
+  "replay": {
+    "baseTime": "2026-09-23T19:00:00Z",
+    "deterministicClock": true,
+    "latencyMode": "recorded",
+    "seed": 42,
+    "strictOrder": true
+  },
+  "sanitization": {
+    "canaryCheck": "passed",
+    "pii": {
+      "fields": [
+        "steps[*].response.body[*].user.login"
+      ],
+      "justification": "reviewer logins are needed to assert idempotency keys are per-external-object, not per-page",
+      "present": true
+    },
+    "redactions": [
+      {
+        "kind": "secret",
+        "method": "dropped",
+        "note": "Bearer tokens never appear in fixtures; transport matches on method+path only",
+        "path": "steps[*].request.headers.authorization"
+      }
+    ],
+    "secretRefs": [],
+    "status": "synthetic"
+  },
+  "sourceType": "rest-json",
+  "steps": [
+    {
+      "id": "page-1",
+      "kind": "request",
+      "note": "first page carries a next link and a full rate-limit budget",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/vnd.github+json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues?state=open&per_page=3&page=1"
+      },
+      "response": {
+        "body": [
+          {
+            "id": 101,
+            "number": 11,
+            "state": "open",
+            "title": "Leaky faucet in unit 4B",
+            "updated_at": "2026-09-20T10:00:00Z",
+            "user": {
+              "login": "tenant-ops"
+            }
+          },
+          {
+            "id": 102,
+            "number": 12,
+            "state": "open",
+            "title": "Water heater pilot keeps going out",
+            "updated_at": "2026-09-20T11:30:00Z",
+            "user": {
+              "login": "prop-mgr"
+            }
+          },
+          {
+            "id": 103,
+            "number": 13,
+            "state": "open",
+            "title": "Quote request: repipe estimate",
+            "updated_at": "2026-09-21T09:15:00Z",
+            "user": {
+              "login": "owner-amy"
+            }
+          }
+        ],
+        "headers": {
+          "etag": "\"page1-etag\"",
+          "link": "</repos/acme/widgets/issues?state=open&per_page=3&page=2>; rel=\"next\"",
+          "x-ratelimit-limit": "60",
+          "x-ratelimit-remaining": "59"
+        },
+        "latencyMs": 120,
+        "status": 200
+      }
+    },
+    {
+      "id": "page-2",
+      "kind": "request",
+      "note": "middle page; budget visibly consumed between pages",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/vnd.github+json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues?state=open&per_page=3&page=2"
+      },
+      "response": {
+        "body": [
+          {
+            "id": 104,
+            "number": 14,
+            "state": "open",
+            "title": "Sump pump alarm at night",
+            "updated_at": "2026-09-21T22:05:00Z",
+            "user": {
+              "login": "tenant-ops"
+            }
+          },
+          {
+            "id": 105,
+            "number": 15,
+            "state": "open",
+            "title": "Follow-up: invoice #2210",
+            "updated_at": "2026-09-22T08:00:00Z",
+            "user": {
+              "login": "prop-mgr"
+            }
+          },
+          {
+            "id": 106,
+            "number": 16,
+            "state": "open",
+            "title": "Frozen hose bibb",
+            "updated_at": "2026-09-22T14:40:00Z",
+            "user": {
+              "login": "owner-amy"
+            }
+          }
+        ],
+        "headers": {
+          "etag": "\"page2-etag\"",
+          "link": "</repos/acme/widgets/issues?state=open&per_page=3&page=3>; rel=\"next\"",
+          "x-ratelimit-limit": "60",
+          "x-ratelimit-remaining": "42"
+        },
+        "latencyMs": 140,
+        "status": 200
+      }
+    },
+    {
+      "id": "page-3",
+      "kind": "request",
+      "note": "last page: no Link header at all, which is the terminal signal (not an empty page)",
+      "request": {
+        "body": null,
+        "headers": {
+          "accept": "application/vnd.github+json"
+        },
+        "method": "GET",
+        "path": "/repos/acme/widgets/issues?state=open&per_page=3&page=3"
+      },
+      "response": {
+        "body": [
+          {
+            "id": 107,
+            "number": 17,
+            "state": "open",
+            "title": "Annual backflow test due",
+            "updated_at": "2026-09-23T07:55:00Z",
+            "user": {
+              "login": "prop-mgr"
+            }
+          }
+        ],
+        "headers": {
+          "etag": "\"page3-etag\"",
+          "x-ratelimit-limit": "60",
+          "x-ratelimit-remaining": "41"
+        },
+        "latencyMs": 110,
+        "status": 200
+      }
+    }
+  ],
+  "title": "GitHub-style paginated REST read: 3 pages of issues via Link rel=next, rate-limit headers on every response"
+}

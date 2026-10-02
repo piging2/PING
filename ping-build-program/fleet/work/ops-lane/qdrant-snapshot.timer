@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily qdrant snapshot timer (bounded, 7-day retention)
+
+[Timer]
+OnCalendar=04:00
+RandomizedDelaySec=600
+Persistent=true
+Unit=qdrant-snapshot.service
+
+[Install]
+WantedBy=timers.target

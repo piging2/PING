@@ -1,0 +1,30 @@
+{
+  "allCaught": true,
+  "cases": [
+    {
+      "name": "secret-leak",
+      "caught": true,
+      "evidence": "scan exit=1 (want 1); run --scan-secrets exit=2 (want 2)"
+    },
+    {
+      "name": "duplicate-write-hiding",
+      "caught": true,
+      "evidence": "permissive expect PASSED (the hiding); invariants: VIOLATED -> invariant: duplicate idempotency keys emitted (2 duplicates)"
+    },
+    {
+      "name": "nondeterministic",
+      "caught": true,
+      "evidence": "lint rejected with 6 violations"
+    },
+    {
+      "name": "fixture-drift",
+      "caught": true,
+      "evidence": "drift-check exit=1 (want 1); classification=SCHEMA_CHANGED"
+    },
+    {
+      "name": "pagination-loop",
+      "caught": true,
+      "evidence": "run exit=2 (want 2, fail-closed); loop guard=tripped"
+    }
+  ]
+}

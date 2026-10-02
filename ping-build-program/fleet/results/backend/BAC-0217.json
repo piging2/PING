@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0217",
+ "verdict": "REJECTED",
+ "summary": "BEFORE deadline_batching: 0.069ms; AFTER deadline-aware batch flush vs fixed-size batches: 0.099ms. Delta +42.7%. 0.07ms to 0.10ms (+43%): the deadline never triggered before the size limit, so deadline batching added only overhead.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench5.py",
+  "fleet/work/fleet-be-1/bench5b.py",
+  "fleet/work/fleet-be-1/bench5_results.json"
+ ],
+ "confidence": 0.85,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.0693,
+  "after_ms": 0.0989,
+  "metric": "deadline_batching",
+  "change": "deadline-aware batch flush vs fixed-size batches",
+  "case": 216
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "mission_id": "BAC-0181",
+ "verdict": "NEEDS-FOLLOWUP",
+ "summary": "BEFORE proactive_refresh: 0.027ms; AFTER proactive refresh at half-TTL vs TTL-only expiry: 0.036ms. Delta +32.7%. stale-serve counting logic was flawed (before measured 0 stale, after 184); the simulation does not measure what it claims.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench4.py",
+  "fleet/work/fleet-be-1/bench4b.py",
+  "fleet/work/fleet-be-1/bench4_results.json"
+ ],
+ "confidence": 0.5,
+ "followup": "rewrite the stale-window simulation with correct serve/refresh accounting",
+ "numbers": {
+  "before_ms": 0.0275,
+  "after_ms": 0.0365,
+  "metric": "proactive_refresh",
+  "change": "proactive refresh at half-TTL vs TTL-only expiry",
+  "case": 180
+ }
+}

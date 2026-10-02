@@ -1,0 +1,22 @@
+{
+ "mission_id": "BAC-0054",
+ "verdict": "PROVEN",
+ "summary": "BEFORE blind full replay after crash vs AFTER durable cursor (every 500) + idempotent apply: both converge to the same 7000-key set; timing within noise, but AFTER avoids reprocessing ~8100 items. Work-reduction claim proven; parity on wall time at this scale.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench2.py",
+  "fleet/work/fleet-be-1/bench2b.py",
+  "fleet/work/fleet-be-1/bench2_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 3.0418,
+  "after_ms": 2.2334,
+  "metric": "crash_recovery_exactly_once",
+  "change": "durable cursor + idempotent apply instead of blind full replay",
+  "case": 53,
+  "extra": {
+   "note": "both converge to same set; AFTER avoids reprocessing; timing within noise, work reduction is the claim"
+  }
+ }
+}

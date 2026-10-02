@@ -1,0 +1,5347 @@
+{
+ "tournament": "PING processor tournament, lane B2 (Phase 4 execution of the lane-11 design)",
+ "generated_at": "2026-09-28T15:10 MDT",
+ "t_plus": "T+0.75 approx (T+0 = 2026-09-28 14:26 MDT)",
+ "rules": [
+  "ZERO authority",
+  "ZERO execution effect",
+  "ZERO policy effect",
+  "Jev never grants, authorizes, or decides anything canonical; Jev stays SHADOW",
+  "shadow outputs never written to any canonical record, never fed back into any decision",
+  "read-only against production; no gateway/scheduler-mission/:3100 contact; no pushes; no new credentials"
+ ],
+ "processors": {
+  "deterministic_baseline": "the incumbent function for each contract, executed read-only on replay cases; the final-label source for this tournament",
+  "jev_shadow": "typesafe/jev-latest via POST /v1/systemone (noul questions), bounded samples, skill-documented credential flow only",
+  "local_model": "NOT AVAILABLE this run (no ollama binary in this sandbox); column recorded UNKNOWN, not collapsed",
+  "muse_shadow": "muse-self-inference: the tournament operator's own judgments, pre-registered before baseline execution; same model family as the runner; NOT independent evidence",
+  "codex_shadow": "NOT USED this run (would require dispatch-path invocation with external effect surface); recorded UNKNOWN"
+ },
+ "cost_models_pre_registered": {
+  "mc.authorize_work_order/v1": {
+   "FP_false_GRANT": "HIGH",
+   "FN_false_DENY": "LOW-MODERATE"
+  },
+  "grantsForViewer/v1": {
+   "FP": "LOW",
+   "FN": "LOW"
+  },
+  "planActions/v1": {
+   "FP": "LOW",
+   "FN": "LOW"
+  },
+  "classifyReview/v1": {
+   "FP_false_positive": "MODERATE-HIGH",
+   "FN": "LOW"
+  },
+  "reconcileGate/v1": {
+   "FP_false_ALLOW": "HIGH",
+   "FN_false_REFUSE": "LOW-MODERATE"
+  },
+  "engagementGuard/v1": {
+   "FP_false_ELIGIBLE": "MODERATE",
+   "FN_false_drop": "LOW"
+  },
+  "grill20Composition/v1": {
+   "FP_false_decide": "HIGH",
+   "FN_false_escalate": "LOW-MODERATE"
+  }
+ },
+ "n_cases": 80,
+ "n_jev_samples": 87,
+ "cases": [
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "GRANT",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.23269,
+   "input_digest": "1287c752c4d997ec",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-02",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "orchestration.plan",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Capability 'orchestration.plan' not allowed for agent 'hermes'",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.00657,
+   "input_digest": "8c1bcf304c74a601",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-03",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "nope-agent",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Unknown exterior agent: nope-agent",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": null,
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.002564,
+   "input_digest": "ba939283d18451c3",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-04",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "bad-namespace",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Invalid namespace 'bad-namespace' (must be core::<name> or tenant::<id>)",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.050636,
+   "input_digest": "27df75853bbaa984",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-05",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Work order must forbid canonical events and mission-state writes",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.012248,
+   "input_digest": "71ef500a1a2b24bb",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-06",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "opencode",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Agent unavailable: No headless CLI on the Pig; only OpenCode.exe desktop (Electron). No safe invocation path.",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": null,
+      "allowedCapabilities": [],
+      "blockedExternal": "No headless CLI on the Pig; only OpenCode.exe desktop (Electron). No safe invocation path."
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.005629,
+   "input_digest": "6d770801e89d2eaf",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-07",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "codex",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "codex blockedUntil 2026-09-17T06:01:00Z in profile; expired by design per lane-11 resolution"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "GRANT",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "exec-subprocess",
+      "invocation": "codex exec --ignore-user-config -s read-only --ephemeral --skip-git-repo-check -C <dir> <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "blockedExternal": {
+       "reason": "ChatGPT plan usage exhausted (observed 2026-09-16).",
+       "blockedUntil": "2026-09-17T06:01:00Z"
+      },
+      "notes": "Hard OS-level read-only sandbox. Preferred when quota available."
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.033951,
+   "input_digest": "4bc4616066dc7c8b",
+   "evidence_digest": "f7d1d18a230cc92d",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-08",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "codex",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "runtime override: codex blockedUntil set to 2099-01-01 (in-process only)"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": true,
+   "jev_question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "input_overrides": {
+    "profiles": {
+     "codex": {
+      "status": "LIVE",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": {
+       "reason": "synthetic active block for replay",
+       "blockedUntil": "2099-01-01T00:00:00Z"
+      },
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      }
+     }
+    }
+   },
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Agent unavailable: synthetic active block for replay",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "status": "LIVE",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": {
+       "reason": "synthetic active block for replay",
+       "blockedUntil": "2099-01-01T00:00:00Z"
+      },
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      }
+     },
+     "profilesOverridden": [
+      "codex"
+     ]
+    }
+   },
+   "baseline_ms": 0.007351,
+   "input_digest": "4bc4616066dc7c8b",
+   "evidence_digest": "6ef1412e8854ff05",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-09",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "synth-pending",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true",
+    "note": "runtime override: synthetic PENDING_AUTH agent (in-process only)"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "input_overrides": {
+    "profiles": {
+     "synth-pending": {
+      "status": "PENDING_AUTH",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": null,
+      "maxConstraints": {}
+     }
+    }
+   },
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Agent 'synth-pending' is registered but pending one-time authorization; not grantable",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "status": "PENDING_AUTH",
+      "allowedCapabilities": [
+       "text.summarize"
+      ],
+      "blockedExternal": null,
+      "maxConstraints": {}
+     },
+     "profilesOverridden": [
+      "synth-pending"
+     ]
+    }
+   },
+   "baseline_ms": 0.013541,
+   "input_digest": "4520302638322950",
+   "evidence_digest": "171e15c7eb0d5dbe",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-10",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": "not-an-object"
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Constraints must be an object",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.071688,
+   "input_digest": "810cb6ac640cfa59",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-11",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "DENY",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "DENY",
+   "baseline_detail": null,
+   "baseline_reason": "Constraint 'no_network' must be true for agent 'hermes'",
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.021292,
+   "input_digest": "7172e8442b1d1bec",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-12",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "hermes",
+    "capability": "text.summarize",
+    "namespace": "tenant::acme-1",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "GRANT",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "oneshot-subprocess",
+      "invocation": "venv/Scripts/python.exe hermes_cli/main.py --safe-mode -z <prompt>",
+      "allowedCapabilities": [
+       "fixture.read",
+       "text.transform",
+       "text.summarize"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "notes": "Free model (openrouter). No quota risk. Toolsets restricted per work order.",
+      "status": "LIVE",
+      "family": "hermes"
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.00637,
+   "input_digest": "47c672966f8859e7",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "AW-13",
+   "contract": "mc.authorize_work_order/v1",
+   "input": {
+    "agentId": "identity_1",
+    "capability": "test.generate",
+    "namespace": "core::system",
+    "constraints": {
+     "read_only": true,
+     "no_writes": true,
+     "no_network": true,
+     "no_canonical_events": true,
+     "no_mission_state_writes": true
+    }
+   },
+   "evidence": {
+    "agent_profiles": "AGENT_PROFILES from vendor/external_agent_adapter.js (in-process, post-override snapshot recorded per case)",
+    "rules": "8 ordered fail-closed checks: known agent; blockedExternal+blockedUntil expiry; not PENDING_AUTH; capability allowed; namespace core::<name>|tenant::<id>; constraints object; tighten vs maxConstraints; no_canonical_events+no_mission_state_writes true"
+   },
+   "muse_shadow": "GRANT",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "GRANT",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "evidence_used": {
+     "profileFacts": {
+      "transport": "broker-dispatch",
+      "invocation": "copilot broker dispatch as identity_1 (piging2); coding task description inline",
+      "allowedCapabilities": [
+       "test.generate",
+       "documentation.generate",
+       "dead_code.analyze"
+      ],
+      "maxConstraints": {
+       "read_only": true,
+       "no_writes": true,
+       "no_network": true
+      },
+      "status": "LIVE",
+      "family": "copilot",
+      "notes": "Evidence must record identityUsed. Broker resolves credentials at the process boundary; never in the WorkOrder."
+     },
+     "profilesOverridden": []
+    }
+   },
+   "baseline_ms": 0.00685,
+   "input_digest": "5e54da35d22c5378",
+   "evidence_digest": "db7134ec43209db4",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": "u1",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.084747,
+   "input_digest": "bda5ab3a30c08a36",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-02",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": "u2",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.002984,
+   "input_digest": "14ad4fb142d78bc1",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-03",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": null,
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.003074,
+   "input_digest": "2ec2ab527516a641",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-04",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": "u1",
+    "controllerId": "u1",
+    "isSite": false
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.001011,
+   "input_digest": "c653d38163da4535",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-05",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": "u2",
+    "controllerId": "u3",
+    "isSite": false
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.001042,
+   "input_digest": "dbd268fc6cbecb81",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GV-06",
+   "contract": "grantsForViewer/v1",
+   "input": {
+    "viewerId": "",
+    "controllerId": "u1",
+    "isSite": true
+   },
+   "evidence": {
+    "rules": "grantsForViewer pure: everyone gets object.reference; controller of a site-capable object with viewerId==controllerId gets the maintain_site bundle; agents never get publish/message/purchase/advertise/provider/mutate",
+    "source": "src/lib/ping/grants.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "object.reference"
+   ],
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": [
+    "object.reference"
+   ],
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.001031,
+   "input_digest": "350d84f530c89e32",
+   "evidence_digest": "33609aa782942f1e",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-01",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": null,
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.308674,
+   "input_digest": "29610a3904d78edc",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-02",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "reply",
+    "reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "like",
+     "reply",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.018458,
+   "input_digest": "b81a8ae6bb04b4dd",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-03",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj1",
+     "schema": "ping.social.post@1",
+     "controllerId": "c1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": true,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "unlike",
+    "reply",
+    "reference"
+   ],
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "unlike",
+     "reply",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.019088,
+   "input_digest": "9c88f6b623a68712",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-04",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj2",
+     "schema": "ping.social.business@1",
+     "controllerId": "v1"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": "https://example.com",
+    "grants": [
+     "object.reference",
+     "site.read",
+     "site.propose"
+    ]
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "open_site",
+    "ask",
+    "like",
+    "propose_update",
+    "propose_site_patch",
+    "open_website",
+    "reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that 'propose_site_patch' is among the correct available actions for this viewer on this target?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "open_site",
+     "ask",
+     "like",
+     "propose_update",
+     "propose_site_patch",
+     "open_website",
+     "reference"
+    ],
+    "viewerIsOwner": true
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.019028,
+   "input_digest": "f12ee3897c3d7b24",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-05",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj3",
+     "schema": "ping.social.profile@1",
+     "controllerId": "id9"
+    },
+    "targetIdentityId": "id9",
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "follow",
+    "reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "follow",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.014942,
+   "input_digest": "b5f032594b5e3f47",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-06",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "id9",
+    "target": {
+     "id": "obj3",
+     "schema": "ping.social.profile@1",
+     "controllerId": "id9"
+    },
+    "targetIdentityId": "id9",
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "reference"
+   ],
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "propose_update",
+     "reference"
+    ],
+    "viewerIsOwner": true
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.010305,
+   "input_digest": "77ff6cdcb5939adf",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "PA-07",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj4",
+     "schema": "ping.social.article@1",
+     "controllerId": "c2"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": "https://example.com/menu"
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "open_website",
+    "reference"
+   ],
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "like",
+     "open_website",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.011267,
+   "input_digest": "67f73d4cc6731828",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "PA-08",
+   "contract": "planActions/v1",
+   "input": {
+    "viewerId": "v1",
+    "target": {
+     "id": "obj2",
+     "schema": "ping.social.business@1",
+     "controllerId": "c9"
+    },
+    "targetIdentityId": null,
+    "followedByViewer": false,
+    "likedByViewer": false,
+    "website": null,
+    "grants": [
+     "object.reference"
+    ]
+   },
+   "evidence": {
+    "rules": "open/ask/reference always for known objects; follow/unfollow on identity-backed targets only, never self; like/unlike on content objects only; reply on posts for signed-in viewers; propose_update when viewer controls; open_website when website present; site.read->open_site, site.propose->propose_site_patch",
+    "source": "src/lib/ping/action-planner.ts (product-lane local mirror; Pig canonical tree unreachable this run)"
+   },
+   "muse_shadow": [
+    "open",
+    "ask",
+    "like",
+    "reference"
+   ],
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "like",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   },
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.009705,
+   "input_digest": "ff87182a9c1d77d2",
+   "evidence_digest": "d6601ca7aa8695b3",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Excellent service! The plumber was prompt, professional, and the work was perfect. Highly recommend.",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "positive",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "positive",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 1.467594,
+   "input_digest": "e373aacbf824ef17",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-02",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Terrible. They never showed up and ignored my calls. Worst experience ever.",
+    "rating": 1
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "negative",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": -1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.412559,
+   "input_digest": "5127ee0bf7e4b7c6",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-03",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "It was fine, I guess. Nothing special.",
+    "rating": 3
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "negative",
+    "confidence": 0.7749999999999999,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": -0.5
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.05309,
+   "input_digest": "5c4b0d398e8183bb",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-04",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "GREAT WORK!!!",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 0.8450000000000001,
+    "hasProfanity": false,
+    "hasSpam": true,
+    "hasQuestion": false,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.047941,
+   "input_digest": "43a181089dba361b",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-05",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Great service, will you come back next week?",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": true,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.041603,
+   "input_digest": "1e89f7ea2a139569",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-06",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "CLICK HERE to win prize free money!!!"
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "neutral",
+    "confidence": 0.37499999999999994,
+    "hasProfanity": false,
+    "hasSpam": true,
+    "hasQuestion": false,
+    "compoundScore": 0
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.034021,
+   "input_digest": "891351a105d45cc7",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-07",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "These idiots did a damn terrible job.",
+    "rating": 1
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "negative",
+    "confidence": 1,
+    "hasProfanity": true,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": -1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.036485,
+   "input_digest": "2aea0d2efc598b81",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-08",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Oh wonderful, another leak. Just fantastic.",
+    "rating": 4
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "positive",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.248774,
+   "input_digest": "9048dd87173278af",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "CR-09",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Excellent, amazing, wonderful work.",
+    "rating": 2
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "review",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "review",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.037226,
+   "input_digest": "b6f0b9d635f9bf76",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "CR-10",
+   "contract": "classifyReview/v1",
+   "input": {
+    "text": "Good.",
+    "rating": 5
+   },
+   "evidence": {
+    "rules": "bucket=positive iff sentiment positive AND confidence>=0.7 AND clean (no profanity/spam/question, caps<=0.5) AND rating absent or >=4; else review. VADER lexicon + profanity/spam/caps heuristics",
+    "source": "src/lib/sentiment/classifier.ts (product-lane local mirror; Pig canonical tree unreachable this run)",
+    "final_label_source": "human moderation decisions (NOT FOUND locally; accuracy vs human = UNKNOWN this run)"
+   },
+   "muse_shadow": "positive",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "positive",
+   "baseline_detail": {
+    "sentiment": "positive",
+    "confidence": 1,
+    "hasProfanity": false,
+    "hasSpam": false,
+    "hasQuestion": false,
+    "compoundScore": 1
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 2.647544,
+   "input_digest": "3f8e398b63505257",
+   "evidence_digest": "9e98dd5a0c7c81b2",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-01",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none"
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALLOW",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-xlC0LG"
+   },
+   "baseline_ms": 1.731009,
+   "input_digest": "e1eb388864dc031f",
+   "evidence_digest": "be2cad8525584187",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-02",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "outcome",
+      "outcome": "completed",
+      "effect_state": "effect_committed"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "REFUSE",
+   "baseline_detail": null,
+   "baseline_reason": "duplicate_attempt",
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-XRu0Gk"
+   },
+   "baseline_ms": 1.555425,
+   "input_digest": "e1eb388864dc031f",
+   "evidence_digest": "520d5470580a466f",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "REFUSE",
+   "baseline_detail": null,
+   "baseline_reason": "reconciliation_required",
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-IdQldE"
+   },
+   "baseline_ms": 4.980227,
+   "input_digest": "ca8dcbd5893c02c4",
+   "evidence_digest": "39d766c005c19bad",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-04",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts and run logs",
+     "found": "no effect committed; process died pre-transport",
+     "decidedBy": "operator:hermes-reconciler"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALLOW",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "reconciliationAccepted": true,
+    "evidence_dir": "/tmp/b2-rg-w6wBBv"
+   },
+   "baseline_ms": 1.778069,
+   "input_digest": "d5bd4000cedfb86a",
+   "evidence_digest": "39d766c005c19bad",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-05",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts",
+     "found": "unknown"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "REFUSE",
+   "baseline_detail": null,
+   "baseline_reason": "reconciliation_invalid",
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-tYeLeU"
+   },
+   "baseline_ms": 0.197727,
+   "input_digest": "7a8bb8332b66bccd",
+   "evidence_digest": "39d766c005c19bad",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-06",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": "__CORRUPT__"
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "REFUSE",
+   "baseline_detail": null,
+   "baseline_reason": "idempotency_index_corrupt",
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-5llv1A"
+   },
+   "baseline_ms": 1.500503,
+   "input_digest": "e1eb388864dc031f",
+   "evidence_digest": "12ac1ce3e5304d69",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-07",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "2"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize"
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "outcome",
+      "outcome": "completed",
+      "effect_state": "effect_committed"
+     }
+    ]
+   },
+   "muse_shadow": "ALLOW",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALLOW",
+   "baseline_detail": null,
+   "baseline_reason": null,
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-itfHZq"
+   },
+   "baseline_ms": 3.2037,
+   "input_digest": "ca8dcbd5893c02c4",
+   "evidence_digest": "520d5470580a466f",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "RG-08",
+   "contract": "reconcileGate/v1",
+   "input": {
+    "execution": {
+     "missionId": "rg-m",
+     "runId": "rg-r",
+     "executionId": "rg-e1",
+     "attempt": "1"
+    },
+    "input": {
+     "probe": "rg"
+    },
+    "tenant_id": "t1",
+    "capability": "text.summarize",
+    "reconciliation": {
+     "checked": "remote worker receipts and run logs",
+     "found": "no effect committed",
+     "decidedBy": "operator:hermes-reconciler"
+    }
+   },
+   "evidence": {
+    "rules": "fresh intent -> ALLOW; same key+attempt already dispatched -> REFUSE duplicate_attempt; latest attempt uncertain + new attempt requires valid reconciliation {checked,found,decidedBy} else REFUSE reconciliation_required/invalid; corrupt index -> REFUSE idempotency_index_corrupt; completed latest -> ALLOW new attempt",
+    "source": "adapter.js reconcileGate (orca-adapter local mirror; fresh os.tmpdir() evidence dirs only, never production dirs)",
+    "outcomes_vocab": "OUTCOME completed|failed|unknown|denied|escalated; EFFECT_STATE effect_unknown|effect_hold|effect_none",
+    "seed_records": [
+     {
+      "type": "attempt",
+      "attempt": "1",
+      "phase": "dispatch"
+     }
+    ]
+   },
+   "muse_shadow": "REFUSE",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "REFUSE",
+   "baseline_detail": null,
+   "baseline_reason": "duplicate_attempt",
+   "baseline_extra": {
+    "reconciliationAccepted": false,
+    "evidence_dir": "/tmp/b2-rg-mlif53"
+   },
+   "baseline_ms": 1.627573,
+   "input_digest": "c5f5ee007b956ef0",
+   "evidence_digest": "39d766c005c19bad",
+   "baseline_error": null,
+   "baseline_identity": "deterministic function executed read-only (local mirrors; see evidence.source)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "EG-01",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": "abbotts cleanup restoration",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALREADY_ENGAGED",
+   "baseline_detail": null,
+   "baseline_reason": "page 'abbotts cleanup restoration' engaged in a prior pass",
+   "baseline_extra": {},
+   "baseline_ms": 0.287,
+   "input_digest": "c4200fca5d38cf51",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-02",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": "all in one",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALREADY_ENGAGED",
+   "baseline_detail": null,
+   "baseline_reason": "page 'all in one' engaged in a prior pass",
+   "baseline_extra": {},
+   "baseline_ms": 0.019,
+   "input_digest": "8bf45a9ccda146ff",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-03",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "instagram",
+    "account": "970mechanical",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALREADY_ENGAGED",
+   "baseline_detail": null,
+   "baseline_reason": "handle @970mechanical engaged in a prior pass",
+   "baseline_extra": {},
+   "baseline_ms": 0.007,
+   "input_digest": "50f20dff1b569a1c",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-04",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "x",
+    "account": "aizikzimerman",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALREADY_ENGAGED",
+   "baseline_detail": null,
+   "baseline_reason": "handle @aizikzimerman engaged in a prior pass",
+   "baseline_extra": {},
+   "baseline_ms": 0.005,
+   "input_digest": "c1c72cee12d9f665",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-05",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": null,
+    "url": "https://www.facebook.com/watch/?v=100001909343220"
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ALREADY_ENGAGED",
+   "baseline_detail": null,
+   "baseline_reason": "post post:100001909343220 engaged in a prior pass",
+   "baseline_extra": {},
+   "baseline_ms": 0.018,
+   "input_digest": "e9163d95d5f6e967",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": "brand new shop grand junction co",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "ELIGIBLE",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ELIGIBLE",
+   "baseline_detail": null,
+   "baseline_reason": "no prior engagement found in durable history",
+   "baseline_extra": {},
+   "baseline_ms": 4.008,
+   "input_digest": "b4790361ee8a247b",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "EG-07",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "instagram",
+    "account": "zzznotarealhandle999",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "ELIGIBLE",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ELIGIBLE",
+   "baseline_detail": null,
+   "baseline_reason": "no prior engagement found in durable history",
+   "baseline_extra": {},
+   "baseline_ms": 4.615,
+   "input_digest": "4adce580dca3fef6",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "EG-08",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": null,
+    "url": "https://www.facebook.com/watch/?v=999999999999999"
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "ELIGIBLE",
+   "jev_shadow_planned": false,
+   "jev_question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "ELIGIBLE",
+   "baseline_detail": null,
+   "baseline_reason": "no prior engagement found in durable history",
+   "baseline_extra": {},
+   "baseline_ms": 0.074,
+   "input_digest": "d420971e6c22dd55",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "EG-09",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": null,
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "ABSTAIN",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "UNKNOWN-UNCHECKABLE",
+   "baseline_detail": null,
+   "baseline_reason": "empty account identity and no URL, cannot check history",
+   "baseline_extra": {},
+   "baseline_ms": 0.003,
+   "input_digest": "6255baa396bfe050",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "EG-10",
+   "contract": "engagementGuard/v1",
+   "input": {
+    "platform": "facebook",
+    "account": "abbotts cleanup restorations",
+    "url": null
+   },
+   "evidence": {
+    "rules": "check() vs durable history index: engaged handle/name/post-id -> ALREADY_ENGAGED; fuzzy/token-subset near-miss -> BLOCKED; empty identity -> UNKNOWN-UNCHECKABLE; else ELIGIBLE. Final-label source = the index+ledger history itself.",
+    "index_envelope": {
+     "facebook": {
+      "log_sha256": "310c76041b17a9dbc443f94ed8df05044d369274b22ecf0abadc6f63674879e9",
+      "names_n": 188,
+      "post_ids_n": 2308
+     },
+     "instagram": {
+      "log_sha256": "44567b929c5b75496d1a0a026a8c36e4d03f8bda910c6ff6f3e3d5b96e706ec6",
+      "handles_n": 151
+     },
+     "x": {
+      "log_sha256": "ff92eff2fd7517d6a0a147b5952432d0094674eb50255db39d73fb4cd0170d6f",
+      "handles_n": 88
+     },
+     "ledger": "action-intent-ledger.jsonl merged at every load_index via _fb_ledger_engaged_post_ids (terminal-aware)"
+    }
+   },
+   "muse_shadow": "DROP",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "BLOCKED",
+   "baseline_detail": null,
+   "baseline_reason": "ambiguous identity: 'abbotts cleanup restorations' closely resembles engaged 'abbotts cleanup restoration', failing closed",
+   "baseline_extra": {},
+   "baseline_ms": 0.198,
+   "input_digest": "93b684c02902ef4b",
+   "evidence_digest": "f3379346489c356f",
+   "baseline_error": null,
+   "baseline_identity": "engagement-guard.py check() vs live index+ledger (read-only)",
+   "muse_shadow_agreement": false
+  },
+  {
+   "id": "GR-01",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "TikTok: auto-restore probe vs comments-only permanently? (asked Nolan 2026-09-24 after the temporary comment block; memory/2026-09-24.md#L554)",
+    "checks": {
+     "boundaries_preserved": true,
+     "code_evidence": false,
+     "locked_invariant": false,
+     "no_destructive_mutation": true,
+     "no_external_effects": true,
+     "no_new_credential_authority": true,
+     "previous_decision": true,
+     "reversible": true,
+     "reversible_experiment": false,
+     "safe_default_80": true
+    },
+    "failed_checks": [],
+    "recommended_default": "Drop to minimum per the standing restriction-response policy, hold, then resume the weekly ramp. (Superseded 2026-09-26 by the no-scale-back rule: failed passes retry at caps.) Carve-out ruled out: the signal was a platform comment block (2026-09-24 ~13:45 MDT, page chrome matched 'temporarily blocked from commenting', driver self-aborted PASS_ABORT_RESTRICTION; memory/2026-09-24.md#L1969), not a login checkpoint requiring Nolan's own action.",
+    "cost_of_being_wrong": "Low: engagement volume only, fully reversible."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T00:31:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "85008c0ee167b3c0",
+   "evidence_digest": "97b420da06e1bdf7",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-02",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": null,
+    "checks": {
+     "locked_invariant": {
+      "pass": false,
+      "evidence": "Grill-20 locks, batch 3/4 locks, and the 19:11 engagement decisions were checked per question; no invariant decides any of the 37."
+     },
+     "previous_nolan_decision": {
+      "pass": false,
+      "evidence": "Reviewed SPRINT-DECISIONS-2026-09-25.md, batch-4 answers, grill-20 locked answers, and the 2026-09-27 MEMORY.md media decisions; two candidate questions were cut as already-decided before drafting."
+     },
+     "code_runtime_evidence": {
+      "pass": false,
+      "evidence": "The questions concern sprint execution, product policy, and authority; nothing in code, tests, git history, specs, or ledgers resolves them."
+     },
+     "reversible_experiment": {
+      "pass": false,
+      "evidence": "No experiment can resolve owner taste, spend authorization, publication calls, or rights posture; the cost is in the decision, not in testable behavior."
+     },
+     "safe_default_80": {
+      "pass": false,
+      "evidence": "Per-question defaults are recommendations, not unilateral safe calls: each has a real cost of being wrong stated inline (publication, spend, rights, trust, or owner control)."
+     },
+     "reversible": {
+      "pass": false,
+      "evidence": "Q14 cutover, Q22 Vercel refresh, Q30 versioning policy, and Q34 media posture are one-way or expensive to reverse once shipped."
+     },
+     "no_consequential_external_effects": {
+      "pass": false,
+      "evidence": "Q5 CTAs, Q22 public demo, Q24 visitor reports, Q34 media, and Q36 attribution all reach external parties (visitors, prospects, owners)."
+     },
+     "no_uncertain_destructive_mutation": {
+      "pass": false,
+      "evidence": "Q9 authorizes deletion scope on shared history; Q10 reaper/HOLD governs automatic retry of unknown-outcome missions."
+     },
+     "no_new_credential_authority": {
+      "pass": false,
+      "evidence": "Q16 puts production owner auth on the roadmap (DNS TXT / OAuth); Q27 sets the demo auth boundary (Tailscale vs token gate)."
+     },
+     "safety_privacy_tenant_preserved": {
+      "pass": false,
+      "evidence": "Q3, Q4, Q7, Q26 each choose whether customer sites leak visitor data to third parties; defaults preserve privacy but Nolan owns the call."
+     }
+    },
+    "failed_checks": [
+     {
+      "check": "locked_invariant",
+      "reason": "No locked invariant covers these 37 product, architectural, authority, and owner-judgment decisions."
+     },
+     {
+      "check": "previous_nolan_decision",
+      "reason": "Prior batches (30+10), grill-20 answers, and the 2026-09-26 19:11 engagement decisions were reviewed per question; none decides them. Two proposed questions were removed before drafting: one repeated a batch-3 lock (third business type), one was covered by standing power policy (wake lease)."
+     },
+     {
+      "check": "code_runtime_evidence",
+      "reason": "No code, test, git history, spec, runtime evidence, or ledger answers any of the 37; they are forward-looking judgments, not recoverable facts."
+     },
+     {
+      "check": "reversible_experiment",
+      "reason": "The decisions (spend, publication, media rights, versioning policy, auth roadmap, demo scope) cannot be settled by a reversible experiment; several are one-way once shipped."
+     },
+     {
+      "check": "safe_default_80",
+      "reason": "Recommended defaults are given per question, but none reaches 80% safe-to-decide-unilaterally; each carries publication, spend, rights, or owner-authority consequences, or is explicitly Nolan's judgment call."
+     },
+     {
+      "check": "reversible",
+      "reason": "Several outcomes are not reversible: published Vercel demo refresh, media-rights posture, grammar versioning policy, owner-auth roadmap commitment."
+     },
+     {
+      "check": "no_consequential_external_effects",
+      "reason": "Demo publication, Vercel refresh, media hotlinking, visitor-report routing, and owner-facing policies all have external effects."
+     },
+     {
+      "check": "no_uncertain_destructive_mutation",
+      "reason": "ORCA dead-code deletion scope and the /build cutover carry destructive or uncertain mutation across shared branches."
+     },
+     {
+      "check": "no_new_credential_authority",
+      "reason": "Q16 (production owner auth) and Q27 (demo gating) touch credential and auth authority."
+     },
+     {
+      "check": "safety_privacy_tenant_preserved",
+      "reason": "Q3 (font hotlink), Q4 (lab discoverability), Q7 (analytics default), and Q26 (maps embed) directly implicate visitor privacy; the recommended defaults preserve it, but the choice is Nolan's to make."
+     }
+    ],
+    "recommended_default": "Accept all 37 recommended defaults as stated in the batch document, or answer per question. The defaults are the safe-to-ship positions; overrides are Nolan's prerogative.",
+    "cost_of_being_wrong": "Wrong calls compound across the sprint: privacy posture (Q3/Q7/Q26), honesty of the product (Q5/Q12/Q15), publication risk (Q22), media rights (Q34), and owner trust (Q16/Q30/Q31). Each question states its individual cost inline; the batch-level cost is a T+24 demo that leaks visitor data, tracks users, asserts false claims, or misleads owners."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": null,
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": [
+     "failed_checks items are objects, not strings"
+    ]
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": [
+     "failed_checks items are objects, not strings"
+    ]
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "06a037b324dc14d9",
+   "evidence_digest": "8a54792908efb1b1",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-03",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "ASK 37 QUESTIONS batch 6: 37 questions where human authority is actually required (authority changes, publication, money/spend, new credentials/access, privacy/security policy, legal/business commitments, licensing, genuine owner taste). Resolves Nolan's tension: he ordered another 37 and ruled batch 5 proves the classifier is too permissive.",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": false,
+     "no_external_effects": false,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": false,
+     "boundaries_preserved": false
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "code_evidence",
+     "reversible_experiment",
+     "reversible",
+     "no_external_effects",
+     "no_new_credential_authority",
+     "boundaries_preserved"
+    ],
+    "recommended_default": "Accept the 37 recommended defaults as stated in the batch document, or answer per question. The defaults are the authority-conservative positions; overrides are Nolan's prerogative.",
+    "cost_of_being_wrong": "Wrong calls compound across the control plane: an unproven executor with consequential authority (Q3/Q4), auto-promoted classifiers (Q5), delegated approvals (Q6), editable history (Q7), an unprotected identity store (Q8), unbounded spend (Q12), unauthorized pricing (Q13), premature publication (Q14/Q15), surveillance-default data retention (Q17/Q18/Q19), personal liability for business acts (Q21), and silence-as-consent approvals (Q28). Each question states its individual cost inline; the batch-level cost is a control plane that looks authoritative but is not."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T01:26:33Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "c04562bb45006882",
+   "evidence_digest": "8573d253f0e68c82",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-04",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "CLASSIFIER TRAINING lane: wire Batch 6 adjudication into the SI-03 escalation classifier as training data (37 entries, 4 classes) and end fixed-size question batches forever",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "write escalation-training-batch6.md with all 37 classified, file this record, add an additive corpus reference to the escalation record template",
+    "cost_of_being_wrong": "negligible: reversible docs curation exactly per Nolan's explicit order"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T01:50:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "dae373427f907c47",
+   "evidence_digest": "715db09f6c00d4df",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-05",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "ASK 37 QUESTIONS batch 7 (LAST): build the final 37-question batch on Nolan's explicit direct order, drawn from the implementation frontier the Batch 6 adjudication left open, every question passing the genuine-owner-decision-needed-now filter",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "Build Batch 7 as ordered: 37 questions from the implementation-frontier territory, each with Context / Recommended default / Default vs alternative / Cost of being wrong / Why Nolan why now, zero em dashes, no repeats from batches 3-6, closing line declaring it the last batch",
+    "cost_of_being_wrong": ""
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T01:55:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "4119afb2fd7ea5bc",
+   "evidence_digest": "628adf3bc75ae1b8",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-06",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "ASK 37 QUESTIONS batch 7 (LAST batch): 37 owner questions on the implementation frontier left open by the Batch 6 adjudication (consequence schema, classifier, permissions, delegation, ApprovalRequest, Jev, Hermes, cutover gates, classifier/audit, coordinator delegation). Nolan returned the FINAL owner disposition on 2026-09-26 ~20:12 MDT.",
+    "checks": null,
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision"
+    ],
+    "recommended_default": null,
+    "cost_of_being_wrong": null
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T02:15:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate_resolved_by_owner",
+    "schema_anomalies": [
+     "checks not a dict",
+     "verdict not decide|escalate: 'escalate_resolved_by_owner'"
+    ]
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": true,
+   "jev_question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate_resolved_by_owner",
+    "match": false,
+    "schema_anomalies": [
+     "checks not a dict",
+     "verdict not decide|escalate: 'escalate_resolved_by_owner'"
+    ]
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "8013c605045566d9",
+   "evidence_digest": "95469116da346baf",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-07",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "BACKUP RESEARCH lane (Batch 7 disposition #30): produce destination recommendation and restore-verification plan as pure research, no execution, no owner contact",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": true,
+     "reversible_experiment": true,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "restic client-side-encrypted repo on OCI Object Storage (rank 1); age+existing-timers fallback (rank 2); Pig disk second copy; destination choice returns to parent/Nolan before any commitment",
+    "cost_of_being_wrong": "low: recommendation is non-binding research; wrong ranking costs a re-decision, not money or data"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T02:18:58Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "05908238b698fb60",
+   "evidence_digest": "ab2166af8afc6e54",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-08",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Notify Nolan that an earlier message contained an accidental browser/app-state dump with session and credential-like authentication material, and that the session should be treated as exposed and rotated/invalidated?",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "code_evidence",
+     "reversible_experiment",
+     "safe_default_80"
+    ],
+    "recommended_default": "Notify Nolan once, briefly, naming only the incident class and the owner action (treat the session as exposed; invalidate/rotate through the provider's normal secure path). Repeat no secret material, preserve nothing from the dump.",
+    "cost_of_being_wrong": "If not surfaced, a possibly live session stays exposed indefinitely with nobody acting. If surfaced and already rotated, cost is one short message."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T02:26:33Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "978713ba4ad56f3b",
+   "evidence_digest": "04c9fdd34916602b",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-09",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "P2 HERMES BRIDGE REPAIR lane: execute the Nolan-authorized repair (Batch 7 disposition #20) \u2014 DEFECT-1 (rebuild Windows venv per INTEGRATION.md recipe, move bridge to persistent C:\\Users\\nolan\\hermes-bridge\\, add --safe-mode to launcher), DEFECT-2 (EFFECT_UNKNOWN/HOLD effect-state dimension in orca-adapter/outcomes.js + wiring), reconcile the 2 executor-eval caveats (constraints into worker prompt; safe-mode doc vs launcher), then re-run the 8-condition proof with harmless prompts only",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "execute the authorized repair exactly as scoped, then re-run the 8-condition proof",
+    "cost_of_being_wrong": "low: every mutation is reversible (preserved venv, file bundles, no commits); the proof re-run falsifies the repair before it is reported"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T02:45:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "24d72a186abd27b8",
+   "evidence_digest": "c729ef6910017d90",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-10",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Pig power policy: designate the Pig an always-on server/execution node with explicit AC sleep policy, or keep it a personal machine with job-scoped wake leases only?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "code_evidence",
+     "reversible_experiment",
+     "safe_default_80"
+    ],
+    "recommended_default": "Keep Nolan's 2026-09-26 call (scoped wake leases for active authorized runs, no global never-sleep) since it is his machine and the outage window is now understood; add a wake lease to every long-running authorized Pig job.",
+    "cost_of_being_wrong": "Another standby event during a critical run repeats this morning's multi-hour outage and the cascade of false monitor alarms."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T14:15:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "945ef79a82670268",
+   "evidence_digest": "18368a1bbc770878",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-11",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "D-SHIP spec fork: privacy suppression as substring redaction vs whole-normalized-value suppression (blocks 8 commits)?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": true,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "code_evidence",
+     "safe_default_80"
+    ],
+    "recommended_default": "Whole-normalized-value suppression (fail-closed for privacy); relax to substring only where a proven use case needs the surrounding content.",
+    "cost_of_being_wrong": "Substring redaction risks leaking PII fragments in edge cases; whole-value suppression risks hiding useful content and shipping a dumber product."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T14:15:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "09e924210232a328",
+   "evidence_digest": "18368a1bbc770878",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-12",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "19:00 design adjudication is a runbook NO-GO (v3-polish fixes not in served tree, lane report falsified). Frame 19:00 as a status call and issue a rework order on the lane?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision",
+     "safe_default_80"
+    ],
+    "recommended_default": "Frame 19:00 as a status call, not a v3 win; issue a bounded rework order to the polish lane with the twelve fixes as acceptance criteria.",
+    "cost_of_being_wrong": "If rework is wrongly ordered, a lane burns effort re-proving already-shipped work; if wrongly skipped, a falsified shipped-state report stands uncorrected and v3 ships with known defects."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T14:58:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "552d46d3f8da6e4f",
+   "evidence_digest": "d47c6eb1f0a59855",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-13",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Retire the 2026-09-24 long-lived keep-awake holder (/home/nolan/keep-awake-start.sh on the Pig) now that job-scoped wake leases are live?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": false,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision",
+     "no_external_effects"
+    ],
+    "recommended_default": "Retire it now that job-scoped leases are proven, since the 2026-09-27 call supersedes always-on holders.",
+    "cost_of_being_wrong": "If retired wrongly, a workload that depended on the holder hits a sleep gap; if kept wrongly, the personal machine keeps an always-on holder Nolan's policy call was meant to end."
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T14:58:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "d7a35078b2fed657",
+   "evidence_digest": "d47c6eb1f0a59855",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-14",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "DeepSeek V4 Flash free has no ':free' listing in the live OpenRouter catalog. Mark it BLOCKED in tier-2 config with no unilateral substitution?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": true,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "Mark DeepSeek free BLOCKED in model-config.json; tier-2 floor stays GLM-5.3 Flash / MiMo-V2.6-Flash; no substitution until benchmarked.",
+    "cost_of_being_wrong": ""
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T14:58:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "d8b8d9143ec912ca",
+   "evidence_digest": "45763e285f970e75",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-15",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Gap-4 binding-lint Q1: where should the reusable binding-lint authority live?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "fyd-lane/substrate/binding-lint/binding-lint.py",
+    "cost_of_being_wrong": "a directory rename later; zero runtime effect"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T17:51:49Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "c207ce405c081668",
+   "evidence_digest": "eaa2f31e6d980fd2",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-16",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Gap-4 binding-lint Q2: should mutation-path reads (owner/apply, regen, proceduralize) be exempt from binding discipline?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": true,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "inventoried-but-exempt, revisit item filed",
+    "cost_of_being_wrong": "a mutation path could read bindings unenforced until the revisit; inventory makes it visible"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T17:51:49Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "b4cf321a8d1d8c68",
+   "evidence_digest": "eaa2f31e6d980fd2",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-17",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Gap-4 binding-lint Q3: enforce the lint on website-tree product surfaces (object-preview.tsx, ask-composer.ts)?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": false,
+     "no_external_effects": false,
+     "no_destructive_mutation": false,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision",
+     "safe_default_80",
+     "reversible",
+     "no_external_effects",
+     "no_destructive_mutation"
+    ],
+    "recommended_default": "onboard the website-tree surfaces as proof-against-scratch-copy only; enforcement waits for Nolan's word",
+    "cost_of_being_wrong": "enforcing without his word could break the served website's build or change rendered behavior; not enforcing leaves observed-fact rendering unverified"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T17:51:49Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "735881baea57aa81",
+   "evidence_digest": "bbc452f36f2fa267",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-18",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "MC-3 tenant authority: (1) does the FYD website surface adopt the same registry authority (displayName/siteRoute are product fields)? (2) collapse curated UI subsets into the registry or keep them with subset tests? (3) where does the implementation land (lane-p01/tree is an untracked exemplar; the real website is Pig-side)?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": true,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": false,
+     "no_external_effects": false,
+     "no_destructive_mutation": false,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision",
+     "safe_default_80",
+     "reversible",
+     "no_external_effects",
+     "no_destructive_mutation"
+    ],
+    "recommended_default": "keep curated UI subsets with subset-of-registry tests (item 2, behavior-preserving); queue items 1 and 3 for Nolan at the Pig",
+    "cost_of_being_wrong": "adopting the registry on product surfaces without his word could change rendered site content; landing the implementation in the wrong tree makes it throwaway work"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T18:15:54Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "e3a385324259af3d",
+   "evidence_digest": "98ac2506bf9065e9",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-19o2",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Change the Pig's Windows power policy to prevent Modern Standby (S0 idle) so the Tailscale tunnel survives idle periods?",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": true,
+     "code_evidence": true,
+     "reversible_experiment": true,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": null,
+    "cost_of_being_wrong": "N/A - owner decision with recorded rollback"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-27T22:12:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": [
+     "line 19 holds 2 concatenated JSON objects (malformed JSONL)"
+    ]
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": [
+     "line 19 holds 2 concatenated JSON objects (malformed JSONL)"
+    ]
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "006970ed6f2f0d3f",
+   "evidence_digest": "898889ca26a94ed9",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-20",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "FYD mission approval: APPROVE or DENY the exact proposed SiteSpec transition (p0prop-ac04480a6d1809fd, digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa)?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": false,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "reversible_experiment",
+     "safe_default_80",
+     "no_external_effects"
+    ],
+    "recommended_default": "none \u2014 owner decision required",
+    "cost_of_being_wrong": "applying an unapproved canonical transition to a business site; or stalling the end-to-end proof indefinitely"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T02:05:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "61c4f7f443dd42de",
+   "evidence_digest": "b10833a1aacc12f5",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-21",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Standing deletion authority for hours 18-22: grant the sprint authority to delete proven-dead Git-recoverable duplication without per-item approval?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": false,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "code_evidence",
+     "safe_default_80",
+     "no_destructive_mutation"
+    ],
+    "recommended_default": "grant narrowed standing authority with the full evidence bar and excluded classes",
+    "cost_of_being_wrong": "overly broad grant converts cleanup into destructive authority; overly narrow grant means dozens of pointless interruptions"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T02:05:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "b9847da4d10a3315",
+   "evidence_digest": "b10833a1aacc12f5",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-22",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "HOLD/UNKNOWN semantics: should HOLD pin a mission until deliberate reconciliation (no lease-expiry redispatch)?",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": false,
+     "code_evidence": true,
+     "reversible_experiment": true,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision"
+    ],
+    "recommended_default": "HOLD pins until deliberate reconciliation; patch the reaper",
+    "cost_of_being_wrong": "duplicate external effects from blind redispatch; or missions stalling that could have safely retried"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T02:05:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "f7eeafee0d2ffd03",
+   "evidence_digest": "b10833a1aacc12f5",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-23",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "PROD-7: production correction path or explicit demo-only scoping (all journal actors are demo; overrides route is DEMO/DEV ONLY)? Build owner auth vs explicit demo-only scoping?",
+    "checks": {
+     "locked_invariant": true,
+     "previous_decision": false,
+     "code_evidence": true,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": true,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [],
+    "recommended_default": "explicit demo-only scoping now (overrides route labeled/guarded DEMO/DEV ONLY across product surface: copy, route guards, docs); owner-auth build deferred until Nolan explicitly requests a production correction path",
+    "cost_of_being_wrong": "if Nolan wants the production correction path with real owner auth soon, the demo-only labels need revisiting (a copy/guard change, not a structural reversal); building auth unprompted would have been the consequential mistake"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T05:09:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "decide",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "decide",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "decide",
+   "baseline_detail": {
+    "recorded_verdict": "decide",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "97b7e3a4eba86fb5",
+   "evidence_digest": "25b2a49d6e12bb48",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-24",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Authorize the one-call-site patch wiring compileAskContext() into POST /api/mc/dispatch (first broken edge: EVIDENCE -> ORCA CONTEXT), on a branch with no push, with the falsifier test?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": true,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": true,
+     "reversible": true,
+     "no_external_effects": false,
+     "no_destructive_mutation": true,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "previous_decision",
+     "no_external_effects"
+    ],
+    "recommended_default": "authorize the one-call-site patch on a branch (no push) with the falsifier test, then replay from a clean checkout",
+    "cost_of_being_wrong": "if authorized and wrong: dispatch ContextPack shape changes for all missions until reverted; if withheld: the loop keeps violating 'models consume compiled evidence' and the shadow seam evaluates against params-only context"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T20:23:31Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "40f89e8a61294f54",
+   "evidence_digest": "8f3a347b5d18f332",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  },
+  {
+   "id": "GR-25",
+   "contract": "grill20Composition/v1",
+   "input": {
+    "question": "Authorize registering jev:'PING' in the gateway NAMESPACE_OWNERS map plus a gateway image rebuild, to stop the unbounded jev-shadow fail/retry bleed (1 failure/5s x 3 missions, /health degraded)?",
+    "checks": {
+     "locked_invariant": false,
+     "previous_decision": false,
+     "code_evidence": false,
+     "reversible_experiment": false,
+     "safe_default_80": false,
+     "reversible": false,
+     "no_external_effects": false,
+     "no_destructive_mutation": false,
+     "no_new_credential_authority": true,
+     "boundaries_preserved": true
+    },
+    "failed_checks": [
+     "locked_invariant",
+     "previous_decision",
+     "code_evidence",
+     "reversible_experiment",
+     "safe_default_80",
+     "reversible",
+     "no_external_effects",
+     "no_destructive_mutation"
+    ],
+    "recommended_default": "APPROVE the namespace registration + gateway image rebuild: PING stays the authority, the retry bleed stops, shadow observation is restored",
+    "cost_of_being_wrong": "APPROVE wrongly = wasted gateway rebuild + production touch if the diagnosis misses a contributing cause; DENY = /health stays degraded with ~5k failures/day of log noise, or pause the 3 missions and lose shadow observation"
+   },
+   "evidence": {
+    "source": "fyd-autonomy/escalation-log.jsonl",
+    "ts": "2026-09-28T20:35:00Z",
+    "composition_rule": "template SI-03: verdict=decide requires failed_checks==[]; verdict=escalate requires failed_checks non-empty (+ cost_of_being_wrong non-empty)",
+    "recorded_verdict": "escalate",
+    "schema_anomalies": []
+   },
+   "muse_shadow": "escalate",
+   "jev_shadow_planned": false,
+   "jev_question": null,
+   "baseline_at": "2026-09-28T14:5x MDT (lane B2 run)",
+   "baseline_output": "escalate",
+   "baseline_detail": {
+    "recorded_verdict": "escalate",
+    "match": true,
+    "schema_anomalies": []
+   },
+   "baseline_reason": null,
+   "baseline_extra": {},
+   "baseline_ms": 0.01,
+   "input_digest": "8bdbbe52fcc757f3",
+   "evidence_digest": "c41779de6f7e5d50",
+   "baseline_error": null,
+   "baseline_identity": "SI-03 template composition rule applied to the logged record (deterministic)",
+   "muse_shadow_agreement": true
+  }
+ ],
+ "jev_samples": [
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.36,
+   "confidence": null,
+   "latency_ms": 803.8,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-02",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.27,
+   "confidence": null,
+   "latency_ms": 389.8,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-03",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.11,
+   "confidence": null,
+   "latency_ms": 400.7,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-04",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.05,
+   "confidence": null,
+   "latency_ms": 518.4,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-05",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.35,
+   "confidence": null,
+   "latency_ms": 286.6,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-06",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.36,
+   "confidence": null,
+   "latency_ms": 490.4,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-07",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.58,
+   "confidence": null,
+   "latency_ms": 478.4,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-08",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "main",
+   "question": "Given the agent profile facts and this work order request, what is the probability (0 to 1) that the correct decision under the fail-closed authorization checks is GRANT rather than DENY?",
+   "http": 200,
+   "p": 0.06,
+   "confidence": null,
+   "latency_ms": 488.5,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "http": 200,
+   "p": 0.87,
+   "confidence": null,
+   "latency_ms": 334.4,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "GV-02",
+   "contract": "grantsForViewer/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "http": 200,
+   "p": 0.28,
+   "confidence": null,
+   "latency_ms": 503.3,
+   "error": null,
+   "baseline_output": [
+    "object.reference"
+   ]
+  },
+  {
+   "id": "GV-03",
+   "contract": "grantsForViewer/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "http": 200,
+   "p": 0.34,
+   "confidence": null,
+   "latency_ms": 349.7,
+   "error": null,
+   "baseline_output": [
+    "object.reference"
+   ]
+  },
+  {
+   "id": "GV-04",
+   "contract": "grantsForViewer/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct grant set for this viewer on this target includes the maintain_site bundle (site.read, site.propose) in addition to object.reference?",
+   "http": 200,
+   "p": 0.41,
+   "confidence": null,
+   "latency_ms": 471.2,
+   "error": null,
+   "baseline_output": [
+    "object.reference"
+   ]
+  },
+  {
+   "id": "PA-01",
+   "contract": "planActions/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?",
+   "http": 200,
+   "p": 0.6,
+   "confidence": null,
+   "latency_ms": 480.7,
+   "error": null,
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   }
+  },
+  {
+   "id": "PA-02",
+   "contract": "planActions/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that 'like' is among the correct available actions for this viewer on this target?",
+   "http": 200,
+   "p": 0.69,
+   "confidence": null,
+   "latency_ms": 460.3,
+   "error": null,
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "like",
+     "reply",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   }
+  },
+  {
+   "id": "PA-04",
+   "contract": "planActions/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that 'propose_site_patch' is among the correct available actions for this viewer on this target?",
+   "http": 200,
+   "p": 0.9,
+   "confidence": null,
+   "latency_ms": 549.8,
+   "error": null,
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "open_site",
+     "ask",
+     "like",
+     "propose_update",
+     "propose_site_patch",
+     "open_website",
+     "reference"
+    ],
+    "viewerIsOwner": true
+   }
+  },
+  {
+   "id": "PA-05",
+   "contract": "planActions/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?",
+   "http": 200,
+   "p": 0.71,
+   "confidence": null,
+   "latency_ms": 369.1,
+   "error": null,
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "follow",
+     "reference"
+    ],
+    "viewerIsOwner": false
+   }
+  },
+  {
+   "id": "PA-06",
+   "contract": "planActions/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that 'follow' is among the correct available actions for this viewer on this target?",
+   "http": 200,
+   "p": 0.19,
+   "confidence": null,
+   "latency_ms": 311.8,
+   "error": null,
+   "baseline_output": {
+    "capabilities": [
+     "open",
+     "ask",
+     "propose_update",
+     "reference"
+    ],
+    "viewerIsOwner": true
+   }
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.91,
+   "confidence": null,
+   "latency_ms": 372.5,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-02",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.01,
+   "confidence": null,
+   "latency_ms": 417.9,
+   "error": null,
+   "baseline_output": "review"
+  },
+  {
+   "id": "CR-03",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.1,
+   "confidence": null,
+   "latency_ms": 525.4,
+   "error": null,
+   "baseline_output": "review"
+  },
+  {
+   "id": "CR-04",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.42,
+   "confidence": null,
+   "latency_ms": 398.6,
+   "error": null,
+   "baseline_output": "review"
+  },
+  {
+   "id": "CR-05",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.24,
+   "confidence": null,
+   "latency_ms": 340.7,
+   "error": null,
+   "baseline_output": "review"
+  },
+  {
+   "id": "CR-06",
+   "contract": "classifyReview/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct moderation bucket for this review text is 'positive' rather than 'review'?",
+   "http": 200,
+   "p": 0.04,
+   "confidence": null,
+   "latency_ms": 336.4,
+   "error": null,
+   "baseline_output": "review"
+  },
+  {
+   "id": "RG-01",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.66,
+   "confidence": null,
+   "latency_ms": 395.4,
+   "error": null,
+   "baseline_output": "ALLOW"
+  },
+  {
+   "id": "RG-02",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.79,
+   "confidence": null,
+   "latency_ms": 578.5,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.4,
+   "confidence": null,
+   "latency_ms": 327.8,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-04",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.39,
+   "confidence": null,
+   "latency_ms": 533.8,
+   "error": null,
+   "baseline_output": "ALLOW"
+  },
+  {
+   "id": "RG-05",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.25,
+   "confidence": null,
+   "latency_ms": 353.0,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-06",
+   "contract": "reconcileGate/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct reconcile-gate decision is ALLOW rather than REFUSE?",
+   "http": 200,
+   "p": 0.39,
+   "confidence": null,
+   "latency_ms": 386.8,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "EG-01",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.72,
+   "confidence": null,
+   "latency_ms": 349.1,
+   "error": null,
+   "baseline_output": "ALREADY_ENGAGED"
+  },
+  {
+   "id": "EG-02",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.65,
+   "confidence": null,
+   "latency_ms": 319.1,
+   "error": null,
+   "baseline_output": "ALREADY_ENGAGED"
+  },
+  {
+   "id": "EG-03",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.75,
+   "confidence": null,
+   "latency_ms": 382.6,
+   "error": null,
+   "baseline_output": "ALREADY_ENGAGED"
+  },
+  {
+   "id": "EG-04",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.74,
+   "confidence": null,
+   "latency_ms": 335.1,
+   "error": null,
+   "baseline_output": "ALREADY_ENGAGED"
+  },
+  {
+   "id": "EG-05",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.71,
+   "confidence": null,
+   "latency_ms": 627.0,
+   "error": null,
+   "baseline_output": "ALREADY_ENGAGED"
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "http": 200,
+   "p": 0.82,
+   "confidence": null,
+   "latency_ms": 444.8,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "GR-01",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 516.1,
+   "error": null,
+   "baseline_output": "decide"
+  },
+  {
+   "id": "GR-02",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.01,
+   "confidence": null,
+   "latency_ms": 366.0,
+   "error": null,
+   "baseline_output": "escalate"
+  },
+  {
+   "id": "GR-03",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.01,
+   "confidence": null,
+   "latency_ms": 396.2,
+   "error": null,
+   "baseline_output": "escalate"
+  },
+  {
+   "id": "GR-04",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.94,
+   "confidence": null,
+   "latency_ms": 353.7,
+   "error": null,
+   "baseline_output": "decide"
+  },
+  {
+   "id": "GR-05",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.89,
+   "confidence": null,
+   "latency_ms": 307.8,
+   "error": null,
+   "baseline_output": "decide"
+  },
+  {
+   "id": "GR-06",
+   "contract": "grill20Composition/v1",
+   "kind": "main",
+   "question": "What is the probability (0 to 1) that the correct verdict composition for these check answers is decide rather than escalate?",
+   "http": 200,
+   "p": 0.08,
+   "confidence": null,
+   "latency_ms": 498.1,
+   "error": null,
+   "baseline_output": "escalate"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 1,
+   "http": 200,
+   "p": 0.37,
+   "confidence": null,
+   "latency_ms": 368.5,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 2,
+   "http": 200,
+   "p": 0.38,
+   "confidence": null,
+   "latency_ms": 438.1,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 3,
+   "http": 200,
+   "p": 0.36,
+   "confidence": null,
+   "latency_ms": 328.4,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 4,
+   "http": 200,
+   "p": 0.36,
+   "confidence": null,
+   "latency_ms": 352.8,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 5,
+   "http": 200,
+   "p": 0.35,
+   "confidence": null,
+   "latency_ms": 323.2,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 6,
+   "http": 200,
+   "p": 0.38,
+   "confidence": null,
+   "latency_ms": 390.5,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 7,
+   "http": 200,
+   "p": 0.38,
+   "confidence": null,
+   "latency_ms": 430.3,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 8,
+   "http": 200,
+   "p": 0.36,
+   "confidence": null,
+   "latency_ms": 329.8,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 9,
+   "http": 200,
+   "p": 0.35,
+   "confidence": null,
+   "latency_ms": 374.5,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "AW-01",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "stability",
+   "rep": 10,
+   "http": 200,
+   "p": 0.37,
+   "confidence": null,
+   "latency_ms": 291.4,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 1,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 512.9,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 2,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 566.7,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 3,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 393.4,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 4,
+   "http": 200,
+   "p": 0.94,
+   "confidence": null,
+   "latency_ms": 358.9,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 5,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 300.2,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 6,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 528.3,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 7,
+   "http": 200,
+   "p": 0.94,
+   "confidence": null,
+   "latency_ms": 300.9,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 8,
+   "http": 200,
+   "p": 0.94,
+   "confidence": null,
+   "latency_ms": 427.0,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 9,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 321.8,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "CR-01",
+   "contract": "classifyReview/v1",
+   "kind": "stability",
+   "rep": 10,
+   "http": 200,
+   "p": 0.93,
+   "confidence": null,
+   "latency_ms": 402.1,
+   "error": null,
+   "baseline_output": "positive"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "stability",
+   "rep": 1,
+   "http": 200,
+   "p": 0.42,
+   "confidence": null,
+   "latency_ms": 502.6,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "stability",
+   "rep": 2,
+   "http": 200,
+   "p": 0.37,
+   "confidence": null,
+   "latency_ms": 499.0,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "stability",
+   "rep": 3,
+   "http": 200,
+   "p": 0.41,
+   "confidence": null,
+   "latency_ms": 464.7,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "stability",
+   "rep": 4,
+   "http": 200,
+   "p": 0.41,
+   "confidence": null,
+   "latency_ms": 303.1,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "stability",
+   "rep": 5,
+   "http": 200,
+   "p": 0.44,
+   "confidence": null,
+   "latency_ms": 503.1,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "stability",
+   "rep": 1,
+   "http": 200,
+   "p": 0.86,
+   "confidence": null,
+   "latency_ms": 449.1,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "stability",
+   "rep": 2,
+   "http": 200,
+   "p": 0.87,
+   "confidence": null,
+   "latency_ms": 440.4,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "stability",
+   "rep": 3,
+   "http": 200,
+   "p": 0.87,
+   "confidence": null,
+   "latency_ms": 505.3,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "stability",
+   "rep": 4,
+   "http": 200,
+   "p": 0.88,
+   "confidence": null,
+   "latency_ms": 338.9,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "GV-01",
+   "contract": "grantsForViewer/v1",
+   "kind": "stability",
+   "rep": 5,
+   "http": 200,
+   "p": 0.87,
+   "confidence": null,
+   "latency_ms": 467.0,
+   "error": null,
+   "baseline_output": [
+    "object.reference",
+    "site.read",
+    "site.propose"
+   ]
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "stability",
+   "rep": 1,
+   "http": 200,
+   "p": 0.81,
+   "confidence": null,
+   "latency_ms": 428.5,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "stability",
+   "rep": 2,
+   "http": 200,
+   "p": 0.82,
+   "confidence": null,
+   "latency_ms": 411.3,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "stability",
+   "rep": 3,
+   "http": 200,
+   "p": 0.81,
+   "confidence": null,
+   "latency_ms": 293.9,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "stability",
+   "rep": 4,
+   "http": 200,
+   "p": 0.83,
+   "confidence": null,
+   "latency_ms": 360.8,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "stability",
+   "rep": 5,
+   "http": 200,
+   "p": 0.82,
+   "confidence": null,
+   "latency_ms": 549.5,
+   "error": null,
+   "baseline_output": "ELIGIBLE"
+  },
+  {
+   "id": "AW-08",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "codex.blockedUntil=blocked",
+   "http": 200,
+   "p": 0.06,
+   "confidence": null,
+   "latency_ms": 318.7,
+   "error": null,
+   "baseline_output": "DENY"
+  },
+  {
+   "id": "AW-07",
+   "contract": "mc.authorize_work_order/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "codex.blockedUntil=expired",
+   "http": 200,
+   "p": 0.54,
+   "confidence": null,
+   "latency_ms": 414.6,
+   "error": null,
+   "baseline_output": "GRANT"
+  },
+  {
+   "id": "GV-01b",
+   "contract": "grantsForViewer/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "isSite true->false",
+   "http": 200,
+   "p": 0.34,
+   "confidence": null,
+   "latency_ms": 369.2,
+   "error": null,
+   "baseline_output": [
+    "object.reference"
+   ]
+  },
+  {
+   "id": "RG-03",
+   "contract": "reconcileGate/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "latest attempt uncertain vs completed",
+   "http": 200,
+   "p": 0.41,
+   "confidence": null,
+   "latency_ms": 507.2,
+   "error": null,
+   "baseline_output": "REFUSE"
+  },
+  {
+   "id": "RG-07",
+   "contract": "reconcileGate/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "latest attempt uncertain vs completed",
+   "http": 200,
+   "p": 0.79,
+   "confidence": null,
+   "latency_ms": 469.7,
+   "error": null,
+   "baseline_output": "ALLOW"
+  }
+ ],
+ "jev_eg_fair_samples": [
+  {
+   "id": "EG-01",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ALREADY_ENGAGED",
+   "http": 200,
+   "p": 0.02,
+   "latency_ms": 417.6,
+   "error": null
+  },
+  {
+   "id": "EG-02",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ALREADY_ENGAGED",
+   "http": 200,
+   "p": 0.02,
+   "latency_ms": 377.1,
+   "error": null
+  },
+  {
+   "id": "EG-03",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ALREADY_ENGAGED",
+   "http": 200,
+   "p": 0.01,
+   "latency_ms": 317.0,
+   "error": null
+  },
+  {
+   "id": "EG-04",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ALREADY_ENGAGED",
+   "http": 200,
+   "p": 0.02,
+   "latency_ms": 483.6,
+   "error": null
+  },
+  {
+   "id": "EG-05",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ALREADY_ENGAGED",
+   "http": 200,
+   "p": 0.02,
+   "latency_ms": 333.3,
+   "error": null
+  },
+  {
+   "id": "EG-06",
+   "contract": "engagementGuard/v1",
+   "kind": "evidence_sensitivity",
+   "perturb": "decisive ledger-membership fact disclosed",
+   "question": "What is the probability (0 to 1) that the correct guard verdict for this candidate is ELIGIBLE rather than drop (ALREADY_ENGAGED or BLOCKED)?",
+   "baseline_output": "ELIGIBLE",
+   "http": 200,
+   "p": 0.96,
+   "latency_ms": 399.1,
+   "error": null
+  }
+ ],
+ "metrics": {
+  "contracts": {
+   "classifyReview/v1": {
+    "n_cases": 10,
+    "baseline": {
+     "judged": 10,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 0.053,
+      "p95": 2.648
+     }
+    },
+    "jev": {
+     "n_sampled": 6,
+     "n_scored": 6,
+     "agreement_at_0.5": {
+      "agree": 6,
+      "n": 6,
+      "pct": 100.0
+     },
+     "brier": 0.0423,
+     "fp": 0,
+     "fn": 0,
+     "disagreements": [],
+     "latency_ms": {
+      "p50": 398.6,
+      "p95": 525.4
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 9,
+     "n": 10,
+     "pct": 90.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "MODERATE-HIGH: abusive/spam review auto-pathed as positive; reputational risk",
+    "fn_cost": "LOW: moderator labor",
+    "stability": {
+     "CR-01": {
+      "n": 10,
+      "mean": 0.933,
+      "min": 0.93,
+      "max": 0.94,
+      "range": 0.01
+     }
+    }
+   },
+   "engagementGuard/v1": {
+    "n_cases": 10,
+    "baseline": {
+     "judged": 9,
+     "abstained": 1,
+     "abstention_typed": true,
+     "latency_ms": {
+      "p50": 0.074,
+      "p95": 4.615
+     }
+    },
+    "jev": {
+     "n_sampled": 6,
+     "n_scored": 6,
+     "agreement_at_0.5": {
+      "agree": 1,
+      "n": 6,
+      "pct": 16.7
+     },
+     "brier": 0.4312,
+     "fp": 5,
+     "fn": 0,
+     "disagreements": [
+      [
+       "EG-01",
+       "FP",
+       0.72,
+       "ALREADY_ENGAGED"
+      ],
+      [
+       "EG-02",
+       "FP",
+       0.65,
+       "ALREADY_ENGAGED"
+      ],
+      [
+       "EG-03",
+       "FP",
+       0.75,
+       "ALREADY_ENGAGED"
+      ],
+      [
+       "EG-04",
+       "FP",
+       0.74,
+       "ALREADY_ENGAGED"
+      ],
+      [
+       "EG-05",
+       "FP",
+       0.71,
+       "ALREADY_ENGAGED"
+      ]
+     ],
+     "latency_ms": {
+      "p50": 382.6,
+      "p95": 627.0
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 10,
+     "n": 10,
+     "pct": 100.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "MODERATE: false ELIGIBLE re-engages an already-engaged post (platform spam risk)",
+    "fn_cost": "LOW: false drop loses one engagement opportunity",
+    "stability": {
+     "EG-06": {
+      "n": 5,
+      "mean": 0.818,
+      "min": 0.81,
+      "max": 0.83,
+      "range": 0.02
+     }
+    },
+    "jev_fair": {
+     "n": 6,
+     "agree_at_0.5": 6,
+     "brier": 0.0006,
+     "note": "same 6 cases re-run with the decisive per-case ledger-membership fact in state; main-run envelope carried only counts/digests (evidence asymmetry)"
+    }
+   },
+   "grantsForViewer/v1": {
+    "n_cases": 6,
+    "baseline": {
+     "judged": 6,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 0.003,
+      "p95": 0.085
+     }
+    },
+    "jev": {
+     "n_sampled": 4,
+     "n_scored": 4,
+     "agreement_at_0.5": {
+      "agree": 4,
+      "n": 4,
+      "pct": 100.0
+     },
+     "brier": 0.0948,
+     "fp": 0,
+     "fn": 0,
+     "disagreements": [],
+     "latency_ms": {
+      "p50": 471.2,
+      "p95": 503.3
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 6,
+     "n": 6,
+     "pct": 100.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "LOW: false maintain-bundle offers propose actions; owner still approves exact digest",
+    "fn_cost": "LOW: degraded UX",
+    "stability": {
+     "GV-01": {
+      "n": 5,
+      "mean": 0.87,
+      "min": 0.86,
+      "max": 0.88,
+      "range": 0.02
+     }
+    }
+   },
+   "grill20Composition/v1": {
+    "n_cases": 25,
+    "baseline": {
+     "judged": 25,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 0.01,
+      "p95": 0.01
+     }
+    },
+    "jev": {
+     "n_sampled": 6,
+     "n_scored": 6,
+     "agreement_at_0.5": {
+      "agree": 6,
+      "n": 6,
+      "pct": 100.0
+     },
+     "brier": 0.0045,
+     "fp": 0,
+     "fn": 0,
+     "disagreements": [],
+     "latency_ms": {
+      "p50": 396.2,
+      "p95": 516.1
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 25,
+     "n": 25,
+     "pct": 100.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "HIGH: false decide = autonomous action crossing owner authority",
+    "fn_cost": "LOW-MODERATE: false escalate interrupts the owner",
+    "stability": {}
+   },
+   "mc.authorize_work_order/v1": {
+    "n_cases": 13,
+    "baseline": {
+     "judged": 13,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 0.012,
+      "p95": 0.233
+     }
+    },
+    "jev": {
+     "n_sampled": 8,
+     "n_scored": 8,
+     "agreement_at_0.5": {
+      "agree": 7,
+      "n": 8,
+      "pct": 87.5
+     },
+     "brier": 0.1162,
+     "fp": 0,
+     "fn": 1,
+     "disagreements": [
+      [
+       "AW-01",
+       "FN",
+       0.36,
+       "GRANT"
+      ]
+     ],
+     "latency_ms": {
+      "p50": 488.5,
+      "p95": 803.8
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 13,
+     "n": 13,
+     "pct": 100.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "HIGH: false GRANT can issue a work order to an unauthorized/unavailable agent (C4, possible external effect; reversible via HOLD/reconcile)",
+    "fn_cost": "LOW-MODERATE: false DENY stalls a mission; operator retries",
+    "stability": {
+     "AW-01": {
+      "n": 10,
+      "mean": 0.366,
+      "min": 0.35,
+      "max": 0.38,
+      "range": 0.03
+     }
+    }
+   },
+   "planActions/v1": {
+    "n_cases": 8,
+    "baseline": {
+     "judged": 8,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 0.018,
+      "p95": 0.309
+     }
+    },
+    "jev": {
+     "n_sampled": 5,
+     "n_scored": 5,
+     "agreement_at_0.5": {
+      "agree": 4,
+      "n": 5,
+      "pct": 80.0
+     },
+     "brier": 0.1173,
+     "fp": 1,
+     "fn": 0,
+     "disagreements": [
+      [
+       "PA-01",
+       "FP",
+       0.6,
+       {
+        "capabilities": [
+         "open",
+         "ask",
+         "reference"
+        ],
+        "viewerIsOwner": false
+       }
+      ]
+     ],
+     "latency_ms": {
+      "p50": 460.3,
+      "p95": 549.8
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 7,
+     "n": 8,
+     "pct": 87.5,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "LOW: false affordance fails at use",
+    "fn_cost": "LOW: missing affordance",
+    "stability": {}
+   },
+   "reconcileGate/v1": {
+    "n_cases": 8,
+    "baseline": {
+     "judged": 8,
+     "abstained": 0,
+     "abstention_typed": false,
+     "latency_ms": {
+      "p50": 1.731,
+      "p95": 4.98
+     }
+    },
+    "jev": {
+     "n_sampled": 6,
+     "n_scored": 6,
+     "agreement_at_0.5": {
+      "agree": 4,
+      "n": 6,
+      "pct": 66.7
+     },
+     "brier": 0.2477,
+     "fp": 1,
+     "fn": 1,
+     "disagreements": [
+      [
+       "RG-02",
+       "FP",
+       0.79,
+       "REFUSE"
+      ],
+      [
+       "RG-04",
+       "FN",
+       0.39,
+       "ALLOW"
+      ]
+     ],
+     "latency_ms": {
+      "p50": 395.4,
+      "p95": 578.5
+     },
+     "cost_per_call": "UNKNOWN (API does not report cost)"
+    },
+    "muse_shadow": {
+     "agreement": 8,
+     "n": 8,
+     "pct": 100.0,
+     "note": "same operator/model family as tournament runner; NOT independent evidence"
+    },
+    "fp_cost": "HIGH: false ALLOW re-dispatches duplicate/uncertain intent; possible double external effect",
+    "fn_cost": "LOW-MODERATE: false REFUSE stalls until reconciled",
+    "stability": {
+     "RG-03": {
+      "n": 5,
+      "mean": 0.41,
+      "min": 0.37,
+      "max": 0.44,
+      "range": 0.07
+     }
+    }
+   }
+  },
+  "notes": [],
+  "evidence_sensitivity_baseline": {
+   "mc.authorize_work_order/v1": "AW-08 (codex blockedUntil far-future) DENY vs AW-07 (expired) GRANT: output moves with the evidence flip",
+   "grantsForViewer/v1": "GV-01 (isSite true) bundle granted vs GV-04 (isSite false) object.reference only: moves",
+   "reconcileGate/v1": "RG-03 (latest attempt uncertain) REFUSE vs RG-07 (latest completed) ALLOW: moves",
+   "engagementGuard/v1": "EG-05 ALREADY_ENGAGED -> ELIGIBLE when the single ledger post-id fact is removed from the in-memory index (on-disk index untouched)",
+   "classifyReview/v1": "not probed (lexicon perturbation would change the function, not the evidence)",
+   "planActions/v1": "not probed",
+   "grill20Composition/v1": "not probed (composition is a pure function of failed_checks)"
+  },
+  "evidence_sensitivity_jev": {
+   "AW blocked->expired": {
+    "AW-08 p": 0.06,
+    "AW-07 p": 0.54,
+    "moves": true
+   },
+   "GV isSite true->false": {
+    "main GV-01 p": "see samples",
+    "GV-01b p": 0.34,
+    "moves": true
+   },
+   "RG uncertain->completed": {
+    "RG-03 p": 0.41,
+    "RG-07 p": 0.79,
+    "moves": true
+   }
+  }
+ },
+ "unknowns": [
+  "Jev cost per call (API does not report it)",
+  "Jev model_version/commit (not published; version endpoints 404)",
+  "Jev confidence field (null, never populated)",
+  "Pig WSL unreachable this run (SSH hung silently, killed per hang-recovery rule); canonical-tree baselines ran on local mirrors instead; mirror-vs-HEAD equivalence NOT verified this run",
+  "classifyReview final-label source = human moderation decisions: NOT FOUND locally; accuracy vs human = UNKNOWN",
+  "callerScope, mc-dispatch-identity, EstimatorFlags: deterministic baselines not executable locally (files absent); not run this tournament",
+  "Calibration NOT established for any processor on any contract (n too small everywhere; Jev stays SHADOW)"
+ ]
+}

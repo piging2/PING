@@ -1,0 +1,36 @@
+=== NFS mounts ===
+sunrpc on /run/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfs not in filesystems
+=== /etc/fstab ===
+no nfs/rpc in fstab
+=== rpcbind service state ===
+active
+enabled
+BindsTo=
+RequiredBy=
+WantedBy=multi-user.target
+=== reverse deps (who wants/requires rpcbind) ===
+rpcbind.service
+● └─multi-user.target
+●   └─graphical.target
+=== running nfs/rpc services ===
+  rpcbind.service                                            loaded active running RPC bind portmap service
+=== processes with rpc in name ===
+_rpc         579  0.0  0.0   8332  3320 ?        Ss   Sep20   0:00 /sbin/rpcbind -f -w
+root         586  0.0  0.0      0     0 ?        I<   Sep20   0:00 [kworker/R-rpciod]
+=== :111 listeners ===
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*          
+LISTEN 0      4096            [::]:111           [::]:*          
+=== rpcinfo ===
+   program vers proto   port  service
+    100000    4   tcp    111  portmapper
+    100000    3   tcp    111  portmapper
+    100000    2   tcp    111  portmapper
+    100000    4   udp    111  portmapper
+    100000    3   udp    111  portmapper
+    100000    2   udp    111  portmapper
+=== autofs ===
+inactive
+autofs not active
+=== recent rpcbind log ===
+-- No entries --

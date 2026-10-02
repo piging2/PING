@@ -1,0 +1,28 @@
+=== docker ps ===
+ping-gateway|ping-gateway:candidate-3c5d280dd|Up 2 days
+ping-postgres|postgres:17-alpine|Up 3 days (healthy)
+ping-qdrant|qdrant/qdrant:v1.7.0|Up 4 days (healthy)
+=== inspect: memory limits, healthcheck, restart ===
+--- ping-gateway ---
+Memory(limit bytes): 0
+MemorySwap: 0
+RestartPolicy: unless-stopped
+Healthcheck: None
+State.Health: None
+--- ping-postgres ---
+Memory(limit bytes): 0
+MemorySwap: 0
+RestartPolicy: unless-stopped
+Healthcheck: {'Test': ['CMD-SHELL', 'pg_isready -U ping -d crx_runtime'], 'Interval': 10000000000, 'Timeout': 5000000000, 'StartPeriod': 30000000000, 'Retries': 5}
+State.Health: healthy
+--- ping-qdrant ---
+Memory(limit bytes): 0
+MemorySwap: 0
+RestartPolicy: unless-stopped
+Healthcheck: {'Test': ['CMD-SHELL', "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/6333' || exit 1"], 'Interval': 15000000000, 'Timeout': 5000000000, 'StartPeriod': 30000000000, 'Retries': 3}
+State.Health: healthy
+=== docker stats (one shot) ===
+ping-gateway|117.6MiB / 5.765GiB|1.99%
+ping-postgres|32.11MiB / 5.765GiB|0.54%
+ping-qdrant|47.95MiB / 5.765GiB|0.81%
+=== exit 137 / OOM in events ===

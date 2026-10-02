@@ -1,0 +1,25 @@
+{
+ "mission_id": "BAC-0002",
+ "verdict": "ADAPT",
+ "summary": "BEFORE name-keyed store + rescan dedupe: 0.67ms; AFTER content-hash store: 2.49ms (hash cost dominates at 2k small blobs). Space: 768000 -> 537600 bytes (30% saved, 1400 unique of 2000 blobs). Adopt for space/dedupe correctness, not for ingest speed; net win when blobs are large or network-attached.",
+ "evidence_files": [
+  "fleet/work/fleet-be-1/bench_backend.py",
+  "fleet/work/fleet-be-1/bench_results.json",
+  "fleet/work/fleet-be-1/followup.py",
+  "fleet/work/fleet-be-1/followup_results.json"
+ ],
+ "confidence": 0.8,
+ "followup": null,
+ "numbers": {
+  "before_ms": 0.6704,
+  "after_ms": 2.4855,
+  "metric": "ingest_plus_dedupe",
+  "change": "content-hash keyed store stores each unique blob once",
+  "case": 1,
+  "extra": {
+   "bytes_before": 768000,
+   "bytes_after": 537600,
+   "unique_blobs": 1400
+  }
+ }
+}

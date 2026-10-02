@@ -1,0 +1,72 @@
+{
+  "at": "2026-09-24T02:26:34.172Z",
+  "results": [
+    {
+      "name": "dedup-identical-bytes",
+      "ok": true,
+      "detail": {
+        "digest": "9eecddfce418e9e5...",
+        "blobRecords": 1,
+        "bindings": 2,
+        "secondIngestNewBlob": false
+      }
+    },
+    {
+      "name": "trace-hash-observation-evidence",
+      "ok": true,
+      "detail": {
+        "renderBinding": "bind-obj-demo-1-hero-9eecddfc",
+        "blobKey": "9eecddfce418.jpg",
+        "observation": "obs-9eecddfce418",
+        "sourceUrl": "https://source-a.example/hero.jpg",
+        "evidence": "ev-9eecddfce418"
+      }
+    },
+    {
+      "name": "source-url-death-render-intact",
+      "ok": true,
+      "detail": {
+        "sourceDead": true,
+        "blobBytesRetained": 2069,
+        "renderedFromBlobBytes": 944
+      }
+    },
+    {
+      "name": "unauthorized-quarantined",
+      "ok": true,
+      "detail": {
+        "verdict": "quarantined",
+        "servableByProjection": false,
+        "quarantineReason": "no-authorization-basis"
+      }
+    },
+    {
+      "name": "tenant-isolation-on-resolve",
+      "ok": true,
+      "detail": {
+        "tenantT1": true,
+        "tenantT2": false,
+        "t2reason": "no-authorized-binding-for-tenant"
+      }
+    },
+    {
+      "name": "exif-changes-identity",
+      "ok": true,
+      "detail": {
+        "samePixels": true,
+        "differentDigests": true,
+        "note": "metadata is part of the byte stream; identity is byte-exact by design, never perceptual"
+      }
+    },
+    {
+      "name": "oversized-upload-rejected",
+      "ok": true,
+      "detail": {
+        "bytes": 26214401,
+        "cap": 26214400,
+        "admitted": false,
+        "note": "rejected pre-ingest; never hashed, never decoded, never enters blobStore"
+      }
+    }
+  ]
+}
