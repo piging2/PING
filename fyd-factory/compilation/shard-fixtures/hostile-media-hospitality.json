@@ -1,0 +1,177 @@
+{
+  "site_id": "hostile-media-hospitality",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "hospitality: 404 + PDF + invalid-scheme media",
+  "variation_thesis": "Stresses media validation: a 404 image, a non-image PDF in an image field, and an invalid URL scheme.",
+  "expected_failure_mode": "fail-closed: validate every media URL before render; quarantine the 404, the PDF, and the invalid scheme; never hotlink unverified media.",
+  "hostile_properties": [
+    "broken-media",
+    "404-image",
+    "non-image-media",
+    "invalid-scheme"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-media-hospitality-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Postcard Test Cabins",
+        "description": "Synthetic test hospitality business with broken or non-image media URLs.",
+        "fields": {
+          "phone": "(970) 555-0152",
+          "business_type": "hospitality",
+          "website": "https://hostile-media-hospitality.example.com",
+          "address": "404 Test Notfound Rd, Delta, CO",
+          "conflicts": [
+            "HOSTILE broken-media: post-01 media_url is a 404. post-02 media_url is a PDF, not an image. post-03 media_url has an invalid scheme. Compiler must validate media before render; broken media quarantines, never renders broken."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-media-hospitality",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-media-hospitality-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Delta, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-media-hospitality.",
+        "fields": {
+          "address_locality": "Delta",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Delta, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-media-hospitality-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-media-hospitality-post-01",
+        "schema": "ping.social.post@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Grand opening",
+        "description": "Post with a media URL that 404s.",
+        "fields": {
+          "headline": "Grand opening",
+          "text": "We opened our doors. Synthetic test post.",
+          "posted_at": "2026-09-20",
+          "media_url": "https://media.example.com/broken/404-missing-image.jpg",
+          "media_expected_status": "404",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-media-hospitality-post-01",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-media-hospitality-post-02",
+        "schema": "ping.social.post@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Menu drop",
+        "description": "Post whose media URL is a PDF, not an image.",
+        "fields": {
+          "headline": "Menu drop",
+          "text": "New menu is out. Synthetic test post.",
+          "posted_at": "2026-09-19",
+          "media_url": "https://media.example.com/broken/actual-document.pdf",
+          "media_content_type": "application/pdf, not an image",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-media-hospitality-post-02",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-media-hospitality-post-03",
+        "schema": "ping.social.post@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Team photo",
+        "description": "Post whose media URL has an invalid scheme.",
+        "fields": {
+          "headline": "Team photo",
+          "text": "Meet the team. Synthetic test post.",
+          "posted_at": "2026-09-18",
+          "media_url": "ht!tp://media.example.com/broken/invalid-scheme.jpg",
+          "media_expected_status": "invalid-scheme",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-media-hospitality-post-03",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-media-hospitality-0001",
+        "subject": "hostile-media-hospitality-biz",
+        "predicate": "located_at",
+        "object": "hostile-media-hospitality-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-media-hospitality:site"
+      },
+      {
+        "id": "rel-hostile-media-hospitality-0002",
+        "subject": "hostile-media-hospitality-biz",
+        "predicate": "publishes",
+        "object": "hostile-media-hospitality-post-01",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-media-hospitality:social"
+      },
+      {
+        "id": "rel-hostile-media-hospitality-0003",
+        "subject": "hostile-media-hospitality-biz",
+        "predicate": "publishes",
+        "object": "hostile-media-hospitality-post-02",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-media-hospitality:social"
+      },
+      {
+        "id": "rel-hostile-media-hospitality-0004",
+        "subject": "hostile-media-hospitality-biz",
+        "predicate": "publishes",
+        "object": "hostile-media-hospitality-post-03",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-media-hospitality:social"
+      }
+    ]
+  }
+}

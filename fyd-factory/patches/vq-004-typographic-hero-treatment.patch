@@ -1,0 +1,29 @@
+diff --git a/src/fyd/components/renderer.tsx b/src/fyd/components/renderer.tsx
+index 37200f2b..dc96462f 100644
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -964,7 +964,23 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
+       className="w-full"
+       data-motion="hero-settle"
+       data-layout-character={character}
+-      style={{ background: theme.ink }}
++      data-hero-treatment={hero ? "photo" : "typographic"}
++      // VQ-004: designed no-media hero treatment. When the media stage has no
++      // acquired photo for this business (hookup: page.tsx heroMediaFor ->
++      // SiteClient prop -> ctx.heroMedia), the slab is not a flat empty panel:
++      // a deterministic token-derived accent wash. No images, no invented
++      // content; photo heroes are untouched.
++      style={{
++        background: hero
++          ? theme.ink
++          : "linear-gradient(160deg, " +
++            theme.ink +
++            " 55%, color-mix(in srgb, " +
++            theme.accent +
++            " 16%, " +
++            theme.ink +
++            "))",
++      }}
+     >
+       {hero ? (
+         <div

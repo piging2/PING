@@ -1,0 +1,21 @@
+{
+  "acquisitionSchema": "fyd.proceduralize.AcquiredSource@fyd-factory",
+  "evidenceHash": "sha256:d1a25e3e287c7a1435c96a21f88551a473464b32c648eef61e36b8c3eeaae7f1",
+  "fetchedAt": "2026-09-23T18:30:00Z",
+  "fixtureSlug": "conflicting-source",
+  "lane": "LANE-ACQ",
+  "levelUsed": 1,
+  "marker": "DEMO_SYNTHETIC",
+  "sourceUrl": "https://rifle-appliance.example.com/",
+  "structuredLayers": [
+    "json-ld(flat)",
+    "opengraph",
+    "html-meta",
+    "html-text"
+  ],
+  "weirdnessPreserved": [
+    "Two sources disagree on phone AND hours inside one fetch; both preserved, neither silently dropped: JSON-LD says (970) 555-0188 / Mo-Fr 08:00-17:00; OG/meta layer says (970) 555-0189 / Mo-Sa 08:00-18:00",
+    "Provenance sidecar records both values with their layers: the fixture refuses to pick a winner",
+    "Known pipeline behavior to verify in validation: SOURCE_PRIORITY resolves json-ld over opengraph over html-meta with no conflict record in PipelineReport"
+  ]
+}

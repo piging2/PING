@@ -1,0 +1,111 @@
+{
+  "site_id": "hostile-phonec-personal",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "personal services: website vs directory phone mismatch",
+  "variation_thesis": "Stresses phone conflict: website and directory disagree on the phone number.",
+  "expected_failure_mode": "fail-closed: assert no canonical phone; block any call/dial action and flag the conflict in the evidence log.",
+  "hostile_properties": [
+    "contradictory-phone",
+    "two-sources-disagree"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-phonec-personal-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Crossed Wire Test Spa",
+        "description": "Synthetic test personal services business where two sources disagree on the phone number.",
+        "fields": {
+          "phone": "(970) 555-0146",
+          "business_type": "personal services",
+          "website": "https://hostile-phonec-personal.example.com",
+          "address": "22 Test Switchboard Ave, Delta, CO",
+          "phone_directory": "(970) 555-0147",
+          "conflicts": [
+            "PHONE CONFLICT: website lists (970) 555-0146; directory listing (reserve.example.com) lists (970) 555-0147. Both claims preserved; no canonical phone asserted. Compiler must not dial either without human resolution."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-phonec-personal",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-phonec-personal-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Delta, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-phonec-personal.",
+        "fields": {
+          "address_locality": "Delta",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Delta, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-phonec-personal-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-phonec-personal-ext-dir",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "https://reserve.example.com/hostile-phonec-personal",
+        "description": "Directory listing carrying the conflicting phone claim.",
+        "fields": {
+          "url": "https://reserve.example.com/hostile-phonec-personal",
+          "platform": "reserve.example.com",
+          "phone": "(970) 555-0147",
+          "phone_conflicts_with": "(970) 555-0146",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-phonec-personal-ext-dir",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-phonec-personal-0001",
+        "subject": "hostile-phonec-personal-biz",
+        "predicate": "located_at",
+        "object": "hostile-phonec-personal-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-phonec-personal:site"
+      },
+      {
+        "id": "rel-hostile-phonec-personal-0002",
+        "subject": "hostile-phonec-personal-biz",
+        "predicate": "links_to",
+        "object": "hostile-phonec-personal-ext-dir",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-phonec-personal:directory"
+      }
+    ]
+  }
+}

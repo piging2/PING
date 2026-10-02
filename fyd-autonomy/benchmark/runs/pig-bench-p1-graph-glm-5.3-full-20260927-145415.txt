@@ -1,0 +1,53 @@
+## 1. Diagnosis
+
+**Root cause:** Excerpt 1 calls `jsonld.flatten` with the wrong argument shape. Per the library docs cited in Invariant 3, the signature is `flatten(input, [ctx], [options])`. The code passes `{ documentLoader: offlineDocumentLoader }` as the **second** (context) argument, not the third (options). The library therefore tries to interpret `{ documentLoader: <function> }` as a JSON-LD context, and a context term value must be a string or object — a function is neither. That is exactly the probe error: `Invalid JSON-LD syntax; @context term values must be strings or objects`. Every block's expansion throws, the pipeline fail-closes per Invariant 1, and every block reports `expansion-failed` with 0 nodes / 0 facts — including the well-formed Coppersmith `@graph` block (so H1, H3, H4, H5 are excluded by the fixture being a valid block that never reaches mapping/filtering).
+
+**Second, independent defect:** In Excerpt 3, `offlineContext` claims "blocks with no declared @context are passed through unchanged," but the code unconditionally sets `@context: rewriteContextValue(rec["@context"])` on every object. A context-less block (like the "parse harvests JSON-LD first" fixture `{"@type":"LocalBusiness","name":"Acme",...}`) gets a new `@context` key (with whatever `rewriteContextValue(undefined)` yields — likely `undefined` or an invalid value). This independently breaks context-less blocks and explains why that pre-existing unit test yields zero facts from its JSON-LD block even apart from the flatten-argument bug.
+
+## 2. Patch spec
+
+File: `structured-data.ts`, function `expandJsonLdBlocks`:
+
+```diff
+- const flattened = await jsonld.flatten(block.parsed, {
+-   documentLoader: offlineDocumentLoader,
+- });
++ const flattened = await jsonld.flatten(
++   block.parsed,
++   undefined, // no explicit ctx; block's own @context is used
++   { documentLoader: offlineDocumentLoader },
++ );
+```
+
+File: `structured-data.ts`, function `offlineContext`:
+
+```diff
+  if (doc !== null && typeof doc === "object") {
+    const rec = doc as Record<string, unknown>;
+-   return { ...rec, "@context": rewriteContextValue(rec["@context"]) };
++   if (rec["@context"] === undefined) return doc; // pass through unchanged
++   return { ...rec, "@context": rewriteContextValue(rec["@context"]) };
+  }
+```
+
+(The exact guard condition should match `rewriteContextValue`'s handling of a missing key — if it already treats `undefined` as "no-op", the first defect may be latent but still worth fixing for clarity. That detail is the one thing the excerpts don't settle.)
+
+## 3. Test spec
+
+**Test:** "extractGraph expands Coppersmith-style @graph JSON-LD into nodes and facts."
+
+**Input:** the Coppersmith block verbatim (the `@graph` example above; the full 3969-char fixture is preferable), passed through `expandJsonLdBlocks` with `offlineDocumentLoader`.
+
+**Assertions — FAIL on current code, PASS after patch:**
+1. No block reports `expansion-failed` (unsupported-evidence list for the JSON-LD lane is empty).
+2. Node count ≥ 2 (the `Plumber/#business` and `WebSite/#website` nodes are returned by `extractGraph`).
+3. Facts include `name = "Coppersmith Plumbing"` and `telephone = "+1-970-555-0100"`.
+
+**Secondary assertions (exercise defect 2):**
+4. A context-less block `{"@type":"LocalBusiness","name":"Acme","telephone":"+1-555-0100"}` produces a node and a `name` fact (currently 0 facts in the "parse harvests JSON-LD first" test).
+
+## 4. Risks
+
+- **`flatten` with `undefined` ctx:** if any caller depended on the (broken) second-argument behavior by accident, nothing did — it always threw. But verify `extractGraph` handles flatten's actual return shape (flatten returns `{@graph: [...]}` or `[@graph...]` depending on library version); if this version returns an array of node objects, `rec["@graph"]`/`rec["@id"]` would still yield zero nodes — the test above would catch that, and a probe of `flatten`'s return value on one block settles it.
+- **offlineContext pass-through:** blocks that previously "failed closed with evidence" now expand; if downstream property mapping (H3 territory) doesn't know `Plumber`/address terms, nodes will appear with fewer facts — the invariant (expand-or-evidence) is still met, but fact counts may be lower than hoped. That's a mapping issue, not this patch's scope; check the mapping tables accept `schema.org` core terms.
+- **Offline loader:** with correct options wiring, `documentLoader` is now actually consulted for the first time. Confirm `offlineDocumentLoader` can serve `https://schema.org` from the offline table; if it can't, blocks now fail closed with a *context-fetch* error instead of a syntax error — progress (Invariant 2 is enforced), but the test would need the schema.org table entry present. The test spec assumes it is; if not, that's the first thing to check.

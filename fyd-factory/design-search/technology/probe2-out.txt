@@ -1,0 +1,365 @@
+=== types.ts tail (FYDSiteSpec interface + tokens) ===
+export interface FYDMediaTokens {
+  treatment?: "documentary" | "polished" | "schematic";
+  aspectRatio?: string;
+}
+
+/** Motion tokens: durations in ms; reduced-motion disables animation. */
+export interface FYDMotionTokens {
+  durationMs?: number;
+  easing?: string;
+}
+
+/**
+ * CANONICAL MOTION PROFILE (Nolan, 2026-09-22 FYD grill, BINDING).
+ *
+ * The one shared motion type the whole design system uses. The compose
+ * lane imports this definition; the shape below is the contract:
+ * - motionIntensity: NONE collapses decorative motion (the
+ *   reduced-motion equivalent: nothing depends on animation);
+ *   SUBTLE is the default product motion (quiet, quick, no theater);
+ *   EXPRESSIVE is reserved for hero/celebration moments.
+ * - entrance: how a surface first appears (FADE_RISE, REVEAL, SCALE).
+ * - objectTransition: how the Circle becomes the card and the card
+ *   becomes Ask FYD (MORPH = shared-identity transform; CROSSFADE =
+ *   the reduced-motion-safe swap).
+ * - stagger: sequencing of grouped children (action grids, suggestion
+ *   chips): NONE, TIGHT, RELAXED.
+ */
+export interface MotionTokens {
+  motionIntensity: "NONE" | "SUBTLE" | "EXPRESSIVE";
+  entrance: "FADE_RISE" | "REVEAL" | "SCALE";
+  objectTransition: "MORPH" | "CROSSFADE";
+  stagger: "NONE" | "TIGHT" | "RELAXED";
+}
+
+/**
+ * Layout character: a PRESENTATION hint, never business truth. Chosen by
+ * the composing strategy/archetype and stamped onto the spec's theme
+ * tokens (SiteSpec), owner-overridable through the normal token-override
+ * path. The same components read it; no fact ever changes with it.
+ */
+export type FYDLayoutCharacter =
+  | "EDITORIAL"
+  | "CRAFT"
+  | "TECHNICAL"
+  | "RETAIL"
+  | "PROFESSIONAL"
+  | "CREATOR";
+
+/**
+ * ViewportCapabilities: the device's composition-relevant capabilities.
+ *
+ * ONE SEMANTIC SITESPEC (mobile architecture, binding): the renderer never
+ * branches on a DesktopSiteSpec/MobileSiteSpec. Composition inputs are
+ * SiteSpec + ObjectGraph + ViewerContext + ViewportCapabilities, and the
+ * SAME object projects differently per device: a Service is a rich
+ * horizontal card on desktop, a compact object tile on mobile.
+ *
+ * SSR honesty: the server cannot know the viewport, so the server renders
+ * the compact (mobile-first) baseline and the client provider
+ * (fyd/components/viewport.tsx) resolves the real capabilities after
+ * mount. Layout projection is CSS-driven from the data-viewport /
+ * data-pointer attributes the provider stamps on <html> (no hydration
+ * mismatch: the DOM is identical, only the projection changes);
+ * ViewportCapabilities in JS is for BEHAVIORAL choices (touch-first
+ * interactions, rails vs grids, sticky actions).
+ *
+ * Width classes: xs <480, sm 480-767, md 768-1023, lg 1024-1439, xl 1440+.
+ * The CSS breakpoints in the renderer use the same cut points.
+ */
+export type ViewportWidthClass = "xs" | "sm" | "md" | "lg" | "xl";
+
+export interface ViewportCapabilities {
+  widthClass: ViewportWidthClass;
+  /** Coarse (touch) or fine (mouse/trackpad) primary pointer. */
+  pointer: "coarse" | "fine";
+  /** Whether the primary input can hover. Never gate functionality on it. */
+  hover: boolean;
+  /** Viewer asked for reduced motion (or intensity NONE was composed). */
+  reducedMotion: boolean;
+  /** CSS safe-area insets in px; zeros where unsupported/unknown. */
+  safeArea: { top: number; right: number; bottom: number; left: number };
+}
+
+/**
+ * DESIGN SYSTEM COMPILER (mobile architecture, binding): semantic design
+ * intent lives on the SiteSpec; a deterministic token map compiles it to
+ * presentation. The LLM/agent proposes INTENT patches (density, radius,
+ * type scale, spacing rhythm, surface depth, motion intensity, media
+ * treatment, content width, object emphasis); the owner approves; the
+ * compiler renders. No arbitrary CSS generation, ever.
+ *
+ * layoutCharacter is the seed of this compiler: strategy/archetype picks
+ * the character, tokenOverrides let the owner adjust, and
+ * CHARACTER_PRESENTATION (renderer) is the deterministic map. The fields
+ * below grow the seed toward full intent without changing the mechanism.
+ */
+export interface FYDDesignIntent {
+  /** Content density: compact tiles vs comfortable cards. */
+  density?: "compact" | "comfortable";
+  /** Max content width in px for the center column. */
+  contentWidthPx?: number;
+  /** Media treatment: contained cards vs edge-to-edge moments on mobile. */
+  mediaTreatment?: "contained" | "edge-to-edge";
+  /** How hard objects push for attention in the composition. */
+  objectEmphasis?: "quiet" | "balanced" | "prominent";
+}
+
+export interface FYDThemeTokens {
+  accent: string;
+  accentForeground: string;
+  surface: string;
+=== dogfood test 1: builder ===
+100 src/fyd/builder/__tests__/ping-fyd-dogfood-render.test.ts
+/**
+ * Dogfood render verification: PING's own site through the FYD substrate.
+ *
+ * Node-level mirror of the golden customer route
+ * (src/app/build/[siteId]/page.tsx). The live route is currently 404'd at
+ * the router by the Circle-Only Product Reset middleware (experimental
+ * product routes disabled), so this test runs the identical pipeline —
+ * projection load -> object-builder verification -> strategy resolution ->
+ * plan -> presentation intent -> hero media -> validate -> renderable gate —
+ * at node level and asserts the dogfood site composes renderable.
+ *
+ * PING-specific facts come only from the owner-asserted projection
+ * (/home/nolan/ping/var/fyd-projections/ping-fyd.json); nothing about
+ * PING Social is hardcoded here.
+ */
+import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { verifyObjectGraph } from "@/fyd/builder/object-builder";
+import { planSite, resolveQueryObjects } from "@/fyd/builder/planner";
+import { strategyForSite } from "@/fyd/builder/strategy-for-site";
+import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
+import { heroMediaFor } from "@/fyd/media/select";
+import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
+import type { FYDSiteSpec } from "@/fyd/sitespec/types";
+import type { ObjectGraph } from "@/fyd/sitespec/types";
+
+const SITE_ID = "ping-fyd";
+
+async function composePingFyd() {
+  const projection = await getPingObjectGraph(SITE_ID);
+  const verified = verifyObjectGraph({ tenantId: SITE_ID }, projection);
+  const strategy = strategyForSite(SITE_ID, verified.graph);
+  const planned = planSite({
+    ctx: { tenantId: SITE_ID },
+    graph: verified.graph,
+    vector: strategy.vector,
+    generatedAt: projection.meta.generatedAt,
+    eventSequences: projection.meta.eventSequences ?? undefined,
+    attestation: verified.attestation,
+  });
+  const spec: FYDSiteSpec = applyPresentationIntent(
+    planned.spec,
+    projection.presentationIntent,
+    verified.graph,
+  ).spec;
+  const heroMedia = heroMediaFor(SITE_ID, verified.graph, spec.ownerObjectId);
+  const knownSchemas = new Set(verified.graph.objects.map((o) => o.schema));
+  const findings = validateSiteSpec(spec, knownSchemas);
+  return { projection, verified, strategy, spec, heroMedia, findings };
+}
+
+function sectionComponents(spec: FYDSiteSpec): string[] {
+  return spec.pages.flatMap((p) => p.sections.map((s) => s.component));
+}
+
+test("ping-fyd: projection loads, verifies, and resolves the TECHNOLOGY strategy", async () => {
+  const { projection, verified, strategy } = await composePingFyd();
+  expect(projection.meta.siteId).toBe(SITE_ID);
+  // 1 business + 4 services + 1 location + 1 external identity.
+  expect(projection.graph.objects).toHaveLength(7);
+  expect(verified.attestation).toBeTruthy();
+  // Explicit tenant pin wins over graph inference.
+  expect(strategy.name).toBe("TECHNOLOGY");
+}, 60000);
+
+test("ping-fyd: spec validates and passes the renderable gate", async () => {
+  const { spec, findings, heroMedia } = await composePingFyd();
+  const blocking = findings.filter((f) => f.severity === "error");
+  expect(blocking).toEqual([]);
+  expect(isRenderable(findings)).toBe(true);
+  // No PING media acquired yet: hero stays null, never a hotlink, never a
+  // fabricated asset.
+  expect(heroMedia).toBeNull();
+  // Ask FYD, contact, and service discovery are must-win components.
+  const components = sectionComponents(spec);
+  for (const must of ["Hero", "AskFYD", "Contact", "Services", "ObjectRail"]) {
+    expect(components).toContain(must);
+  }
+}, 60000);
+
+test("ping-fyd: the 4 owner-asserted services are bound to the Services section", async () => {
+  const { spec, verified } = await composePingFyd();
+  const services = spec.pages
+    .flatMap((p) => p.sections)
+    .find((s) => s.component === "Services");
+  expect(services).toBeDefined();
+  const graph: ObjectGraph = verified.graph;
+  const bound = resolveQueryObjects(graph, services!.query).map((o) => o.id).sort();
+  expect(bound).toEqual([
+    "ping-fyd-svc-admin",
+    "ping-fyd-svc-calls",
+    "ping-fyd-svc-followup",
+    "ping-fyd-svc-scheduling",
+  ]);
+}, 60000);
+
+test("ping-fyd: owner phone from the projection is the contact fact (no invented contact)", async () => {
+  const { spec, verified } = await composePingFyd();
+  const business = verified.graph.objects.find((o) => o.id === spec.ownerObjectId);
+  expect(business?.fields?.phone).toBe("(970) 589-3309");
+}, 60000);
+=== dogfood test 2: components ===
+93 src/fyd/components/__tests__/ping-fyd-dogfood.test.ts
+/**
+ * Dogfood render test: PING's own composed site through the real renderer.
+ *
+ * Composes the ping-fyd spec through the production pipeline (projection
+ * load -> object-builder verification -> TECHNOLOGY strategy -> plan ->
+ * presentation intent) and renders every page to static markup with the
+ * real section components. Guards the dogfood quality bar:
+ * - contact discoverability: the owner phone is a one-glance tel: action
+ *   in the Hero when the tenant has no website;
+ * - service discoverability: all 4 owner-asserted services render with
+ *   their evidence-bound descriptions;
+ * - Ask FYD: the section is present, correctly named, evidence-framed;
+ * - PING brand arrives via theme tokens (gold accent, purple ink), never
+ *   hardcoded in components.
+ */
+import { renderToStaticMarkup } from "react-dom/server";
+import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { verifyObjectGraph } from "@/fyd/builder/object-builder";
+import { planSite } from "@/fyd/builder/planner";
+import { strategyForSite } from "@/fyd/builder/strategy-for-site";
+import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
+import { buildRenderContext, SitePageView } from "../renderer";
+import type { FYDSiteSpec } from "@/fyd/sitespec/types";
+
+const SITE_ID = "ping-fyd";
+
+async function composeAndRender() {
+  const projection = await getPingObjectGraph(SITE_ID);
+  const verified = verifyObjectGraph({ tenantId: SITE_ID }, projection);
+  const strategy = strategyForSite(SITE_ID, verified.graph);
+  const planned = planSite({
+    ctx: { tenantId: SITE_ID },
+    graph: verified.graph,
+    vector: strategy.vector,
+    generatedAt: projection.meta.generatedAt,
+    attestation: verified.attestation,
+  });
+  const spec: FYDSiteSpec = applyPresentationIntent(
+    planned.spec,
+    projection.presentationIntent,
+    verified.graph,
+  ).spec;
+  const base = buildRenderContext(spec, verified.graph, {
+    viewerId: null,
+    displayName: null,
+  });
+  const ctx = { ...base, siteId: SITE_ID };
+  const pages = new Map(
+    spec.pages.map((p) => [
+      p.slug,
+      renderToStaticMarkup(SitePageView({ page: p, ctx })),
+    ]),
+  );
+  return { spec, verified, pages };
+}
+
+test("ping-fyd home: contact is one glance away (tel: hero action, no website)", async () => {
+  const { pages } = await composeAndRender();
+  const home = pages.get("home")!;
+  expect(home).toContain('href="tel:');
+  expect(home).toContain("Call (970) 589-3309");
+}, 60000);
+
+test("ping-fyd home: all 4 owner-asserted services render with evidence-bound copy", async () => {
+  const { pages, verified } = await composeAndRender();
+  const home = pages.get("home")!;
+  const services = verified.graph.objects.filter(
+    (o) => o.schema === "ping.social.service@1",
+  );
+  expect(services).toHaveLength(4);
+  for (const s of services) {
+    expect(home).toContain(s.title);
+    if (s.description) expect(home).toContain(s.description);
+  }
+}, 60000);
+
+test("ping-fyd home: Ask FYD section is present, correctly named, evidence-framed", async () => {
+  const { pages } = await composeAndRender();
+  const home = pages.get("home")!;
+  expect(home).toContain('id="ask"');
+  expect(home).toContain("Ask FYD about PING Social");
+  expect(home).toContain("Questions go to Ask FYD.");
+  expect(home).not.toContain("FYD Social");
+}, 60000);
+
+test("ping-fyd: PING brand arrives via theme tokens, never hardcoded components", async () => {
+  const { pages, spec } = await composeAndRender();
+  expect(spec.themeTokens.accent).toBe("#C9A227");
+  expect(spec.themeTokens.ink).toBe("#232033");
+  const home = pages.get("home")!;
+  expect(home).toContain("#C9A227");
+  expect(home).toContain("#232033");
+}, 60000);
+=== registry.ts ===
+148 src/fyd/components/registry.ts
+2: * Component registry: the eighteen section components plus GenericObjectCard.
+4: * Contract (harvest T5): each entry names the component, the schemas it
+5: * accepts, and whether it needs the owner. Adding a component means adding
+6: * one entry here plus one renderer branch. Unknown schemas render through
+9: * The registry is the only place that maps schema -> component. The
+13: * acceptsSchemas lists are built from the central SCHEMA_ROLES table in
+14: * ../sitespec/schemas: no schema id is hardcoded here, so the
+19:import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
+22:  /** Registry name, used in FYDSection.component. */
+23:  name: string;
+26:  /** Schema ids this component can render. */
+28:  /** True when the component renders the site owner rather than a list. */
+50:   * failure counts, LCP impact, and the graph shapes this component
+65: * component change can be traced to the specs it affected.
+67:export const COMPONENT_REGISTRY_VERSION = "fyd-component-registry@1";
+72:  { name: "Hero", label: "Hero", description: "Identity block: name, category, tagline, primary action.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+73:  { name: "IdentityCard", label: "Identity card", description: "Compact identity card for the business. (Follow/share are unwired: no UI renders them.)", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+74:  { name: "BusinessSummary", label: "Business summary", description: "About-style summary from the business description.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+75:  { name: "Services", label: "Services", description: "Card grid of services the business provides.", acceptsSchemas: SCHEMA_ROLES.service, ownerBound: false, requiresData: true },
+76:  { name: "Products", label: "Products", description: "Card grid of products the business offers.", acceptsSchemas: SCHEMA_ROLES.product, ownerBound: false, requiresData: true },
+77:  { name: "Locations", label: "Locations", description: "Where the business operates, as coarse public claims.", acceptsSchemas: SCHEMA_ROLES.location, ownerBound: false, requiresData: true },
+78:  { name: "People", label: "People", description: "The people behind the business.", acceptsSchemas: SCHEMA_ROLES.person, ownerBound: false, requiresData: true },
+79:  { name: "Posts", label: "Posts", description: "Recent posts and articles.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article], ownerBound: false, requiresData: true },
+80:  { name: "ObjectGrid", label: "Object grid", description: "Generic responsive grid for any object list.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
+81:  { name: "ObjectFeed", label: "Object feed", description: "Chronological feed of objects, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
+82:  { name: "RecentObjects", label: "Recent objects", description: "Latest objects across schemas, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.business], ownerBound: false, requiresData: true },
+83:  { name: "Contact", label: "Contact", description: "Public contact channels: phone, email, website.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+84:  { name: "Links", label: "Links", description: "Social and website links published by the business.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+85:  { name: "SocialProof", label: "Social proof", description: "Reviews and testimonials, labeled as published claims.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+86:  { name: "CTA", label: "Call to action", description: "Primary action block: visit website or start a conversation.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service], ownerBound: true, requiresData: false },
+87:  { name: "AskFYD", label: "Ask FYD", description: "Question box: ask anything about this business.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: false },
+88:  { name: "GenericObjectCard", label: "Generic object card", description: "Fallback renderer for schemas with no dedicated component.", acceptsSchemas: [], ownerBound: false, requiresData: true },
+90:    name: "ObjectRail",
+93:    acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE],
+103:    name: "Gallery",
+119:export function getComponentDef(name: string): FYDComponentDef | undefined {
+128: * Resolve the component for a schema. Dedicated component when one
+130: * SCHEMA_ROLES, so a knowledge service matches Services directly; the
+131: * role fallback below stays for schemas listed nowhere. Never throws,
+134:export function componentForSchema(schemaId: string): string {
+136:    (d) => d.name !== "GenericObjectCard" && d.acceptsSchemas.includes(schemaId),
+139:  const role = schemaRole(schemaId);
+141:    const proofId = SCHEMA_ROLES[role][0];
+=== archetypes ===
+__tests__
+apply.ts
+jest.config.cjs
+profiles.ts
+=== F2 mentions in docs ===
+e48ef710 FYD Wave 1 fixup: current product UI implementation + ask test alignment
+696dd13f FYD step-0: proven renderer/mobile/URL-safety/service-card work
+490f5f7c FYD Wave 1: ask authorized read-path, OwnerContext seam, BindingVerifier, retargeted ui tests
+0dec40f5 FYD-001: update hero badge assertions for honest claim labels
+e7ae22bc FYD-001: update object-scope tests for real service objects

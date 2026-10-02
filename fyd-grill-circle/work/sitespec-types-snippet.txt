@@ -1,0 +1,61 @@
+ * resolveCollapseBreakpoint; no placement logic hardcodes px.
+ */
+export interface FYDBreakpoints {
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+}
+
+/** Media treatment tokens. */
+export interface FYDMediaTokens {
+  treatment?: "documentary" | "polished" | "schematic";
+  aspectRatio?: string;
+}
+
+/** Motion tokens: durations in ms; reduced-motion disables animation. */
+export interface FYDMotionTokens {
+  durationMs?: number;
+  easing?: string;
+}
+
+export interface FYDThemeTokens {
+  accent: string;
+  accentForeground: string;
+  surface: string;
+  ink: string;
+  radius: "none" | "sm" | "md" | "lg" | "full";
+  fontDisplay: string;
+  fontBody: string;
+  typography?: FYDTypeScale;
+  spacing?: FYDSpacingScale;
+  colors?: FYDColorSystem;
+  surfaces?: FYDSurfaces;
+  shadows?: FYDShadows;
+  layout?: FYDLayoutTokens;
+  breakpoints?: FYDBreakpoints;
+  media?: FYDMediaTokens;
+  motion?: FYDMotionTokens;
+}
+
+export const DEFAULT_FYD_THEME: FYDThemeTokens = {
+  accent: "#C9A227",
+  accentForeground: "#1c1917",
+  surface: "#FFFFFF",
+  ink: "#232033",
+  radius: "md",
+  fontDisplay: "Playfair Display, Georgia, serif",
+  fontBody: "Geist, system-ui, sans-serif",
+};
+
+/** Where the spec's claims come from. Website claims are never verified fact. */
+export interface FYDSpecProvenance {
+  source: "website-ingestion";
+  claimKind: "website_statement";
+  /** Acceptance-sequence window of the ingestion events, when known. */
+  eventSequences?: [number, number];
+  note: string;
+}
+
+export interface FYDSiteSpec {
+  kind: "fyd.sitespec@1";

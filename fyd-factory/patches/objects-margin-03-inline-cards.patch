@@ -1,0 +1,53 @@
+PROPOSAL ONLY. Not applied. Repo stays read-only on branch fyd-factory.
+
+Patch 03: service and person cards link to their object nodes, so tap opens ObjectOverlay (src/fyd/components/renderer.tsx)
+
+Rationale: SiteClient already intercepts clicks on a[href^="/o/"]
+and opens ObjectOverlay (node projection: identity, evidence-backed
+summary, facts, contact, provenance, related objects, ask entry),
+restoring scroll on close. But nothing on the tenant site currently
+links to /o/, so the overlay is unreachable. This patch makes
+service and person section cards link their titles to /o/<objectId>,
+giving mobile visitors (and desktop users) tap-to-node object depth
+with zero new chrome: no floating button, no drawer, no explorer.
+
+Binding compliance:
+- Modifier clicks (new tab) and #ask links pass through unchanged
+  (existing interceptor behavior in site-client.tsx).
+- The overlay stays a single-object sheet; related objects render
+  as peer-jump links, never as a browseable grid. It must not
+  become the All Objects explorer through the back door.
+- Ask entry routes to the ONE assistant with {siteId, objectId}
+  context (existing askHref in object-overlay.tsx).
+
+Verified seam: renderSection cases "Services" and "People" dispatch
+to ServicesSection and PeopleSection (renderer.tsx, read 2026-09-23).
+Exact card markup inside those section components was NOT read; the
+hunk below is placed at the documented seam and marked where
+implementation must read the card body.
+
+Proposed change (apply inside ServicesSection and PeopleSection
+card render; read each card body first):
+
+  --- a/src/fyd/components/renderer.tsx
+  +++ b/src/fyd/components/renderer.tsx
+  @@ ServicesSection card (exact lines TBD at implementation)
+  -        <h3>{object.title}</h3>
+  +        <h3>
+  +          <a href={`/o/${encodeURIComponent(object.id)}`}>{object.title}</a>
+  +        </h3>
+  @@ PeopleSection card (exact lines TBD at implementation)
+  -        <h3>{object.title}</h3>
+  +        <h3>
+  +          <a href={`/o/${encodeURIComponent(object.id)}`}>{object.title}</a>
+  +        </h3>
+
+Alternative (lower risk, same outcome): wrap the whole card in the
+anchor only if the card has no other interactive children; title
+link is preferred because it preserves existing card actions.
+
+Acceptance: tapping a service card opens ObjectOverlay with the
+object's evidence-backed node projection; close returns to the exact
+scroll position; the overlay's ask entry routes to /o/<id>#ask with
+siteId; no /o/ links leak for objects absent from the public graph
+(the interceptor already guards on graph membership).

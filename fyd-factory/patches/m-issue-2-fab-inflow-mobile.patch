@@ -1,0 +1,27 @@
+diff --git a/src/fyd/components/object-rail.tsx b/src/fyd/components/object-rail.tsx
+index 9e0d02d9..249dbffa 100644
+--- a/src/fyd/components/object-rail.tsx
++++ b/src/fyd/components/object-rail.tsx
+@@ -170,7 +170,12 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
+   // hardcoded in placement logic.
+   const autoCss =
+     "@media (max-width: " + (bp - 1) + "px){.fyd-rail-auto-rail{display:none!important}}" +
+-    "@media (min-width: " + bp + "px){.fyd-rail-auto-trigger{display:none!important}}";
++    "@media (min-width: " + bp + "px){.fyd-rail-auto-trigger{display:none!important}}" +
++    // ISSUE-2: below the breakpoint the trigger is in-flow, never fixed. The
++    // fixed 153px pill occluded section headings at 320px (48% of viewport).
++    "@media (max-width: " +
++    (bp - 1) +
++    "px){.fyd-rail-auto-trigger .fyd-rail-auto-trigger-btn{position:static!important;margin:0.75rem auto 0}}";
+ 
+   const railClass =
+     "w-72 shrink-0 lg:w-80" + (placement === "auto" ? " fyd-rail-auto-rail" : "");
+@@ -205,7 +210,7 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
+             onClick={() => setOpen(true)}
+             aria-haspopup="dialog"
+             aria-expanded={open}
+-            className="fixed bottom-6 right-6 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg"
++            className="fyd-rail-auto-trigger-btn fixed bottom-6 right-6 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg"
+             style={{ background: theme.accent, color: theme.accentForeground }}
+           >
+             {label}

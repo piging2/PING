@@ -1,0 +1,90 @@
+[REASONING]
+Let me analyze the evidence carefully.
+
+The key evidence:
+
+1. Every block reports `expansion-failed` unsupported evidence — so `jsonld.flatten` throws for every block.
+2. Direct node-level probe of the library threw: `Invalid JSON-LD syntax; @context term values must be strings or objects`.
+3. A pre-existing test with a block having NO `@context` produced zero facts.
+4. No exception from `extractGraph`.
+
+Let's look at the code excerpts:
+
+**Excerpt 1 — `expandJsonLdBlocks`:**
+```ts
+const flattened = await jsonld.flatten(block.parsed, {
+  documentLoader: offlineDocumentLoader,
+});
+```
+
+Wait — per invariant 3, `flatten` signature is `flatten(input, [ctx], [options])`. The call passes `(input, options)` — but the second positional parameter is `ctx`, not `options`. So they're passing the options object as the context! That means the `{ documentLoader: ... }` object is being interpreted as a JSON-LD context. A JSON-LD context object would need to be a mapping of term definitions; `{ documentLoader: ... }` — `documentLoader` is not a term with a string value... Actually wait, `{ documentLoader: [Object] }` — the value is an object, which could be interpreted as a term definition... but a term definition must be a string, object with specific keys, or null. `documentLoader: { documentLoader: offlineDocumentLoader }` — hmm, actually the options object is `{ documentLoader: offlineDocumentLoader }`. So as a context, it would be `{ documentLoader: <function or object> }`. The term `documentLoader` would map to... whatever `offlineDocumentLoader` is (probably a function object). A term value must be a string or object — a function... Actually the error message says `@context term values must be strings or objects`. A function is an object in JS typeof... hmm.
+
+Wait, but also there's the issue in `offlineContext`: it always adds `"@context": rewriteContextValue(rec["@context"])` — even when `rec["@context"]` is undefined. `rewriteContextValue(undefined)` presumably returns something — but we don't see `rewriteContextValue`. The comment says "blocks with no declared @context are passed through unchanged" — but the code does `{ ...rec, "@context": rewriteContextValue(rec["@context"]) }` which always sets `@context`, even when it was absent. If `rewriteContextValue(undefined)` returns `undefined`, then the object would have `"@context": undefined`. When serialized... JSON.stringify drops undefined values, but if passed directly as JS object, `@context: undefined` — jsonld.js might treat presence of `@context` key with undefined value... Hmm.
+
+But wait — where is `offlineContext` used? Excerpt 3 says it's for context preparation. The failing probe: "A direct node-level probe of the library threw: `Invalid JSON-LD syntax; @context term values must be strings or objects`."
+
+Let me think about what causes that error. In jsonld.js, that error occurs when expanding a context where a term's value is neither a string nor a plain object (e.g., it's a number, boolean, array of mixed things, or a function).
+
+Scenario A: The `flatten` call mis-passes options as ctx. So the context passed is `{ documentLoader: offlineDocumentLoader }`. `documentLoader` as a term → value is the `offlineDocumentLoader` — likely a function. A function is not a string, and `isPlainObject` check would fail (functions aren't plain objects). So jsonld.js throws `Invalid JSON-LD syntax; @context term values must be strings or objects`. That matches the probe error exactly!
+
+Also, since options is passed as ctx, the `documentLoader` never reaches options — so even if the context were fine, the offline document loader wouldn't be used. But invariant 2 says remote contexts are never fetched — default jsonld.js behavior might use the built-in fetch... but offline. Hmm, but the primary failure is the thrown error.
+
+Wait — but which is it: the probe is "direct node-level probe of the library" — did the probe call `flatten` with the same wrong signature? Not necessarily. The probe might have called something else. Let's think.
+
+Actually, maybe the probe expanded the block with `@context` present. The Coppersmith block has `"@context": "https://schema.org"`. With the offline loader... but the probe error is about term values, not remote context loading.
+
+Scenario B: `offlineContext` rewrites blocks. For a block with `@context: "https://schema.org"`, `rewriteContextValue` maps the remote URL to an offline context — perhaps an object. That might be fine. But for a block with NO `@context` (the "parse harvests JSON-LD first" test), `offlineContext` sets `"@context": rewriteContextValue(undefined)`. If `rewriteContextValue(undefined)` returns... hmm we don't know. The comment says "blocks with no declared @context are passed through unchanged" — but the code unconditionally sets `@context`. That's a defect: if `rewriteContextValue(undefined)` returns something like `undefined`, then `rec["@context"] = undefined`. In jsonld.js, having `@context` defined as `undefined`... during processing, `context` would be undefined and probably treated as absent. Actually if the property exists with value `undefined`, accessing gives `undefined` — jsonld would likely treat as no context. Hmm, that might not throw.
+
+But wait, where does `offlineContext` get applied? Excerpt 3's function operates on `doc` — maybe applied to the block before flatten? If applied and `rewriteContextValue` for a string returns an object (offline table entry), fine. But what does it do for `undefined`?
+
+Actually, consider: if `rewriteContextValue` returns the result of a table lookup: `table[value]` — for `undefined`, `table[undefined]` would be `undefined` unless... So `"@context": undefined`.
+
+Hmm, but which mechanism explains "every block reports expansion-failed"? Both the signature bug (H-excerpt 1) would cause every flatten call to throw. The `offlineContext` issue would only affect... also every block if applied to all blocks.
+
+Let's check: the signature bug alone fully explains: `jsonld.flatten(block.parsed, { documentLoader: offlineDocumentLoader })` passes options as `ctx`. jsonld.js flatten implementation: `flatten(input, ctx, options)` — if the second arg is not array and not string... Actually jsonld.js normalizes: if `ctx` is omitted, shifts. Let me recall jsonld.js API: `jsonld.flatten(input, ctx, options)`. It calls `flatten(input, ctx, options)`. The internal code: `if(typeof ctx === 'function')...` Hmm, actually jsonld.js does arg-shifting: in `flatten`, if `ctx` is an options object (how would it know?). Let me recall: jsonld.js has `api.flatten = async function(input, ctx, options)`. It does:
+
+```js
+if(ctx === undefined) {
+  ctx = null;
+  options = ctx;
+}
+```
+
+Hmm no. Actually many jsonld.js methods do:
+```js
+function flatten(input, ctx, options) {
+  if(arguments.length < 1) ...
+  if(ctx && !Array.isArray(ctx) && typeof ctx !== 'string' && typeof ctx !== 'object') ...
+}
+```
+
+Hmm, I shouldn't invent library behavior. The invariant says: "The pipeline uses the jsonld.js library. Its flatten signature is `flatten(input, [ctx], [options])` per the library docs." This is given to tell us the second positional arg is ctx, third is options. The code passes `{documentLoader}` as second arg → interpreted as ctx. So the offline document loader never gets passed as options; instead the object is used as a context.
+
+Now, would using `{documentLoader: fn}` as a context throw `Invalid JSON-LD syntax; @context term values must be strings or objects`? The context object `{ documentLoader: offlineDocumentLoader }` — term `documentLoader`, value = a function. jsonld.js checks context values: strings OK, plain objects OK, else throw that exact error. A function is not a string; is it a plain object? jsonld.js `isPlainObject` typically checks `obj && typeof obj === 'object' && obj.constructor === Object` or prototype is Object.prototype or null. A function's constructor is Function, so not plain. So it throws exactly the observed error: `Invalid JSON-LD syntax; @context term values must be strings or objects`. 
+
+But wait — does the term get processed? A context key `documentLoader` that isn't a protected/reserved key becomes a term definition; its value must be string/object/null. A function value → throw. Yes.
+
+But hold on — would jsonld even process the context before the options? Also, `documentLoader` as a term name — any issue? No.
+
+Also, note: does the `@context` in the input combine? The input block has `@context: "https://schema.org"`, plus the ctx param `{documentLoader: fn}` — the active context starts from ctx param then input's `@context` is processed... Actually in JSON-LD, the `ctx` argument is the initial context; the input document's `@context` is merged. Processing order: the ctx argument is processed first I believe (or merged). Either way, processing `{documentLoader: fn}` as context throws.
+
+Hmm, but actually there's a subtlety: jsonld.js `flatten(input, ctx, options)` — if options is undefined, it uses defaults; the default documentLoader would be used for `https://schema.org` if ctx processing got that far... but the throw happens on term values.
+
+Actually wait — order matters: does jsonld process ctx argument first, or input `@context` first? If input's `@context: "https://schema.org"` is processed first, it would try to load remote URL — with default loader (fetch) — offline, that would fail with a different error (network error / couldn't load). But the observed error is the term-value error, so the ctx argument `{documentLoader: fn}` is processed first (jsonld.js processes the ctx argument when building initial context), or... Actually in jsonld.js, `flatten` calls `_flatten` which calls `_createNodeMap` after expanding with context `ctx`. The expansion processes the initial context (the ctx arg) first, then merges document `@context`. Processing `{documentLoader: fn}` → throw. Yes, initial context first. So observed error matches.
+
+Also the "direct node-level probe" — probe likely called `jsonld.expand` or `flatten` with the block and maybe same mis-passed ctx? The evidence says "A direct node-level probe of the library threw: Invalid JSON-LD syntax; @context term values must be strings or objects". This is consistent with passing an options object as ctx, OR with `offlineContext` injecting a bad `@context`.
+
+Now, second independent defect. Let's examine `extractGraph`:
+
+```ts
+function extractGraph(flattened: unknown): ExpandedNode[] {
+  if (flattened === null || typeof flattened !== "object") return [];
+  const rec = flattened as Record<string, unknown>;
+  if (Array.isArray(rec["@graph"])) return rec["@graph"] as ExpandedNode[];
+  if (typeof rec["@id"] === "string") return [rec as unknown as ExpandedNode];
+  return [];
+}
+```
+
+`jsonld.flatten` returns an **array** of flattened nodes (flatten returns an array, not an object with `@graph`). Wait
+[/REASONING]

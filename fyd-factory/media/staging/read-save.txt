@@ -1,0 +1,164 @@
+===== saveMedia (601-700) =====
+export async function saveMedia(media: Media): Promise<void> {
+  try {
+    // P0 FIX: Enforce storage contract for published local records
+    // This prevents invalid PublishedMediaAsset records from being persisted
+    if (media.lifecycleState === 'published' && media.source === 'local') {
+      // Storage field MUST be present for published local records
+      if (!media.storage) {
+        throw new Error(`Cannot save media ${media.id}: Published local media requires storage field (static or blob)`);
+      }
+      
+      // Storage must be either static or blob
+      if (media.storage !== 'static' && media.storage !== 'blob') {
+        throw new Error(`Cannot save media ${media.id}: Published local media storage must be 'static' or 'blob', got '${media.storage}'`);
+      }
+      
+      // Static storage must have valid static path
+      if (media.storage === 'static') {
+        if (!media.variants?.original) {
+          throw new Error(`Cannot save media ${media.id}: Static storage requires variants.original`);
+        }
+        if (!media.variants.original.startsWith('/images/')) {
+          throw new Error(`Cannot save media ${media.id}: Static storage path must start with /images/, got '${media.variants.original}'`);
+        }
+      }
+      
+      // Blob storage must have content hash
+      if (media.storage === 'blob') {
+        if (!media.contentHash) {
+          throw new Error(`Cannot save media ${media.id}: Blob storage requires content hash`);
+        }
+      }
+      
+      // Verify materialization state before saving (internal operations only)
+      // This is permissive for intermediate states during materialization
+      const hasValidState = await verifyMaterializationState(media);
+      if (!hasValidState) {
+        throw new Error(`Cannot save media ${media.id}: Failed materialization state check`);
+      }
+    }
+    
+    const client = createRedisClient();
+    
+    // Use atomic Lua script to maintain media record + index consistency
+    const saveScript = `
+      local mediaKey = KEYS[1]
+      local contentHashKey = KEYS[2]
+      local mediaId = ARGV[1]
+      local contentHash = ARGV[2]
+      local mediaJson = ARGV[3]
+      
+      -- Set media record
+      redis.call('SET', mediaKey, mediaJson)
+      
+      -- Update content hash index if content hash present
+      if contentHash and contentHash ~= '' then
+        redis.call('SET', contentHashKey, mediaId)
+      end
+      
+      return 'OK'
+    `;
+    
+    await client.eval(
+      saveScript,
+      [namespacedKey(`${MEDIA_PREFIX}${media.id}`), namespacedKey(`${CONTENT_HASH_PREFIX}${media.contentHash || ''}`)],
+      [media.id, media.contentHash || '', JSON.stringify(media)]
+    );
+  } catch (error) {
+    console.error('[MEDIA_KV] Failed to save media:', error);
+    throw new Error(`Failed to save media ${media.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Update storage field with Compare-And-Swap (CAS) protection
+ * 
+ * This is a true atomic CAS operation using Redis Lua script to prevent race conditions
+ * during concurrent reconciliation operations.
+ * 
+ * CAS Conditions:
+ * 1. Record must exist
+ * 2. Content hash must match expected value (record hasn't changed since classification)
+ * 3. Storage field must be either unset or already match proposed value (idempotent)
+ * 
+ * @param mediaId - The media record ID
+ * @param expectedContentHash - The content hash from classification (CAS condition)
+ * @param proposedStorage - The proposed storage value ("static" or "blob")
+ * @returns true if updated, false if CAS conflict (record modified or already set)
+ */
+export async function updateStorageFieldCAS(
+  mediaId: string,
+  expectedContentHash: string,
+  proposedStorage: 'static' | 'blob'
+): Promise<{ success: boolean; reason?: string }> {
+  try {
+    const client = createRedisClient();
+    
+    // Atomic Lua script for CAS-protected storage field update
+    const casScript = `
+      local mediaKey = KEYS[1]
+      local expectedHash = ARGV[1]
+===== getMedia (390-451) =====
+export async function getMedia(id: string): Promise<Media | null> {
+  try {
+    const client = createRedisClient();
+    if (!client) {
+      console.warn('[MEDIA_KV] KV unavailable for getMedia', { id });
+      return null;
+    }
+    
+    const data = await client.get(namespacedKey(`media:${id}`));
+    
+    if (!data) {
+      return null;
+    }
+    
+    // Handle both JSON strings and already-deserialized objects
+    const media = typeof data === 'string' ? JSON.parse(data) : data;
+    
+    // Verify public media authority before returning (strict public gate)
+    if (media.lifecycleState === 'published' && media.source === 'local') {
+      // Read path: structural gate only. See PublicMediaAuthorityOptions.
+      const hasPublicAuthority = await verifyPublicMediaAuthority(media);
+      if (!hasPublicAuthority) {
+        console.warn('[MEDIA_KV] Media failed public media authority check', { id });
+        return null;
+      }
+    }
+    
+    // Stale records are never returned
+    if (media.lifecycleState === 'stale') {
+      console.warn('[MEDIA_KV] Rejecting stale media record', { id });
+      return null;
+    }
+    
+    return media;
+  } catch (error) {
+    // DEV_MODE_SKIP_KV: Return null to allow higher-level fallback
+    if (error instanceof KvUnavailableError && error.message.includes('DEV_MODE_SKIP_KV')) {
+      console.log('[MEDIA_KV] DEV_MODE_SKIP_KV - returning null for static fallback', { id });
+      return null;
+    }
+    
+    console.error('[MEDIA_KV] Failed to get media:', error);
+    throw new Error(`Failed to get media ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Batch variant of getMedia().
+ *
+ * Applies exactly the same public-media gate and the same stale-record
+ * rejection as getMedia(), but resolves N records with a bounded number of
+ * round trips instead of N client constructions and 2N GETs:
+ *
+ *   1 MGET for the media records
+ * + 1 MGET for the blob_metadata records of blob-backed candidates
+ *
+ * Ordering is not guaranteed; callers should use the returned Map.
+ * Records that fail the gate are ABSENT from the result, identically to
+ * getMedia() returning null. Rejections are still logged individually, so
+ * PUBLIC_GATE_REJECTED telemetry is preserved.
+ */
+export async function getMediaBatch(ids: string[]): Promise<Map<string, Media>> {

@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && sed -n 124,200p src/fyd/sitespec/binding-verifier.ts; echo ===; ls node_modules/react-dom/package.json 2>/dev/null && echo REACTDOM-OK; echo ===; ls node_modules/.bin/tsx

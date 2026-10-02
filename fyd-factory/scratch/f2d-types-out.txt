@@ -1,0 +1,117 @@
+########## PingObject / provenance kinds ##########
+101:  kind: ObjectProvenanceKind;
+202:  kind: CircleKind | null;
+225:  kind: ActionKind;
+229:    | { kind: "object"; objectId: string; schema: string }
+230:    | { kind: "identity"; identityId: string }
+231:    | { kind: "url"; url: string }
+232:    | { kind: "ask"; objectId: string | null; prefill: string | null }
+233:    | { kind: "reference"; referenceId: string }
+251:  kind: DiscoveryKind;
+262:  kind: "object" | "relationship" | "field";
+276:   * claim kind (e.g. "website_statement").
+284:  kind: "object_update" | "object_create";
+337:  kind: "site_patch";
+362:   * proposals {kind,targetObjectId,schema,changes}, for site_patch the
+########## predicate vocab ##########
+26:  predicate: string;
+60:    { predicate: "provides", targetSchemas: ["ping.social.service@1", "ping.social.product@1"], meaning: "Services or products the business offers." },
+61:    { predicate: "publishes", targetSchemas: ["ping.social.post@1", "ping.social.article@1"], meaning: "Posts or articles the business published." },
+62:    { predicate: "located_at", targetSchemas: ["ping.social.location@1"], meaning: "Where the business operates." },
+63:    { predicate: "employs", targetSchemas: ["ping.social.person@1"], meaning: "People behind the business." },
+81:    { predicate: "provided_by", targetSchemas: ["ping.social.business@1"], meaning: "The business offering this service." },
+100:    { predicate: "published_by", targetSchemas: ["ping.social.business@1"], meaning: "The business that published this post." },
+101:    { predicate: "replies_to", targetSchemas: ["ping.social.post@1"], meaning: "The post this replies to." },
+286:// Derivation 3: RELATIONSHIP RULES. Schema -> allowed predicates.
+293:export function isAllowedPredicate(schemaId: string, predicate: string): boolean {
+     33 "provides"
+     33 "offers"
+     27 "located_at"
+     14 "employs"
+     13 "publishes"
+     12 "works_for"
+     11 "links_to"
+      9 "has_website"
+      5 "member_of"
+      2 "authored_by"
+########## validator rules ##########
+/**
+ * SiteSpec validator: two layers, findings out (harvest B6).
+ *
+ * Layer 1 (structure): the spec shape is well-formed, pages/sections/queries
+ * reference known components, ids are unique and deterministic.
+ * Layer 2 (semantic): components accept the schemas their queries can
+ * return, required fields are satisfiable, no section renders without data.
+ *
+ * Never render an invalid spec: the demo page renders only when no error
+ * findings exist. Warnings and info pass through to the operator.
+ */
+
+import { getComponentDef } from "../components/registry";
+import { SCHEMA_ROLES, eligibleComponents } from "./schemas";
+import type { FYDFinding, FYDSiteSpec, FYDSection } from "./types";
+
+function err(resourceId: string, path: string, message: string): FYDFinding {
+  return { severity: "error", authority: "fyd.sitespec.validator", resourceId, path, message };
+}
+
+function warn(resourceId: string, path: string, message: string): FYDFinding {
+  return { severity: "warning", authority: "fyd.sitespec.validator", resourceId, path, message };
+}
+
+/**
+ * Validate a SiteSpec. Pure and deterministic.
+ * `knownSchemas` is the set of schema ids present in the graph being rendered.
+ */
+export function validateSiteSpec(spec: FYDSiteSpec, knownSchemas: Set<string>): FYDFinding[] {
+  const findings: FYDFinding[] = [];
+  const rid = "spec:" + spec.ownerObjectId;
+
+  if (spec.kind !== "fyd.sitespec@1") {
+    findings.push(err(rid, "kind", "Unknown spec kind '" + spec.kind + "'."));
+  }
+  if (spec.pages.length === 0) {
+    findings.push(err(rid, "pages", "A site needs at least one page."));
+  }
+
+  const seenSectionIds = new Set<string>();
+  const seenSlugs = new Set<string>();
+  for (const page of spec.pages) {
+    if (seenSlugs.has(page.slug)) {
+      findings.push(err(rid, "pages." + page.slug, "Duplicate page slug '" + page.slug + "'."));
+    }
+    seenSlugs.add(page.slug);
+    if (page.sections.length === 0) {
+      findings.push(
+        warn(rid, "pages." + page.slug + ".sections", "Page '" + page.slug + "' has no sections; it renders empty."),
+      );
+    }
+    page.sections.forEach((section: FYDSection, index: number) => {
+      const spath = "pages." + page.slug + ".sections[" + index + "]";
+      if (seenSectionIds.has(section.id)) {
+        findings.push(err(rid, spath + ".id", "Duplicate section id '" + section.id + "'."));
+      }
+      seenSectionIds.add(section.id);
+      const expectedId = page.slug + ":" + section.component + ":" + index;
+      if (section.id !== expectedId) {
+        findings.push(
+          warn(rid, spath + ".id", "Section id '" + section.id + "' is not the deterministic '" + expectedId + "'."),
+        );
+      }
+      const def = getComponentDef(section.component);
+      if (!def) {
+        findings.push(err(rid, spath + ".component", "Unknown component '" + section.component + "'."));
+        return;
+      }
+      // Semantic layer: the query's schemas must be acceptable to the component.
+      const querySchemas = querySchemasFor(section, knownSchemas);
+      for (const qs of querySchemas) {
+        const eligible = eligibleComponents(qs);
+        if (!eligible.includes(section.component) && section.component !== "GenericObjectCard") {
+          findings.push(
+            err(
+              rid,
+              spath + ".query",
+              "Component '" + section.component + "' does not accept schema '" + qs + "'.",
+            ),
+          );

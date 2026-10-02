@@ -1,0 +1,7 @@
+# 1. Diagnosis
+
+**Root cause: an unsanitized *URL sink* (`href`) receives raw observed data at two call sites in `renderer.tsx`.**
+
+- **Sink:** the `href` attribute in Excerpt 1 (`<a href={website}>`, contact/hero) and Excerpt 2 (`<a href={url}>` inside `socials.map`). `href` is not a text sink — it is a *navigation capability*. Whatever string lands there is handed to the browser's URL parser and, for `javascript:` / `data:` / `vbscript:` schemes, becomes executable script in the page's origin.
+- **Data reaching it:** `fields.website` and `fields.socials[]` from the harvested ObjectGraph, passed through `generateSiteSpec` into `SitePageView` with no transformation (Excerpt 3 confirms this is the real path, not a probe-only path). Per Invariant 1 this is hostile external input.
+- **Why text escaping does not save it:** React's JSX escaping operates on *text nodes and attribute values as markup* — it entity-encodes `<`, `>`, `&`, `"` so `<script>` and `<img onerror>` cannot break out of the text/attribute context. That is exactly why the `description` probes PASS. But `javascript:alert

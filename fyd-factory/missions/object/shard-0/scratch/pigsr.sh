@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && find src -name "schema-roles*" 2>/dev/null; echo ---; grep -n "schema-roles" src/fyd/components/registry.ts | head -3; echo ---; grep -rn "moduleNameMapper" jest.config* src/fyd/components/jest.config.cjs 2>/dev/null | head

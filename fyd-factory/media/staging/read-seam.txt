@@ -1,0 +1,84 @@
+===== owner hero id in view.ts / renderer.tsx? =====
+src/fyd/components/renderer.tsx:154:   * via the canonical media selector (heroMediaFor in src/fyd/media/select).
+===== Hero section in renderer.tsx =====
+153:   * Hero media for the spec owner, resolved once at the server render seam
+154:   * via the canonical media selector (heroMediaFor in src/fyd/media/select).
+156:   * Null (or absent) means the owner has no acquired media, and the Hero
+159:  heroMedia?: DisplayMedia | null;
+162:   * seam via galleryMediaFor (same pattern as heroMedia). Serialized
+312:    /** Hero heading scale multiplier. */
+313:    heroScale: number;
+324:  EDITORIAL: { sectionRhythmPx: 56, headingTracking: "-0.015em", cardElevation: "flat", heroScale: 1.12, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "contained", objectEmphasis: "balanced" },
+325:  CRAFT: { sectionRhythmPx: 48, headingTracking: "0em", cardElevation: "layered", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "balanced" },
+326:  TECHNICAL: { sectionRhythmPx: 40, headingTracking: "0.04em", cardElevation: "flat", heroScale: 1.0, density: "compact", contentWidthPx: 1152, mediaTreatment: "contained", objectEmphasis: "quiet" },
+327:  RETAIL: { sectionRhythmPx: 48, headingTracking: "0em", cardElevation: "layered", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "prominent" },
+328:  PROFESSIONAL: { sectionRhythmPx: 48, headingTracking: "0.01em", cardElevation: "flat", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "contained", objectEmphasis: "balanced" },
+329:  CREATOR: { sectionRhythmPx: 56, headingTracking: "-0.01em", cardElevation: "layered", heroScale: 1.12, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "prominent" },
+449:        ".fyd-hero-settle { animation: fyd-hero-settle 560ms cubic-bezier(.2,.7,.2,1) both; }",
+450:        "@keyframes fyd-hero-settle { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }",
+895: * Contextual provenance for the hero photo: the generic WhyThis
+901:function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
+933:      claim={media.alt || "Hero photo"}
+940:function Hero({ objects, presentation, theme, ctx }: SectionProps) {
+954:  // the renderer never selects it. Null keeps the honest typographic hero.
+===== sharp png pattern in derivatives.test.ts =====
+/**
+ * Tests for derivative generation (fyd-media@2).
+ *
+ * Contract: every generated variant carries derivedFrom = the sha256 of
+ * the ORIGINAL bytes it was produced from (the derived-asset
+ * relationship, explicit in data). Runs sharp for real against a tiny
+ * generated PNG; no network, temp dir only.
+ */
+
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import sharp from "sharp";
+import { generateDerivatives, hashContentBytes, planDerivatives } from "../derivatives";
+
+describe("planDerivatives", () => {
+  test("generates only the product's named sizes, never upscales", () => {
+    const plans = planDerivatives(2000);
+    expect(plans.map((p) => p.name)).toEqual(["thumbnail", "card", "hero", "blur"]);
+    expect(plans.map((p) => p.width)).toEqual([480, 768, 1600, 10]);
+    // No speculative responsive ladder: 1080/2000 are not generated.
+    expect(plans.some((p) => p.width === 1080 || p.width === 2000)).toBe(false);
+    expect(plans.every((p) => p.format === "webp")).toBe(true);
+  });
+
+  test("small sources get one rendition at source width (no upscale)", () => {
+    const plans = planDerivatives(100);
+    expect(plans.map((p) => p.name)).toEqual(["thumbnail", "blur"]);
+    expect(plans[0].width).toBe(100);
+    expect(plans[1].width).toBe(10);
+  });
+
+  test("deterministic: same width, same plan", () => {
+    expect(planDerivatives(1600)).toEqual(planDerivatives(1600));
+  });
+});
+
+describe("generateDerivatives", () => {
+  test("every variant stamps derivedFrom with the original digest", async () => {
+    const input = await sharp({
+      create: { width: 64, height: 48, channels: 3, background: { r: 180, g: 100, b: 40 } },
+    })
+      .png()
+      .toBuffer();
+    const digest = hashContentBytes(input);
+    const dir = mkdtempSync(join(tmpdir(), "fyd-media-test-"));
+    try {
+      const gen = await generateDerivatives(input, digest, dir);
+      expect(gen.variants.length).toBeGreaterThan(0);
+      for (const v of gen.variants) {
+        expect(v.derivedFrom).toBe(digest);
+        expect(v.digest).toHaveLength(64);
+        expect(v.url).toBe("/fyd-media/" + digest + "/" + v.name + "-" + v.width + "w.webp");
+      }
+      // Dimensions are observed from the bytes, never invented.
+      expect(gen.width).toBe(64);
+      expect(gen.height).toBe(48);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }

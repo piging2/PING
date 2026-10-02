@@ -1,0 +1,125 @@
+{
+ "site_id": "repro-rail-unbound-description",
+ "redacted": true,
+ "synthetic": true,
+ "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+ "testing_only": true,
+ "fixture_note": "Minimized repro for OBJECT-SHARD-0 finding RAIL-UNBOUND-DESCRIPTION. Based on hostile-rtl-trade (the fixture where the mission probe fired). The service object carries a description with NO provenance. Main sections omit it via the boundField gate; the ObjectRail section (renderer.tsx ObjectRailSection) and the rail adapters (object-rail.tsx) read o.description raw, so it renders labeled \"Observed on website-ingestion\".",
+ "graph": {
+  "objects": [
+   {
+    "id": "repro-rail-unbound-biz",
+    "schema": "ping.social.business@1",
+    "controllerId": "identity_fyd_fixture_hostile",
+    "visibility": "public",
+    "title": "אינסטלטור טסט",
+    "description": "אינסטלטור טסט עם תיאור בעברית. Synthetic Hebrew test plumber. (Hebrew synthetic plumber)",
+    "fields": {
+     "phone": "(970) 555-0125",
+     "business_type": "trades",
+     "website": "https://hostile-rtl-trade.example.com",
+     "address": "1 Test Bazaar Ln, Montrose, CO",
+     "conflicts": [
+      "HOSTILE rtl: business name and description are right-to-left script (Hebrew/Arabic) mixed with Latin metadata. Bidi rendering and search indexing must not garble or invert the Latin segments."
+     ],
+     "claimKind": "synthetic_statement"
+    },
+    "createdAt": "2026-09-23T20:00:00Z",
+    "updatedAt": "2026-09-23T20:00:00Z",
+    "provenance": {
+     "kind": "synthetic",
+     "ref": "fixture:synthetic:hostile-rtl-trade",
+     "derivedAt": "2026-09-23T20:00:00Z",
+     "observed_at": "2026-09-23T20:00:00Z"
+    }
+   },
+   {
+    "id": "repro-rail-unbound-loc",
+    "schema": "ping.social.location@1",
+    "controllerId": "identity_fyd_fixture_hostile",
+    "visibility": "public",
+    "title": "Montrose, CO",
+    "description": "Coarse public location claim for synthetic fixture hostile-rtl-trade.",
+    "fields": {
+     "address_locality": "Montrose",
+     "address_region": "CO",
+     "address_country": "US",
+     "locality": "Montrose, CO",
+     "claimKind": "synthetic_statement"
+    },
+    "createdAt": "2026-09-23T20:00:00Z",
+    "updatedAt": "2026-09-23T20:00:00Z",
+    "provenance": {
+     "kind": "synthetic",
+     "ref": "fixture:synthetic:hostile-rtl-trade-loc",
+     "derivedAt": "2026-09-23T20:00:00Z"
+    }
+   },
+   {
+    "id": "repro-rail-unbound-p-owner",
+    "schema": "ping.social.person@1",
+    "controllerId": "identity_fyd_fixture_hostile",
+    "visibility": "public",
+    "title": "Test Owner (Owner)",
+    "description": "Person listed for synthetic fixture hostile-rtl-trade: Test Owner, Owner.",
+    "fields": {
+     "name": "Test Owner",
+     "role": "Owner",
+     "claimKind": "synthetic_statement"
+    },
+    "createdAt": "2026-09-23T20:00:00Z",
+    "updatedAt": "2026-09-23T20:00:00Z",
+    "provenance": {
+     "kind": "synthetic",
+     "ref": "fixture:synthetic:hostile-rtl-trade-p-owner",
+     "derivedAt": "2026-09-23T20:00:00Z"
+    }
+   },
+   {
+    "id": "repro-rail-unbound-svc-001",
+    "schema": "ping.social.service@1",
+    "controllerId": "identity_fyd_fixture_hostile",
+    "visibility": "public",
+    "title": "שירות ראשי",
+    "description": "REPRO UNBOUND CLAIM: this service description has no provenance and must not render in the rail.",
+    "fields": {
+     "name": "שירות ראשי",
+     "description": "Primary service, RTL title; description: synthetic test service.",
+     "category": "service",
+     "claimKind": "synthetic_statement"
+    },
+    "createdAt": "2026-09-23T20:00:00Z",
+    "updatedAt": "2026-09-23T20:00:00Z"
+   }
+  ],
+  "relationships": [
+   {
+    "id": "rel-hostile-rtl-trade-0001",
+    "subject": "repro-rail-unbound-biz",
+    "predicate": "located_at",
+    "object": "repro-rail-unbound-loc",
+    "status": "active",
+    "createdAt": "2026-09-23T20:00:00Z",
+    "evidenceRef": "corpus:hostile:hostile-rtl-trade:site"
+   },
+   {
+    "id": "rel-hostile-rtl-trade-0002",
+    "subject": "repro-rail-unbound-p-owner",
+    "predicate": "works_for",
+    "object": "repro-rail-unbound-biz",
+    "status": "active",
+    "createdAt": "2026-09-23T20:00:00Z",
+    "evidenceRef": "corpus:hostile:hostile-rtl-trade:site"
+   },
+   {
+    "id": "rel-hostile-rtl-trade-0003",
+    "subject": "repro-rail-unbound-biz",
+    "predicate": "offers",
+    "object": "repro-rail-unbound-svc-001",
+    "status": "active",
+    "createdAt": "2026-09-23T20:00:00Z",
+    "evidenceRef": "corpus:hostile:hostile-rtl-trade:site"
+   }
+  ]
+ }
+}

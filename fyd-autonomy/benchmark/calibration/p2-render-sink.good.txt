@@ -1,0 +1,36 @@
+## 1. Diagnosis
+Root cause: raw observed URL strings are interpolated directly into href.
+`href={website}` and `href={url}` in renderer.tsx take `fields.website` /
+`fields.socials` verbatim with no scheme check. React escapes HTML text and
+warns on javascript: URLs, but it does NOT block them - a javascript: scheme
+in href is an executable navigation sink. Text escaping (the <script>/<img
+onerror> cases) is a different mechanism and does not cover URL sinks.
+
+## 2. Patch spec
+Add one link-resolution seam (e.g. safe-link.ts) with a parser-based,
+per-capability allowlist: "navigate" allows http:/https: only; "call" builds
+tel: from phone characters; "email" builds mailto: from a well-formed address.
+Reject: javascript: (plain, mixed-case, whitespace/control-char smuggled),
+data:, vbscript:, file:, blob:, percent-encoded scheme tricks, malformed
+URLs, non-string input, relative URLs without an explicit safe base.
+Renderer change: every observed-data href interpolates ONLY a value the
+resolver returned as kind==="safe". Internal anchors (#ask) and internal
+routes ("/o/" + encodeURIComponent(id)) carry no observed data and stay.
+
+## 3. Test spec
+Inputs: "javascript:alert(1)", "JaVaScRiPt:alert(1)", "  javascript:alert(1)",
+"java\tscript:alert(1)", "javascript%3Aalert(1)", "data:text/html,<script>",
+"vbscript:msgbox(1)", "file:///etc/passwd", null, "/relative/path",
+"https://example.com", "+1-970-555-0100", "a@b.com".
+Assertions (FAIL before on the hostile set, PASS after): hostile inputs must
+not render any executable href (non_navigable); https/tel/mailto inputs must
+still render working links. Also assert the probe's original two cases:
+fields.website="javascript:alert(1)" and socials=["javascript:alert(2)"]
+produce no javascript: href.
+
+## 4. Risks
+Over-blocking legitimate links: bare hostnames ("example.com") have no scheme
+and would become non-navigable without a base - check corpus for bare-hostname
+website fields and decide (prepend https:// vs non-navigable). The resolver
+must be the ONLY path from observed string to href; audit every href/src
+interpolation after the change.

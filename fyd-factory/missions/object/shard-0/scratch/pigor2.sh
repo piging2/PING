@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && sed -n 60,95p src/fyd/components/object-rail.tsx; echo =====; sed -n 255,282p src/fyd/components/object-rail.tsx; echo =====; grep -n "pingObjectToView" src/fyd/components/object-rail.tsx | head; echo =====; sed -n 1,40p src/fyd/components/object-rail.tsx

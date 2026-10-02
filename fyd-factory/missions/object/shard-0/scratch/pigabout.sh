@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && grep -n "function boundFieldValue" -A 20 src/fyd/sitespec/graph.ts | head -30; echo ===; grep -n "About\|about" src/fyd/components/renderer.tsx | grep -in "section\|function" | head -10

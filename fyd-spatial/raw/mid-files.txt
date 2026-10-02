@@ -1,0 +1,741 @@
+"use client";
+
+/**
+ * PortalHost: mounts portal circles into safe peripheral space.
+ *
+ * Wiring: SemanticTargetResolver -> SpatialSlotManager ->
+ * ContextObjectRanker -> AttentionController -> CircleProjection.
+ *
+ * - Wide viewports: collapsed circles fixed into the best peripheral
+ *   band (right preferred, then left). Each circle's engaged diameter is
+ *   clamped to the largest circle fitting its slot: host content is
+ *   never occluded, by construction.
+ * - Narrow viewports: no honest margin exists, so no portal renders.
+ *   Per the placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL
+ *   anywhere. The dock branch collapses to null; margins are never faked
+ *   and mobile placement is a separate interaction problem.
+ */
+
+import * as React from "react";
+import {
+  createSlotManager,
+  type PeripheralSlot,
+} from "@/fyd/spatial/slot-manager";
+import {
+  proximityScore,
+  resolveSemanticTargets,
+} from "@/fyd/spatial/semantic-targets";
+import { rankCandidates } from "@/fyd/rank/object-ranker";
+import { AttentionController } from "@/fyd/attention/controller";
+import { reconcileEngagementOnModeChange } from "@/fyd/placement/engagement-reconcile";
+import { PortalCircle } from "./portal-circle";
+import type { PortalProjection } from "@/fyd/preview/types";
+
+interface Assignment {
+  portal: PortalProjection;
+  slot: PeripheralSlot | null;
+  x: number;
+  y: number;
+}
+
+export function PortalHost({ portals }: { portals: PortalProjection[] }) {
+  const [mounted, setMounted] = React.useState(false);
+  const [slots, setSlots] = React.useState<PeripheralSlot[]>([]);
+  const [awareId, setAwareId] = React.useState<string | null>(null);
+  const [engagedId, setEngagedId] = React.useState<string | null>(null);
+  const [followed, setFollowed] = React.useState<Record<string, boolean>>({});
+  const controllerRef = React.useRef<AttentionController | null>(null);
+  if (!controllerRef.current) controllerRef.current = new AttentionController();
+
+  React.useEffect(() => {
+    setMounted(true);
+    const mgr = createSlotManager(setSlots);
+    let cancelled = false;
+    portals.forEach((p) => {
+      fetch(`/api/fyd/follow?objectId=${encodeURIComponent(p.circle.id)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (!cancelled && d && d.ok === true) {
+            setFollowed((prev) => ({ ...prev, [p.circle.id]: !!d.following }));
+          }
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+      mgr.dispose();
+      controllerRef.current?.reset();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const assignments: Assignment[] = React.useMemo(() => {
+    if (!mounted || portals.length === 0) return [];
+    const usable = slots
+      .filter((s) => s.capacity > 0)
+      .sort((a, b) =>
+        a.side === b.side ? 0 : a.side === "right" ? -1 : 1,
+      );
+    if (usable.length === 0) {
+      // Dock mode: no honest margin. Compact circles, bottom edge.
+      return portals.map((portal, i) => ({ portal, slot: null, x: i, y: 0 }));
+    }
+    const targets = resolveSemanticTargets();
+    const targetById = new Map(targets.map((t) => [t.objectId, t]));
+    const assigned = new Set<string>();
+    const out: Assignment[] = [];
+    for (const slot of usable) {
+      const ranked = rankCandidates(
+        portals
+          .filter((p) => !assigned.has(p.circle.id))
+          .map((p) => {
+            const t = targetById.get(p.circle.id);
+            return {
+              objectId: p.circle.id,
+              semanticProximity: proximityScore(t?.rect ?? null, slot.rect),
+              followed: !!followed[p.circle.id],
+              liked: false,
+              capabilityCount: p.circle.capabilities.length,
+              recentInteractionAt: null,
+              slotStability: slot.stability,
+              slotCollisionRisk: slot.collisionRisk,
+            };
+          }),
+      );
+      const winner = ranked[0];
+      if (!winner) continue;
+      assigned.add(winner.objectId);
+      const portal = portals.find((p) => p.circle.id === winner.objectId);
+      if (!portal) continue;
+      out.push({
+        portal,
+        slot,
+        x: slot.rect.x + (slot.rect.width - 64) / 2,
+        y: slot.rect.y + slot.rect.height * 0.26,
+      });
+    }
+    // Any portal without a slot joins the dock.
+    portals.forEach((portal, i) => {
+      if (!assigned.has(portal.circle.id)) {
+        out.push({ portal, slot: null, x: i, y: 0 });
+      }
+    });
+    return out;
+  }, [mounted, slots, portals, followed]);
+
+  const docked = assignments.filter((a) => a.slot === null);
+  const slotted = assignments.filter((a) => a.slot !== null);
+
+  const handleEngageRequest = React.useCallback(
+    (id: string) => {
+      const c = controllerRef.current;
+      if (!c) return;
+      if (engagedId && engagedId !== id) {
+        c.release(engagedId);
+        setEngagedId(null);
+      }
+      if (c.requestPrimary(id)) {
+        c.lock(id);
+        setEngagedId(id);
+        setAwareId(null);
+      }
+    },
+    [engagedId],
+  );
+
+  const handleRelease = React.useCallback((id: string) => {
+    const c = controllerRef.current;
+    if (!c) return;
+    c.unlock(id);
+    c.release(id);
+    setEngagedId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  // Awareness (secondary) goes through the controller too: it is the
+  // single authority for who holds primary vs secondary attention.
+  const handleAware = React.useCallback((id: string) => {
+    controllerRef.current?.setAware(id);
+    setAwareId(id);
+  }, []);
+
+  const handleUnaware = React.useCallback((id: string) => {
+    controllerRef.current?.clearAware(id);
+    setAwareId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  // Engagement/placement reconciliation (adaptive plane): the engaged
+  // portal's placement mode is its peripheral slot id, or "none" when it
+  // holds no safe slot. Docked portals render null per the no-bottom-portal
+  // directive, so when the mode changes while engaged (slot lost or moved),
+  // release engagement: the Circle collapses back to launcher state
+  // instead of leaving a stale or invisible surface behind. Engagement
+  // moving between Circles is a user action, not a geometry event, and is
+  // never released here.
+  const engagedSlotMode = engagedId
+    ? (slotted.find((a) => a.portal.circle.id === engagedId)?.slot?.id ?? "none")
+    : null;
+  const prevPlacementRef = React.useRef<{
+    engagedId: string;
+    mode: string;
+  } | null>(null);
+  React.useEffect(() => {
+    const next =
+      engagedId && engagedSlotMode ? { engagedId, mode: engagedSlotMode } : null;
+    const decision = reconcileEngagementOnModeChange(prevPlacementRef.current, next);
+    prevPlacementRef.current = next;
+    if (decision.releaseEngagedId) handleRelease(decision.releaseEngagedId);
+  }, [engagedId, engagedSlotMode, handleRelease]);
+
+  if (!mounted) return null;
+
+  return (
+    <>
+      {slotted.map((a) => (
+        <div
+          key={a.portal.circle.id}
+          className="fixed z-40"
+          style={{ left: a.x, top: a.y }}
+          data-ping-host
+          data-ping-slot={a.slot?.id}
+        >
+          <div className="relative">
+            <PortalCircle
+              portal={a.portal}
+              slot={a.slot}
+              aware={awareId === a.portal.circle.id}
+              engaged={engagedId === a.portal.circle.id}
+              onAware={handleAware}
+              onUnaware={handleUnaware}
+              onEngageRequest={handleEngageRequest}
+              onRelease={handleRelease}
+            />
+          </div>
+        </div>
+      ))}
+
+      {/* Placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL anywhere.
+          The dock branch collapses to null. A portal with no safe side
+          margin is not rendered at all; narrow/mobile placement is a
+          separate interaction problem and never becomes a bottom overlay
+          covering customer content. */}
+      {docked.length > 0 ? null : null}
+    </>
+  );
+}
+===OBJECT-CIRCLE===
+/**
+ * ObjectCircle: the portable FYD doorway into an object Node.
+ *
+ * STATE 1 (inline): compact object reference (logo/initials, name,
+ * category and location). Tiny, fast, portable.
+ *
+ * STATE 2 (circle / expanded preview): on hover-capable devices, hover or
+ * keyboard focus opens a compact preview card; on touch devices (or via
+ * click/Enter/Space anywhere) a bottom-sheet dialog opens. NOTHING requires
+ * hover: every piece of information and every action is reachable from the
+ * dialog alone, and the whole thing is keyboard operable (Escape closes,
+ * focus returns to the trigger).
+ *
+ * Card contents (each omitted gracefully when missing, never faked):
+ * image, name, category, location, top services, capability-gated actions.
+ *
+ * Actions render ONLY from view.capabilities: a phone number exposes Call
+ * only when the call capability exists. No fake buttons.
+ *
+ * Motion: a short scale/fade entrance (transform + opacity only, 60fps
+ * class). prefers-reduced-motion fully honored via the CSS module.
+ */
+
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { ExternalLink, Mail, MessageCircleQuestion, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { ObjectCapability, ObjectView } from "../object/types";
+import styles from "./object-circle.module.css";
+
+interface ObjectCircleProps {
+  view: ObjectView;
+  /** Node href; defaults to /o/<id>. */
+  nodeHref?: string;
+  className?: string;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "?";
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+  return (first + last).toUpperCase();
+}
+
+function LogoMark({ view, size }: { view: ObjectView; size: "sm" | "lg" }) {
+  const logo = view.media.find((m) => m.role === "logo");
+  const dims = size === "sm" ? "h-10 w-10" : "h-16 w-16";
+  if (logo) {
+    return (
+      <img
+        src={logo.src}
+        alt={view.name + " logo"}
+        loading="lazy"
+        className={cn(dims, "shrink-0 rounded-full bg-white object-contain p-1")}
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        dims,
+        "flex shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-900",
+      )}
+    >
+      {initials(view.name)}
+    </span>
+  );
+}
+
+function CapabilityActions({ view, nodeHref }: { view: ObjectView; nodeHref: string }) {
+  const render = (cap: ObjectCapability, index: number) => {
+    const key = cap.kind + ":" + index;
+    const btn =
+      "inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600";
+    switch (cap.kind) {
+      case "view":
+        return (
+          <Link
+            key={key}
+            href={nodeHref}
+            className={cn(btn, "bg-amber-600 text-white hover:bg-amber-700")}
+          >
+            View
+          </Link>
+        );
+      case "ask":
+        return (
+          <Link
+            key={key}
+            href={nodeHref + "#ask"}
+            className={cn(btn, "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100")}
+          >
+            <MessageCircleQuestion className="h-4 w-4" aria-hidden="true" />
+            Ask
+          </Link>
+        );
+      case "call":
+        return (
+          <a
+            key={key}
+            href={cap.href}
+            className={cn(btn, "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100")}
+          >
+            <Phone className="h-4 w-4" aria-hidden="true" />
+            {cap.label}
+          </a>
+        );
+      case "email":
+        return (
+          <a
+            key={key}
+            href={cap.href}
+            className={cn(btn, "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100")}
+          >
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            {cap.label}
+          </a>
+        );
+      case "website":
+        return (
+          <a
+            key={key}
+            href={cap.href}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(btn, "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100")}
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            {cap.label}
+          </a>
+        );
+      default:
+        return null;
+    }
+  };
+  return <div className="mt-4 flex flex-wrap gap-2">{view.capabilities.map(render)}</div>;
+}
+
+function CardBody({ view, nodeHref }: { view: ObjectView; nodeHref: string }) {
+  const hero = view.media.find((m) => m.role === "hero" || m.role === "gallery");
+  const topServices = view.services.filter((s) => s.visible).slice(0, 5);
+  return (
+    <div className="p-5">
+      {hero && (
+        <img
+          src={hero.src}
+          alt={hero.alt}
+          loading="lazy"
+          className="mb-4 h-36 w-full rounded-lg object-cover"
+        />
+      )}
+      <div className="flex items-start gap-3">
+        <LogoMark view={view} size="lg" />
+        <div className="min-w-0">
+          <p className="truncate text-lg font-bold text-stone-900">{view.name}</p>
+          <p className="truncate text-sm text-stone-500">
+            {[view.category, view.locationLabel].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+      </div>
+      {topServices.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Top services">
+          {topServices.map((s) => (
+            <li
+              key={s.id}
+              className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
+            >
+              {s.name}
+            </li>
+          ))}
+        </ul>
+      )}
+      <CapabilityActions view={view} nodeHref={nodeHref} />
+      <p className="mt-4 text-xs text-stone-400">{view.provenance.label}</p>
+    </div>
+  );
+}
+
+export function ObjectCircle({ view, nodeHref, className }: ObjectCircleProps) {
+  const href = nodeHref ?? "/o/" + encodeURIComponent(view.id);
+  const [cardOpen, setCardOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [canHover, setCanHover] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setCanHover(window.matchMedia("(hover: hover)").matches);
+  }, []);
+
+  const openCard = React.useCallback(() => {
+    if (!canHover || dialogOpen) return;
+    setCardOpen(true);
+  }, [canHover, dialogOpen]);
+  const closeCard = React.useCallback(() => setCardOpen(false), []);
+  const openDialog = React.useCallback(() => {
+    setCardOpen(false);
+    setDialogOpen(true);
+  }, []);
+  const closeDialog = React.useCallback(() => {
+    setDialogOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  React.useEffect(() => {
+    if (!dialogOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeDialog();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [dialogOpen, closeDialog]);
+
+  const onTriggerBlur = (e: React.FocusEvent) => {
+    if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) closeCard();
+  };
+
+  const subline = [view.category, view.locationLabel].filter(Boolean).join(" · ");
+
+  return (
+    <div
+      ref={wrapperRef}
+      className={cn("relative", className)}
+      onMouseEnter={openCard}
+      onMouseLeave={closeCard}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={openDialog}
+        onFocus={openCard}
+        onBlur={onTriggerBlur}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openDialog();
+          } else if (e.key === "Escape") {
+            closeCard();
+          }
+        }}
+        aria-haspopup="dialog"
+        aria-expanded={dialogOpen}
+        aria-label={dialogOpen ? "Close preview for " + view.name : "Open preview for " + view.name}
+        className="flex w-full items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+      >
+        <LogoMark view={view} size="sm" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-stone-900">{view.name}</span>
+          <span className="block truncate text-xs text-stone-500">{subline || "Tap to open"}</span>
+        </span>
+      </button>
+
+      {/* Hover/focus card: desktop enhancement only, never required. */}
+      {cardOpen && canHover && !dialogOpen && (
+        <div
+          role="note"
+          aria-label={"Preview card for " + view.name}
+          className={cn(
+            styles.cardEnter,
+            "absolute left-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-stone-200 bg-white shadow-xl",
+          )}
+        >
+          <CardBody view={view} nodeHref={href} />
+        </div>
+      )}
+
+      {/* Bottom sheet dialog: the fully accessible path on every device. */}
+      {dialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={closeDialog} aria-hidden="true" />
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={"Preview for " + view.name}
+            tabIndex={-1}
+            className={cn(
+              styles.sheetEnter,
+              "relative max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl focus:outline-none sm:max-w-md sm:rounded-2xl",
+            )}
+          >
+            <div className="sticky top-0 flex justify-end bg-white/95 p-2">
+              <button
+                type="button"
+                onClick={closeDialog}
+                aria-label="Close"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+              >
+                <span aria-hidden="true" className="text-xl leading-none">×</span>
+              </button>
+            </div>
+            <CardBody view={view} nodeHref={href} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+===REGISTRY===
+/**
+ * Motion 3.0 semantic registry — harvest-only.
+ *
+ * Maps a semantic motion specification to a vetted deterministic
+ * implementation harvested from the existing motion modules.
+ *
+ * Semantic axes (the only inputs):
+ *   role          reveal | emphasis | feedback | ambient | transition
+ *   placement     content | edge | overlay
+ *   intensity     subtle | standard | strong
+ *   trigger       scroll | hover | tap | mount | none
+ *   reducedMotion boolean (prefers-reduced-motion state)
+ *
+ * Hard constraints enforced by the registry:
+ * - CSS first for trivial motion (hover/tap feedback). Framer Motion only
+ *   for scroll-triggered, spring, or orchestrated motion.
+ * - Transform and opacity only. Implementations using filter, blur, or
+ *   layout properties are NOT vetted and are excluded with reasons below.
+ * - Reduced motion is always honored: reducedMotion=true resolves to no
+ *   motion (instant state), regardless of the other axes.
+ * - Decorative edge layers must be pointer-events-none and hidden below
+ *   768px (no edge ornaments on small viewports).
+ * - No GSAP, no Lottie. No customer-specific motion code: the registry is
+ *   generic; generated surfaces resolve through it, never around it.
+ * - Motion is presentation only. It never carries truth, evidence, or
+ *   authority. A motion failure must never hide or fabricate content
+ *   (progressive enhancement: content is visible without the animation).
+ *
+ * Determinism: resolveMotion is a pure function. The same spec always
+ * resolves to the same implementation. No wall-clock, no randomness.
+ */
+
+import type { Variants } from "framer-motion";
+import { revealUp, revealDown, revealLeft, revealRight } from "./reveal";
+import { pageFade } from "./pageTransition";
+import { duration } from "./motionTokens";
+
+export type MotionRole = "reveal" | "emphasis" | "feedback" | "ambient" | "transition";
+export type MotionPlacement = "content" | "edge" | "overlay";
+export type MotionIntensity = "subtle" | "standard" | "strong";
+export type MotionTrigger = "scroll" | "hover" | "tap" | "mount" | "none";
+
+export interface MotionSpec {
+  role: MotionRole;
+  placement: MotionPlacement;
+  intensity: MotionIntensity;
+  trigger: MotionTrigger;
+  reducedMotion: boolean;
+}
+
+export type MotionKind = "css" | "framer" | "none";
+
+export interface MotionResolution {
+  kind: MotionKind;
+  /** Tailwind classes to apply (kind === "css"). Transform/opacity only. */
+  cssClasses?: string;
+  /** Framer Motion variants to spread onto a motion.* element (kind === "framer"). */
+  variants?: Variants;
+  /** Constraints the caller must satisfy for the resolution to be valid. */
+  requirements: string[];
+  /** Why this implementation was chosen. */
+  reason: string;
+}
+
+/**
+ * CSS-first trivial motion: hover/tap feedback on content.
+ * transition-transform + scale/translate, opacity only. No JS needed.
+ */
+const CSS_FEEDBACK_SUBTLE = "transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.98]";
+const CSS_FEEDBACK_STANDARD = "transition-all duration-200 ease-out hover:scale-[1.03] hover:opacity-90 active:scale-[0.97]";
+const CSS_EMPHASIS_SUBTLE = "transition-transform duration-300 ease-out hover:-translate-y-0.5";
+const CSS_EMPHASIS_STANDARD = "transition-transform duration-300 ease-out hover:-translate-y-1";
+
+/**
+ * Resolve a semantic motion spec to a vetted implementation.
+ * Pure function: same spec -> same resolution, always.
+ */
+export function resolveMotion(spec: MotionSpec): MotionResolution {
+  // Reduced motion wins over every other axis. No motion, instant state.
+  if (spec.reducedMotion) {
+    return {
+      kind: "none",
+      requirements: [],
+      reason: "prefers-reduced-motion: motion resolved to instant state",
+    };
+  }
+
+  // Decorative ambient layers live on the edge only, never touch content,
+  // never intercept pointer events, and never render below 768px.
+  // Harvests the existing .motion-ambient-drift CSS (transform-only keyframes,
+  // gated by prefers-reduced-motion: no-preference in globals.css).
+  if (spec.role === "ambient" && spec.placement === "edge") {
+    return {
+      kind: "css",
+      cssClasses: "motion-ambient-drift pointer-events-none hidden md:block",
+      requirements: [
+        "pointer-events-none: decorative layer must not intercept input",
+        "hidden md:block: no edge ornaments below 768px",
+        ".motion-ambient-drift: transform/opacity keyframes only, reduced-motion gated",
+      ],
+      reason: "ambient edge decoration: harvested CSS drift, pointer-transparent, desktop-only",
+    };
+  }
+
+  // Scroll-triggered reveals: Framer Motion, harvested variants.
+  // All vetted variants are transform+opacity with reducedMotion states
+  // and opacity:1 hidden states (progressive enhancement).
+  if (spec.role === "reveal" && spec.trigger === "scroll") {
+    const variants =
+      spec.intensity === "strong"
+        ? revealUp // strong reveal = standard rise; scale reserved for media
+        : spec.placement === "overlay"
+          ? revealDown
+          : revealUp;
+    return {
+      kind: "framer",
+      variants,
+      requirements: [
+        "use with whileInView + viewport once (see ScrollReveal)",
+        "content must be visible if the animation never runs",
+      ],
+      reason: "scroll reveal: harvested revealUp/revealDown (transform+opacity, reduced-motion aware)",
+    };
+  }
+
+  // Directional reveals (harvested; same guarantees as revealUp).
+  if (spec.role === "reveal" && spec.trigger === "mount" && spec.placement === "content") {
+    return {
+      kind: "framer",
+      variants: revealUp,
+      requirements: ["content must be visible if the animation never runs"],
+      reason: "mount reveal: harvested revealUp",
+    };
+  }
+
+  // Trivial feedback: CSS first. No JS animation needed.
+  if (spec.role === "feedback" && (spec.trigger === "hover" || spec.trigger === "tap")) {
+    return {
+      kind: "css",
+      cssClasses: spec.intensity === "subtle" ? CSS_FEEDBACK_SUBTLE : CSS_FEEDBACK_STANDARD,
+      requirements: ["transform/opacity only; no layout property transitions"],
+      reason: "trivial feedback: CSS transition, transform+opacity only",
+    };
+  }
+
+  // Emphasis on hover: CSS lift.
+  if (spec.role === "emphasis" && spec.trigger === "hover") {
+    return {
+      kind: "css",
+      cssClasses: spec.intensity === "subtle" ? CSS_EMPHASIS_SUBTLE : CSS_EMPHASIS_STANDARD,
+      requirements: ["transform/opacity only"],
+      reason: "hover emphasis: CSS translate, no JS",
+    };
+  }
+
+  // Page/overlay transitions: harvested pageFade (opacity only).
+  if (spec.role === "transition") {
+    return {
+      kind: "framer",
+      variants: pageFade,
+      requirements: ["opacity only; keep under 400ms"],
+      reason: "transition: harvested pageFade (opacity only, reduced-motion aware)",
+    };
+  }
+
+  // Closed world: anything not mapped above has no vetted implementation.
+  // Callers must not invent motion for unmapped specs.
+  return {
+    kind: "none",
+    requirements: [],
+    reason: `no vetted implementation for ${spec.role}/${spec.placement}/${spec.intensity}/${spec.trigger}; motion omitted rather than invented`,
+  };
+}
+
+/**
+ * Vetting ledger. Every implementation the registry can return, and every
+ * candidate that was excluded, with reasons. Harvest-only: nothing here was
+ * invented for the registry; exclusions are documented, not silently dropped.
+ */
+export const VETTING_LEDGER = {
+  vetted: [
+    { impl: "revealUp/revealDown/revealLeft/revealRight", from: "src/motion/reveal.ts", why: "transform+opacity, reducedMotion variant, opacity:1 hidden (progressive enhancement)" },
+    { impl: "pageFade", from: "src/motion/pageTransition.ts", why: "opacity only, reducedMotion variant, durations under 400ms" },
+    { impl: "fadeIn/fadeUp/fadeDown/fadeLeft/fadeRight", from: "src/motion/fade.ts", why: "opacity-only, reducedMotion variants, progressive enhancement. Vetted alternative to reveal for opacity-only fades." },
+    { impl: "CSS feedback/emphasis classes", from: "registry (Tailwind primitives)", why: "trivial motion belongs in CSS; transform/opacity only, zero JS" },
+    { impl: "CSS ambient drift (.motion-ambient-drift)", from: "src/app/globals.css (new, generic)", why: "transform-only keyframes, prefers-reduced-motion gated; decorative only, pointer-events-none + hidden md:block required" },
+  ],
+  excluded: [
+    { impl: "revealBlur", from: "src/motion/reveal.ts", why: "uses filter: blur(); violates transform-and-opacity-only. Not returned by the registry." },
+    { impl: "ctaSignature / buttonSecondaryHover", from: "src/motion/buttons.ts", why: "animate boxShadow / backgroundColor; no reducedMotion variant. Violates transform-and-opacity-only. Unused. Not returned." },
+    { impl: "buttonHover / buttonTap", from: "src/motion/buttons.ts", why: "transform-only but no reducedMotion variant; superseded by registry CSS feedback path. Unused. Not returned." },
+    { impl: "hoverBrighten / hoverShadow / hoverBackground", from: "src/motion/hover.ts", why: "animate filter: brightness() / boxShadow / backgroundColor; no reducedMotion variant. Violates transform-and-opacity-only. Unused. Not returned." },
+    { impl: "hoverLift / hoverScale / hoverLiftScale", from: "src/motion/hover.ts", why: "transform-only but no reducedMotion variant; superseded by registry CSS emphasis path. Unused. Not returned." },
+    { impl: "cardEntrance / cardHover / cardTap / cardStagger", from: "src/motion/cards.ts", why: "no reducedMotion variant; component-specific, superseded by generic registry paths. Unused. Not returned." },
+    { impl: "heroTextReveal / heroCtaReveal / heroBackgroundDrift / heroStagger", from: "src/motion/hero.ts", why: "component-specific hero motion; has reducedMotion variants but unused and superseded by generic registry paths. Not returned." },
+    { impl: "revealScale", from: "src/motion/reveal.ts", why: "unused; scale-on-reveal unvetted for content (reserved). Not returned by the registry." },
+    { impl: "headingReveal/bodyReveal/charReveal", from: "src/motion/typography.ts", why: "no reducedMotion variant; opacity:0 hidden without progressive-enhancement fix. Unused. Not returned." },
+    { impl: "parallaxSlow/Medium/Fast/Horizontal", from: "src/motion/parallax.ts", why: "infinite ambient motion; unused. Ambient needs are served by the CSS drift path with mobile gating." },
+    { impl: "magneticButton/Strong/Subtle", from: "src/motion/magnetic.ts", why: "unused variants; live magnetic effect in button.tsx is a bespoke transform-only implementation. Not returned." },
+    { impl: "staggerUp/staggerFade (+items)", from: "src/motion/stagger.ts", why: "unused; stagger orchestration unvetted. Not returned." },
+    { impl: "pageSlideUp", from: "src/motion/pageTransition.ts", why: "unused; slide transitions unvetted for page changes. Not returned." },
+  ],
+} as const;
+
+/** Re-export the token scale so callers stay on tokens, not magic numbers. */
+export { duration };
+export { revealUp, revealDown, revealLeft, revealRight };

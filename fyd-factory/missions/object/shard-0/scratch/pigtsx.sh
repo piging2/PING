@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && node -e "const s=require("fs").readFileSync("node_modules/tsx/dist/register-C557imBs.cjs","utf8"); const i=s.indexOf("wrapModuleLoad"); console.log(s.slice(Math.max(0,i-200), i+1500));" 2>/dev/null | head -60

@@ -1,0 +1,24 @@
+# Patch 1 (REQUIRED): run the projection-seam gauntlet under the boundary lane's own jest config
+#
+# Problem: src/fyd/boundary/jest.config.cjs has no CSS transform stub, but the
+# gauntlet (src/fyd/boundary/__tests__/projection-seam-attack.test.ts) imports
+# the real renderer, which pulls in object-circle.module.css transitively.
+# Without this, the lane command `npx jest --config
+# src/fyd/boundary/jest.config.cjs` fails to parse the new test file.
+#
+# Fix: mirror the components lane's existing CSS stub mapping
+# (src/fyd/components/jest.config.cjs). Test-infra only; no product code.
+#
+# Apply: git apply ~/workspace/fyd-factory/patches/boundary-jest-css-stub.patch
+# (from repo root /home/nolan/projects/ping, branch fyd-factory)
+
+--- a/src/fyd/boundary/jest.config.cjs
++++ b/src/fyd/boundary/jest.config.cjs
+@@ -12,6 +12,7 @@ module.exports = {
+   testMatch: ["<rootDir>/src/fyd/boundary/__tests__/*.test.ts"],
+   moduleNameMapper: {
+     "^@/(.*)$": "<rootDir>/src/$1",
++    "\\.css$": "<rootDir>/src/fyd/components/__tests__/css-stub.js",
+   },
+   transform: {
+     "^.+\\.tsx?$": [

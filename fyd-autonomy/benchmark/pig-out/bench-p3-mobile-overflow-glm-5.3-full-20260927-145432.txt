@@ -1,0 +1,41 @@
+## 1. Diagnosis
+
+**Owner:** the `<button class="proposal-btn">Propose</button>` in the Ask FYD proposal row (`site-client.tsx`).
+
+**Mechanism:** the proposal row is a flex container with three items — label (`display:flex`, `min-width:auto`), input (`flex:1`, `min-width:auto`), and the button. Every flex item defaults to `min-width:auto`, so *none* of them can shrink below its min-content width. The row's min-content width is therefore the sum of the intrinsic widths (label 80 + input 150 + button min-content 55, plus row padding/gaps), which totals ≈331px. At 320px the row cannot fit, the button gets squeezed to `clientW = 42` but holds `scrollW = 55` (its text + padding + the 44px touch minimum produce a 55px min-content), spilling ~11–13px past the viewport edge — matching `docScrollW = 331` vs `innerW = 320` exactly. At 375px the same 331px min-content fits inside 360px of usable width (scrollW = 360), so the defect is invisible there. Desktop is trivially fine.
+
+This also explains why earlier bisection failed: `w-full`, `overflow-x-auto`, and wrapper constraints don't change the row's **intrinsic min-content width** — only shrinking an item's min-content does. H1–H5 are all ruled out by the probe: the owner is inside the proposal row, not the hero, nav, column wrapper, viewport meta, or hero section.
+
+## 2. Patch spec
+
+One file, one element: the proposal-row button in `site-client.tsx`, Excerpt 1.
+
+Reduce the button's horizontal padding at small viewports so its min-content width fits within the 44px touch minimum, keeping `min-w-44`:
+
+```diff
+- <button className="proposal-btn min-w-44 px-4 ...">Propose</button>
++ <button className="proposal-btn min-w-44 px-2.5 sm:px-4 ...">Propose</button>
+```
+
+(Exact current padding value is not shown in the excerpt; the edit is "cut horizontal padding by ~6px per side below the `sm` breakpoint only." The probe's numbers — min-content 55, need ≤ ~44, so a ≥11px min-content reduction — pin the required magnitude. Padding is the only safe lever: the text "Propose" is fixed and `min-w-44` must stay.)
+
+`min-w-44` stays, so the touch target is preserved; `sm:px-4` restores the original appearance at ≥640px, leaving 375px and desktop pixel-identical.
+
+## 3. Test spec
+
+Headless Chrome via CDP, same harness as the existing 4/4-run proof, both demo sites (happy-place, coppersmith-plumbing):
+
+- **FAIL on current code (320×800 viewport):** `document.documentElement.scrollWidth = 331` (> 320); probe button: `clientW = 42`, `scrollW = 55`.
+- **PASS after patch:** `document.documentElement.scrollWidth ≤ 320`; button `clientW ≥ 44` and `scrollW === clientWidth` (no internal overflow); `window.innerWidth = 320`. 4/4 runs.
+- Regression check (unchanged): 375px → `scrollW = 360`; 1280px → `scrollW = 1265`.
+
+Falsifiable: if `scrollWidth` at 320px is still > 320 after the patch, the min-content math was wrong and another item (input/label) also needs `min-width:0` — the probe re-run would name the new owner.
+
+## 4. Risks
+
+- **Touch target:** if padding is cut too far, `min-w-44` still floors the button at 44px, but if min-content drops *below* 44 the button renders at exactly 44px and the "Propose" text could clip — verify visually at 320px that the label text is fully visible (`scrollW === clientW` on the button is the programmatic check).
+- **375px / mid widths:** padding change is scoped below `sm`, but 375–639px gets the smaller padding too; confirm the button still looks acceptable (minor cosmetic change, no layout break expected since scrollW = 360 there with slack).
+- **Other pages:** the class is in the shared `site-client.tsx`, so every FYD-rendered page gets it — re-run both demo sites, and ideally any other site using the shared client, at 320/375/1280.
+- **What I'd check before merging:** the button's actual computed padding pre-patch (not in evidence — confirm the ~6px/side reduction lands min-content at ≤44, since Excerpt 1 elides the real class string), and a screenshot at 320px to confirm no clipped text.
+
+**Missing evidence I'd want:** the exact computed `padding-left/right` on `proposal-btn` and the row's gap, to convert "reduce by ≥11px" into an exact class change.

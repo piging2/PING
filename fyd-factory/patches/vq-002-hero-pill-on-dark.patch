@@ -1,0 +1,49 @@
+diff --git a/src/fyd/components/renderer.tsx b/src/fyd/components/renderer.tsx
+index 37200f2b..7e54872e 100644
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -238,9 +238,33 @@ export function claimBadgeLabel(objects: PingObject[]): string {
+   return "Mixed sources";
+ }
+ 
+-function ClaimBadge({ objects }: { objects: PingObject[] }) {
++/**
++ * VQ-002: the badge defaults to the light-surface treatment
++ * (border-border-soft / text-accent). On the dark hero slab (theme.ink) those
++ * light-theme tokens are illegible, so the Hero passes tone="onDark": text in
++ * text-background (the same token as the hero h1, proven legible on ink)
++ * with a theme.accent border (the same treatment as the Ask FYD button border
++ * on the same slab). Theme tokens only; no invented colors, no literal
++ * RGB-complement math.
++ */
++function ClaimBadge({
++  objects,
++  theme,
++  tone,
++}: {
++  objects: PingObject[];
++  theme?: FYDThemeTokens;
++  tone?: "onDark";
++}) {
++  const dark = tone === "onDark" && theme != null;
+   return (
+-    <span className="inline-block rounded-full border border-border-soft px-2 py-0.5 text-[11px] uppercase tracking-wide text-accent">
++    <span
++      className={
++        "inline-block rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide" +
++        (dark ? " text-background" : " border-border-soft text-accent")
++      }
++      style={dark && theme ? { borderColor: theme.accent } : undefined}
++    >
+       {claimBadgeLabel(objects)}
+     </span>
+   );
+@@ -994,7 +1018,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
+       ) : null}
+       <div className="px-4 py-16 sm:px-6 sm:py-24">
+       <div className="mx-auto max-w-5xl">
+-        <ClaimBadge objects={objects} />
++        <ClaimBadge objects={objects} theme={theme} tone="onDark" />
+         <h1
+           className="mt-4 text-4xl font-bold text-background sm:text-6xl"
+           style={{ fontFamily: theme.fontDisplay }}

@@ -1,0 +1,94 @@
+# Patch 2 (REQUIRED): /o contact block through the single safe-link choke point
+#
+# Finding: same hole as Patch 1, second render site. src/app/o/[objectId]/page.tsx
+# (the Contact section) interpolated raw contact values into hrefs with no
+# safe-link gate: "tel:" + phone, "mailto:" + email, and the raw website
+# string. A hostile website value rendered a second live javascript: anchor
+# on the same /o page that Patch 1 seals. Both sites are gated; the choke
+# point stays singular (resolveSafeLink).
+#
+# Fix: compute the three gated hrefs once per render via resolveSafeLink.
+# A safe value renders the anchor as before; an unsafe value renders as
+# inert text with NO anchor (no executable capability, no fake button).
+# Display text is unchanged: the raw value still shows, React-escaped.
+#
+# Apply: git apply ~/workspace/fyd-factory/patches/o-contact-block-safe-link.patch
+# (from repo root /home/nolan/projects/ping, branch fyd-factory)
+
+--- a/src/app/o/[objectId]/page.tsx
++++ b/src/app/o/[objectId]/page.tsx
+@@ -25,6 +25,7 @@
+ import { LikeButton } from "@/fyd/ui/like-button";
+ import { WhyThis } from "@/fyd/ui/why-this";
+ import type { ObjectCapability, ObjectView } from "@/fyd/object/types";
++import { resolveSafeLink } from "@/fyd/sitespec/safe-link";
+ 
+ export const dynamic = "force-dynamic";
+ 
+@@ -168,6 +169,13 @@
+   const phoneCorrection =
+     view.fieldCorrections.find((c) => c.field === "phone") ?? null;
+ 
++  // Contact hrefs are EXECUTABLE CAPABILITIES: each clears the single
++  // safe-link choke point. An unsafe value renders as inert text with no
++  // anchor (see the Contact section below).
++  const phoneLink = resolveSafeLink(view.contact.phone, "call");
++  const emailLink = resolveSafeLink(view.contact.email, "email");
++  const websiteLink = resolveSafeLink(view.contact.website, "navigate");
++
+   return (
+     <div className="min-h-screen bg-stone-50 text-stone-900">
+       {/* Minimal object-owned top bar. No PING chrome. */}
+@@ -281,9 +289,13 @@
+               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                 <dt className="text-sm font-medium text-stone-500">Phone</dt>
+                 <dd className="text-right">
+-                  <a href={"tel:" + view.contact.phone.replace(/\s/g, "")} className="text-base font-semibold text-amber-800 hover:underline">
+-                    {view.contact.phone}
+-                  </a>
++                  {phoneLink.kind === "safe" ? (
++                    <a href={phoneLink.href} className="text-base font-semibold text-amber-800 hover:underline">
++                      {view.contact.phone}
++                    </a>
++                  ) : (
++                    <span className="text-base font-semibold text-amber-800">{view.contact.phone}</span>
++                  )}
+                   {phoneCorrection ? (
+                     <p className="mt-0.5 text-xs text-stone-400">
+                       Owner-corrected; the site lists {phoneCorrection.sourceValue ?? "no number"}.
+@@ -296,9 +308,13 @@
+               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                 <dt className="text-sm font-medium text-stone-500">Email</dt>
+                 <dd>
+-                  <a href={"mailto:" + view.contact.email} className="break-all text-base font-semibold text-amber-800 hover:underline">
+-                    {view.contact.email}
+-                  </a>
++                  {emailLink.kind === "safe" ? (
++                    <a href={emailLink.href} className="break-all text-base font-semibold text-amber-800 hover:underline">
++                      {view.contact.email}
++                    </a>
++                  ) : (
++                    <span className="break-all text-base font-semibold text-amber-800">{view.contact.email}</span>
++                  )}
+                 </dd>
+               </div>
+             )}
+@@ -306,9 +322,15 @@
+               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                 <dt className="text-sm font-medium text-stone-500">Website</dt>
+                 <dd>
+-                  <a href={view.contact.website} target="_blank" rel="noreferrer" className="text-base font-semibold text-amber-800 hover:underline">
+-                    {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+-                  </a>
++                  {websiteLink.kind === "safe" ? (
++                    <a href={websiteLink.href} target="_blank" rel="noreferrer" className="text-base font-semibold text-amber-800 hover:underline">
++                      {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
++                    </a>
++                  ) : (
++                    <span className="text-base font-semibold text-amber-800">
++                      {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
++                    </span>
++                  )}
+                 </dd>
+               </div>
+             )}

@@ -1,0 +1,21 @@
+<script>
+window.addEventListener("load", () => {
+  const bad = [];
+  const vw = document.documentElement.clientWidth;
+  const seen = new Set();
+  document.querySelectorAll("*").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width > vw + 1 && r.width < 10000 && !seen.has(el)) {
+      seen.add(el);
+      const cls = typeof el.className === "string" ? el.className : "";
+      bad.push(el.tagName + "|" + cls.slice(0, 50) + "|w=" + Math.round(r.width));
+    }
+  });
+  const t = document.createElement("div");
+  t.id = "fyd-overflow-report";
+  t.textContent =
+    "VW=" + vw + " SCROLLW=" + document.documentElement.scrollWidth +
+    " BAD=" + bad.slice(0, 15).join(" ;; ");
+  document.body.appendChild(t);
+});
+</script>

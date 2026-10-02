@@ -1,0 +1,23 @@
+import * as fs from "fs";
+import { parseFeedXml, feedFacts } from "./feed-parser";
+import type { AcquiredSource } from "./proceduralizer";
+
+test("feed measurement", () => {
+  const cases: [string, string, string][] = [
+    ["yoast_com", "rss", "https://yoast.com/feed/"],
+    ["rankmath_com", "rss", "https://rankmath.com/feed/"],
+  ];
+  for (const [slug, stype, url] of cases) {
+    const xml = fs.readFileSync("/home/nolan/fyd-b-work/raw/" + slug + "__feed.body", "utf8");
+    const parsed = parseFeedXml(xml, url);
+    console.log(slug + " bytes=" + xml.length + " -> " + (parsed ? "items=" + parsed.items.length + " title=" + (parsed.title || "").slice(0, 50) : "PARSE-NULL"));
+    if (parsed) {
+      const acq = { url, sourceType: stype, discoveredAt: "2026-09-22T19:00:00-06:00", raw: xml, ok: true, status: 200 } as AcquiredSource;
+      const facts = feedFacts(acq);
+      const kinds: Record<string, number> = {};
+      for (const f of facts) kinds[f.name + ":" + f.sourceType] = (kinds[f.name + ":" + f.sourceType] || 0) + 1;
+      console.log("  facts=" + facts.length + " kinds=" + JSON.stringify(kinds));
+      console.log("  sample item: " + JSON.stringify(facts.filter(f => f.claimKind === "feed_item").slice(0, 2).map(f => ({ name: f.name, value: String(f.value).slice(0, 70), detail: (f.evidenceDetail || "").slice(0, 60) }))));
+    }
+  }
+});

@@ -1,0 +1,32 @@
+{
+  "fixture": "synth-shard0-correction-ambiguous-target",
+  "mission": 61,
+  "signature": "CORRECTION_AMBIGUOUS_TARGET",
+  "failureStage": "compose",
+  "world": {
+    "type": "knowledge",
+    "dim": "location-heavy",
+    "hostile": "clean",
+    "ownerIntent": "correct-fact"
+  },
+  "reobsKind": "identity-churn",
+  "probes": [
+    "dropped-field",
+    "identity-churn"
+  ],
+  "failingChecks": [
+    {
+      "name": "correction-survived",
+      "stage": "compose",
+      "detail": "ambiguous-target"
+    },
+    {
+      "name": "dropped-field-collision",
+      "stage": "reobservation",
+      "detail": "collision=field-dropped"
+    }
+  ],
+  "repro": "deterministic: mulberry32 mission index; rerun harness and inspect results.jsonl",
+  "synthetic": true,
+  "testing_only": true
+}

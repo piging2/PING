@@ -1,0 +1,216 @@
+===== src/lib/media-kv-store.ts (head 200) =====
+/**
+ * KV Media Store
+ * 
+ * Manages PublishedMediaAsset records in Upstash Redis KV.
+ * Rejects synthetic content identity (SHA256(canonicalId) rather than actual bytes).
+ * Requires physical Blob verification for constitutional proof.
+ */
+
+import { Redis } from '@upstash/redis';
+import crypto from 'crypto';
+import type { Media } from '@/types/media';
+import { verifyBlobHash, type BlobHashVerificationResult } from '@/lib/blob-storage';
+import { getEnvironment, getKvNamespace } from '@/lib/environment';
+
+/**
+ * Apply namespace prefix to KV key
+ * Prevents cross-environment key collisions
+ */
+function namespacedKey(key: string): string {
+  const namespace = getKvNamespace();
+  return `${namespace}${key}`;
+}
+
+/**
+ * Detect if we're in static build mode
+ * During static build, we can tolerate KV unavailability
+ * During runtime, KV is a required dependency
+ */
+function isStaticBuild(): boolean {
+  // Check if we're in Next.js build phase.
+  // Next.js sets NEXT_PHASE='phase-production-build' during `next build`.
+  // It never sets the value 'build', so the previous check was always false and
+  // the KvUnavailableError degradation path below was unreachable.
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+class KvUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'KvUnavailableError';
+  }
+}
+
+/**
+ * KV Client Factory
+ * 
+ * Creates environment-bound Redis clients to prevent mutable process-global state.
+ * Each client is bound to the current environment namespace at creation time.
+ * This prevents identity leaks when environments change or credentials rotate.
+ */
+/**
+ * Memoized client handle.
+ *
+ * This is a connection handle, NOT an authority cache: no media records, no
+ * authorization decisions, and no derived state are retained. The handle is
+ * keyed on (url, token, environment) so that a credential rotation or an
+ * environment change produces a new client instead of reusing a stale one,
+ * preserving the original environment-binding guarantee.
+ *
+ * Rationale: the Upstash REST client is stateless HTTP. Constructing one per
+ * record turned a list operation into N client constructions and N log lines.
+ */
+let cachedClient: { key: string; client: Redis } | null = null;
+
+function createRedisClient(): Redis {
+  let url = process.env.KV_REST_API_URL;
+  let token = process.env.KV_REST_API_TOKEN;
+  
+  // Check integration-generated variables
+  const integrationUrl = process.env.KV_REST_API__KV_REST_API_URL || process.env.KV_REST_API__REDIS_URL || process.env.KV_REST_API__KV_URL;
+  const integrationToken = process.env.KV_REST_API__KV_REST_API_TOKEN;
+  const readOnlyToken = process.env.KV_REST_API__KV_REST_API_READ_ONLY_TOKEN;
+  
+  // Use integration credentials if primary not set
+  if (!url && integrationUrl) {
+    url = integrationUrl;
+  }
+  if (!token && integrationToken) {
+    token = integrationToken;
+  }
+  
+  // DEV_MODE_SKIP_KV: Allow development without KV credentials
+  // This enables testing the assignment loop in local development
+  if (process.env.DEV_MODE_SKIP_KV === 'true') {
+    console.log('[MEDIA_KV] DEV_MODE_SKIP_KV enabled - KV operations will be skipped');
+    throw new KvUnavailableError('DEV_MODE_SKIP_KV: KV operations skipped for development testing');
+  }
+
+  // During static build, KV may not be available - throw explicit error
+  // Runtime pages will handle this as a dependency failure
+  if (!url || !token) {
+    if (isStaticBuild()) {
+      throw new KvUnavailableError('KV credentials not available during static build');
+    }
+    throw new Error('Missing required environment variables: KV_REST_API_URL and KV_REST_API_TOKEN');
+  }
+  
+  // Client bound to current environment + credentials
+  const env = getEnvironment();
+  const namespace = getKvNamespace();
+  const bindingKey = `${env}|${namespace}|${url}|${token}`;
+
+  if (cachedClient && cachedClient.key === bindingKey) {
+    return cachedClient.client;
+  }
+
+  const client = new Redis({ url, token });
+  cachedClient = { key: bindingKey, client };
+
+  console.log('[MEDIA_KV] Created environment-bound client', {
+    environment: env,
+    namespace,
+  });
+
+  return client;
+}
+
+// KV key prefixes (P1-9: Environment isolation applied)
+const MEDIA_PREFIX = 'media:';
+const CONTENT_HASH_PREFIX = 'content_hash:';
+const BLOB_METADATA_PREFIX = 'blob_metadata:';
+const STALE_INDEX_PREFIX = 'stale_index:';
+const MEDIA_QUARANTINE_PREFIX = 'media_quarantine:';
+
+/**
+ * Compute synthetic content hash (SHA256 of canonical ID)
+ * This is used to detect and reject synthetic content identity
+ */
+function computeSyntheticHash(canonicalId: string): string {
+  return crypto.createHash('sha256').update(canonicalId).digest('hex');
+}
+
+/**
+ * Check if a content hash is synthetic (derived from canonical ID rather than actual bytes)
+ */
+function isSyntheticContentHash(canonicalId: string, actualContentHash: string): boolean {
+  const syntheticHash = computeSyntheticHash(canonicalId);
+  return actualContentHash === syntheticHash;
+}
+
+/**
+ * Verify media state for internal materialization operations
+ * This is permissive for intermediate states during materialization
+ * Used by ingestion/materialization paths, NOT the public gate
+ */
+async function verifyMaterializationState(media: Media): Promise<boolean> {
+  // DriveReference records are valid source references
+  if (media.lifecycleState === 'source_reference') {
+    return true;
+  }
+  
+  // MaterializingMedia is valid during materialization phase
+  if (media.lifecycleState === 'materializing') {
+    return true;
+  }
+  
+  // PublishedMediaAsset must have content hash
+  if (media.lifecycleState === 'published' && media.source === 'local') {
+    if (!media.contentHash) {
+      console.error('[MEDIA_KV] REJECTED: Published local media missing content hash', {
+        mediaId: media.id,
+        reason: 'PublishedMediaAsset must have content hash'
+      });
+      return false;
+    }
+    
+    // CRITICAL: Use storage field to distinguish static vs Blob
+    // Static storage: served from /public/images/, no Blob metadata required
+    // Blob storage: materialized from Drive, requires Blob metadata
+    if (media.storage === 'blob') {
+      const client = createRedisClient();
+      const blobMetadata = await client.get(namespacedKey(`${BLOB_METADATA_PREFIX}${media.contentHash}`));
+      
+      if (!blobMetadata) {
+        console.error('[MEDIA_KV] REJECTED: Blob storage media missing Blob metadata', {
+          mediaId: media.id,
+          contentHash: media.contentHash,
+          storage: media.storage,
+          reason: 'Blob-storage assets must have Blob metadata with physical Blob proof'
+        });
+        return false;
+      }
+    } else if (media.storage === 'static') {
+      // Static storage: no Blob metadata required
+      // Just verify the storage field is properly set
+      console.log('[MEDIA_KV] STATIC_STORAGE_ACCEPTED', {
+        mediaId: media.id,
+        storage: media.storage,
+        reason: 'Static storage assets do not require Blob metadata'
+      });
+    } else {
+      // Missing or invalid storage field
+      console.error('[MEDIA_KV] REJECTED: Missing or invalid storage field', {
+        mediaId: media.id,
+        storage: media.storage,
+        reason: 'Published local media must have storage field (static or blob)'
+      });
+      return false;
+    }
+    
+
+===== exported functions =====
+230:export interface PublicMediaAuthorityOptions {
+264:export async function verifyPublicMediaAuthority(
+390:export async function getMedia(id: string): Promise<Media | null> {
+451:export async function getMediaBatch(ids: string[]): Promise<Map<string, Media>> {
+535:export async function getMediaRecordRaw(id: string): Promise<Media | null> {
+571:export async function listMediaIds(): Promise<string[]> {
+601:export async function saveMedia(media: Media): Promise<void> {
+689:export async function updateStorageFieldCAS(
+758:export async function deleteMedia(id: string): Promise<void> {
+804:export const storeMedia = saveMedia;
+809:export const setMedia = saveMedia;
+816:export async function getBlobMetadata(contentHash: string): Promise<Record<string, unknown> | null> {
+844:export async function findMediaByContentHash(contentHash: string): Promise<Media | null> {

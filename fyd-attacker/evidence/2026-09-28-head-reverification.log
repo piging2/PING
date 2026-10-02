@@ -1,0 +1,95 @@
+
+### suite-ask-evidence
+[PASS] F1-refusal-ungrounded
+    evidence: partial=true markers=[] unknowns=["services offered by this business"]
+[PASS] F2-services-field-cited-classified
+    evidence: markers=[1] classifications=["website_statement","website_statement","website_statement","website_statement","website_statement"] answer="Services on record: drains, water heaters. [1]\n\nI answer from the site record for Acme Plumbing (business). [1]\n\nThe rec"
+[PASS] F2-no-invention
+    evidence: answer contains only the recorded value: "Services on record: drains, water heaters. [1]\n\nI answer from the site record for Acme Plumbing (business). [1]\n\nThe record's stated source is https://acme.exam"
+[PASS] F3-basis-not-laundered
+    evidence: per-service classes=[["s1","website_statement"],["s2","DIRECT_FACT"],["s3","DEMO_SYNTHETIC"],["b3","website_statement"]]
+[PASS] F3-demo-not-recorded-fact
+    evidence: demo service s3 classified as DEMO_SYNTHETIC, never DIRECT_FACT
+[PASS] F4-ungrounded-topic-no-dump
+    evidence: partial=true no services listing dumped; consulted-refs list may name the service object: "I do not have evidence for that in the current context, so I will not guess.\n\nI consulted: business: Acme Plumbing; service: Drain cleaning.\n\nOpen an object to give me something concrete to answer fro"
+[PASS] F5-name-not-topic
+    evidence: no service invented from the business name: partial=true
+[PASS] F6-no-orphan-citations
+    evidence: markers=[1,2] all resolve to a ref with a classification
+[PASS] F7-provenance-branch-honest
+    evidence: basis sentence: "I answer from the site record for Acme Plumbing (business). [1]\n\nThe record was derived on 2026-09-27. [1]\n\nBasis: demo content added by the site operator (not the website's own words, not a recorded fact). [1]"
+[PASS] F8-description-not-services
+    evidence: description prose not treated as service facts: partial=true
+-- suite-ask-evidence: 10/10 PASS
+
+### suite-classification-boundary
+[FAIL] B1-unknown-class-not-direct
+    evidence: claimClassFor("DIRECCT_FACT") = SUPPORTED DIRECTLY (want: not SUPPORTED DIRECTLY)
+[FAIL] B2-missing-class-not-direct
+    evidence: undefined -> SUPPORTED DIRECTLY, "" -> SUPPORTED DIRECTLY
+[FAIL] B3-garbage-claimkind-not-direct
+    evidence: claimKind "TYPO_CLASS" -> claimClassification "TYPO_CLASS" -> customer class "SUPPORTED DIRECTLY"
+[PASS] B4-generated-copy-never-direct
+    evidence: GENERATED_COPY -> DERIVED
+[PASS] B5-generated-copy-basis-honest
+    evidence: basis = "Site-generated copy (not verified fact)"
+[FAIL] B6-unknown-basis-not-confident
+    evidence: future class -> basis "Site record", class "SUPPORTED DIRECTLY"
+[PASS] B7-provenance-chain-honest
+    evidence: overlay-authored->DEMO_SYNTHETIC canonical-journal->DIRECT_FACT website-ingestion->website_statement owner->owner_authorship mystery-kind->unknown
+[PASS] B8-derived-coarse-known-documented
+    evidence: answerStateFor("DERIVED") = "KNOWN" — tension recorded: fine label preserves GENERATED_COPY, coarse state says KNOWN
+-- suite-classification-boundary: 4/8 PASS
+(node:19150) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/hatch/workspace/fyd-attacker/vendor/src/fyd/sitespec/field-visibility.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/hatch/workspace/fyd-attacker/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+### suite-hide-override
+[PASS] H1-hide-zero-disclosure
+    evidence: projected biz fields=["phone"]; street segment absent from projection
+[PASS] H1-observation-survives
+    evidence: source graph still holds verbatim value after HIDE (no mutation)
+[PASS] H2-no-traversal-leak
+    evidence: location object dropped; located_at rels remaining=0
+[PASS] H3-value-shape-fail-closed
+    evidence: resolve=coarse/conservative_default; coarsen("123 Main St")="" (single-segment street suppressed, not leaked)
+[PASS] H4-street-lead-dropped
+    evidence: coarsen => "Grand Junction CO 81501"
+[PASS] H5-owner-show-wins
+    evidence: owner SHOW override => verbatim projected despite address default
+[PASS] H6-version-tie-deterministic
+    evidence: tie at v3 => later array entry wins: show
+[PASS] H7-address-family-hide
+    evidence: after HIDE on "city": biz fields=["phone"]
+[PASS] H8-benign-passthrough
+    evidence: coarsen("Grand Junction")="Grand Junction"; valueLooksLikeAddress=false
+[FAIL] H9-members-policy-failopen
+    evidence: policy "members" resolved=members, phone visible to public=true (want: not visible or not resolved)
+-- suite-hide-override: 9/10 PASS
+
+### suite-generated-copy
+[PASS] G1-demo-keeps-demo-basis
+    evidence: composer=DEMO_SYNTHETIC customer=SUPPORTED DIRECTLY basis="Demo content added by the site operator (not the website's own words)"
+[PASS] G2-generated-copy-never-evidence
+    evidence: composer=GENERATED_COPY customer=DERIVED
+[PASS] G3-mixed-bases-survive
+    evidence: composer classes=[["s11","website_statement"],["s12","DEMO_SYNTHETIC"],["b11","website_statement"]]; customer classes=["s11:SUPPORTED DIRECTLY","s12:SUPPORTED DIRECTLY","b11:SUPPORTED DIRECTLY"] (route-layer risk: both map to SUPPORTED DIRECTLY -> "SUPPORTED BY MULTIPLE EVIDENCE" overclaim needs live test)
+[PASS] G4-pipeline-inference-surfaces
+    evidence: fieldClasses INFERENCE -> composer=INFERENCE -> customer=DERIVED
+-- suite-generated-copy: 4/4 PASS
+
+### suite-route-reduction
+[FAIL] R1-no-multiple-evidence-overclaim
+    evidence: answerClass="SUPPORTED BY MULTIPLE EVIDENCE" with cites=[{"n":1,"claimClass":"SUPPORTED DIRECTLY","basis":"The site's own words (website statement, not verified fact)"},{"n":2,"claimClass":"SUPPORTED DIRECTLY","basis":"The site's own words (website statement, not verified fact)"},{"n":3,"claimClass":"SUPPORTED DIRECTLY","basis":"Demo content added by the site operator (not the website's own words)"}]
+[PASS] R2-homogeneous-multiple-evidence
+    evidence: answerClass="SUPPORTED BY MULTIPLE EVIDENCE" (two website-statement cites, same claim)
+[PASS] R3-refusal-unsupported
+    evidence: refusal=true answerClass="UNSUPPORTED"
+[PASS] R4-derived-poisons-answer
+    evidence: derived cites=1 answerClass="DERIVED"
+[PASS] R5-conflict-wins
+    evidence: answerClass="CONFLICTED" with one CONFLICTED cite
+-- suite-route-reduction: 4/5 PASS
+
+=== TOTAL FAILED CHECKS: 6 ===

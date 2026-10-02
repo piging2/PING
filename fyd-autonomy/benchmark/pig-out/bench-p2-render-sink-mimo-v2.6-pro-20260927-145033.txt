@@ -1,0 +1,96 @@
+[REASONING]
+We need to answer exactly four sections: Diagnosis, Patch spec, Test spec, Risks. Reason only from evidence. Don't invent. But we need to write code patches for renderer.tsx presumably. We must be careful: "reason only from the evidence above. Do not invent functions, files, test results, or library behaviors not shown." So we can propose a helper function in renderer.tsx (new), that's fine as part of the patch spec. But we shouldn't invent existing functions like `hostOf` — well, `hostOf` is shown in excerpt 2, so it exists. We can reference it.
+
+Let me structure.
+
+Evidence: excerpt 1 and 2 show raw `href={website}` and `href={url}`. The probe (step5-hostile.ts) uses real path generateSiteSpec -> renderToStaticMarkup with SitePageView. Text sinks escaped (React escapes text children). No dangerouslySetInnerHTML. So root cause: URL attribute sink (`href`) receives unvalidated observed data (external input), bypassing any sanitization; JSX escaping only escapes text/attribute characters like `"` `<` `&` but preserves the scheme string `javascript:` verbatim — hence neutralizes markup injection but not scheme-based script execution. So it's a missing URL-scheme allowlist before render.
+
+Hypotheses: H1 ruled out (no dangerouslySetInnerHTML), H2 irrelevant (text sinks escaped, and the failure is at URL sink), H3 contradicted (website/socials from fields.*, observed data — evidence: fields.website is from object graph of harvested content), H4 false (React only warns; probe observed verbatim executable href), H5 unverifiable but probe renders real path; the rendered markup contains the exact string; need browser-level check to fully settle execution, but the sink being unsanitized is established. Maybe note evidence to settle H5: execute rendered markup in a browser and observe dialog; but not needed for the fix since the invariant is that observed strings must never reach href raw.
+
+Patch spec: minimal change — add a URL sanitizer/allowlist in renderer.tsx (or the place where fields are mapped into the view props, i.e., generateSiteSpec? But the evidence shows the render passes website and socials through without transformation; simplest minimal change: sanitize at the sink or in the mapping function). Since we shouldn't invent files... The excerpt says renderer.tsx has the `<a href={website}>` and socials map. The probe path: synthetic ObjectGraph -> generateSiteSpec -> renderToStaticMarkup with SitePageView. So sanitizing inside SitePageView (renderer.tsx) covers both demo pages and probe. Minimal: add a small pure helper `safeExternalHref(raw: string): string | null` in renderer.tsx; render `<a>` only if non-null, else render the text without a link (or render as plain text/`<span>`), preserving display.
+
+Details of sanitizer:
+- Trim leading/trailing whitespace; strip ASCII control chars and whitespace anywhere? Actually per spec, browsers strip leading/trailing whitespace and remove ASCII tab/newline/CR from URLs. To be safe: reject if after removing all ASCII whitespace and control characters (0x00–0x20, 0x7F) the string differs? Hmm. Safer: decode? Careful with `java\tscript:` smuggling. Approach: normalize: remove all chars in [\u0000-\u0020\u007f] (whitespace & control) and lowercase, then check scheme against allowlist `http:`, `https:`, and maybe `mailto:`/`tel:` if desired (but evidence doesn't show those; keep allowlist minimal: http/https only — mention that if mailto/tel are observed in real data they can be added with their own validation). Then also re-validate: parse with `new URL` and compare protocol. But "do not invent library behaviors not shown" — `new URL` is standard JS, fine to use; but maybe keep to a string check to be deterministic and avoid double-encoding issues. I'll propose explicit allowlist parsing without reliance on browser URL normalization: split scheme as the substring before the first `:` (after normalization), require it to be exactly `http` or `https` (case-insensitive) and require the remainder to start with `//` maybe (network-path). Then return the original trimmed string (not the normalized one) so display/href keep the original data... Hmm but returning original retains possible `java%09script:`? That's percent-encoded tab which browsers... `%09` in scheme is not decoded by browsers before scheme matching — actually browsers don't percent-decode the scheme. `java%09script:alert(1)` is not a valid scheme so it'd be treated as relative URL? Actually `href="java%09script:alert(1)"` — the browser resolves relative to base URL, giving something like `https://site/java%09script:alert(1)` which is inert. Fine.
+
+Also handle `data:`, `vbscript:` — they'd be rejected since scheme not in allowlist. Good.
+
+Also handle mixed case `JaVaScRiPt:` — lowercase comparison handles.
+
+Whitespace smuggling: `java script:alert(1)` (space) — browsers treat space in scheme? `javascript :alert`? Actually `java script:alert(1)` as href — browsers treat it as a relative URL probably; but after stripping whitespace it becomes `javascript:alert(1)`. Since our normalization strips whitespace before checking scheme and we reject non-allowlisted, we reject. But careful: we should reject if the raw string, after whitespace/control stripping, has a disallowed scheme. And for the accepted case, return the raw trimmed string? If raw contains internal whitespace/control chars, e.g. `ht\ttp:` — after stripping becomes `http:` allowed but raw has a control char; browsers strip tab/newline from URLs, making it `http:` which is fine (still http). But to be conservative, reject any raw string containing ASCII control chars (< 0x20 or 0x7F) outright. That's the safest: strict allowlist + reject control characters.
+
+Also handle leading whitespace: `  javascript:alert(1)` — trim first, then check. Browsers trim leading/trailing whitespace too. So trim, then reject if any control chars remain, then check scheme allowlist after lowercasing (maybe also removing remaining internal whitespace like `\u0009` already covered as control chars? `\u0009` tab is < 0x20 so covered. Space0x20 is not < 0x20; use <= 0x20 for the reject-control check but then `https://exa mple.com` with space would be rejected — acceptable conservative; or treat space separately). Let's define: reject if /[\u0000-\u0020\u007f]/.test(trimmed) — i.e., no ASCII whitespace or control anywhere in the URL. That is conservative but legitimate URLs don't contain raw spaces (they should be percent-encoded). Good — mention that raw spaces are rejected and that legitimate links with spaces should be percent-encoded (that's a risk/check item).
+
+Then scheme: match /^([a-z][a-z0-9+.-]*):/i on lowercased trimmed; require scheme ∈ {http, https}. Otherwise return null.
+
+Additionally maybe require `new URL(trimmed)` parse succeeds and `url.protocol` ∈ allowed, and reject if `url.username`/password? Not necessary. Keep minimal. Maybe include both: string allowlist then `new URL` sanity. Keep minimal: string check is enough and deterministic. I'll present a small helper.
+
+Renderer changes:
+Excerpt 1: 
+```tsx
+const href = safeExternalHref(website);
+{href ? <a href={href} className="underline">{website}</a> : <span className="underline">{website}</span>}
+```
+Hmm, keeping display of the raw string as text is fine since text sinks are escaped (evidence). Good — note that rendering the rejected value as text is safe (React escapes; evidence PASS for `<script>` text).
+
+Excerpt 2:
+```tsx
+{socials.map((url) => {
+  const href = safeExternalHref(url);
+  return href ? (
+    <a key={url} href={href}>{hostOf(url)}</a>
+  ) : (
+    <span key={url}>{hostOf(url)}</span>
+  );
+})}
+```
+Hmm `hostOf(url)` on a `javascript:alert(2)` string — what does hostOf do? Unknown; it presumably parses hostname. If it returns something odd, fine. Could display `{hostOf(url) ?? url}`? Don't invent. Keep `{hostOf(url)}` as display, as it is the existing text content. Maybe simpler: keep the anchor only for allowed URLs.
+
+Alternative minimal patch: sanitize in `generateSiteSpec` (where fields map into the spec). But the sink-level fix in renderer.tsx is where the excerpt shows. However, better defense: fix at both the data mapping (generateSiteSpec) and the sink? "Prefer a diff-shaped description. Do not redesign the renderer." Minimal: sink-level in renderer.tsx (SitePageView), covering both the demo pages and the probe path (probe uses SitePageView). Note the probe inspects rendered href attributes; so patch at render sink makes probe assertions pass. Mention optional belt-and-braces at generateSiteSpec if other consumers exist, but keep minimal.
+
+Test spec: one falsifiable test — a hostile-fields test in step5-hostile.ts style, but we must not invent test file names? The probe file is step5-hostile.ts, shown. We can say extend/replicate the probe: build synthetic ObjectGraph with hostile fields, run generateSiteSpec -> renderToStaticMarkup(SitePageView), then assert on the rendered markup string. That's grounded.
+
+Assertions:
+- For each hostile input, assert the rendered output does NOT contain `href="javascript:` nor any case/whitespace-smuggled variant; more robust: parse rendered HTML for all `href` attributes and assert each one's normalized scheme ∈ {http, https} (or is an internal anchor/route). And assert the number of `<a href` for the hostile fields is 0 (i.e., no anchor emitted), while the text is still displayed (assert the payload string appears as escaped text content? maybe assert display preserved).
+
+Concretely:
+
+Hostile inputs (fields):
+1. `website = "javascript:alert(1)"` (plain)
+2. `website = "JaVaScRiPt:alert(1)"` (mixed case)
+3. `website = "java\tscript:alert(1)"`, `"java\nscript:alert(1)"`, `" \tjavascript:alert(1)"` (whitespace/control smuggling: leading/trailing whitespace, embedded tab/newline/CR, `\u0000`)
+4. `website = "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="`, `website = "vbscript:msgbox(1)"`, `website = "data:image/svg+xml,<svg onload=alert(1)>"`.
+5. socials: same set as array items.
+
+Assertions per case (on rendered markup):
+- FAIL-before/PASS-after: `assert(!/href\s*=\s*["'](?![#\/]|https?:)/i.test(markup))` hmm — better: collect hrefs via regex `/href="([^"]*)"/g`, and for each: assert `^https?:\/\//` (external) or `^#` or `^\/` (internal). And assert `!markup.includes('href="javascript')` case-insensitively after whitespace normalization.
+
+Precise assertion set:
+A) `const hrefs = [...markup.matchAll(/href="([^"]*)"/g)].map(m => m[1]);`
+B) `expect(hrefs.every(h => /^(https?:\/\/|#|\/)/i.test(h))).toBe(true);` — covers reject of javascript:, data:, vbscript: in any case/whitespace form (because after our normalization... well a smuggled `java\tscript:` as href would fail the regex since it starts with `java`). Hmm `href="java script:alert(1)"` starts with `java` -> fails regex -> good. But careful: internal routes are `"/o/" + encodeURIComponent(id)` -> starts with `/` -> passes. Internal anchors `#ask` -> pass. Good.
+
+C) For each hostile input value v: `expect(markup).not.toMatch(new RegExp('href="' + escapeRegex(v) + '"'))` — asserts verbatim rendering gone.
+
+D) Preservation: the hostile string still appears as escaped text (website text) — `expect(markup).toContain(escapeForHtml(v))`? That invents escape helper. Simpler: assert `<a` count decreased / that no `<a` wraps the value: e.g., `expect(markup).not.toContain('<a href="javascript')`. Keep to simple, regex-based assertions on the markup string — nothing invented.
+
+Also positive control (legit links must keep working): `website = "https://example.com/x?y=1#z"` renders `href="https://example.com/x?y=1#z"` verbatim; `socials = ["https://twitter.com/x", "https://github.com/y"]` render anchors with `hostOf(url)` labels. That is part of test spec too (falsifiable both ways) and ties into risks.
+
+Also test the expected post-patch behavior: hostile inputs render as non-anchor text (no `<a` element for them), so assert `expect(markup).not.toContain('<a href="javascript')` and that the text still shows: `expect(markup).toContain('alert(1)')`? Hmm the text `javascript:alert(1)` would be rendered as text content; containing `alert(1)` in markup is fine (text is escaped; `alert(1)` has no special chars). Could assert `expect(markup).toContain('javascript:alert(1)')` for the plain case to show data preserved as text but not as href. But careful: the string `javascript:alert(1)` appears in markup as text — assertion `not.toContain('href="javascript:alert(1)"')` is the key one. I'll include both: the string may appear as text (fine), but never inside `href=`.
+
+Note whitespace smuggling nuance in rendered output: React would render `href="java&#x9;script:alert(1)"`? Actually React escapes attribute values minimally: it escapes `"`, `&`, etc. Tab might be emitted literally or as-is. So an assertion `not.toContain('href="java')` case-insensitive is more robust. Let's define assertion as: no `href` attribute value in rendered markup may begin with anything other than `http://`, `https://`, `#`, or `/` — via the regex extraction above. That single assertion plus per-case list is falsifiable and robust.
+
+Also mention: run under `renderToStaticMarkup` (same as probe) and additionally, to settle H5, execute the rendered page in a real browser and assert no dialog; but the falsifiable unit test is the markup assertion. Keep short.
+
+Risks:
+- Legit schemes we might now block: `mailto:`, `tel:`, `sms:`, `whatsapp:`, `ftp:`, `magnet:`, protocol-relative `//host`, relative links, `http:` (cleartext). If harvested sites legitimately use mailto/tel, our http/https-only allowlist drops them -> link becomes text. Check: sample real harvested data for non-http schemes; if present, extend allowlist with explicit per-scheme validators (mailto: no embedded `javascript` weirdness... actually mailto is safe-ish but can launch mail client with content — capability; per invariant 2, "a rendered link is an executable capability (navigation, phone dialer, mail client)" so tel/mailto are capabilities; allowlist them deliberately or drop).
+- URL with raw spaces/percent-encoding differences; our conservative control-char rejection might drop valid-but-sloppy URLs (e.g., unencoded spaces, unicode). Check sample data.
+- Display regression: rejected values now render as text without underline link; UI tests/snapshots asserting `<a href=` count may fail; key prop uses `url` — with duplicates? unchanged.
+- `hostOf(url)` on non-URL strings: unchanged behavior but check it doesn't throw on `javascript:...` (evidence doesn't show its implementation) — since we now may call it for values we reject (we still render text with hostOf(url))... Hmm, we call hostOf on rejected url to render label. If hostOf throws on garbage input, that's a risk. Safer: render the raw string as text for rejected items? But excerpt 2 uses hostOf as display. To avoid changing behavior on untrusted input handling... Actually a safer diff: for rejected URLs, render the raw `url` as text (already shown to be escaped safely) rather than `hostOf(url)`, avoiding any behavior change in hostOf on weird input. But hostOf is already called on raw strings today (with javascript: values), and the probe ran it fine (rendered). Evidence: probe with socials=["javascript:alert(2)"] rendered an anchor with hostOf(url) as label — so hostOf did not throw on that input. Good, so it's safe to keep calling it. But for `data:` etc. unknown. To be safe, mention: if `hostOf` is not validated for arbitrary strings, fall back to the raw string for the label. Or keep hostOf call (it worked for javascript: per evidence). I'll keep hostOf as-is and note in risks to verify hostOf doesn't throw on `data:`/`vbscript:`/whitespace-smuggled inputs; if in doubt, use the raw string as the label (text sink is escaped).
+
+- Also mention: truncation/verification of double encoding (H5) — if we ever need to prove exploitability, run in browser.
+
+Also mention nothing in the patch touches text sinks; internal anchors/routes untouched (`href="#ask"` and `"/o/" + ...` still rendered as-is; they pass the allowlist check since they start with `#` / `/`).
+
+Wait: our sanitizer is applied only to website and socials (external observed data), so internal anchors/routes aren't passed through it. Good — say that explicitly: don't run internal hrefs through the allowlist, or allow `#`/`/` prefixes.
+
+Diagnosis section: single root cause: unvalidated external URL string (fields.website, fields.socials items
+[/REASONING]

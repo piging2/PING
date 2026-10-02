@@ -1,0 +1,37 @@
+PROPOSAL ONLY. Not applied. Repo stays read-only on branch fyd-factory.
+
+Patch 01: stamp data-object-anchor on tenant site sections (src/fyd/components/renderer.tsx)
+
+Rationale: MarginObjectLayer anchors objects to document elements via
+[data-object-anchor="<key>"]. Tenant site sections currently carry no
+anchor keys (only src/app/page.tsx does), so the layer has nothing to
+track on tenant sites. This patch stamps the deterministic section id
+(pageSlug:component:index, already the section id contract) onto a
+thin wrapper. No visual change intended; the wrapper is an unstyled
+block div, and sections already render as block-level.
+
+Verified seams: SitePageView at renderer.tsx:1795 maps
+page.sections via renderSection(s, ctx, i) (lines 1795-1801 read on
+2026-09-23). Section id determinism: FYDSection.id = pageSlug +
+":" + component + ":" + index (sitespec/types.ts).
+
+Caveat: the wrapper div can disturb margin-collapsing in section CSS.
+Acceptance requires before/after screenshots of both demo tenants
+(happy-place, coppersmith-plumbing) at desktop and mobile widths.
+
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -1795,7 +1795,11 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
+ export function SitePageView({ page, ctx }: { page: FYDPage; ctx: RenderContext }) {
+   return (
+     <>
+       <FydMotionStyles theme={ctx.spec.themeTokens} />
+-      {page.sections.map((s, i) => renderSection(s, ctx, i))}
++      {page.sections.map((s, i) => (
++        <div key={s.id} data-object-anchor={s.id}>
++          {renderSection(s, ctx, i)}
++        </div>
++      ))}
+     </>
+   );
+ }

@@ -1,0 +1,53 @@
+--- a/src/fyd/components/object-rail.tsx	2026-09-23 20:52:59.354413514 -0600
++++ b/src/fyd/components/object-rail.tsx	2026-09-23 21:39:41.426868519 -0600
+@@ -32,6 +32,7 @@
+ import { schemaRole } from "../sitespec/schemas";
+ import type { ClaimEvidence, ObjectProjection } from "../object/object-projection";
+ import type { ObjectView } from "../object/types";
++import { verifyPresentationBinding } from "../sitespec/graph";
+ 
+ /** Resolved placement for one render. */
+ export type RailPlacement = "rail" | "drawer" | "hidden";
+@@ -76,6 +77,24 @@
+  *   does not verify, so they are never granted here.
+  * - media: empty. The rail never invents imagery.
+  */
++/**
++ * Binding-gated description read for the rail adapters.
++ *
++ * The main sections read factual fields only through the binding authority
++ * (boundField -> resolveBoundField); the rail adapters previously read
++ * o.description raw, so a description with no provenance (an unbound claim)
++ * still rendered in the rail, labeled with an invented
++ * "Observed on website-ingestion" receipt. Routing the adapters through the
++ * same authority means unbound descriptions are omitted, never rendered.
++ */
++function boundRailDescription(o: PingObject): string {
++  const verdict = verifyPresentationBinding(
++    { objectId: o.id, field: "description", classification: "direct" },
++    { objects: [o], relationships: [] },
++  );
++  return verdict.ok ? verdict.value.trim() : "";
++}
++
+ export function pingObjectToProjection(o: PingObject): ObjectProjection {
+   const ref = o.provenance?.ref ?? "website-ingestion";
+   const derivedAt = o.provenance?.derivedAt ?? "";
+@@ -88,7 +107,7 @@
+   const kindLabel = role
+     ? role.charAt(0).toUpperCase() + role.slice(1)
+     : friendlySchemaLabel(o.schema);
+-  const description = (o.description ?? "").trim();
++  const description = boundRailDescription(o);
+   return {
+     id: o.id,
+     schema: o.schema,
+@@ -278,7 +297,7 @@
+     name: o.title,
+     category: role ? (RAIL_ROLE_LABELS[role] ?? "Object") : "Object",
+     locationLabel: null,
+-    summary: (o.description ?? "").trim(),
++    summary: boundRailDescription(o),
+     media: [],
+     services: [],
+     serviceArea: [],

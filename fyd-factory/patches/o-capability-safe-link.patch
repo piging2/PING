@@ -1,0 +1,68 @@
+# Patch 1 (REQUIRED): /o capability lane through the single safe-link choke point
+#
+# Finding: BYPASS-1 / BYPASS-2 (A35, A36). buildCapabilities in
+# src/fyd/object/view.ts interpolated raw contact values into hrefs with no
+# safe-link gate: website "javascript:alert('A35')" rendered as a live
+# <a href="javascript:alert('A35')">Website</a> on the /o object page, both
+# directly and end-to-end through composeObjectView.
+#
+# Fix: route all three /o capability hrefs (call/email/website) through the
+# existing resolveSafeLink choke point (src/fyd/sitespec/safe-link.ts: the
+# single link authority; it imports nothing, so no cycle). No new
+# SecurityAuthority, no second allowlist. An unsafe value emits NO
+# capability (no fake buttons: the UI renders an action row from this list
+# and nothing else). The /o contact block still shows the raw value as
+# inert text (see o-contact-block-safe-link.patch). This also closes W2
+# (A37): the "call" capability's TEL_ALLOWED rule rejects
+# quote/attribute-breakout phones before any href is built.
+#
+# Behavior note: a website that is a bare hostname or relative path is now
+# non-navigable (no Website button), matching the choke point's documented
+# rule. Fail closed.
+#
+# Apply: git apply ~/workspace/fyd-factory/patches/o-capability-safe-link.patch
+# (from repo root /home/nolan/projects/ping, branch fyd-factory)
+
+--- a/src/fyd/object/view.ts
++++ b/src/fyd/object/view.ts
+@@ -34,6 +34,7 @@
+   listPingSiteIdsSync,
+ } from "@/fyd/data/ping-object-source";
+ import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
++import { resolveSafeLink } from "../sitespec/safe-link";
+ import type { ObjectGraph } from "../sitespec/types";
+ import type { PingObject } from "../../lib/ping/types";
+ import { readOverrides } from "./owner-store";
+@@ -202,13 +203,26 @@
+     contact.locality !== null;
+   if (hasAskEvidence) caps.push({ kind: "ask" });
+ 
++  // Contact hrefs are EXECUTABLE CAPABILITIES: every one clears the single
++  // safe-link choke point (resolveSafeLink) before it becomes an href. An
++  // unsafe value emits NO capability (no fake buttons); the contact block
++  // still shows the value as inert text.
+   const contactActions = () => {
+-    if (contact.phone)
+-      caps.push({ kind: "call", href: "tel:" + contact.phone.replace(/\s/g, ""), label: "Call" });
+-    if (contact.email)
+-      caps.push({ kind: "email", href: "mailto:" + contact.email, label: "Email" });
+-    if (contact.website)
+-      caps.push({ kind: "website", href: contact.website, label: "Website" });
++    if (contact.phone) {
++      const link = resolveSafeLink(contact.phone, "call");
++      if (link.kind === "safe")
++        caps.push({ kind: "call", href: link.href, label: "Call" });
++    }
++    if (contact.email) {
++      const link = resolveSafeLink(contact.email, "email");
++      if (link.kind === "safe")
++        caps.push({ kind: "email", href: link.href, label: "Email" });
++    }
++    if (contact.website) {
++      const link = resolveSafeLink(contact.website, "navigate");
++      if (link.kind === "safe")
++        caps.push({ kind: "website", href: link.href, label: "Website" });
++    }
+   };
+ 
+   switch (role) {

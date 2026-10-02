@@ -1,0 +1,132 @@
+########## rich graph head ##########
+/**
+ * Happy Place RICH graph fixture: the canonical 9-object / 10-relationship
+ * graph derived from the governed PING event journal, acceptance sequences
+ * 65-83 (lane B website-ingestion run, 2026-09-21, Ed25519-signed at
+ * emission via the governed POST /events path).
+ *
+ * FIXTURE CONTRACT (2026-09-21): this file and happy-place-graph.ts serve
+ * DIFFERENT contracts. This rich fixture is the generator/renderer contract
+ * testbed: it exercises services, people, locations, contact, and links
+ * sections. happy-place-graph.ts is the machine-generated extraction
+ * regression output (currently 2 objects from the structured pipeline);
+ * it must stay byte-faithful to runExtractionPipeline on the pinned raw
+ * bytes. Do NOT "refresh" this file from the pipeline, and do NOT weaken
+ * generator/renderer tests to the 2-object graph: the two fixtures test
+ * two different layers.
+ *
+ * 9 objects, 10 relationships. Object ids, relationship ids, schema names,
+ * predicates, and field values are copied from the accepted event bodies
+ * (~/workspace/lane-b/bodies.json); only the PingObject/PingRelationship
+ * projection shape is this lane's. Every claim is labeled website_statement:
+ * claimed by the website, never verified fact. No precise personal addresses
+ * appear anywhere: the location is a coarse service area and the people are
+ * site personas, exactly as the canonical events record them.
+ */
+
+import type { PingObject, PingRelationship } from "@/lib/ping/types";
+import type { ObjectGraph } from "../../sitespec/types";
+
+const OBSERVED_AT = "2026-09-21T02:44:00Z";
+const SOURCE = "https://happy-place-platform.vercel.app/";
+const CONTROLLER = "identity_cc3383c868f96fc1";
+const EVIDENCE_REF = "lane-b-observation-001";
+
+function provenance() {
+  return {
+    kind: "website-derived" as const,
+    ref: "website-ingestion:seq65-83:" + EVIDENCE_REF,
+    derivedAt: OBSERVED_AT,
+  };
+}
+
+function claimFields(extra: Record<string, string | string[]>): Record<string, string | string[]> {
+  return {
+    claimKind: "website_statement",
+    source_url: SOURCE,
+    source_type: "website_text_extraction",
+    observed_at: OBSERVED_AT,
+    ...extra,
+  };
+}
+
+function obj(
+  id: string,
+  schema: string,
+  title: string,
+  description: string,
+  fields: Record<string, string | string[]>,
+): PingObject {
+  return {
+    id,
+    schema,
+    controllerId: CONTROLLER,
+    visibility: "public",
+    title,
+    description,
+    fields: claimFields(fields),
+    createdAt: OBSERVED_AT,
+    updatedAt: OBSERVED_AT,
+    provenance: provenance(),
+  };
+}
+
+const objects: PingObject[] = [
+  obj(
+    "object_6cc955e4077ad14f",
+    "ping.knowledge.business@1",
+    "Happy Place Carpentry",
+    "We repair, restore, and improve homes across the Mid-Willamette Valley. The work should look right the day we leave, and still look right years later.",
+    {
+      tagline: "Your favorite part of coming home should be the home itself.",
+      claimed_projects_completed: "125+",
+      claimed_license: "CCB# 254240",
+      claimed_licensed: "true",
+      claimed_bonded: "true",
+      claimed_insured: "true",
+      price_range: "$$",
+      phone: "+15412865190",
+    },
+  ),
+  obj(
+    "object_cda465c087b62af9",
+    "ping.knowledge.website@1",
+    "Happy Place Carpentry \u2014 Decks, Fences & Remodels in the Willamette Valley",
+    "Website sections observed: hero; services (A few ways we can help); Recent Work; about/family business; reviews; newsletter; contact. 2 images.",
+    {
+      url: SOURCE,
+      page_sections: [
+        "hero",
+        "services (A few ways we can help)",
+        "Recent Work",
+        "about/family business",
+        "reviews",
+        "newsletter",
+        "contact",
+      ],
+      image_count: "2",
+    },
+  ),
+  obj(
+    "object_f4be50f223741f51",
+    "ping.knowledge.location@1",
+    "Mid-Willamette Valley",
+    "Service area as claimed by the site; not a street address. No precise personal addresses are recorded.",
+    {
+      kind: "service_area",
+########## rich graph schema mentions ##########
+########## schemas.ts registered schemas ##########
+ping.social.
+ping.social.article@1
+ping.social.business@1
+ping.social.location@1
+ping.social.person@1
+ping.social.post@1
+ping.social.product@1
+ping.social.service@1
+########## predicates in rich graph ##########
+      1 predicate
+      1 predicate: string
+      1 predicates
+########## types.ts ObjectGraph shape ##########
+18:export interface ObjectGraph {

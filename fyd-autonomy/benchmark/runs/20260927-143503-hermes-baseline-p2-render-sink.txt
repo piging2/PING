@@ -1,0 +1,46 @@
+**Diagnosis**  
+The renderer directly interpolates observed URL strings from `fields.website` and `fields.socials` into the `href` attribute of anchor tags without neutralizing dangerous URL schemes (e.g., `javascript:`, `data:`, `vbscript:`). While React's JSX escaping prevents HTML injection in text content (as confirmed by the inert `<script>` and `<img onerror>` tests), it does not sanitize URL attributes. The observed data flows unchanged into `href`, creating an executable capability (navigation to hostile schemes) despite text-escaping working for HTML text sinks.
+
+**Patch spec**  
+In `renderer.tsx`:  
+1. Add a URL sanitization helper function above the component:  
+   ```tsx
+   function sanitizeUrl(url: string): string {
+     if (typeof url !== 'string') return 'about:blank';
+     const trimmed = url.trim();
+     const colonIndex = trimmed.indexOf(':');
+     if (colonIndex !== -1) {
+       const scheme = trimmed.substring(0, colonIndex).toLowerCase();
+       if (['javascript', 'data', 'vbscript'].includes(scheme)) {
+         return 'about:blank';
+       }
+     }
+     return trimmed;
+   }
+   ```  
+2. In the website link excerpt (Excerpt 1), change:  
+   ```diff
+   - <a href={website} className="underline">
+   + <a href={sanitizeUrl(website)} className="underline">
+     {website}
+   </a>
+   ```  
+3. In the socials list excerpt (Excerpt 2), change:  
+   ```diff
+   - {socials.map((url) => (
+   -   <a key={url} href={url}>
+   + {socials.map((url) => (
+   +   <a key={url} href={sanitizeUrl(url)}>
+     {hostOf(url)}
+   </a>
+   ))}
+   ```  
+
+**Test spec**  
+Render the SitePageView component with `fields.website` set to each of: `"javascript:alert(1)"`, `"JavAsCript:alert(1)"`, `" javascript:alert(1)"`, `"javascript:alert(1) "`, `"data:text/html,<script>alert(1)</script>"`, `"vbscript:msgbox(1)"`, `"about:blank"`, `"https://example.com"`, `"/relative/path"`, `""`. For each input, assert that the rendered anchor's `href` attribute:  
+- On current code: equals the input string (failure).  
+- After patch: equals `"about:blank"` for the first six inputs (dangerous schemes), and equals the trimmed input for the last four inputs (safe/relative/empty).  
+Additionally, render `fields.socials` as an array containing one instance of each input string and assert that each anchor's `href` in the list passes the same checks. Verify that text content (e.g., `{website}` or `{hostOf(url)}`) remains the original escaped string in all cases (leveraging existing text-escaping invariant).  
+
+**Risks**  
+Legitimate URLs using the `javascript:`, `data:`, or `vbscript:` schemes would be blocked, but these schemes are inherently unsafe for `href` in this context (no legitimate use case for website/social links). Relative URLs (e.g., `/about`) and standard schemes (`http:`, `https:`, `mailto:`, `tel:`) are preserved. Trimming whitespace may alter user-intended whitespace in URLs, but leading/trailing whitespace in URLs is invalid and unlikely to be intentional. The patch does not affect text content, so existing XSS protections for HTML text sinks remain intact. Verify by manual testing of legitimate link types and confirming text rendering matches expectations.

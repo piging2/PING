@@ -1,0 +1,138 @@
+=== FYDSiteSpec interface location ===
+314:export interface FYDSiteSpec {
+=== FYDSiteSpec block ===
+export interface FYDSiteSpec {
+  kind: "fyd.sitespec@1";
+  /** The business (or root) object this site is generated for. */
+  ownerObjectId: string;
+  version: 1;
+  generator: {
+    name: "fyd-site-generator";
+    version: string;
+    generatedAt: string;
+  };
+  themeTokens: FYDThemeTokens;
+  navigation: FYDNavItem[];
+  pages: FYDPage[];
+  provenance: FYDSpecProvenance;
+  /**
+   * Builder composition extensions (all optional, backward compatible):
+   * status/revision: draft-vs-published lifecycle with bounded revision
+   * history; archetype: which composition profile composed this spec;
+   * objectPresence: the generic margin/rail layout capability.
+   */
+  status?: FYDSpecStatus;
+  revision?: number;
+  archetype?: FYDSiteArchetype;
+  objectPresence?: ObjectPresence;
+}
+=== FYDThemeTokens tail ===
+export interface FYDThemeTokens {
+  accent: string;
+  accentForeground: string;
+  surface: string;
+  ink: string;
+  radius: "none" | "sm" | "md" | "lg" | "full";
+  fontDisplay: string;
+  fontBody: string;
+  typography?: FYDTypeScale;
+  spacing?: FYDSpacingScale;
+  colors?: FYDColorSystem;
+  surfaces?: FYDSurfaces;
+  shadows?: FYDShadows;
+  layout?: FYDLayoutTokens;
+  breakpoints?: FYDBreakpoints;
+  media?: FYDMediaTokens;
+  motion?: FYDMotionTokens;
+  /**
+   * Presentation character hint (strategy-chosen, owner-overridable).
+   * Changes presentation tokens only, never facts.
+   */
+  layoutCharacter?: FYDLayoutCharacter;
+  /**
+   * Motion semantics for the customer surface. SiteSpec chooses the
+   * semantics; the renderer owns the implementation. Absent: restrained
+   * defaults (SUBTLE / FADE_RISE / MORPH / TIGHT), always collapsed by
+   * prefers-reduced-motion.
+   */
+  motionTokens?: MotionTokens;
+  /**
+=== SCHEMA_ROLES ===
+134:export const SCHEMA_ROLES: Record<FYDSchemaRole, string[]> = {
+135-  business: ["ping.social.business@1", "ping.knowledge.business@1"],
+136-  service: ["ping.social.service@1", "ping.knowledge.service@1"],
+137-  product: ["ping.social.product@1"],
+138-  location: ["ping.social.location@1", "ping.knowledge.location@1"],
+139-  person: ["ping.social.person@1", "ping.knowledge.person@1"],
+140-  // Content splits into short-form posts and long-form articles so the
+141-  // generator can tell them apart through the role map instead of
+142-  // hardcoded schema ids. The knowledge vocabulary projects onto both.
+143-  post: ["ping.social.post@1", "ping.knowledge.post@1"],
+144-  article: ["ping.social.article@1", "ping.knowledge.article@1"],
+145-};
+146-
+147-/** The site-compiler role a schema id plays, or null when it plays none. */
+148-export function schemaRole(schemaId: string): FYDSchemaRole | null {
+149:  const roles = Object.keys(SCHEMA_ROLES) as FYDSchemaRole[];
+150-  for (const role of roles) {
+151:    if (SCHEMA_ROLES[role].includes(schemaId)) return role;
+152-  }
+153-  return null;
+154-}
+155-
+156-// ---------------------------------------------------------------------------
+157-// Derivation 1: VALIDATOR. Schema -> findings over a field record.
+158-// ---------------------------------------------------------------------------
+159-
+160-export interface FieldRecord {
+161-  title: string;
+162-  description: string;
+163-  fields: Record<string, string | string[]>;
+164-}
+165-
+166-/**
+167- * Validate an object's scalar fields against its schema definition.
+168- * Returns findings (harvest B6 shape); empty means valid.
+169- */
+170-export function validateAgainstSchema(
+171-  def: FYDSchemaDef,
+--
+278:    const proofId = SCHEMA_ROLES[role][0];
+=== dogfood projection graph ===
+total 52
+drwxr-xr-x 2 nolan nolan  4096 Sep 22 08:50 .
+drwxr-xr-x 4 nolan nolan  4096 Sep 22 17:21 ..
+-rw------- 1 nolan nolan 11476 Sep 22 08:50 coppersmith-plumbing.json
+-rw------- 1 nolan nolan 12954 Sep 22 08:50 happy-place.json
+-rw------- 1 nolan nolan  5094 Sep 21 14:37 happy-place.json.lane-c-backup
+-rw-r--r-- 1 nolan nolan  6515 Sep 21 20:46 ping-fyd.json
+=== ping-fyd.json objects ===
+OBJ ping-fyd-business | ping.social.business@1 | PING Social
+   desc: AI concierge and business automation for home service businesses.
+   field phone = (970) 589-3309
+   field locality = Grand Junction, Colorado
+   field serviceArea = Mesa County corridor: Grand Junction, Fruita, Palisade, Clifton, Collbran, Loma, Mack, De Beque, plus Delta, Montrose, R
+OBJ ping-fyd-svc-calls | ping.social.service@1 | AI call answering
+   desc: An AI concierge answers when the crew is on a job, so no opportunity goes to voicemail.
+OBJ ping-fyd-svc-followup | ping.social.service@1 | Lead follow-up
+   desc: Fast, consistent follow-up on every estimate request and inquiry.
+OBJ ping-fyd-svc-scheduling | ping.social.service@1 | Scheduling support
+   desc: Fewer phone-tag loops getting jobs on the calendar.
+OBJ ping-fyd-svc-admin | ping.social.service@1 | Admin automation
+   desc: Repetitive paperwork and organization handled quietly in the background.
+OBJ ping-fyd-location | ping.social.location@1 | Grand Junction, Colorado
+   field locality = Grand Junction, Colorado
+OBJ ping-fyd-facebook | ping.social.external_identity@1 | PING Social on Facebook
+   field platform = facebook
+   field url = https://www.facebook.com/profile.php?id=61594275542163
+RELS:
+   ping-fyd-business provides ping-fyd-svc-calls
+   ping-fyd-business provides ping-fyd-svc-followup
+   ping-fyd-business provides ping-fyd-svc-scheduling
+   ping-fyd-business provides ping-fyd-svc-admin
+   ping-fyd-business located_at ping-fyd-location
+   ping-fyd-business links_to ping-fyd-facebook
+OWNER: n/a
+META keys: ['siteId', 'dumpedAt', 'dumperVersion', 'baseDigest', 'fixtureFileDigest', 'graphDigest', 'generatedAt', 'overlayEventIds']
+=== TECHNOLOGY strategy profile ===
+34:  "ping-fyd": "TECHNOLOGY",

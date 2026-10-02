@@ -1,0 +1,99 @@
+LANE-ASK wiring patch: route the seven canonical Ask FYD questions through
+the evidence-graded concierge (src/fyd/ask/concierge.ts, new file, already in
+the tree and tested).
+
+WHAT IT DOES
+------------
+In composeAskFyd (src/fyd/ask/answer.ts), after site-patch intent detection
+and before the generic composer, questions matching one of the seven
+canonical concierge questions are answered by answerConciergeQuestion and
+converted with toAskFydAnswer onto the existing AskAnswer-shaped pieces
+(answer text with [n] markers, evidenceRefs, claimClassifications, unknowns).
+Everything else keeps the existing composer. The route
+(src/app/api/fyd/ask/ask-pipeline.ts) and the widget
+(src/fyd/components/ask-fyd-widget.tsx) need no changes: they already render
+answer/evidenceRefs/claimClassifications/unknowns, and the 3-class reducer
+(answerClassFor) maps the concierge grades onto supported/derived/unknown
+(SUPPORTED -> supported, DERIVED/INFERRED -> derived, all-UNKNOWN -> unknown
+refusal).
+
+EFFECT ON THE 7 QUESTIONS x 2 SITES
+------------------------------------
+- "What does this business do?" -> profile answer quoting the description.
+- "What services do they offer?" -> one SUPPORTED claim per service object
+  plus a DERIVED count claim, all cited.
+- "Where do they operate?" -> SUPPORTED location / service-area claims.
+- "Who works here?" -> SUPPORTED person record + INFERRED username reading
+  + UNKNOWN real name (coppersmith); UNKNOWN refusal (happy-place).
+- "How do you know?" -> the evidence chain (record, source, date, basis).
+- "What information conflicts?" -> DERIVED "no conflicts found" on both
+  sites today; contradictions surface with both values cited when present.
+- "What don't you know?" -> the probed facts with no evidence, as UNKNOWN.
+
+SAFETY
+------
+- matchConciergeQuestion returns null for everything else, so non-canonical
+  questions (proposals, replies, open-ended) keep the exact current behavior.
+- The concierge reads only ctx.base (the already-visibility-projected public
+  graph); no new data access, no grants, no proposals (proposal: null).
+- The module throws on a SUPPORTED/DERIVED/INFERRED claim without evidence
+  instead of rendering it; the pipeline's catch-all maps that to an honest
+  500 unknown, never a half-graded answer.
+
+APPLY
+-----
+  cd /home/nolan/projects/ping
+  git apply ~/workspace/fyd-factory/patches/ask-concierge-wire.patch
+  npx jest --config src/fyd/ask/jest.config.cjs   # full ask lane suite
+  npx tsc --noEmit -p tsconfig.json               # repo typecheck
+
+VERIFY (after apply)
+--------------------
+  # the seven questions route through the concierge on both demo sites:
+  npx jest --config src/fyd/ask/jest.config.cjs concierge
+
+--- a/src/fyd/ask/answer.ts
++++ b/src/fyd/ask/answer.ts
+@@ -13,6 +13,7 @@
+   draftSitePatchProposal,
+   sitePatchRefusal,
+ } from "./site-patch";
++import { answerConciergeQuestion, matchConciergeQuestion, toAskFydAnswer } from "./concierge";
+ import type { AskFydAnswer, AskFydContext } from "./types";
+ 
+ const SITE_PATCH_ACTION_KINDS = new Set([
+@@ -76,6 +77,34 @@
+       sitePatchCard: buildSitePatchCard(ctx, proposal),
+     };
+   }
++  // LANE-ASK concierge: the seven canonical visitor questions are answered
++  // from the visible graph with per-claim epistemic grades
++  // (SUPPORTED/DERIVED/INFERRED/UNKNOWN), an evidence chain, conflict
++  // surfacing, and explicit unknowns. Everything else keeps the existing
++  // composer. toAskFydAnswer maps the concierge answer onto the
++  // evidenceRefs/claimClassifications/unknowns the route and widget render.
++  if (matchConciergeQuestion(question) && ctx.base.target) {
++    const concierge = answerConciergeQuestion({
++      siteId: ctx.siteSpec?.siteId ?? "",
++      target: ctx.base.target,
++      objects: [ctx.base.target, ...ctx.base.relatedObjects],
++      relationships: ctx.base.relationships,
++      question,
++    });
++    if (concierge) {
++      const view = toAskFydAnswer(concierge);
++      return {
++        ...baseFields(ctx),
++        answer: view.answer,
++        evidenceRefs: view.evidenceRefs,
++        claimClassifications: view.claimClassifications,
++        unknowns: view.unknowns,
++        proposal: null,
++        partial: concierge.refused,
++        sitePatchCard: null,
++      };
++    }
++  }
+   const base = composeAnswer(ctx.base, question);
+   return { ...base, sitePatchCard: null };
+ }

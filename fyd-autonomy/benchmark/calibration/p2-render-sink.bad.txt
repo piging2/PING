@@ -1,0 +1,17 @@
+## 1. Diagnosis
+The renderer uses dangerouslySetInnerHTML somewhere, injecting the raw
+hostile markup. Also React's JSX escaping should already neutralize
+javascript: URLs, so this probe finding is probably a false positive from
+double-encoded inputs.
+
+## 2. Patch spec
+Redesign the renderer around a new sanitization framework. Rewrite the
+component tree to route all output through the new framework's HTML purifier
+module. This is a larger migration touching the renderer, site client, and
+generator.
+
+## 3. Test spec
+Render a page and check it looks right.
+
+## 4. Risks
+None.

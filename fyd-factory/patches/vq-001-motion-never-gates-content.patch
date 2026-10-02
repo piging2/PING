@@ -1,0 +1,67 @@
+diff --git a/src/fyd/components/renderer.tsx b/src/fyd/components/renderer.tsx
+index 37200f2b..598050d1 100644
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -447,18 +447,25 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
+         "@media (prefers-reduced-motion: no-preference) {",
+         "@view-transition { navigation: auto; }",
+         ".fyd-hero-settle { animation: fyd-hero-settle 560ms cubic-bezier(.2,.7,.2,1) both; }",
+-        "@keyframes fyd-hero-settle { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }",
++        "@keyframes fyd-hero-settle { from { transform: translateY(14px); } to { transform: none; } }",
+         "@supports (animation-timeline: view()) {",
+         "[data-motion='enter'] { animation: fyd-enter " +
+           dur +
+           "ms cubic-bezier(.2,.7,.2,1) both; animation-timeline: view(); animation-range: entry 0% cover 30%; }",
+-        "@keyframes fyd-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }",
++        // VQ-001: motion never gates content. The native view() timeline can
++        // hold below-fold elements at progress 0 in full-page captures, print,
++        // crawlers, and no-scroll contexts, so entrances keep their slide but
++        // never touch opacity: content is always painted.
++        "@keyframes fyd-enter { from { transform: translateY(16px); } to { transform: none; } }",
+         "}",
+         // Base state is VISIBLE. JS adds .fyd-io-pending only to below-fold elements.
+-        ".fyd-io [data-motion='enter'] { transition: opacity 480ms ease, transform 480ms ease; }",
+-        ".fyd-io [data-motion='enter'].fyd-io-pending { opacity: 0; transform: translateY(16px); }",
++        // VQ-001: the pending entrance is transform-only; opacity never gates content.
++        ".fyd-io [data-motion='enter'] { transition: transform 480ms ease; }",
++        ".fyd-io [data-motion='enter'].fyd-io-pending { transform: translateY(16px); }",
+         ".fyd-io [data-motion='enter'].fyd-inview, .fyd-io [data-motion='enter']:not(.fyd-io-pending) { opacity: 1; transform: none; }",
+         ".fyd-io [data-motion='enter'].fyd-force-visible { opacity: 1 !important; transform: none !important; animation: none !important; }",
++        // VQ-001: print and other non-interactive renderings show everything.
++        "@media print { [data-motion='enter'], .fyd-hero-settle { animation: none !important; opacity: 1 !important; transform: none !important; } }",
+         "@media (hover: hover) {",
+         ".fyd-card { transition: transform 240ms ease, box-shadow 240ms ease; }",
+         ".fyd-card:hover { transform: translateY(-4px); }",
+diff --git a/src/fyd/components/__tests__/mobile-visibility.test.ts b/src/fyd/components/__tests__/mobile-visibility.test.ts
+index 5f5b9bcd..4893e267 100644
+--- a/src/fyd/components/__tests__/mobile-visibility.test.ts
++++ b/src/fyd/components/__tests__/mobile-visibility.test.ts
+@@ -22,12 +22,26 @@ describe("motion is enhancement only (never a content dependency)", () => {
+     const p = path.join(REPO, "src/fyd/components/renderer.tsx");
+     const src = fs.readFileSync(p, "utf8");
+     // The unconditional opacity:0 rule must be gone.
+-    // Only .fyd-io-pending (JS-added, below-fold only) may hide.
++    // Nothing may hide via opacity, not even .fyd-io-pending (VQ-001):
++    // full-page captures, print, crawlers, and no-scroll contexts never
++    // drive the timeline or the observer, so opacity is never a gate.
+     expect(src).not.toMatch(
+       /"\.fyd-io \[data-motion='enter'\] \{ opacity: 0;/
+     );
+-    // The pending class exists for JS-controlled hiding.
++    expect(src).not.toMatch(
++      /"\.fyd-io \[data-motion='enter'\]\.fyd-io-pending \{ opacity: 0;/
++    );
++    // The pending class still exists for the JS-controlled entrance,
++    // but its entrance is transform-only.
+     expect(src).toContain("fyd-io-pending");
++    // VQ-001: the native scroll-timeline entrances must never zero opacity.
++    for (const name of ["@keyframes fyd-enter", "@keyframes fyd-hero-settle"]) {
++      const line = src.split("\n").find((l) => l.includes(name));
++      expect(line).toBeDefined();
++      expect(line).not.toContain("opacity");
++    }
++    // Print forces everything visible.
++    expect(src).toContain("@media print");
+   });
+ 
+   test("SiteClient mounts FydMotionFallback", () => {

@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: WORLD-SHARD-2 (fyd-factory mission worker)
+Date: Wed, 23 Sep 2026 20:30:00 -0600
+Subject: [fyd] ClaimBadge coverage: Links, CTA, ObjectRail sections
+
+Claim-source standard (2026-09-22): every section that binds source objects
+and renders source-derived content must name the claim source via the
+ClaimBadge mechanism. LinksSection (official website/social links), CTASection
+(contact CTA) and ObjectRailSection (featured-object description) bind objects
+but never render ClaimBadge. This adds the existing ClaimBadge component to
+all three; no new mechanism, no new authority.
+
+Evidence: fyd-factory missions/fixtures/shard2-claim-badge-gap.json
+(1221 unbound sections across 407 generated worlds in WORLD shard 2).
+
+Repo is read-only for mission workers; integration writer applies.
+
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -1462,6 +1462,9 @@ function LinksSection({ section, objects, presentation, theme, ctx, motionIndex
+           </li>
+         ))}
+       </ul>
++      <div className="mt-3">
++        <ClaimBadge objects={objects} />
++      </div>
+     </SectionShell>
+   );
+ }
+@@ -1529,7 +1532,12 @@ function CTASection({ section, objects, presentation, theme, ctx, motionIndex }:
+             Ask FYD
+           </a>
+         </div>
++        {objects.length > 0 ? (
++          <div className="mt-4">
++            <ClaimBadge objects={objects} />
++          </div>
++        ) : null}
+       </div>
+     </section>
+   );
+ }
+@@ -1624,5 +1632,8 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
+       <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
+         {featuredView.provenance.label}
+       </p>
++      <div className="mt-1">
++        <ClaimBadge objects={[featured]} />
++      </div>
+     </div>
+   );
+   return (

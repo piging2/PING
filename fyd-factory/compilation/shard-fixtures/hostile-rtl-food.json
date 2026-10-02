@@ -1,0 +1,139 @@
+{
+  "site_id": "hostile-rtl-food",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "food: RTL name and description (Hebrew synthetic restaurant)",
+  "variation_thesis": "Stresses bidirectional text handling: Hebrew/Arabic business names and descriptions mixed with Latin fields.",
+  "expected_failure_mode": "warn: compiler must preserve RTL runs exactly, escape bidi control characters in HTML, and never reorder Latin metadata around RTL text.",
+  "hostile_properties": [
+    "rtl-text",
+    "hebrew",
+    "bidi"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-rtl-food-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "מסעדת סינתטית",
+        "description": "מסעדת טסט עם תיאור בעברית. Synthetic Hebrew test restaurant. מטבח מקומי. (Hebrew synthetic restaurant)",
+        "fields": {
+          "phone": "(970) 555-0117",
+          "business_type": "food",
+          "website": "https://hostile-rtl-food.example.com",
+          "address": "1 Test Bazaar Ln, Grand Junction, CO",
+          "conflicts": [
+            "HOSTILE rtl: business name and description are right-to-left script (Hebrew/Arabic) mixed with Latin metadata. Bidi rendering and search indexing must not garble or invert the Latin segments."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-food",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-food-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Grand Junction, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-rtl-food.",
+        "fields": {
+          "address_locality": "Grand Junction",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Grand Junction, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-food-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-food-p-owner",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Test Owner (Owner)",
+        "description": "Person listed for synthetic fixture hostile-rtl-food: Test Owner, Owner.",
+        "fields": {
+          "name": "Test Owner",
+          "role": "Owner",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-food-p-owner",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-food-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "שירות ראשי",
+        "description": "Primary service, RTL title; description: synthetic test service.",
+        "fields": {
+          "name": "שירות ראשי",
+          "description": "Primary service, RTL title; description: synthetic test service.",
+          "category": "service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-food-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-rtl-food-0001",
+        "subject": "hostile-rtl-food-biz",
+        "predicate": "located_at",
+        "object": "hostile-rtl-food-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-food:site"
+      },
+      {
+        "id": "rel-hostile-rtl-food-0002",
+        "subject": "hostile-rtl-food-p-owner",
+        "predicate": "works_for",
+        "object": "hostile-rtl-food-biz",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-food:site"
+      },
+      {
+        "id": "rel-hostile-rtl-food-0003",
+        "subject": "hostile-rtl-food-biz",
+        "predicate": "offers",
+        "object": "hostile-rtl-food-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-food:site"
+      }
+    ]
+  }
+}

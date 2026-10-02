@@ -1,0 +1,129 @@
+===== attach.ts (lines 60-160) =====
+      roles: m.roles.join(","),
+      source_url: m.provenance.sourceUrl,
+      source_page: m.provenance.sourcePage,
+      observed_at: m.provenance.observedAt,
+      width: String(m.width),
+      height: String(m.height),
+      hero_url: hero?.url ?? "",
+      thumbnail_url: thumb?.url ?? "",
+      alt_text: m.altText ?? "",
+      alt_text_source: m.altTextSource,
+    },
+    createdAt: observedAt,
+    updatedAt: observedAt,
+    provenance: {
+      kind: "website-derived",
+      ref: "fyd-media:" + m.provenance.sourceUrl,
+      derivedAt: m.provenance.observedAt,
+    },
+  };
+}
+
+/**
+ * Append media objects + semantic relationships. depicts[] on the
+ * manifest entries names the object ids the media belongs to; when empty,
+ * media depicting the business attaches to the owner business via
+ * represented_by.
+ */
+export function attachMediaToGraph(graph: ObjectGraph, manifest: MediaManifest): ObjectGraph {
+  if (manifest.media.length === 0) return graph;
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  // Owner rule mirrors the generator/findOwner: the lowest-id public
+  // business. Undepicted media represents the business.
+  const ownerId =
+    graph.objects
+      .filter((o) => /business/.test(o.schema) && o.visibility === "public")
+      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]?.id ??
+    graph.objects.find((o) => /business/.test(o.schema))?.id ??
+    "";
+  const objects: PingObject[] = graph.objects.slice();
+  const relationships: PingRelationship[] = graph.relationships.slice();
+
+  for (const m of manifest.media) {
+    // Defense in depth: the rights gate in ingest.ts never mints
+    // reference-only assets, but the graph must never carry one either.
+    if (!isAcquirable(m.rightsSource)) continue;
+    if (objects.some((o) => o.id === m.id)) continue;
+    objects.push(mediaToObject(m, ownerId, manifest.generatedAt));
+    const targets = m.depicts.length > 0 ? m.depicts : ownerId ? [ownerId] : [];
+    for (const target of targets) {
+      const subject = byId.get(target);
+      const predicate = predicateForSubjectSchema(subject?.schema ?? "");
+      relationships.push({
+        id: "rel-" + m.digest.slice(0, 12) + "-" + predicate.replace(/_/g, ""),
+        subject: target,
+        predicate,
+        object: m.id,
+        status: "active",
+        createdAt: manifest.generatedAt,
+        evidenceRef: "fyd-media:" + m.provenance.sourceUrl,
+      });
+    }
+  }
+  return { objects, relationships };
+}
+
+/**
+ * Select the media attached to an object via the semantic predicates.
+ * The ONE selector every consumer (Page, Circle, ObjectView, feed, agent
+ * context) uses: media follows its object, never a page slot.
+ * Deterministic: ascending media id order.
+ */
+export function mediaForObject(graph: ObjectGraph, objectId: string): PingObject[] {
+  const mediaIds = new Set<string>();
+  for (const r of graph.relationships) {
+    if (r.subject !== objectId) continue;
+    if (r.status !== "active") continue;
+    if (!(MEDIA_PREDICATES as readonly string[]).includes(r.predicate)) continue;
+    mediaIds.add(r.object);
+  }
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  const out: PingObject[] = [];
+  for (const id of [...mediaIds].sort()) {
+    const o = byId.get(id);
+    if (o && o.schema === MEDIA_SCHEMA_ID && o.visibility === "public") out.push(o);
+  }
+  return out;
+}
+===== bundle-media getPipelineManifest =====
+123:export function getPipelineManifest(
+124-  siteId: string,
+125-): PipelineMediaManifest | null {
+126-  try {
+127-    const raw = readFileSync(
+128-      join(process.cwd(), "src", "fyd", "media", "manifests", siteId + ".json"),
+129-      "utf8",
+130-    );
+131-    return validatePipelineManifest(JSON.parse(raw), siteId);
+132-  } catch {
+133-    return null;
+134-  }
+135-}
+136-
+137-/**
+138- * Site ids with a pipeline manifest (scanned, not hardcoded). Only the
+139- * production directory is scanned: manifests/preview/ is namespaced out
+140- * and never listed.
+141- */
+142-export function listManifestSiteIds(): string[] {
+143-  try {
+144-    return readdirSync(join(process.cwd(), "src", "fyd", "media", "manifests"))
+145-      .filter((f) => f.endsWith(".json"))
+146-      .map((f) => f.slice(0, -".json".length))
+147-      .sort();
+148-  } catch {
+--
+158:export function getMediaManifest(siteId: string): BundleMediaManifest | null {
+159-  const manifest = getPipelineManifest(siteId);
+160-  if (!manifest) return null;
+161-  const items: SiteBundleMediaItem[] = manifest.media
+162-    .filter((m) => isAcquirable(m.rightsSource))
+163-    .map((m) => ({
+164-      id: m.id,
+165-      sourceUrl: m.provenance.sourceUrl,
+166-      digest: m.digest,
+167-    }))
+168-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+169-  return { siteId: manifest.siteId, items };
+170-}

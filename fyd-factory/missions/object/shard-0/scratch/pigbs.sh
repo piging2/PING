@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && grep -n "^export" src/fyd/sitespec/binding-verifier.ts | head -12; echo ---; node -e "console.log(require.resolve("react-dom/server"))"; echo ---; uptime; echo ---; nproc

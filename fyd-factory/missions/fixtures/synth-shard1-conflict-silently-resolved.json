@@ -1,0 +1,34 @@
+{
+  "fixture": "synth-shard1-conflict-silently-resolved",
+  "mission": 645,
+  "signature": "CONFLICT_SILENTLY_RESOLVED",
+  "failureStage": "projection",
+  "world": {
+    "type": "fitness",
+    "dim": "person-heavy",
+    "hostile": "clean",
+    "ownerIntent": "hide-object"
+  },
+  "reobsKind": "conflict",
+  "probes": [
+    "conflicting-source",
+    "identity-churn"
+  ],
+  "failingChecks": [
+    {
+      "name": "conflict-labeled",
+      "stage": "projection",
+      "detail": "conflictClaims=0"
+    },
+    {
+      "name": "hide-effective",
+      "stage": "visibility",
+      "detail": "LEAK title=true occ=true"
+    }
+  ],
+  "mechanism": "conflict evidence keyed to the pre-refresh business objectId; projection composes candidates[0] (parent brand); conflict never labeled on the presented phone",
+  "fix": "patch v2 synth-shard0-overlay-orphan-ambiguity.patch: findBusinessObject fail-closed on !=1 candidate; projection presents no settled business facts under ambiguity",
+  "repro": "deterministic: mulberry32 mission index; rerun harness and inspect results.jsonl",
+  "synthetic": true,
+  "testing_only": true
+}

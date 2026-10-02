@@ -1,0 +1,102 @@
+PROPOSAL ONLY. Not applied. Repo stays read-only on branch fyd-factory.
+
+Patch 02: mount MarginObjectLayer on tenant sites, desktop-only (src/app/sites/_shared/site-client.tsx)
+
+Rationale: today MarginObjectLayer is mounted only on the PING
+homepage (src/app/page.tsx). Tenant sites get no object intelligence.
+This patch mounts the same layer on tenant site pages with
+descriptors built from the already-serialized PUBLIC graph (the
+publicGraph() boundary in src/app/sites/happy-place/page.tsx is
+untouched; private objects never enter client state).
+
+Binding compliance:
+- The wrapper renders the layer only at viewport width >= 1024px.
+  Tablet (768-1023) keeps the layer's own compact edge-rail policy.
+  Below 768 the layer is not mounted at all: mobile gets object
+  depth through inline cards + ObjectOverlay (patch 03), never
+  floating chrome, never a drawer in primary UX.
+- Anchor map (anchorKey = section id, requires patch 01):
+  Services sections -> service objects; People -> person objects;
+  Locations -> location objects; ObjectFeed/Posts -> post/article
+  objects; BusinessSummary -> owner object; Hero and Contact ->
+  no rail.
+- Descriptor fields (name, category, location, whyHere) are read
+  from evidence-backed public graph fields only; nulls omit the
+  line, never guessed (MarginObjectDescriptor contract in
+  src/fyd/ui/object-layer/types.ts).
+
+Verified seams: MarginObjectLayer({ objects: MarginObjectDescriptor[],
+motion?: MotionTokens }) at src/fyd/ui/object-layer/MarginObjectLayer.tsx:296.
+SiteClient receives graph (public-only) and siteId
+(src/app/sites/_shared/site-client.tsx, read 2026-09-23).
+
+New file (proposal): src/app/sites/_shared/tenant-object-margin.tsx
+
+  "use client";
+  import * as React from "react";
+  import { MarginObjectLayer, type MarginObjectDescriptor } from "@/fyd/ui/object-layer/MarginObjectLayer";
+  import type { ObjectGraph } from "@/fyd/sitespec/types";
+  import type { FYDPage } from "@/fyd/sitespec/types";
+
+  // Build descriptors for the active page from the public graph.
+  // Evidence-backed fields only; unknown fields stay null.
+  export function descriptorsForPage(graph: ObjectGraph, page: FYDPage | undefined): MarginObjectDescriptor[] {
+    if (!page) return [];
+    const bySchema = (schemas: string[]) => graph.objects.filter((o) => schemas.includes(o.schema));
+    const anchorFor = (component: string) => page.sections.find((s) => s.component === component)?.id ?? null;
+    const out: MarginObjectDescriptor[] = [];
+    const push = (objs: ReturnType<typeof bySchema>, component: string, priority: number) => {
+      const anchorKey = anchorFor(component);
+      if (!anchorKey) return;
+      for (const o of objs.sort((a, b) => (a.id < b.id ? -1 : 1))) {
+        out.push({
+          objectId: o.id,
+          name: (typeof o.title === "string" && o.title) || o.id,
+          imageSrc: null,
+          imageSrcSet: null,
+          websiteUrl: null,
+          anchorKey,
+          priority,
+          category: typeof o.fields?.["category"] === "string" ? o.fields["category"] : null,
+          location: null, // coarse public claims only; resolved from location objects when present
+          whyHere: null,
+        });
+      }
+    };
+    push(bySchema(["ping.social.service@1", "ping.knowledge.service@1"]), "Services", 10);
+    push(bySchema(["ping.social.person@1", "ping.knowledge.person@1"]), "People", 20);
+    push(bySchema(["ping.social.location@1", "ping.knowledge.location@1"]), "Locations", 30);
+    push(bySchema(["ping.social.post@1", "ping.social.article@1"]), "ObjectFeed", 40);
+    return out;
+  }
+
+  const DESKTOP_MIN = 1024;
+
+  export function TenantObjectMargin({ graph, page }: { graph: ObjectGraph; page: FYDPage | undefined }) {
+    const [wide, setWide] = React.useState(false);
+    React.useEffect(() => {
+      const mq = window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`);
+      const update = () => setWide(mq.matches);
+      update();
+      mq.addEventListener("change", update);
+      return () => mq.removeEventListener("change", update);
+    }, []);
+    const objects = React.useMemo(() => descriptorsForPage(graph, page), [graph, page]);
+    if (!wide || objects.length === 0) return null;
+    return <MarginObjectLayer objects={objects} />;
+  }
+
+Hunk in site-client.tsx (inside the renderable branch, after SitePageView):
+
+  --- a/src/app/sites/_shared/site-client.tsx
+  +++ b/src/app/sites/_shared/site-client.tsx
+  @@ imports
+  +import { TenantObjectMargin } from "./tenant-object-margin";
+  @@ render
+        page && <SitePageView key={page.slug + JSON.stringify(spec.themeTokens)} page={page} ctx={ctx} />
+  +      {renderable && page && <TenantObjectMargin graph={graph} page={page} />}
+
+Acceptance: desktop shows rails beside anchored sections with
+scroll-invariant placement; mobile shows nothing; no private object
+ids in client payloads; reduced-motion users get instant swaps;
+before/after screenshots at 375/768/1024/1440 widths.

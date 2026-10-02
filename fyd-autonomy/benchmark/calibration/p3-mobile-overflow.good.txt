@@ -1,0 +1,27 @@
+## 1. Diagnosis
+The overflowing owner is the Ask FYD "Design tokens" proposal row in the
+shared site-client.tsx: `label.flex` (min-width:auto) + `input.flex-1`
+(min-width:auto, flex items do not shrink below intrinsic width by default)
++ "Propose" button (44px minimum touch target, 55px min-content width).
+At 320px the row's intrinsic minimum exceeds the viewport, so
+document.scrollWidth = 331 > innerWidth 320. The probe's smallest true
+owners confirm it: button clientW=42 scrollW=55. At 375px the row fits, which
+is why 375px traces clean. The hero h1 and nav hypotheses are ruled out:
+the hero renders clean in isolation and the 375px composed page is clean.
+
+## 2. Patch spec
+site-client.tsx, one class: add `min-w-0` to the token input so the flex-1
+input can shrink below its intrinsic width. The button keeps its 44px+
+touch target. No other CSS touched.
+
+## 3. Test spec
+Viewports 320 / 375 / 1280 on both demo sites via headless Chrome CDP.
+Assertions (FAIL before, PASS after): 320px docScrollW <= 320 (was 331);
+375px scrollW == 360 with hero h1 right edge <= 360; 1280px scrollW <= 1280.
+Also assert the Propose button still measures >= 44px wide at 320px (touch
+target preserved).
+
+## 4. Risks
+min-w-0 on the input could let very long token names clip at tiny widths -
+acceptable for a proposal row; check 320px rendering visually. Blast radius
+is one class on one input; no layout changes elsewhere.

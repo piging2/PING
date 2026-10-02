@@ -1,0 +1,42 @@
+# Patch 5 (RECOMMENDED): tighten the "email" safe-link gate against attribute breakout
+#
+# Finding: W1 (A32/A33). contactMethodFor("email") accepted
+# '"><script>alert('A32')</script>@x.com' and emitted a raw mailto:
+# actionUri containing a live '"><script>' string. Neutralized in current
+# output only by React SSR attribute escaping; any non-React consumer of
+# actionUri (the ContactMethod contract calls it a "Safe tel:/mailto: URI")
+# would inherit the breakout.
+#
+# Fix: reject quote and angle-bracket characters in EMAIL_SHAPE, at the
+# single choke point (src/fyd/sitespec/safe-link.ts). These characters can
+# break out of a quoted HTML attribute and never occur in real business
+# contact addresses. Fail closed: such values become non_navigable, and
+# contactMethodFor returns null (no ContactMethod), which is the gate's
+# documented unsafe-value behavior.
+#
+# Tradeoff: rejects RFC-legal quoted local parts ('"john doe"@x.com').
+# Those never occur in observed business contact data; the gate is
+# explicitly "not a validator, a gate". Plus-addressing, dots, hyphens,
+# and subdomains are unaffected.
+#
+# Apply: git apply ~/workspace/fyd-factory/patches/safe-link-email-shape-tighten.patch
+# (from repo root /home/nolan/projects/ping, branch fyd-factory)
+
+--- a/src/fyd/sitespec/safe-link.ts
++++ b/src/fyd/sitespec/safe-link.ts
+@@ -48,8 +48,13 @@
+ /** Characters the "call" capability accepts in an author-formatted number. */
+ const TEL_ALLOWED = /^[+().\-\s\d]+$/;
+ 
+-/** Minimal shape for the "email" capability. Not a validator, a gate. */
+-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
++/**
++ * Minimal shape for the "email" capability. Not a validator, a gate.
++ * Quote and angle-bracket characters are rejected: they can break out of a
++ * quoted HTML attribute in a non-React consumer of the emitted mailto: URI,
++ * and they never occur in real business contact addresses. Fail closed.
++ */
++const EMAIL_SHAPE = /^[^\s@"<>]+@[^\s@"<>]+\.[^\s@"<>]+$/;
+ 
+ export interface SafeLinkOptions {
+   /**

@@ -1,0 +1,71 @@
+**Diagnosis**  
+The root cause is in `structured-data.ts` within `expandJsonLdBlocks`: the call to `jsonld.flatten` incorrectly passes the options object `{ documentLoader: offlineDocumentLoader }` as the second argument (context) instead of the third argument (options). Per the `jsonld.js` library signature `flatten(input, [ctx], [options])`, this interprets the options object as an invalid JSON-LD context (since context values must be strings or objects, and `documentLoader` is neither), triggering the error `Invalid JSON-LD syntax; @context term values must be strings or objects`. The pipeline catches this as `expansion-failed` evidence.  
+
+A second, independent defect exists in `extractGraph`: it fails to handle the case where `flattened` is an array (the normal output of `jsonld.flatten` without a frame). The function only checks for objects with `@graph` or `@id`, returning `[]` for array input, which would cause zero nodes even if expansion succeeded.
+
+**Patch spec**  
+1. In `structured-data.ts`, `expandJsonLdBlocks`:  
+   Change:  
+   ```ts
+   const flattened = await jsonld.flatten(block.parsed, {
+     documentLoader: offlineDocumentLoader,
+   });
+   ```  
+   To:  
+   ```ts
+   const flattened = await jsonld.flatten(block.parsed, undefined, {
+     documentLoader: offlineDocumentLoader,
+   });
+   ```  
+2. In `structured-data.ts`, `extractGraph`:  
+   Change:  
+   ```ts
+   function extractGraph(flattened: unknown): ExpandedNode[] {
+     if (flattened === null || typeof flattened !== "object") return [];
+     const rec = flattened as Record<string, unknown>;
+     if (Array.isArray(rec["@graph"])) return rec["@graph"] as ExpandedNode[];
+     if (typeof rec["@id"] === "string") return [rec as unknown as ExpandedNode];
+     return [];
+   }
+   ```  
+   To:  
+   ```ts
+   function extractGraph(flattened: unknown): ExpandedNode[] {
+     if (Array.isArray(flattened)) return flattened as ExpandedNode[];
+     if (flattened === null || typeof flattened !== "object") return [];
+     const rec = flattened as Record<string, unknown>;
+     if (Array.isArray(rec["@graph"])) return rec["@graph"] as ExpandedNode[];
+     if (typeof rec["@id"] === "string") return [rec as unknown as ExpandedNode];
+     return [];
+   }
+   ```
+
+**Test spec**  
+Input: The Coppersmith JSON-LD fixture block (as an object with `parsed` property containing the 3969-character `@context`/`@graph` block).  
+Current code behavior:  
+- `expandJsonLdBlocks` throws `Invalid JSON-LD syntax; @context term values must be strings or objects` (or returns expansion-failed evidence).  
+- Even if expansion were mocked to return an array, `extractGraph` would return `[]` due to the array-handling defect.  
+Assertions that FAIL on current code:  
+```ts
+const flattened = await expandJsonLdBlocks(block); // Should not throw
+expect(flattened).toBeInstanceOf(Array);           // Fails: throws or non-array
+expect(flattened.length).toBeGreaterThan(0);       // Fails: zero or error
+const graph = extractGraph(flattened);
+expect(graph).toBeInstanceOf(Array);               // Fails: returns [] even if flattened is array
+expect(graph.length).toBeGreaterThan(0);           // Fails: zero
+```  
+After patch:  
+- `expandJsonLdBlocks` returns an array of two node objects ( Plumber and WebSite ).  
+- `extractGraph` returns that same array.  
+Assertions that PASS:  
+```ts
+expect(flattened.length).toBe(2);
+expect(graph.length).toBe(2);
+```
+
+**Risks**  
+- The `jsonld.flatten` argument-order fix could break other calls to `jsonld.flatten` in the codebase if they similarly misused the second argument for options. Audit all `jsonld.flatten` invocations to ensure they pass `undefined` or a valid context as the second argument.  
+- The `extractGraph` array-handling fix assumes the flattened output is always an array when no frame is used. If other callers pass non-array values (e.g., objects from framed flatten), the existing logic remains unchanged and safe. Verify no callers depend on the current `[]` return for array input (unlikely, as it was defective).  
+- The `offlineContext` function is unused in the expansion call; if it was intended to preprocess `block.parsed` (e.g., to rewrite `@context` for offline use), the patch omits this step. However, the direct library probe error implicates the flatten call itself, not missing preprocessing, and the offline `documentLoader` should already block remote contexts. Confirm by checking if `offlineContext` is used elsewhere in the pipeline for JSON-LD input.  
+- Existing test "parse harvests JSON-LD first" (no-`@context` block) must still pass; verify it produces non-zero nodes after the patch (it should, as the fixes are neutral for context-less blocks).  
+- Run the full test suite to ensure no regressions in structured-data handling.

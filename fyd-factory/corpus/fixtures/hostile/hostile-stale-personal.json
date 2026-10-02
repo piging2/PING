@@ -1,0 +1,83 @@
+{
+  "site_id": "hostile-stale-personal",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "personal services: evidence from 2024-06-15",
+  "variation_thesis": "Stresses staleness: all evidence observed 2024-06-15, over two years old.",
+  "expected_failure_mode": "warn: emit freshness annotations on every claim, quarantine time-sensitive claims (hours, prices), require re-observation before any outreach use.",
+  "hostile_properties": [
+    "stale-source",
+    "two-years-old",
+    "freshness"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-stale-personal-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Mothball Test Barbers",
+        "description": "Synthetic test personal services business whose only evidence is two years old.",
+        "fields": {
+          "phone": "(970) 555-0136",
+          "business_type": "personal services",
+          "website": "https://hostile-stale-personal.example.com",
+          "address": "9 Test Archive St, Montrose, CO",
+          "hours": "Mo-Fr 09:00-17:00 (observed 2024, UNVERIFIED now)",
+          "source_last_observed": "2024-06-15T12:00:00Z",
+          "freshness": "stale: 2 years",
+          "conflicts": [
+            "HOSTILE stale-source: every claim was observed 2024-06-15, over two years ago. Hours, phone, and services may have changed. Do not present as current; mark freshness explicitly."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-stale-personal",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2024-06-15T12:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-stale-personal-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Montrose, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-stale-personal.",
+        "fields": {
+          "address_locality": "Montrose",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Montrose, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-stale-personal-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-stale-personal-0001",
+        "subject": "hostile-stale-personal-biz",
+        "predicate": "located_at",
+        "object": "hostile-stale-personal-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-stale-personal:archive-2024"
+      }
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+[REASONING]
+Let me carefully analyze this problem.
+
+We have horizontal overflow at 320px viewport: docScrollW = 331 > 320.
+
+The overflow-owner probe shows:
+- button.proposal-btn: clientW 42, scrollW 55, minW 44px
+- input.token-input: clientW 150, scrollW 150, minW auto
+- label.token-label: clientW 80, scrollW 80, minW auto
+
+Wait — the probe lists "owners" as smallest elements with scrollWidth > clientWidth. Only the button has scrollW (55) > clientW (42). The input and label have scrollW == clientW, so they're not actually overflowing themselves — they're listed but not overflowing. Hmm, but the probe output includes them. Actually the probe says "finds the smallest elements with scrollWidth > clientWidth" — but the input and label show equal values. So only the button is a true owner: scrollW 55 > clientW 42.
+
+The button has minW: 44px (a 44px minimum touch target) but its min-content width is 55px (text "Propose" plus padding). Its clientW is 42px — meaning the flex container squeezed it to 42px, but its scrollWidth is 55px, so content overflows the button box.
+
+Now, how does this cause document scrollWidth = 331?
+
+The proposal row is a flex row: label (flex, min-width auto), input (flex-1, min-width auto), button (min-width 44px presumably, but min-content 55px).
+
+Wait — but the button's clientW is 42, which is less than its minW of 44px. Hmm, that's odd. Actually minW: "44px" is the computed min-width property. clientW 42 < 44? That seems contradictory unless there's some rounding or the button is being shrunk below its min-width... Actually in flex layout, min-width should prevent shrinking below 44px. Unless the min-width is on a different element or the button's box-sizing... Hmm.
+
+Actually, maybe the probe's clientW of 42 is the content box vs border box discrepancy? Not sure. Let's not overthink.
+
+The key mechanism: The flex row's total min-content width exceeds the available 320px (minus container padding). The label has min-width:auto (doesn't shrink below intrinsic), input has flex:1 with min-width:auto (doesn't shrink below intrinsic width — the input's intrinsic size, e.g., default size attribute ~150px+), and the button has min-width 44px but min-content 55px.
+
+Let's compute: container is content column `div.mx-auto.max-w-5xl` with `px-4` padding (16px each side) → at 320px viewport, inner content width = 320 - 32 = 288px.
+
+The proposal row: label 80 + input 150 + button 55 = 285. Plus gaps? If there are gaps (e.g., gap-2 = 8px × 2 = 16), total = 301 > 288. Overflow = 301 - 288 = 13. Hmm, docScrollW 331 - 320 = 11. Close-ish.
+
+Actually, wait. Let's reconsider: maybe the row itself doesn't overflow the container but the button's scrollWidth (55) vs clientW (42) — the button content overflows its own box, but does that extend the document? Overflow from a button's content... buttons typically have overflow visible? Actually button content overflowing doesn't usually extend document scrollWidth beyond the button's border box... Hmm, actually scrollable overflow of a button — buttons have special behavior; content can overflow visually but I think it does contribute to scrollable overflow of ancestors in some browsers? Not sure.
+
+Let me reconsider. The probe lists three "owners" but only the button has scrollW > clientW. The input and label have scrollW == clientW, meaning they are at their intrinsic size and cannot shrink (min-width:auto in flex). So the row's min-content width = 80 + 150 + 55 (+ gaps) which exceeds available 288.
+
+But wait — if the row's min-content exceeded the container, the row itself would be an owner (row scrollW > clientW). The probe shows the button as owner with clientW 42 scrollW 55. Hmm, but the probe says it finds the *smallest* elements — so it lists leaf-level elements. The button is the smallest.
+
+Actually, let's think about what causes docScrollW = 331. The button: clientW 42, scrollW 55. If the button is positioned near the right edge of the content area... The content area right edge at 320 viewport: padding-right 16 → content right edge at 304. Button right edge at 304. Button's scroll content extends 55 - 42 = 13px beyond its client box → to 304 + 13 = 317? That's less than 320. Hmm, doesn't reach 331.
+
+Alternatively, the row overflows: row min-content = label 80 + input 150 + button 55 = 285 + gaps. If gap is 8px: 301. Container inner width 288. Row overflows container by 13px → row right edge at 304 + 13 = 317. Still not 331.
+
+Hmm, what about the button's min-width 44px vs clientW 42? Weird.
+
+Let me reconsider: maybe the button's min-width:44px forces it to 44px, but its min-content is 55px, so scrollW 55. The flex algorithm: flex items' automatic minimum size = min-width:auto = min-content size, unless min-width is set. The button has min-width:44px (explicit), so it can shrink to 44px... but clientW is 42? Contradiction. Unless box-sizing: content-box and there's a border/padding: min-width 44 applies to content box? With border-box, min-width includes padding. Hmm.
+
+Actually maybe clientW 42 is because the button shrank to 42 due to... no, min-width should prevent that.
+
+Let me step back. The exact pixel arithmetic may not be fully derivable from the evidence. The task says "reason only from the evidence above" and "If you are unsure, say what evidence would settle it."
+
+Key evidence:
+1. Probe identifies button.proposal-btn as the element with scrollW (55) > clientW (42) — the only true overflowing owner.
+2. Computed-style notes: label display:flex min-width:auto; input flex:1 min-width:auto does not shrink below intrinsic width; button 44px min touch target with 55px min-content width.
+3. Earlier bisection: removing w-full, flex, overflow-x-auto, or constraining wrapper did NOT fix.
+
+So the root cause: the proposal row (flex container) cannot shrink below the sum of its items' intrinsic minimums: label min-content 80 + input intrinsic 150 + button min-content 55 (+ gaps), which exceeds the 288px available inside px-4 at 320px. The button is the probe-identified owner (scrollW 55 > clientW 42) — it's being squeezed below its min-content width while the input refuses to shrink below its intrinsic width due to min-width:auto.
+
+Why at 320 but not 375? At 375: available = 375 - 32 = 343. Sum 80 + 150 + 55 = 285 (+ gaps 16 = 301) < 343 → fits. At 320: available 288 < 301 → overflow of ~13px... but docScrollW is 331, i.e., 11px over. Hmm, 331 - 320 = 11. If the row overflows the container's content box by 13, the row's right edge = (320 - 16) + 13 = 317. Not 331.
+
+Wait — maybe the container padding is only on one side considered, or the row is inside additional wrappers. Or maybe the overflow is: the row's min-content width 301 + left padding 16 = 317... still not 331.
+
+Alternatively: maybe the input's intrinsic width is larger. The probe says input clientW 150 scrollW 150 minW auto. The input is at 150 (its intrinsic). Label 80. Button clientW 42 (squeezed) but scrollW 55.
+
+Hmm, what if the row itself is not the constraint — what if the button, being squeezed to 42 with content 55, overflows to the right by 13px, and the row's right edge is at container right edge 304, so button content extends to 304 + 13 = 317. Still not 331.
+
+What if there's no px-4 on the actual row's ancestor at that level, or the row is wider? Let's compute backwards: docScrollW 331 means something extends to x=331. If the row starts at x=16 (px-4 left), then row width = 331 - 16 = 315. Row min-content = label 80 + input 150 + button 55 = 285 + gaps. If gap = 16 (gap-4): 285 + 32 = 317. Close to 315! Or gaps of 15? Hmm.
+
+Or label 80 + input 150 + button 55 = 285, plus gap-2 (8px × 2) = 301, row from 16 to 317. Not 331.
+
+What if the input's intrinsic is bigger than 150? The probe shows clientW 150 — that's its laid-out width, which equals its intrinsic (min-width:auto prevents shrink, but flex:1 would grow it... wait, flex:1 means it grows to fill. If the row is constrained, input would be at least intrinsic and grow to fill leftover. clientW 150 = exactly intrinsic suggests the row is at its min-content size (no leftover to distribute), i.e., the row IS overflowing.
+
+Hmm, actually if the row were constrained to 288 and items' min sum is 285+gaps > 288, the row overflows. The input at exactly 150 (its intrinsic) means no free space.
+
+Let me try: maybe gaps are gap-4 (16px): total = 80 + 150 + 55 + 32 = 317. Row from
+[/REASONING]

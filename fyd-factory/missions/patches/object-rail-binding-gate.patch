@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Pigi (OBJECT shard-1, FYD factory)
+Date: Wed, 23 Sep 2026 21:30:00 -0600
+Subject: [fyd-factory] Gate ObjectRail featured identity on the binding verifier
+
+Generic class: OBJECT-UNBOUND-RAIL-LEAK (8/500 missions in shard object-1,
+indices 614, 619, 774, 784, 814, 829, 881, 921).
+
+Root cause: ObjectRailSection in src/fyd/components/renderer.tsx featured the
+richest public non-owner object and rendered its identity through
+pingObjectToView, which maps name: o.title and summary: o.description raw.
+That bypassed the projection seam binding gate (boundTitle /
+boundDescription via resolveBoundField): an object whose "direct" title
+binding fails (e.g. empty provenance ref, verdict "no evidence ref") still
+appeared in public HTML as the featured object, with its description and an
+aria-label naming it.
+
+Fix (ONE authorized path, reuses the existing authority): restrict the
+featured candidates to objects whose title binding verifies, and feed the
+view the verified title/description instead of the raw fields. No new
+authority; resolveBoundField in src/fyd/sitespec/graph.ts stays the single
+binding verifier. Deterministic: filter preserves candidate order,
+richestObject is already deterministic, boundTitle is pure.
+
+Repro fixture: missions/fixtures/unbound-rail-leak.json.
+Test: git apply --check passes; functional test against a patched COPY of
+the tree (repo untouched) removes the marker from rendered HTML; rerun of
+the 8 affected missions -> GENERATED.
+---
+diff --git a/src/fyd/components/renderer.tsx b/src/fyd/components/renderer.tsx
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -1606,11 +1606,20 @@
+  * Features the richest public non-owner object through the existing
+  * ObjectCircle doorway over the honest pingObjectToView adapter; presence
+  * mode auto lets geometry decide rail vs drawer from the theme token.
++ *
++ * Binding gate: the featured identity is a factual claim, so candidates are
++ * restricted to objects whose title binding verifies (boundTitle resolves
++ * through the presentation-binding verifier). The view and the summary use
++ * the verified values, never the raw object fields. An unbound object never
++ * features: no binding, no factual output.
+  */
+ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+-  const featured = richestObject(objects, ctx.spec.ownerObjectId);
++  const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
++  const featured = richestObject(bound, ctx.spec.ownerObjectId);
+   if (!featured) return null;
+-  const featuredView = pingObjectToView(featured);
++  const name = boundTitle(ctx, featured) as string;
++  const summary = boundDescription(ctx, featured);
++  const featuredView = pingObjectToView({ ...featured, title: name, description: summary ?? "" });
+   const presence: ObjectPresence = {
+     mode: "auto",
+     objects: [featured.id],
+@@ -1619,9 +1628,9 @@
+   const cards = (
+     <div className="space-y-3">
+       <ObjectCircle view={featuredView} />
+-      {featured.description?.trim() ? (
++      {summary?.trim() ? (
+         <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>
+-          {featured.description.trim()}
++          {summary.trim()}
+         </p>
+       ) : null}
+       <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>

@@ -1,0 +1,279 @@
+===== jest.config.cjs =====
+/**
+ * Jest config for the FYD media lane (safe fetch, derivatives, ingest).
+ * Scoped to this lane's tests only. Run with:
+ * npx jest --config src/fyd/media/jest.config.cjs
+ *
+ * Shape harvested from src/fyd/proceduralize/jest.config.cjs.
+ */
+module.exports = {
+  testEnvironment: "node",
+  rootDir: "../../..",
+  testMatch: ["<rootDir>/src/fyd/media/__tests__/*.test.ts"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.css$": "<rootDir>/src/fyd/components/__tests__/css-stub.js",
+  },
+  transform: {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        tsconfig: {
+          target: "ES2017",
+          module: "commonjs",
+          moduleResolution: "node",
+          jsx: "react-jsx",
+          esModuleInterop: true,
+          strict: true,
+          skipLibCheck: true,
+        },
+      },
+    ],
+  },
+};
+===== safe-fetch.ts =====
+/**
+ * Shim: the canonical SSRF gate lives at @/fyd/net/safe-fetch.
+ * This re-export keeps the media pipeline compiling. There is exactly one
+ * SSRF implementation; do not add fetch logic here.
+ */
+export * from "../net/safe-fetch";
+===== run-ingest.ts =====
+/**
+ * Build-host media ingest runner. Node-only; run from the repo root:
+ *
+ *   npx tsx src/fyd/media/run-ingest.ts happy-place
+ *   npx tsx src/fyd/media/run-ingest.ts coppersmith-plumbing
+ *
+ * Discovers images on the business site(s), fetches them through the SSRF
+ * gate, digests, dedupes, generates derivatives into public/fyd-media/,
+ * and writes src/fyd/media/manifests/<siteId>.json.
+ *
+ * Preview/experimental runs:
+ *
+ *   npx tsx src/fyd/media/run-ingest.ts happy-place --preview
+ *
+ * write to src/fyd/media/manifests/preview/<siteId>.<runId>.json and are
+ * stamped preview: true. The production read path (bundle-media.ts)
+ * never scans that directory and rejects preview-marked manifests even
+ * if one were copied into the production dir: a preview artifact is
+ * structurally incapable of becoming production truth.
+ */
+
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { ingestSiteMedia } from "./ingest";
+
+const SITES: Record<string, { pages: string[]; businessSlug: string }> = {
+  "happy-place": {
+    pages: ["https://happyplacecarpentry.com/"],
+    businessSlug: "happy-place",
+  },
+  "coppersmith-plumbing": {
+    pages: ["https://www.coppersmithplumbing.com/"],
+    businessSlug: "coppersmith",
+  },
+};
+
+async function main() {
+  const siteId = process.argv[2];
+  const preview = process.argv.includes("--preview");
+  const def = siteId ? SITES[siteId] : undefined;
+  if (!def) {
+    console.error("usage: tsx src/fyd/media/run-ingest.ts <siteId> [--preview]");
+    console.error("known: " + Object.keys(SITES).join(", "));
+    process.exit(2);
+  }
+  const manifestPath = preview
+    ? join(
+        process.cwd(),
+        "src",
+        "fyd",
+        "media",
+        "manifests",
+        "preview",
+        siteId + "." + randomUUID() + ".json",
+      )
+    : join(
+        process.cwd(),
+        "src",
+        "fyd",
+        "media",
+        "manifests",
+        siteId + ".json",
+      );
+  const manifest = await ingestSiteMedia({
+    siteId,
+    businessSlug: def.businessSlug,
+    pages: def.pages,
+    publicDir: join(process.cwd(), "public", "fyd-media"),
+    manifestPath,
+    preview,
+  });
+  const ok = manifest.observations.filter((o) => o.outcome === "ingested").length;
+  const failed = manifest.observations.filter((o) => o.outcome === "failed").length;
+  const rejected = manifest.observations.filter((o) => o.outcome === "rejected").length;
+  const dupes = manifest.observations.filter((o) => o.outcome === "duplicate").length;
+  console.log(
+    JSON.stringify({
+      siteId,
+      preview,
+      manifestPath,
+      ingested: ok,
+      failed,
+      rejected,
+      duplicates: dupes,
+      mediaObjects: manifest.media.length,
+    }),
+  );
+  for (const o of manifest.observations) {
+    if (o.outcome !== "ingested") console.log(" -", o.outcome, o.sourceUrl, o.reason ?? "");
+  }
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+===== attach.ts (head 60) =====
+/**
+ * Semantic media attachment: manifest -> object graph.
+ *
+ * Pure function: (base graph, manifest) -> augmented graph. The base
+ * graph is never mutated; media objects and semantic relationships are
+ * appended.
+ *
+ * Attachment is SEMANTIC, not positional: the predicate is chosen by the
+ * SUBJECT's schema, never by page layout:
+ * - Business represented_by Media (the business's own imagery, logos
+ *   included: a logo represents the business; roles still distinguish it)
+ * - Service illustrated_by Media
+ * - Project has_media Media
+ * - anything else: has_image (legacy fallback)
+ *
+ * SiteSpec consumers (Page, Circle, ObjectView, and later feed/social/
+ * agent context) select media by walking these relationships from the
+ * object: mediaForObject(). One truth: the manifest store; the graph
+ * carries the semantic linkage. Deterministic: relationship ids derive
+ * from the media digest + predicate.
+ */
+
+import type { ObjectGraph } from "../sitespec/types";
+import type { PingObject, PingRelationship } from "../../lib/ping/types";
+import { MEDIA_SCHEMA_ID, isAcquirable, type FydMediaObject, type MediaManifest } from "./types";
+
+/** Semantic media predicates, by subject schema. Exported for selectors. */
+export const MEDIA_PREDICATES = [
+  "represented_by",
+  "illustrated_by",
+  "has_media",
+  "has_image",
+] as const;
+
+export type MediaPredicate = (typeof MEDIA_PREDICATES)[number];
+
+/** Predicate for a media attachment whose subject has the given schema. */
+export function predicateForSubjectSchema(schema: string): MediaPredicate {
+  if (/business/.test(schema)) return "represented_by";
+  if (/service/.test(schema)) return "illustrated_by";
+  if (/project/.test(schema)) return "has_media";
+  return "has_image";
+}
+
+function mediaToObject(m: FydMediaObject, ownerId: string, observedAt: string): PingObject {
+  const hero = m.variants.find((v) => v.name === "hero") ?? m.variants.find((v) => v.name === "w1600");
+  const thumb = m.variants.find((v) => v.name === "thumbnail");
+  return {
+    id: m.id,
+    schema: MEDIA_SCHEMA_ID,
+    controllerId: "web:" + ownerId,
+    visibility: "public",
+    title: m.title,
+    description:
+      "Image from the business website (" + m.width + "x" + m.height + ", " + m.originalFormat + "). " + m.rightsBasis,
+    fields: {
+      digest: m.digest,
+      rights_source: m.rightsSource,
+      rights_basis: m.rightsBasis,
+      roles: m.roles.join(","),
+===== bundle-media.ts (head 80) =====
+/**
+ * H3 lane (media + presence + owner mode): media -> site-bundle seam.
+ * Managed-pipeline lane (fyd-media@2): rights/source classification.
+ * Media-hero-defects lane: production-truth validation.
+ *
+ * Server-only (node:fs): the pipeline manifests
+ * (src/fyd/media/manifests/*.json) are read from disk on every call so a
+ * re-ingest is visible immediately — freshness outranks the memo. Never
+ * import this module from a client component.
+ *
+ * The manifests carry the full provenance chain: observation -> ingest ->
+ * digest -> derivatives. The site bundle contract (./site-bundle.ts) only
+ * needs the minimal acquired set, so this module is the filter: ONLY
+ * assets with an acquirable rightsSource (business-provided |
+ * public-demo-source, via isAcquirable()) are exposed as FYD-served media.
+ * Assets classified unclear-reference-only are NEVER presented as FYD
+ * media; they stay source references in the manifest observations,
+ * exactly as the rights gate recorded them.
+ *
+ * Production-truth validation: the manifests are committed files in a
+ * shared repo, so ANY writer (a preview run, a hand edit, a stale copy)
+ * could land a plausible-looking file. getPipelineManifest applies
+ * validatePipelineManifest on every read: only manifests stamped by the
+ * production ingest pipeline (generator + ingestRunId + pipelineVersion
+ * provenance, preview marker clear, every item rights-acquirable with
+ * real bytes behind it) are served. Anything else is treated exactly
+ * like a missing manifest: the caller renders unknown, never the file's
+ * contents. Preview/experimental runs write outside this directory
+ * (run-ingest.ts --preview -> manifests/preview/), so the production
+ * read path cannot reach them even structurally.
+ *
+ * Deterministic: items are sorted by id. No network, no mutation.
+ */
+
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { MEDIA_MODULE_VERSION, isAcquirable } from "./types";
+import type {
+  MediaManifest as BundleMediaManifest,
+  SiteBundleMediaItem,
+} from "./site-bundle";
+import type {
+  FydMediaObject,
+  MediaManifest as PipelineMediaManifest,
+} from "./types";
+
+/**
+ * Production-truth validation for a pipeline manifest. Returns the
+ * manifest when it is provably production pipeline output, null
+ * otherwise. Every rejection is silent-by-design: a rejected manifest is
+ * indistinguishable from a missing one to the caller, which renders
+ * unknown rather than untrusted content.
+ *
+ * A manifest is production truth only when:
+ * - it names the site being read (no cross-site file can slip in);
+ * - it carries the production pipeline stamp (generator), the ingest
+ *   run that minted it (ingestRunId), and a pipeline version matching
+ *   the code reading it (stale manifests fail closed);
+ * - it is not marked preview/experimental;
+ * - every media object is rights-acquirable and has real bytes behind
+ *   it (a digest plus at least one generated variant): invented imagery
+ *   cannot satisfy this without going through the pipeline.
+ */
+export function validatePipelineManifest(
+  raw: unknown,
+  siteId: string,
+): PipelineMediaManifest | null {
+  if (!raw || typeof raw !== "object") return null;
+  const m = raw as Partial<PipelineMediaManifest>;
+  if (m.siteId !== siteId) return null;
+  if (!Array.isArray(m.media)) return null;
+  // Production pipeline stamp: the real ingest writes generator =
+  // MEDIA_MODULE_VERSION. A missing, hand-written, or preview-origin
+  // stamp is not servable truth.
+  if (m.generator !== MEDIA_MODULE_VERSION) return null;
+  // Preview/experimental artifacts are never production truth,
+  // wherever the file sits.
+  if (m.preview === true) return null;
+  // The run that minted this manifest; a stale or hand-written file
+  // cannot masquerade as pipeline output without it.

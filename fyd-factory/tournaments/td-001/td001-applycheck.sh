@@ -1,0 +1,62 @@
+#!/bin/bash
+cd /home/nolan/projects/ping || exit 1
+cat > /home/nolan/td001-patch.txt <<'PATCHEOF'
+diff --git a/src/fyd/sitespec/__tests__/explore-external-identity.test.ts b/src/fyd/sitespec/__tests__/explore-external-identity.test.ts
+new file mode 100644
+index 0000000..a41a552 100644
+--- /dev/null
++++ b/src/fyd/sitespec/__tests__/explore-external-identity.test.ts
+@@ -0,0 +1,48 @@
++/**
++ * TD-001 regression: the Explore ObjectFeed must validate when the graph
++ * contains a ping.social.external_identity@1 object.
++ *
++ * external_identity has no SCHEMA_ROLES entry, so eligibleComponents()
++ * resolves it to GenericObjectCard only: it is not feed-renderable. The
++ * generator narrows the Explore `all` query to ObjectFeed-accepting schemas,
++ * so the validator never sees external_identity under the ObjectFeed
++ * component. This pins that behavior: if the narrowing ever regresses, the
++ * Coppersmith spec fails validation and the site renders
++ * "Spec failed validation".
++ */
++
++import { COPPERSMITH_GRAPH } from "../../proceduralize/__fixtures__/coppersmith-graph";
++import { generateSiteSpec } from "../../proceduralize/generator";
++import { isRenderable, validateSiteSpec } from "../validator";
++
++const OPTS = { generatedAt: "2026-09-21T12:00:00.000Z" };
++const EXTERNAL_IDENTITY = "ping.social.external_identity@1";
++
++describe("TD-001: Explore ObjectFeed with an external_identity object", () => {
++  test("the fixture graph contains a public external_identity object", () => {
++    const ext = COPPERSMITH_GRAPH.objects.filter(
++      (o) => o.schema === EXTERNAL_IDENTITY && o.visibility === "public",
++    );
++    expect(ext.length).toBeGreaterThan(0);
++  });
++
++  test("the generated Explore ObjectFeed narrows its all-query away from external_identity", () => {
++    const spec = generateSiteSpec(COPPERSMITH_GRAPH, OPTS);
++    const explore = spec.pages.find((p) => p.slug === "explore");
++    expect(explore).toBeDefined();
++    const feed = explore!.sections.find((s) => s.component === "ObjectFeed");
++    expect(feed).toBeDefined();
++    expect(feed!.query.kind).toBe("all");
++    if (feed!.query.kind === "all") {
++      expect(feed!.query.schemas ?? []).not.toContain(EXTERNAL_IDENTITY);
++    }
++  });
++
++  test("the Coppersmith SiteSpec validates with zero errors and is renderable", () => {
++    const spec = generateSiteSpec(COPPERSMITH_GRAPH, OPTS);
++    const knownSchemas = new Set(COPPERSMITH_GRAPH.objects.map((o) => o.schema));
++    const findings = validateSiteSpec(spec, knownSchemas);
++    expect(findings.filter((f) => f.severity === "error")).toEqual([]);
++    expect(isRenderable(findings)).toBe(true);
++  });
++});
+PATCHEOF
+git apply --check /home/nolan/td001-patch.txt && echo "APPLY-CHECK: OK (clean)"
+git apply --stat /home/nolan/td001-patch.txt
+rm -f /home/nolan/td001-patch.txt /home/nolan/td001-repro.ts /home/nolan/td001-repro2.ts
+rm -rf /home/nolan/td001-check

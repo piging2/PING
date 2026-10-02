@@ -1,0 +1,68 @@
+########## schema defs with relationships ##########
+43-
+44-export const BUSINESS_SCHEMA: FYDSchemaDef = {
+45:  id: "ping.social.business@1",
+46-  label: "Business",
+47-  summary:
+48-    "A business: name, description, category, website, contact details, hours, and social links. The root object a generated site is built around.",
+49-  fields: [
+50-    { name: "title", type: "string", required: true, label: "Name", meaning: "The business name." },
+51-    { name: "description", type: "string", required: true, label: "Description", meaning: "What the business does, in its own words." },
+52-    { name: "category", type: "string", required: false, label: "Category", meaning: "Trade or industry category." },
+53-    { name: "website", type: "url", required: false, label: "Website", meaning: "Public website URL." },
+54-    { name: "phone", type: "string", required: false, label: "Phone", meaning: "Public business phone." },
+55-    { name: "email", type: "string", required: false, label: "Email", meaning: "Public business email." },
+56-    { name: "hours", type: "string", required: false, label: "Hours", meaning: "Opening hours as published." },
+57-    { name: "socials", type: "string[]", required: false, label: "Social links", meaning: "Public social profile URLs." },
+58-  ],
+59-  relationships: [
+60-    { predicate: "provides", targetSchemas: ["ping.social.service@1", "ping.social.product@1"], meaning: "Services or products the business offers." },
+61-    { predicate: "publishes", targetSchemas: ["ping.social.post@1", "ping.social.article@1"], meaning: "Posts or articles the business published." },
+62-    { predicate: "located_at", targetSchemas: ["ping.social.location@1"], meaning: "Where the business operates." },
+63-    { predicate: "employs", targetSchemas: ["ping.social.person@1"], meaning: "People behind the business." },
+64-  ],
+65-  identityBacked: true,
+66-  likeable: false,
+67-};
+===== post =====
+88:  id: "ping.social.post@1",
+89-  label: "Post",
+90-  summary:
+91-    "A post or article: title, body text, publish date, and tags. Rendered in feeds and recent-objects sections. Replies reference posts.",
+92-  fields: [
+93-    { name: "title", type: "string", required: true, label: "Title", meaning: "The post title." },
+94-    { name: "text", type: "string", required: false, label: "Body", meaning: "The post body text." },
+95-    { name: "date", type: "string", required: false, label: "Date", meaning: "Publish date as published." },
+96-    { name: "tags", type: "string[]", required: false, label: "Tags", meaning: "Topic tags." },
+97-    { name: "url", type: "url", required: false, label: "Link", meaning: "Canonical link to the full post." },
+98-  ],
+99-  relationships: [
+100-    { predicate: "published_by", targetSchemas: ["ping.social.business@1"], meaning: "The business that published this post." },
+101-    { predicate: "replies_to", targetSchemas: ["ping.social.post@1"], meaning: "The post this replies to." },
+102-  ],
+103-  identityBacked: false,
+104-  likeable: true,
+105-};
+106-
+107-/** The three proof schemas. Not one hundred. */
+108-export const FYD_SCHEMAS: FYDSchemaDef[] = [BUSINESS_SCHEMA, SERVICE_SCHEMA, POST_SCHEMA];
+109-
+110-export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
+===== article =====
+===== person =====
+===== service =====
+70:  id: "ping.social.service@1",
+71-  label: "Service",
+72-  summary:
+73-    "A service the business offers: name, description, and optional price or duration hints. Rendered as cards in Services sections.",
+74-  fields: [
+75-    { name: "title", type: "string", required: true, label: "Name", meaning: "The service name." },
+76-    { name: "description", type: "string", required: true, label: "Description", meaning: "What the service includes." },
+77-    { name: "price_hint", type: "string", required: false, label: "Price hint", meaning: "Published price guidance, never a quote." },
+78-    { name: "duration", type: "string", required: false, label: "Duration", meaning: "Typical job duration as published." },
+79-  ],
+80-  relationships: [
+81-    { predicate: "provided_by", targetSchemas: ["ping.social.business@1"], meaning: "The business offering this service." },
+82-  ],
+83-  identityBacked: false,
+84-  likeable: true,

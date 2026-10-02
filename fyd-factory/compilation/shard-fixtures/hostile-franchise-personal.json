@@ -1,0 +1,147 @@
+{
+  "site_id": "hostile-franchise-personal",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "personal services: franchise-lookalike, do-not-merge",
+  "variation_thesis": "Stresses entity resolution: chain-like branding, three locations, central-phone pattern, but fully synthetic and independent.",
+  "expected_failure_mode": "fail-closed: never merge with a real chain, never inherit chain-level claims; compile as an independent multi-location business with a franchise-lookalike warning.",
+  "hostile_properties": [
+    "franchise-lookalike",
+    "entity-resolution",
+    "multi-location"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-franchise-personal-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "CurlUp Test Salon",
+        "description": "Synthetic test personal services business that LOOKS like a national franchise but is fictional.",
+        "fields": {
+          "phone": "(970) 555-0130",
+          "business_type": "personal services",
+          "website": "https://www.curlupsalon.example.com",
+          "address": "500 Test Franchise Blvd, Delta, CO",
+          "hours": "Mo-Su 07:00-23:00",
+          "brand_signals": [
+            "national-style naming",
+            "uniform logo across 3 locations in data",
+            "call-center phone pattern"
+          ],
+          "location_count_in_data": 3,
+          "conflicts": [
+            "HOSTILE franchise-lookalike: branding mimics a national chain (uniform naming, 3 locations in source data, central phone pattern) but every element is synthetic and fictional. Compiler must NOT merge this with any real chain and must NOT inherit real-chain hours/phone. Treat as independent unless a franchise disclosure document is observed."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-franchise-personal",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-franchise-personal-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Delta, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-franchise-personal.",
+        "fields": {
+          "address_locality": "Delta",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Delta, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-franchise-personal-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-franchise-personal-loc-2",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "De Beque, CO",
+        "description": "Second synthetic location claim feeding the franchise lookalike stress.",
+        "fields": {
+          "address_locality": "De Beque",
+          "address_region": "CO",
+          "address_country": "US",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-franchise-personal-loc-2",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-franchise-personal-loc-3",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Loma, CO",
+        "description": "Third synthetic location claim feeding the franchise lookalike stress.",
+        "fields": {
+          "address_locality": "Loma",
+          "address_region": "CO",
+          "address_country": "US",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-franchise-personal-loc-3",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-franchise-personal-0001",
+        "subject": "hostile-franchise-personal-biz",
+        "predicate": "located_at",
+        "object": "hostile-franchise-personal-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-franchise-personal:site"
+      },
+      {
+        "id": "rel-hostile-franchise-personal-0002",
+        "subject": "hostile-franchise-personal-biz",
+        "predicate": "also_located_at",
+        "object": "hostile-franchise-personal-loc-2",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-franchise-personal:directory"
+      },
+      {
+        "id": "rel-hostile-franchise-personal-0003",
+        "subject": "hostile-franchise-personal-biz",
+        "predicate": "also_located_at",
+        "object": "hostile-franchise-personal-loc-3",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-franchise-personal:directory"
+      }
+    ]
+  }
+}

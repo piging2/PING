@@ -1,0 +1,43 @@
+**Diagnosis**  
+The overflowing owner is the `<button className="proposal-btn">Propose</button>` element. At a 320px viewport its `scrollWidth` (55px) exceeds its `clientWidth` (42px) because CSS gives it a fixed `min-width:44px` (touch‑target rule) that prevents the button from shrinking within its flex container. The flex row (label + input + button) is constrained by the viewport width; the button’s inability to shrink forces the row’s intrinsic width to exceed `innerWidth`, causing `document.documentElement.scrollWidth = 331 > 320`. The label and input have `min-width:auto` and can shrink, so the button is the sole element whose `scrollWidth > clientWidth`.
+
+**Patch spec**  
+Locate the CSS rule that sets `min-width:44px` on `.proposal-btn` (likely in a stylesheet or CSS module imported by `site-client.tsx`). Change it to allow shrinking at small viewports, e.g.:
+
+```css
+/* Before */
+.proposal-btn {
+  min-width: 44px; /* touch target */
+}
+
+/* After – keep the touch target but let it shrink when needed */
+.proposal-btn {
+  min-width: 0; /* allow flex shrinking */
+}
+```
+
+If the touch target must be preserved for larger screens, scope the change to the mobile breakpoint:
+
+```css
+.proposal-btn {
+  min-width: 44px;
+}
+@media (max-width: 359px) {
+  .proposal-btn {
+    min-width: 0;
+  }
+}
+```
+
+Only this rule is touched; no other classes, files, or layout properties are changed.
+
+**Test spec**  
+Load each demo site (happy-place, coppersmith-plumbing) in a headless Chrome instance with viewport width set to 320px. Measure:
+- `document.documentElement.scrollWidth` must equal `window.innerWidth` (both 320).
+- The button’s `scrollWidth` must not exceed its `clientWidth` (i.e., no overflow owner remains).
+Run the same measurement at 375px and 1280px to confirm they remain clean (scrollW = innerW). The test passes if the 320px overflow disappears and the other widths stay unchanged.
+
+**Risks**  
+- The button may become narrower than the recommended 44px touch target on very small screens, potentially reducing tap accessibility. Verify that the rendered width still provides an adequate hit area (e.g., by checking the button’s actual width after the change or by adding explicit padding).  
+- If the button’s text were to wrap or shrink excessively, layout could shift elsewhere; confirm that the button’s `white-space` property remains `nowrap` and that the flex row’s `flex-shrink` behavior does not cause unintended squeezing of the label or input.  
+- No impact expected at 375px or 1280px because the override only applies below ~360px, but regression testing at those widths should ensure the original touch‑target rule still applies.

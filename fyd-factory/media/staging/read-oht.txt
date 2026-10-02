@@ -1,0 +1,120 @@
+/**
+ * Owner-selected hero override (lane-media).
+ *
+ * Binding: deterministic hero selection with the business owner's
+ * selection outranking the automatic selection. The override is
+ * validated, not trusted: a stale/mistyped/revoked/rights-rejected
+ * owner selection falls back to auto with a diagnostic note.
+ *
+ * Fixture manifests are written into the production manifests dir and
+ * removed in a finally block (the select.test.ts pattern), so the real
+ * read path (fresh-from-disk + production-truth validation) is
+ * exercised.
+ */
+
+import { writeFileSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
+import { resolveHeroMedia } from "../owner-hero";
+import { heroMediaFor } from "../select";
+import type { ObjectGraph } from "../../sitespec/types";
+import type { PingObject } from "@/lib/ping/types";
+
+const TS = "2026-09-21T00:00:00.000Z";
+const FIXTURE_SITE = "__test-owner-hero";
+
+function businessObject(id: string): PingObject {
+  return {
+    id,
+    schema: "ping.social.business@1",
+    controllerId: "web:" + id,
+    visibility: "public",
+    title: "Test Business",
+    description: "A test business for owner-hero override.",
+    fields: {},
+    createdAt: TS,
+    updatedAt: TS,
+    provenance: { kind: "website-derived", ref: "test", derivedAt: TS },
+  };
+}
+
+function testGraph(): ObjectGraph {
+  return { objects: [businessObject("biz-test-1")], relationships: [] };
+}
+
+function fixtureMedia(id: string, roles: string[]): any {
+  return {
+    id,
+    schema: "ping.social.media@1",
+    title: "Fixture " + id,
+    mediaType: "image",
+    roles,
+    rightsSource: "public-demo-source",
+    rightsBasis: "fixture rights basis",
+    lifecycle: "published",
+    provenance: {
+      sourceUrl: "https://example.com/" + id + ".jpg",
+      sourcePage: "https://example.com/",
+      observedAt: TS,
+    },
+    digest: "e".repeat(64),
+    originalFormat: "jpeg",
+    width: 1200,
+    height: 800,
+    variants: [
+      {
+        name: "hero",
+        width: 1200,
+        height: 800,
+        format: "webp",
+        url: "/fyd-media/fixture/" + id + "/hero-1200w.webp",
+        bytes: 5000,
+        digest: "e".repeat(64),
+        derivedFrom: "e".repeat(64),
+      },
+      {
+        name: "thumbnail",
+        width: 400,
+        height: 267,
+        format: "webp",
+        url: "/fyd-media/fixture/" + id + "/thumbnail-400w.webp",
+        bytes: 1000,
+        digest: "e".repeat(64),
+        derivedFrom: "e".repeat(64),
+      },
+    ],
+    depicts: [],
+    altText: "Alt " + id,
+    altTextSource: "source",
+    visibility: "public",
+  };
+}
+
+function fixtureManifestPath(): string {
+  return join(
+    process.cwd(),
+    "src",
+    "fyd",
+    "media",
+    "manifests",
+    FIXTURE_SITE + ".json",
+  );
+}
+
+function withFixtureManifest(media: any[], fn: () => void): void {
+  const manifest = {
+    siteId: FIXTURE_SITE,
+    generatedAt: TS,
+    generator: "fyd-media@2",
+    ingestRunId: "test-ingest-run-owner-hero",
+    pipelineVersion: "fyd-media@2",
+    observations: [],
+    media,
+  };
+  const path = fixtureManifestPath();
+  writeFileSync(path, JSON.stringify(manifest));
+  try {
+    fn();
+  } finally {
+    unlinkSync(path);
+  }
+}

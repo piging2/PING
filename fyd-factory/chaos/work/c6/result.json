@@ -1,0 +1,19 @@
+{
+ "experiment": "C6 two workers on the same entity",
+ "mode": "real",
+ "note": "Stage-level machinery is real; the publication point is a harness API because the batch spec defines no entity-level publication rule.",
+ "both_stage_jobs_committed": true,
+ "outputs_differ": true,
+ "naive_last_writer_wins": {
+  "stale_publish_accepted": true,
+  "final_seq": 1,
+  "hazard": "older result silently overwrote newer canonical pointer"
+ },
+ "fenced_compare_and_set": {
+  "stale_publish_accepted": false,
+  "final_seq": 2,
+  "in_order_a_then_b_accepted": true
+ },
+ "journal_lines": 4,
+ "verdict": "PASS"
+}

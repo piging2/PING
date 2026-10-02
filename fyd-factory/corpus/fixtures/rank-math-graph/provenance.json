@@ -1,0 +1,23 @@
+{
+  "acquisitionSchema": "fyd.proceduralize.AcquiredSource@fyd-factory",
+  "evidenceHash": "sha256:d74fcfe8e42a6a6ab7871c667c40449da5ae47ab2c48154c98a839a7dc222dfb",
+  "fetchedAt": "2026-09-23T18:30:00Z",
+  "fixtureSlug": "rank-math-graph",
+  "lane": "LANE-ACQ",
+  "levelUsed": 1,
+  "marker": "DEMO_SYNTHETIC",
+  "sourceUrl": "https://redlands-plumbing.example.com/",
+  "structuredLayers": [
+    "json-ld(@graph)",
+    "opengraph(thin)",
+    "html-text"
+  ],
+  "weirdnessPreserved": [
+    "Nested @graph with Organization, LocalBusiness (multi @type Plumber+LocalBusiness), and 3 Service entities cross-referenced by @id",
+    "Near-duplicate Organization node emitted by a second SEO plugin (http vs https @id, name missing the trailing period): entity-resolution stress case",
+    "SEO chrome nodes (BreadcrumbList, Article, WebPage, WebSite) that the pipeline must skip as unsupported evidence, not project as business objects",
+    "Person author node leaking a real name pattern (Casey Morgan, Owner) via worksFor @id",
+    "openingHoursSpecification with dayOfWeek arrays and a single-day string variant",
+    "Private streetAddress present: pipeline must classify and withhold it"
+  ]
+}

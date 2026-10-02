@@ -1,0 +1,114 @@
+{
+  "site_id": "hostile-hoursconf-food",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "food: Saturday 9-5 vs closed conflict",
+  "variation_thesis": "Stresses conflict preservation: Saturday open-9-5 on the website vs closed in the directory.",
+  "expected_failure_mode": "warn: emit explicit HOURS CONFLICT flag; never pick a winner; quarantine any booking/scheduling projection until human verifies.",
+  "hostile_properties": [
+    "hours-conflict",
+    "saturday-open-vs-closed",
+    "preserved"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-hoursconf-food-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Hatch Test Taqueria",
+        "description": "Synthetic test food business with a hard Saturday hours conflict.",
+        "fields": {
+          "phone": "(970) 555-0106",
+          "business_type": "food",
+          "website": "https://hostile-hoursconf-food.example.com",
+          "address": "77 Test Mesa Ave, Palisade, CO",
+          "hours": "Tu-Su 11:00-21:00; Sa conflicting (see conflicts)",
+          "conflicts": [
+            "HOURS CONFLICT: website claims Saturday 09:00-17:00. Directory listing (reserve.example.com) claims Saturday CLOSED. Both claims preserved; no canonical Saturday hours asserted."
+          ],
+          "claim_saturday_website": "Sa 09:00-17:00",
+          "claim_saturday_directory": "Sa closed",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-food",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-hoursconf-food-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Palisade, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-hoursconf-food.",
+        "fields": {
+          "address_locality": "Palisade",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Palisade, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-food-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-hoursconf-food-ext-dir",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "https://reserve.example.com/hostile-hoursconf-food",
+        "description": "Directory listing carrying the conflicting Saturday claim.",
+        "fields": {
+          "url": "https://reserve.example.com/hostile-hoursconf-food",
+          "platform": "reserve.example.com",
+          "hours": "Mo-Fr 08:00-17:00; Sa closed",
+          "phone": "(970) 555-0150",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-food-ext-dir",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-hoursconf-food-0001",
+        "subject": "hostile-hoursconf-food-biz",
+        "predicate": "located_at",
+        "object": "hostile-hoursconf-food-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-hoursconf-food:site"
+      },
+      {
+        "id": "rel-hostile-hoursconf-food-0002",
+        "subject": "hostile-hoursconf-food-biz",
+        "predicate": "links_to",
+        "object": "hostile-hoursconf-food-ext-dir",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-hoursconf-food:directory"
+      }
+    ]
+  }
+}

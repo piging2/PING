@@ -1,0 +1,89 @@
+===== generated treatment search =====
+===== ingest.ts exports =====
+47:export interface IngestOptions {
+79:export async function ingestSiteMedia(opts: IngestOptions): Promise<MediaManifest> {
+222:export { attachMediaToGraph };
+===== existing test imports (what they pin) =====
+import sharp from "sharp";
+import type { MediaManifest } from "../types";
+import type { ObjectGraph } from "../../sitespec/types";
+import type { PingObject } from "@/lib/ping/types";
+import {
+import { MEDIA_MODULE_VERSION } from "../types";
+import { classifyRights } from "../discover";
+import { classifyRights, discoverImages } from "../discover";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { generateDerivatives, hashContentBytes, planDerivatives } from "../derivatives";
+import { getMediaProvenance, listMediaProvenance } from "../provenance";
+import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getPipelineManifest, validatePipelineManifest } from "../bundle-media";
+import { heroMediaFor } from "../select";
+import { heroMediaFor, listObjectMedia } from "../select";
+import { heroMediaFor, listObjectMedia, type DisplayMedia } from "../select";
+import { isAcquirable } from "../types";
+import { isAcquirable, MEDIA_MODULE_VERSION } from "../types";
+import { join } from "node:path";
+import { loadObjectViewById } from "../../object/by-id";
+import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { objectViewToCircleProjection } from "../../object/circle-adapter";
+import { renderSection, type RenderContext } from "../../components/renderer";
+import { renderToStaticMarkup } from "react-dom/server";
+import { resolveHeroMedia } from "../owner-hero";
+import { safeFetchImage, type SafeFetchDeps } from "../safe-fetch";
+import { tmpdir } from "node:os";
+import { validatePipelineManifest } from "../bundle-media";
+import { writeFileSync, unlinkSync } from "node:fs";
+===== pipeline-invariants head =====
+/**
+ * FYD media pipeline invariants (Phase 4 verification).
+ *
+ * These tests pin the download + digest + derivative contract against the
+ * committed pipeline manifests and the derivative bytes on disk:
+ * - every published manifest asset answers where it came from
+ *   (provenance.sourceUrl), when it was observed (provenance.observedAt),
+ *   and what bytes generated its derivatives (digest), with a recorded
+ *   rights basis;
+ * - every derivative variant is served FYD-local (/fyd-media/...) and the
+ *   bytes on disk sha256-match the manifest entry;
+ * - unacquired (rights-rejected) references never surface as media:
+ *   happy-place has zero acquired assets, so listObjectMedia is empty,
+ *   heroMediaFor is null, and the circle background is the deterministic
+ *   gradient, never the external hero URL that exists only as an
+ *   unacquired reference in the business fields;
+ * - end to end: loadObjectViewById("coppersmith-plumbing", businessId)
+ *   lists all 11 assets with local srcs, and the circle adapter picks the
+ *   logo/hero derivative for the background.
+ *
+ * Run from the repo root so manifests resolve via process.cwd():
+ * npx jest --config src/fyd/media/jest.config.cjs
+ */
+
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { loadObjectViewById } from "../../object/by-id";
+import { objectViewToCircleProjection } from "../../object/circle-adapter";
+import {
+  getMediaManifest,
+  getPipelineManifest,
+  validatePipelineManifest,
+} from "../bundle-media";
+import {
+  GRADIENT_BASIS,
+  gradientFor,
+  resolveCircleBackground,
+} from "../circle-background";
+import { heroMediaFor, listObjectMedia } from "../select";
+import { isAcquirable, MEDIA_MODULE_VERSION } from "../types";
+
+const PROJECTIONS = join(
+  __dirname,
+  "..",
+  "..",
+  "object",

@@ -1,0 +1,1074 @@
+=== branch ===
+fyd-factory
+=== src/fyd/sitespec ===
+total 112
+drwxr-xr-x  3 nolan nolan  4096 Sep 22 20:22 .
+drwxr-xr-x 35 nolan nolan  4096 Sep 22 05:46 ..
+drwxr-xr-x  2 nolan nolan  4096 Sep 22 20:20 __tests__
+-rw-r--r--  1 nolan nolan 20095 Sep 22 20:22 binding-verifier.ts
+-rw-r--r--  1 nolan nolan  4779 Sep 21 08:09 field-visibility.ts
+-rw-r--r--  1 nolan nolan  5924 Sep 21 08:43 graph.ts
+-rw-r--r--  1 nolan nolan   106 Sep 21 05:47 index.ts
+-rw-r--r--  1 nolan nolan   809 Sep 21 20:22 jest.config.cjs
+-rw-r--r--  1 nolan nolan  6218 Sep 21 08:43 render-model.ts
+-rw-r--r--  1 nolan nolan  4720 Sep 21 08:42 safe-link.ts
+-rw-r--r--  1 nolan nolan 14810 Sep 22 05:46 schemas.ts
+-rw-r--r--  1 nolan nolan 13834 Sep 22 18:17 types.ts
+-rw-r--r--  1 nolan nolan  4978 Sep 21 13:35 validator.ts
+=== sitespec type files (head 120) ===
+--- src/fyd/sitespec/binding-verifier.ts
+/**
+ * BindingVerifier: the factual-binding gate at the evidence/object-graph
+ * projection seam.
+ *
+ * Law (FYD-DECISIONS-LOCKED-2026-09-22): THE RENDERER DOES NOT OWN FACTUAL
+ * TRUTH. THE SITE PLANNER DOES NOT OWN FACTUAL TRUTH. THE LLM DOES NOT
+ * OWN FACTUAL TRUTH. The BindingVerifier / evidence-object projection seam
+ * determines what factual material is eligible for presentation.
+ *
+ * Pipeline position:
+ *
+ *   EVIDENCE -> OBJECT PROJECTION -> OWNER ASSERTIONS
+ *     -> BINDING VERIFICATION (this module) -> SITE SPEC -> RENDERER
+ *
+ * This module is a verifier, not an authority. Given a set of factual
+ * bindings (the spec fragment the projection wants to publish), the object
+ * graph, and the recorded owner assertions, it returns one verdict per
+ * binding:
+ *
+ *   BOUND, source "evidence-ref":      a direct binding whose object field
+ *                                       resolves and whose object carries a
+ *                                       non-empty provenance ref (direct
+ *                                       evidence).
+ *   BOUND, source "object-field":      a derived binding resolving to a
+ *                                       deterministic transform of a present
+ *                                       object field (derived fact).
+ *   BOUND, source "owner-assertion":   an owner_authored binding whose value
+ *                                       exactly matches a recorded owner
+ *                                       assertion for that object and field
+ *                                       (owner assertion). A binding merely
+ *                                       LABELED owner_authored is NOT enough:
+ *                                       the assertion must exist and its value
+ *                                       must equal the bound value.
+ *   BOUND, source "generated-presentation": a generated binding naming a
+ *                                       generator (name@version): explicitly
+ *                                       marked generated presentation, never
+ *                                       smuggled as fact.
+ *   UNBOUND:                           anything else. The verdict carries a
+ *                                       reason (unknown object, unbound
+ *                                       field, no evidence ref, no owner
+ *                                       assertion, no generator ref,
+ *                                       unknown classification).
+ *
+ * UNBOUND factual bindings fail closed at the emission gate
+ * (assertSpecBindingsVerified throws before any spec is produced) or are
+ * dropped from the binding set (dropUnboundBindings): an unbound factual
+ * claim is never published as fact.
+ *
+ * Visibility is a separate dimension and is NOT decided here; the field
+ * visibility seam (field-visibility.ts) and buildRenderContext own that.
+ * Determinism: pure function of (bindings, graph, ownerAssertions). No
+ * clock, no randomness, no I/O, no LLM, no network.
+ */
+
+import type { OwnerFieldCorrection } from "@/lib/ping/types";
+import type { ObjectGraph } from "./types";
+import {
+  verifyPresentationBinding,
+  type PresentationBinding,
+} from "./graph";
+
+/** Re-exported for emission-seam consumers (planner, renderer). */
+export type { PresentationBinding } from "./graph";
+
+/**
+ * A recorded owner attestation the projection may bind owner_authored
+ * statements to. In the live graph these ride on the object itself
+ * (PingObject.ownerFieldCorrections, attached by the read seam); the
+ * verifier takes them as an explicit input so the check is visible and
+ * testable rather than implicit.
+ */
+export interface OwnerAssertion {
+  objectId: string;
+  /** "title" | "description" | a key of fields. */
+  field: string;
+  /** The exact value the owner attests. The bound value must equal this. */
+  value: string;
+}
+
+/**
+ * Derive owner assertions from a graph: the read seam attaches
+ * ownerFieldCorrections to objects, each carrying the source value the
+ * correction was recorded against and the owner's attested value.
+ * Order follows the graph (object order, then correction order):
+ * deterministic for a given graph.
+ */
+export function ownerAssertionsFromGraph(graph: ObjectGraph): OwnerAssertion[] {
+  const out: OwnerAssertion[] = [];
+  for (const o of graph.objects) {
+    const corrections: OwnerFieldCorrection[] = o.ownerFieldCorrections ?? [];
+    for (const c of corrections) {
+      out.push({ objectId: o.id, field: c.field, value: c.ownerValue });
+    }
+  }
+  return out;
+}
+
+/**
+ * The accepted source a BOUND verdict traces to. These are the three
+ * factual sources from the locked decisions (DIRECT EVIDENCE, DERIVED
+ * FACT, OWNER ASSERTION) plus the explicit generated-presentation mark
+ * the directives require for anything else.
+ */
+export type BindingSource =
+  | "object-field"
+  | "owner-assertion"
+  | "evidence-ref"
+  | "generated-presentation";
+
+export interface BoundBindingVerdict {
+  status: "BOUND";
+  binding: PresentationBinding;
+  source: BindingSource;
+  /** The verified value the binding resolves to. */
+  value: string;
+}
+
+export interface UnboundBindingVerdict {
+  status: "UNBOUND";
+  binding: PresentationBinding;
+--- src/fyd/sitespec/field-visibility.ts
+/**
+ * FYD owner field-visibility override: the bounded address control.
+ *
+ * INTEGRATION POINT (site routes are frozen; not wired): the site page
+ * should call applyFieldVisibility(sourceGraph, ownerDecisions) and pass
+ * the PROJECTED graph to generateSiteSpec/render, keeping the SOURCE graph
+ * untouched for the next ingest. The four layers stay distinct and
+ * non-overwriting: SOURCE STATE (discovered value) -> OWNER STATE
+ * (decisions, this file) -> GENERATED STATE (SiteSpec) ->
+ * PROJECTION STATE (render). Owner decisions live OUTSIDE the graph, so a
+ * clean re-ingest (fresh SOURCE STATE) plus re-applying the same decisions
+ * reproduces the owner's intent: source re-ingestion cannot erase owner
+ * visibility intent.
+ *
+ * Concepts: DISCOVERED VALUE (what the source says), VISIBILITY DEFAULT
+ * (what FYD conservatively recommends), OWNER VISIBILITY POLICY (what the
+ * owner actually chose). Owner policy wins when permissible. One bounded
+ * control: the address case. No privacy-settings UI, no policy engine.
+ *
+ * Pure, deterministic, browser-safe. No dependencies beyond types.
+ */
+
+import type { PingObject } from "@/lib/ping/types";
+import type { ObjectGraph } from "./types";
+
+/** What the owner allows for one object field. */
+export type FieldVisibilityPolicy = "show" | "hide" | "coarse";
+
+/** Where a resolved visibility came from. */
+export type VisibilitySource = "owner_override" | "conservative_default";
+
+/**
+ * One owner decision. Semantics per decision: object/field, visibility
+ * policy, decision source, actor, timestamp/version. The owner is the only
+ * actor in this bounded control; only owner_override decisions exist here.
+ */
+export interface FieldVisibilityDecision {
+  objectId: string;
+  field: string;
+  policy: FieldVisibilityPolicy;
+  decidedBy: "owner";
+  decidedAt: string; // ISO 8601
+  source: "owner_override";
+  version: number;
+}
+
+/**
+ * Resolve the visibility for one object field.
+ *
+ * An owner decision for the exact objectId+field wins; the highest version
+ * wins (ties resolve to the later decision, deterministically).
+ *
+ * Conservative default table otherwise: address-bearing fields are the one
+ * case FYD will not show verbatim by default. A field whose name contains
+ * "address" (case-insensitive; covers "address", "streetaddress",
+ * "street_address", "address_locality", ...) defaults to "coarse".
+ * Every other field defaults to "show".
+ */
+export function resolveFieldVisibility(
+  objectId: string,
+  field: string,
+  decisions: FieldVisibilityDecision[],
+): { policy: FieldVisibilityPolicy; source: VisibilitySource } {
+  let best: FieldVisibilityDecision | undefined;
+  for (const d of decisions) {
+    if (d.objectId !== objectId || d.field !== field) continue;
+    if (best === undefined || d.version >= best.version) best = d;
+  }
+  if (best !== undefined) {
+    return { policy: best.policy, source: "owner_override" };
+  }
+  const policy: FieldVisibilityPolicy = field.toLowerCase().includes("address")
+    ? "coarse"
+    : "show";
+  return { policy, source: "conservative_default" };
+}
+
+/**
+ * COARSEN RULE: split the value on commas, keep the last two segments,
+ * trim each, and rejoin with ", ". The street-level detail (the first
+ * segment) is dropped; city/region/postal survives.
+ * Example: "123 Main St, Grand Junction, CO 81501" -> "Grand Junction, CO 81501".
+ * Deterministic. Fewer than two segments -> the value is returned unchanged.
+ */
+export function coarsenAddress(value: string): string {
+  const segments = value.split(",").map((s) => s.trim());
+  if (segments.length < 2) return value;
+  return segments.slice(-2).join(", ");
+}
+
+/**
+ * Project a NEW ObjectGraph with owner visibility decisions applied.
+ * Never mutates the input: the returned graph is a fresh record, each
+ * object is a fresh record with a REBUILT fields record; every other
+ * object property and the relationships array are shared by reference.
+ * Only fields records are rebuilt. SOURCE STATE stays intact for the next
+ * ingest; this output is PROJECTION input.
+ */
+export function applyFieldVisibility(
+  graph: ObjectGraph,
+  decisions: FieldVisibilityDecision[],
+): ObjectGraph {
+  const objects: PingObject[] = graph.objects.map((o) => {
+    const fields: Record<string, string | string[]> = {};
+    for (const [key, value] of Object.entries(o.fields)) {
+      const { policy } = resolveFieldVisibility(o.id, key, decisions);
+      if (policy === "hide") continue; // drop the field
+      if (policy === "coarse") {
+        const joined = Array.isArray(value) ? value.join(", ") : value;
+        fields[key] = coarsenAddress(joined);
+      } else {
+        fields[key] = value;
+      }
+    }
+    return { ...o, fields };
+  });
+  return { objects, relationships: graph.relationships };
+}
+--- src/fyd/sitespec/graph.ts
+/**
+ * Shared object-graph helpers for the site compiler.
+ *
+ * Pure, deterministic, browser-safe. Used by the generator (section
+ * existence) and the renderer (display), so both agree on what the graph
+ * says. No company-specific logic: every rule here holds for any graph.
+ */
+
+import type { PingObject } from "@/lib/ping/types";
+import type { ObjectGraph } from "./types";
+
+function fieldOf(o: PingObject, name: string): string {
+  const v = o.fields[name];
+  return typeof v === "string" ? v : Array.isArray(v) ? v.join(",") : "";
+}
+
+/**
+ * Resolve the public website URL for an owner object.
+ *
+ * The website field on the business comes first. Otherwise follow
+ * has_website relationships to website objects and read their url field:
+ * the website is its own object in the knowledge vocabulary, never
+ * duplicated onto the business. First URL in sort order wins, so the
+ * result is deterministic.
+ */
+export function resolveWebsiteUrl(graph: ObjectGraph, ownerId: string): string {
+  const objects = new Map(graph.objects.map((o) => [o.id, o]));
+  const owner = objects.get(ownerId);
+  if (owner && owner.visibility === "public") {
+    const direct = fieldOf(owner, "website");
+    if (direct !== "") return direct;
+  }
+  const urls: string[] = [];
+  for (const r of graph.relationships) {
+    if (r.subject !== ownerId) continue;
+    if (r.status !== "active") continue;
+    if (r.predicate !== "has_website") continue;
+    const target = objects.get(r.object);
+    if (target && target.visibility === "public") {
+      const url = fieldOf(target, "url");
+      if (url !== "") urls.push(url);
+    }
+  }
+  urls.sort();
+  return urls[0] ?? "";
+}
+
+/**
+ * The four visible-statement classifications for a presentation binding.
+ *
+ * - direct: the presented value is accepted evidence, shown verbatim.
+ * - derived: the presented value is a deterministic transform of present
+ *   evidence (formatting, joining, unit conversion).
+ * - generated: the presented value was AI-written; it must name the
+ *   generator that produced it, bound to evidence.
+ * - owner_authored: the presented value is owner state, which is durable
+ *   and survives re-ingestion.
+ */
+export type BindingClassification = "direct" | "derived" | "generated" | "owner_authored";
+
+/**
+ * A single factual claim a renderer wants to show: which object, which
+ * field, and how the presented statement is classified. evidenceRef and
+ * generatorRef are carrier metadata; the verifier never treats them as
+ * authoritative on their own.
+ */
+export interface PresentationBinding {
+  objectId: string;
+  field: string;
+  classification: BindingClassification;
+  evidenceRef?: string;
+  generatorRef?: string;
+}
+
+/** Verdict of the presentation binding check: fail closed. */
+export type BindingVerdict = { ok: true; value: string } | { ok: false; reason: string };
+
+/**
+ * Field value read, like fieldOf but preserving the bound/unbound
+ * distinction. "title" and "description" are object-level factual identity
+ * and bind as pseudo-fields: a direct binding still requires the object's
+ * provenance ref, exactly like any other direct field.
+ */
+function boundFieldValue(o: PingObject, name: string): string | undefined {
+  if (name === "title") return o.title === "" ? undefined : o.title;
+  if (name === "description") return o.description === "" ? undefined : o.description;
+  const v = o.fields[name];
+  if (typeof v === "string") return v === "" ? undefined : v;
+  if (Array.isArray(v)) {
+    const joined = v.filter((s) => s !== "").join(", ");
+    return joined === "" ? undefined : joined;
+  }
+  return undefined;
+}
+
+/** The four classifications this verifier recognizes. */
+const CLASSIFICATIONS: readonly BindingClassification[] = [
+  "direct",
+  "derived",
+  "generated",
+  "owner_authored",
+];
+
+/**
+ * Verify that a presentation binding resolves to an accepted fact.
+ *
+ * Pure and deterministic: no clock, no randomness, no I/O. This is a
+ * verifier, not an authority: it answers whether the presented statement
+ * resolves to accepted evidence (direct, via the object's provenance.ref),
+ * a deterministic transform of present evidence (derived), owner state
+ * (owner_authored), or an explicitly classified generated statement
+ * (generated, via a generatorRef of the form name@version). Anything else
+ * fails closed and the caller omits the value.
+ */
+export function verifyPresentationBinding(
+  binding: PresentationBinding,
+  graph: ObjectGraph
+): BindingVerdict {
+  const objects = new Map(graph.objects.map((o) => [o.id, o]));
+  const obj = objects.get(binding.objectId);
+--- src/fyd/sitespec/index.ts
+export * from "./types";
+export * from "./schemas";
+export * from "./graph";
+export * from "./validator";
+--- src/fyd/sitespec/render-model.ts
+/**
+ * FYD semantic render model.
+ *
+ * Semantic determinism, not DOM-byte determinism: the same SiteSpec +
+ * ObjectGraph snapshot + ViewerContext + OwnerOverrides + renderer version
+ * + design-token version must always produce the same semantic rendered
+ * experience.
+ *
+ * Owner overrides enter through the projected graph (buildRenderContext
+ * applies them before the model is built), but the model ALSO records the
+ * override set explicitly: two models built from the same source graph
+ * with different owner decisions must differ, so the invariant is visible
+ * in the model itself rather than only implicit in the input.
+ *
+ * This module is the projection seam's deterministic summary: it resolves
+ * every section query through the real render path (resolveQuery, whose
+ * ordering is the renderer's ordering contract) and records the result as
+ * plain data. It contains no layout, no styling, no wall-clock reads, no
+ * randomness, and no module-level mutable state.
+ *
+ * RENDER_MODEL_VERSION must be bumped whenever renderer.ts render semantics
+ * change (query resolution ordering, section visibility rules, or what data
+ * a section binds).
+ */
+
+import { resolveQuery } from "../components/renderer";
+import type { FieldVisibilityDecision } from "./field-visibility";
+import type { FYDSiteSpec, ObjectGraph, ViewerContext } from "./types";
+
+/** Semantic render-model version. Bump when renderer.ts render semantics change. */
+export const RENDER_MODEL_VERSION = 1;
+
+/**
+ * renderer.tsx carries no version constant (gap, 2026-09-21): until the
+ * renderer lane versions its render semantics, the model pins the source
+ * file that defines them.
+ */
+export const RENDERER_VERSION = "renderer.tsx@unversioned";
+
+/**
+ * FYDThemeTokens carries no version field (gap, 2026-09-21): until the
+ * sitespec lane versions its design tokens, the model records an explicit
+ * placeholder (overridable per build via options).
+ */
+export const DESIGN_TOKEN_VERSION = "tokens@unversioned";
+
+/** One rendered section: its identity, its component, and the objects it binds, in render order. */
+export interface SemanticSectionModel {
+  id: string;
+  component: string;
+  /** Object ids in the order resolveQuery returns (already deterministically sorted; never re-sorted here). */
+  objectIds: string[];
+  heading?: string;
+  copy?: string;
+}
+
+/** One rendered page, sections in spec order. */
+export interface SemanticPageModel {
+  slug: string;
+  sections: SemanticSectionModel[];
+}
+
+/** The full semantic render model: the deterministic summary of one render. */
+export interface SemanticRenderModel {
+  renderModelVersion: number;
+  rendererVersion: string;
+  designTokenVersion: string;
+  viewerId: string | null;
+  /** Genuine time dependence enters only here, never via hidden wall-clock. */
+  asOf: string;
+  specKind: string;
+  /**
+   * The owner-visibility decisions this model was built under, in stable
+   * canonical form ("none" when the caller passed none). Part of the
+   * determinism invariant: same decisions -> same model.
+   */
+  ownerOverrides: string;
+  /** Pages in spec order. */
+  pages: SemanticPageModel[];
+}
+
+export interface BuildRenderModelOptions {
+  asOf: string;
+  designTokenVersion?: string;
+  /**
+   * Owner visibility decisions applied to the input graph. Canonicalized
+   * (sorted, JSON) before recording so decision order never affects the
+   * model.
+   */
+  ownerOverrides?: FieldVisibilityDecision[];
+}
+
+/**
+ * Build the semantic render model. Pure function of its inputs:
+ * pages and sections are visited in spec order, and objectIds preserve
+ * resolveQuery's deterministic ordering (updatedAt desc with id tiebreak;
+ * "related" sorted by id). No Date.now(), no Math.random(), no counters,
+ * no request-order-dependent ids.
+ */
+export function buildSemanticRenderModel(
+  spec: FYDSiteSpec,
+  graph: ObjectGraph,
+  viewer: ViewerContext,
+  opts: BuildRenderModelOptions,
+): SemanticRenderModel {
+  const pages: SemanticPageModel[] = spec.pages.map((page) => ({
+    slug: page.slug,
+    sections: page.sections.map((section) => ({
+      id: section.id,
+      component: section.component,
+      objectIds: resolveQuery(section.query, graph, spec.ownerObjectId).map((o) => o.id),
+      heading: section.presentation.heading,
+      copy: section.presentation.copy,
+    })),
+  }));
+  return {
+    renderModelVersion: RENDER_MODEL_VERSION,
+    rendererVersion: RENDERER_VERSION,
+    designTokenVersion: opts.designTokenVersion ?? DESIGN_TOKEN_VERSION,
+    viewerId: viewer.viewerId,
+--- src/fyd/sitespec/safe-link.ts
+/**
+ * FYD safe-link resolver.
+ *
+ * A rendered link is an EXECUTABLE CAPABILITY (navigation, phone dialer,
+ * mail client). An observed URL string in the object graph is only data.
+ * This module is the one place that converts data into capability: a raw
+ * observed value goes in, and either a safe navigable href or an explicit
+ * non-navigable verdict comes out. The renderer never interpolates a raw
+ * observed string into href/src on its own.
+ *
+ * Rules:
+ * - Parser-based, not scheme-regex-based: the real URL parser decides what
+ *   the string means, and the module then checks the parsed result against
+ *   an explicit per-capability allowlist. A hostile string that parses to a
+ *   non-allowlisted scheme (javascript:, data:, vbscript:, file:, blob:,
+ *   ...) is non-navigable. There is no scheme regex to smuggle past.
+ * - Whitespace/control-character smuggling fails closed: leading/trailing
+ *   whitespace is trimmed, any remaining control character rejects the
+ *   value before parsing, so "java\tscript:" style tricks never reach the
+ *   parser as executable text.
+ * - Relative references are non-navigable unless the caller passes an
+ *   explicit baseUrl, and that base must itself resolve to a safe
+ *   navigable URL. Bare hostnames ("example.com") have no scheme and are
+ *   therefore non-navigable without a base.
+ * - Capabilities are separate: "navigate" allows http:/https: only;
+ *   "call" builds a tel: href from an author-formatted phone string that
+ *   contains only phone characters (plus a mandatory digit); "email"
+ *   builds a mailto: href from a minimally well-formed address. A value
+ *   that is safe for one capability is never silently reused for another.
+ * - Non-string input (null, arrays, objects) is non-navigable.
+ *
+ * Pure and deterministic: no I/O, no clock, no randomness.
+ */
+
+export type LinkCapability = "navigate" | "call" | "email";
+
+/** A safe, renderer-usable href, or an explicit refusal to navigate. */
+export type SafeLinkResult =
+  | { kind: "safe"; href: string }
+  | { kind: "non_navigable" };
+
+/** Schemes the renderer may navigate to. Explicit allowlist. */
+const NAVIGABLE_SCHEMES: readonly string[] = ["https:", "http:"];
+
+/** Control characters are never valid inside a link value. */
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+/** Characters the "call" capability accepts in an author-formatted number. */
+const TEL_ALLOWED = /^[+().\-\s\d]+$/;
+
+/** Minimal shape for the "email" capability. Not a validator, a gate. */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export interface SafeLinkOptions {
+  /**
+   * Base URL used to resolve relative references. Must itself resolve to
+   * a safe navigable URL; otherwise relative input stays non-navigable.
+   */
+  baseUrl?: string;
+}
+
+/**
+ * Resolve a raw observed value to a safe href for the given capability.
+ *
+ * Returns { kind: "safe", href } when the value parses to an allowed
+ * target, else { kind: "non_navigable" }. The caller renders an anchor
+ * only for the "safe" case; the "non_navigable" case renders no link.
+ */
+export function resolveSafeLink(
+  rawValue: unknown,
+  capability: LinkCapability,
+  opts: SafeLinkOptions = {},
+): SafeLinkResult {
+  if (typeof rawValue !== "string") return { kind: "non_navigable" };
+  const raw = rawValue.trim();
+  if (raw === "") return { kind: "non_navigable" };
+  if (CONTROL_CHARS.test(raw)) return { kind: "non_navigable" };
+
+  switch (capability) {
+    case "call": {
+      if (!TEL_ALLOWED.test(raw)) return { kind: "non_navigable" };
+      if (!/\d/.test(raw)) return { kind: "non_navigable" };
+      // tel: URIs carry no whitespace; keep the author's punctuation.
+      return { kind: "safe", href: "tel:" + raw.replace(/\s+/g, "") };
+    }
+    case "email": {
+      if (!EMAIL_SHAPE.test(raw)) return { kind: "non_navigable" };
+      return { kind: "safe", href: "mailto:" + raw };
+    }
+    case "navigate": {
+      let parsed: URL | null = null;
+      try {
+        parsed = new URL(raw);
+      } catch {
+        // Relative reference: only with an explicit, itself-safe base.
+        if (!opts.baseUrl) return { kind: "non_navigable" };
+        const base = resolveSafeLink(opts.baseUrl, "navigate");
+        if (base.kind !== "safe") return { kind: "non_navigable" };
+        try {
+          parsed = new URL(raw, base.href);
+        } catch {
+          return { kind: "non_navigable" };
+        }
+      }
+      // The URL parser lowercases the scheme; check the parsed result,
+      // not the raw text, against the allowlist.
+      if (!NAVIGABLE_SCHEMES.includes(parsed.protocol.toLowerCase())) {
+        return { kind: "non_navigable" };
+      }
+      return { kind: "safe", href: parsed.href };
+    }
+  }
+}
+--- src/fyd/sitespec/schemas.ts
+/**
+ * FYD proof schemas: exactly three (Business, Service, Post).
+ *
+ * One schema definition drives five things (harvest T4 codegen chain):
+ *   SCHEMA -> VALIDATOR -> OBJECT eligibility -> RELATIONSHIPS ->
+ *   CAPABILITIES -> RENDERER props -> AGENT TOOL description.
+ *
+ * Evolution law (harvest T5): new fields are optional, never change a
+ * field type, never remove a field. Breaking changes mint a new version.
+ */
+
+import type { FYDFinding } from "./types";
+
+export type FYDFieldType = "string" | "string[]" | "url";
+
+export interface FYDSchemaField {
+  name: string;
+  type: FYDFieldType;
+  required: boolean;
+  label: string;
+  /** Short plain-language meaning, used in agent tool descriptions. */
+  meaning: string;
+}
+
+export interface FYDRelationshipRule {
+  predicate: string;
+  targetSchemas: string[];
+  meaning: string;
+}
+
+export interface FYDSchemaDef {
+  id: string;
+  label: string;
+  /** Plain-language summary for the agent tool description. */
+  summary: string;
+  fields: FYDSchemaField[];
+  relationships: FYDRelationshipRule[];
+  /** True when the object is backed by an identity a viewer can follow. */
+  identityBacked: boolean;
+  /** True when likes belong on this schema (content, never identities). */
+  likeable: boolean;
+}
+
+export const BUSINESS_SCHEMA: FYDSchemaDef = {
+  id: "ping.social.business@1",
+  label: "Business",
+  summary:
+    "A business: name, description, category, website, contact details, hours, and social links. The root object a generated site is built around.",
+  fields: [
+    { name: "title", type: "string", required: true, label: "Name", meaning: "The business name." },
+    { name: "description", type: "string", required: true, label: "Description", meaning: "What the business does, in its own words." },
+    { name: "category", type: "string", required: false, label: "Category", meaning: "Trade or industry category." },
+    { name: "website", type: "url", required: false, label: "Website", meaning: "Public website URL." },
+    { name: "phone", type: "string", required: false, label: "Phone", meaning: "Public business phone." },
+    { name: "email", type: "string", required: false, label: "Email", meaning: "Public business email." },
+    { name: "hours", type: "string", required: false, label: "Hours", meaning: "Opening hours as published." },
+    { name: "socials", type: "string[]", required: false, label: "Social links", meaning: "Public social profile URLs." },
+  ],
+  relationships: [
+    { predicate: "provides", targetSchemas: ["ping.social.service@1", "ping.social.product@1"], meaning: "Services or products the business offers." },
+    { predicate: "publishes", targetSchemas: ["ping.social.post@1", "ping.social.article@1"], meaning: "Posts or articles the business published." },
+    { predicate: "located_at", targetSchemas: ["ping.social.location@1"], meaning: "Where the business operates." },
+    { predicate: "employs", targetSchemas: ["ping.social.person@1"], meaning: "People behind the business." },
+  ],
+  identityBacked: true,
+  likeable: false,
+};
+
+export const SERVICE_SCHEMA: FYDSchemaDef = {
+  id: "ping.social.service@1",
+  label: "Service",
+  summary:
+    "A service the business offers: name, description, and optional price or duration hints. Rendered as cards in Services sections.",
+  fields: [
+    { name: "title", type: "string", required: true, label: "Name", meaning: "The service name." },
+    { name: "description", type: "string", required: true, label: "Description", meaning: "What the service includes." },
+    { name: "price_hint", type: "string", required: false, label: "Price hint", meaning: "Published price guidance, never a quote." },
+    { name: "duration", type: "string", required: false, label: "Duration", meaning: "Typical job duration as published." },
+  ],
+  relationships: [
+    { predicate: "provided_by", targetSchemas: ["ping.social.business@1"], meaning: "The business offering this service." },
+  ],
+  identityBacked: false,
+  likeable: true,
+};
+
+export const POST_SCHEMA: FYDSchemaDef = {
+  id: "ping.social.post@1",
+  label: "Post",
+  summary:
+    "A post or article: title, body text, publish date, and tags. Rendered in feeds and recent-objects sections. Replies reference posts.",
+  fields: [
+    { name: "title", type: "string", required: true, label: "Title", meaning: "The post title." },
+    { name: "text", type: "string", required: false, label: "Body", meaning: "The post body text." },
+    { name: "date", type: "string", required: false, label: "Date", meaning: "Publish date as published." },
+    { name: "tags", type: "string[]", required: false, label: "Tags", meaning: "Topic tags." },
+    { name: "url", type: "url", required: false, label: "Link", meaning: "Canonical link to the full post." },
+  ],
+  relationships: [
+    { predicate: "published_by", targetSchemas: ["ping.social.business@1"], meaning: "The business that published this post." },
+    { predicate: "replies_to", targetSchemas: ["ping.social.post@1"], meaning: "The post this replies to." },
+  ],
+  identityBacked: false,
+  likeable: true,
+};
+
+/** The three proof schemas. Not one hundred. */
+export const FYD_SCHEMAS: FYDSchemaDef[] = [BUSINESS_SCHEMA, SERVICE_SCHEMA, POST_SCHEMA];
+
+export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
+  return FYD_SCHEMAS.find((s) => s.id === schemaId);
+}
+
+// ---------------------------------------------------------------------------
+// Schema roles: the site compiler reasons over roles, not single schema ids.
+//
+// The ping.social.* vocabulary above is the proof vocabulary: three
+// definitions driving everything. The ping.knowledge.* vocabulary is the
+// constitutional website-ingestion vocabulary (knowledge adapter, no new
+// authority): knowledge objects project onto the same site-compiler roles.
+--- src/fyd/sitespec/types.ts
+/**
+ * FYD SiteSpec: the declarative product of the generative object-site compiler.
+ *
+ * Law: the spec is DATA, never generated JSX. The renderer turns
+ * (SiteSpec + ObjectGraph + ViewerContext) into UI. A spec is portable,
+ * diffable, validatable, and deterministic: the same graph always yields
+ * the same spec.
+ *
+ * Shape harvested from src/lib/website-structure.ts (Route -> Page ->
+ * Section -> Component) and generalized: pages hold sections, sections name
+ * a registered component and declare HOW to fetch their objects (query),
+ * never the objects themselves.
+ */
+
+import type { PingObject, PingRelationship } from "@/lib/ping/types";
+
+/** The graph the generator reasons over: browser-safe objects plus relationships. */
+export interface ObjectGraph {
+  objects: PingObject[];
+  relationships: PingRelationship[];
+}
+
+/** Who is viewing the rendered site. Kept minimal on purpose. */
+export interface ViewerContext {
+  viewerId: string | null;
+  displayName: string | null;
+}
+
+/** How a section resolves its objects from the graph. Deterministic. */
+export type FYDQuery =
+  | { kind: "owner" }
+  | {
+      kind: "related";
+      from: string;
+      /** Primary predicate, human-readable. */
+      predicate: string;
+      /**
+       * Full predicate match set in canonical order. Resolution matches any
+       * of these, so one query compiles both the social vocabulary
+       * (provides) and the knowledge vocabulary (offers). Defaults to
+       * [predicate] when absent.
+       */
+      predicates?: string[];
+      schema?: string;
+      schemas?: string[];
+      limit?: number;
+    }
+  | { kind: "all"; schema?: string; schemas?: string[]; limit?: number }
+  | { kind: "reference"; objectIds: string[] }
+  | { kind: "static" };
+
+/** Presentation overrides. Copy edits arrive here as PROPOSED changes only. */
+export interface FYDPresentation {
+  heading?: string;
+  copy?: string;
+  featuredIds?: string[];
+  hidden?: boolean;
+}
+
+export interface FYDSection {
+  /** Deterministic id: pageSlug + ":" + component + ":" + index. */
+  id: string;
+  /** Component registry name, e.g. "Hero", "Services". */
+  component: string;
+  query: FYDQuery;
+  presentation: FYDPresentation;
+}
+
+export interface FYDPage {
+  /** URL slug, e.g. "home", "about", "services", "explore". */
+  slug: string;
+  title: string;
+  navLabel: string;
+  sections: FYDSection[];
+}
+
+export interface FYDNavItem {
+  label: string;
+  pageSlug: string;
+}
+
+/**
+ * Basic design tokens. Structured values only, no drag and drop.
+ * Tokens re-skin the whole generated site without touching the spec.
+ *
+ * v1 fields (accent, accentForeground, surface, ink, radius, fontDisplay,
+ * fontBody) are frozen. The builder composition lane (fyd/builder-composition)
+ * extends the set additively; every new group is optional so specs written
+ * before this change validate and render unchanged.
+ */
+export interface FYDTypeScale {
+  /** Base font size in px. */
+  base: number;
+  /** Modular ratio between type steps. */
+  ratio: number;
+}
+
+/** Spacing scale in px, named steps. */
+export interface FYDSpacingScale {
+  xs: number;
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+}
+
+/** Extended color roles beyond the v1 accent/surface/ink triple. */
+export interface FYDColorSystem {
+  muted?: string;
+  border?: string;
+  success?: string;
+  warning?: string;
+  danger?: string;
+}
+
+/** Surface variants for cards, sheets, overlays. */
+export interface FYDSurfaces {
+  card?: string;
+  overlay?: string;
+  sheet?: string;
+--- src/fyd/sitespec/validator.ts
+/**
+ * SiteSpec validator: two layers, findings out (harvest B6).
+ *
+ * Layer 1 (structure): the spec shape is well-formed, pages/sections/queries
+ * reference known components, ids are unique and deterministic.
+ * Layer 2 (semantic): components accept the schemas their queries can
+ * return, required fields are satisfiable, no section renders without data.
+ *
+ * Never render an invalid spec: the demo page renders only when no error
+ * findings exist. Warnings and info pass through to the operator.
+ */
+
+import { getComponentDef } from "../components/registry";
+import { SCHEMA_ROLES, eligibleComponents } from "./schemas";
+import type { FYDFinding, FYDSiteSpec, FYDSection } from "./types";
+
+function err(resourceId: string, path: string, message: string): FYDFinding {
+  return { severity: "error", authority: "fyd.sitespec.validator", resourceId, path, message };
+}
+
+function warn(resourceId: string, path: string, message: string): FYDFinding {
+  return { severity: "warning", authority: "fyd.sitespec.validator", resourceId, path, message };
+}
+
+/**
+ * Validate a SiteSpec. Pure and deterministic.
+ * `knownSchemas` is the set of schema ids present in the graph being rendered.
+ */
+export function validateSiteSpec(spec: FYDSiteSpec, knownSchemas: Set<string>): FYDFinding[] {
+  const findings: FYDFinding[] = [];
+  const rid = "spec:" + spec.ownerObjectId;
+
+  if (spec.kind !== "fyd.sitespec@1") {
+    findings.push(err(rid, "kind", "Unknown spec kind '" + spec.kind + "'."));
+  }
+  if (spec.pages.length === 0) {
+    findings.push(err(rid, "pages", "A site needs at least one page."));
+  }
+
+  const seenSectionIds = new Set<string>();
+  const seenSlugs = new Set<string>();
+  for (const page of spec.pages) {
+    if (seenSlugs.has(page.slug)) {
+      findings.push(err(rid, "pages." + page.slug, "Duplicate page slug '" + page.slug + "'."));
+    }
+    seenSlugs.add(page.slug);
+    if (page.sections.length === 0) {
+      findings.push(
+        warn(rid, "pages." + page.slug + ".sections", "Page '" + page.slug + "' has no sections; it renders empty."),
+      );
+    }
+    page.sections.forEach((section: FYDSection, index: number) => {
+      const spath = "pages." + page.slug + ".sections[" + index + "]";
+      if (seenSectionIds.has(section.id)) {
+        findings.push(err(rid, spath + ".id", "Duplicate section id '" + section.id + "'."));
+      }
+      seenSectionIds.add(section.id);
+      const expectedId = page.slug + ":" + section.component + ":" + index;
+      if (section.id !== expectedId) {
+        findings.push(
+          warn(rid, spath + ".id", "Section id '" + section.id + "' is not the deterministic '" + expectedId + "'."),
+        );
+      }
+      const def = getComponentDef(section.component);
+      if (!def) {
+        findings.push(err(rid, spath + ".component", "Unknown component '" + section.component + "'."));
+        return;
+      }
+      // Semantic layer: the query's schemas must be acceptable to the component.
+      const querySchemas = querySchemasFor(section, knownSchemas);
+      for (const qs of querySchemas) {
+        const eligible = eligibleComponents(qs);
+        if (!eligible.includes(section.component) && section.component !== "GenericObjectCard") {
+          findings.push(
+            err(
+              rid,
+              spath + ".query",
+              "Component '" + section.component + "' does not accept schema '" + qs + "'.",
+            ),
+          );
+        }
+      }
+      if (section.presentation.hidden && section.component === "Hero") {
+        findings.push(
+          warn(rid, spath + ".presentation.hidden", "Hiding the Hero leaves the home page without an identity block."),
+        );
+      }
+    });
+  }
+
+  // Navigation must point at real pages.
+  for (const nav of spec.navigation) {
+    if (!seenSlugs.has(nav.pageSlug)) {
+      findings.push(err(rid, "navigation", "Nav item '" + nav.label + "' points at missing page '" + nav.pageSlug + "'."));
+    }
+  }
+
+  return findings;
+}
+
+/** Schemas a section query can resolve to, for eligibility checks. */
+function querySchemasFor(section: FYDSection, knownSchemas: Set<string>): string[] {
+  const q = section.query;
+  switch (q.kind) {
+    case "static":
+      return [];
+    case "reference":
+      // References are resolved at render; eligibility is checked per object.
+      return [];
+    case "owner":
+      return [...SCHEMA_ROLES.business];
+    case "all":
+      // Mirrors "related": an explicit schema filter narrows expansion, but a
+      // bare "all" still expands to every known schema (fail-closed for
+      // hand-written specs).
+      return q.schemas ?? (q.schema ? [q.schema] : [...knownSchemas]);
+    case "related": {
+      if (q.schemas) return q.schemas;
+      return q.schema ? [q.schema] : [...knownSchemas];
+    }
+=== src/fyd/components (top level) ===
+__tests__
+ask-fyd-widget.tsx
+compose-motion.ts
+contact-link.tsx
+fyd-motion-fallback.tsx
+jest.config.cjs
+object-affordance.tsx
+object-overlay.tsx
+object-rail.tsx
+registry.ts
+renderer.tsx
+viewport.tsx
+=== src/fyd dir ===
+TEST-GATE.md
+__tests__
+acquisition
+adapters
+archetypes
+ask
+attention
+boundary
+builder
+capabilities
+claim
+components
+customize
+data
+harvest
+identity
+jest.config.cjs
+media
+net
+object
+onboarding
+owner-mode
+placement
+presence
+preview
+proceduralize
+rank
+refresh
+resolve
+sitespec
+social
+spatial
+tenant
+ui
+wiring
+=== fixture search: dogfood / ping / fyd ===
+./src/fyd/builder/__tests__/ping-fyd-dogfood-render.test.ts
+./src/fyd/components/__tests__/ping-fyd-dogfood.test.ts
+=== fixture search: graph ===
+=== F2 corpus search ===
+./.git/objects/46/48e4a734f2458d25761ff3fe4ca2de721ef098
+./.git/objects/c4/0bf20247750507e7670c1facb444eb81aade86
+./.git/objects/dc/f6a00479d63f2f535e71bbfaecdbeb7d5949fb
+./.git/objects/48/063d64bf2f5f976622e2dc9d6d5ee4ce812484
+./.git/objects/69/6dd13f25ec710efe38f251b77a22ebee314e11
+./.git/objects/69/0d6a0553f2ab214cad38f3b198349f6b3c6b8f
+./.git/objects/17/6905852571def7be1d1083a66ff263c93e9925
+./.git/objects/32/0aa5165c55560955f30532b98f2ebeeaf7d4bd
+./.git/objects/16/44fd7bc27d58fe24f96bbdb59ce110304df27c
+./.git/objects/16/dfc559b11cf0d2af3819d53f9d44268c34f24f
+./.git/objects/6c/050b79466ff0a9f89079f2249c44d99dd56875
+./.git/objects/d0/67f27752668d4b8e3720a303b3db7e841872a7
+./.git/objects/d0/a71f200c6d72f92d593bf5dd02d29767695551
+./.git/objects/d0/7231c597bf46606caf4f250479ff30940c55e0
+./.git/objects/67/959a04db76f2882cdc53cc1907be41c95ac3de
+./.git/objects/ef/e11bf2ba0511aa206501938258c97e3a340bc1
+./.git/objects/a0/b3423d6d2f2c81b5fb730d926931e8f377272f
+./.git/objects/a0/20bbabf2111fa06ba47e57255fde64ec34d1a3
+./.git/objects/53/f21302eb5fe29ba16ae1c8acd6b4f7f769fba3
+./.git/objects/b7/caa4d6a7f4326798b7d5f2b18b93a2a8369ed3
+./.git/objects/5d/1975d178d639442f22dd7a82a3c1cf32f3d573
+./.git/objects/b8/9b8a8315c38d271d1b914e28c7b93f243673dd
+./.git/objects/45/8948f2d06f583793b7a84a0d2c41772c054880
+./.git/objects/20/00d09b51e8baef185f20f55fc50dad95e8e279
+./.git/objects/25/becdd0649811bdfdf220da0eca1f845aa4e7ab
+./.git/objects/6f/d3f4836a4cb05f29f4fe6396b18a82edc6ce54
+./.git/objects/38/a88aa6d64cb4f2d82cbe9f6c3f4a9cb825d4ee
+./.git/objects/e2/68ea13f2c80792a7117e433484e31cd3289755
+./.git/objects/8a/d2f22a6a9dcae7f2785a696f93db94c48fd5bd
+./.git/objects/52/69c620db780708c457146cd8f2233a69ff94e3
+=== technology / software fixture search ===
+=== demo dirs ===
+=== git status (first 5) ===
+ M package.json
+ M src/app/build/[siteId]/page.tsx
+ M src/app/o/[objectId]/page.tsx
+ M src/app/page.tsx
+ M src/app/portal-rail/rail-client.tsx

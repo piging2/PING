@@ -1,0 +1,74 @@
+=== Gallery + ObjectRail registry entries ===
+  { name: "GenericObjectCard", label: "Generic object card", description: "Fallback renderer for schemas with no dedicated component.", acceptsSchemas: [], ownerBound: false, requiresData: true },
+  {
+    name: "ObjectRail",
+    label: "Object rail",
+    description: "Margin rail featuring one evidence-backed object through the ObjectCircle doorway (inline reference, hover preview, dialog); collapses to a drawer below the collapseBelow breakpoint. Geometry decides placement; center content is untouched.",
+    acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE],
+    ownerBound: false,
+    requiresData: true,
+    requiredData: ["objectPresence.objects", "themeTokens.breakpoints"],
+    capabilities: ["preview"],
+    responsive: { behavior: "rail-to-drawer", collapseBelow: "lg", touchTargetMinPx: 44 },
+    editableProperties: ["heading", "objectPresence.mode", "objectPresence.rules.collapseBelow"],
+    variants: ["rail", "drawer", "auto"],
+  },
+  {
+    name: "Gallery",
+    label: "Gallery",
+    description: "Evidence-backed photo gallery from the site's acquired media (gallery/project/service/team/location roles). Renders only when gallery media exists; the section itself is the eligibility gate, so requiresData is false and the renderer returns null on empty media.",
+    acceptsSchemas: [],
+    ownerBound: true,
+    requiresData: false,
+    requiredData: ["renderContext.galleryMedia"],
+    capabilities: ["preview"],
+    responsive: { behavior: "stack", touchTargetMinPx: 44 },
+    editableProperties: ["heading"],
+    variants: ["grid"],
+  },
+];
+
+const BY_NAME = new Map(DEFINITIONS.map((d) => [d.name, d]));
+
+=== FYDSpecProvenance ===
+306:export interface FYDSpecProvenance {
+307-  source: "website-ingestion";
+308-  claimKind: "website_statement";
+309-  /** Acceptance-sequence window of the ingestion events, when known. */
+310-  eventSequences?: [number, number];
+311-  note: string;
+312-}
+313-
+314-export interface FYDSiteSpec {
+315-  kind: "fyd.sitespec@1";
+316-  /** The business (or root) object this site is generated for. */
+317-  ownerObjectId: string;
+318-  version: 1;
+319-  generator: {
+320-    name: "fyd-site-generator";
+321-    version: string;
+=== FYDSiteArchetype ===
+336:  archetype?: FYDSiteArchetype;
+360:export type FYDSiteArchetype = "KNOWLEDGE" | "TRADES" | "TECHNICAL_ENTERPRISE";
+=== resolveQuery owner/related semantics (planner) ===
+__tests__
+canonical.ts
+confidence.ts
+dimensions.ts
+dogfood
+eligibility.ts
+generated-presentation.ts
+index.ts
+infer-strategy.ts
+jest.config.cjs
+manifest.ts
+object-builder.ts
+owner-intent.ts
+planner.ts
+semantic-diff.ts
+site-vectors.ts
+source-refresh.ts
+strategies.ts
+strategy-for-site.ts
+structural-diff.ts
+visibility.ts

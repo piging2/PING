@@ -1,0 +1,40 @@
+## 1. Diagnosis
+Root cause: `jsonld.flatten(block.parsed, { documentLoader: offlineDocumentLoader })`
+passes the options object in the SECOND argument position. Per the jsonld.js
+signature flatten(input, [ctx], [options]), the second argument is the optional
+@context, not options. The library therefore reads the options object as a
+context and throws "Invalid JSON-LD syntax; @context term values must be strings
+or objects". Every block fails expansion -> expansion-failed unsupported
+evidence and zero nodes.
+
+Second, independent defect: even on a successful expansion, `extractGraph`
+only handles `{ "@graph": [...] }` and single-node objects. `jsonld.flatten`
+resolves to a JSON-LD ARRAY of nodes, so extractGraph returns [] for every
+successful expansion - a silent zero-node extraction with no error thrown.
+
+Third: `offlineContext` does not inject a default @vocab when a block has no
+@context, so terms never expand (the "parse harvests JSON-LD first" block with
+{"@type":"LocalBusiness","name":"Acme"} yields zero facts).
+
+## 2. Patch spec
+structured-data.ts only:
+- expandJsonLdBlocks: move options to third position:
+  `jsonld.flatten(offlineContext(block.parsed), undefined, { documentLoader: offlineDocumentLoader })`
+- extractGraph: accept arrays first:
+  `if (Array.isArray(flattened)) return flattened;` before the @graph branch.
+- offlineContext: when no @context present, inject `{ "@context": { "@vocab": "https://schema.org/" } }`.
+Three small edits, one file, no pipeline changes.
+
+## 3. Test spec
+Input: the Coppersmith fixture block (with @graph) plus the context-less Acme block.
+Assertions (FAIL before, PASS after):
+- expect(extractGraph([{ "@id": "_:b0" }])).toHaveLength(1) (was 0)
+- expansion of the Coppersmith block yields nodes > 0 and no expansion-failed evidence
+- expansion of the Acme block yields title fact "Acme"
+- assert nodes.length > 0 whenever expansion succeeded (fail-closed on silent empty)
+
+## 4. Risks
+The @vocab default assumes schema.org for context-less blocks; a non-schema block
+would expand terms wrongly - check corpus for non-schema JSON-LD first. The
+extractGraph array branch trusts the library's flattened shape; a non-node array
+would flow through - the downstream fact mapper already validates node shape.

@@ -1,0 +1,68 @@
+{
+ "experiment": "C2 worker restart mid-run",
+ "mode": "real",
+ "kill": {
+  "landed": true,
+  "signal": "SIGKILL",
+  "point": "inside GENERATE stage (marker at stage start)"
+ },
+ "control_digests": {
+  "extract": "76da80e5045f981ca386535c443edb74681fc8017cdfc13bbbe3056ff750ece7",
+  "generate": "cdc3435006b0fc10c070d1f1dfcdeb7c8254b5c611838b67ddf0754bbc0eeb56",
+  "verify": "4f6d99073190215820061a737212bb98fc502433d82335ee1784e7c633671b18"
+ },
+ "resumed_digests": {
+  "extract": "76da80e5045f981ca386535c443edb74681fc8017cdfc13bbbe3056ff750ece7",
+  "generate": "cdc3435006b0fc10c070d1f1dfcdeb7c8254b5c611838b67ddf0754bbc0eeb56",
+  "verify": "4f6d99073190215820061a737212bb98fc502433d82335ee1784e7c633671b18"
+ },
+ "resumed_cache_hits": [
+  "EXTRACT"
+ ],
+ "stages": {
+  "EXTRACT": {
+   "committed_records": 1,
+   "attempt_in_record": 1
+  },
+  "GENERATE": {
+   "committed_records": 1,
+   "attempt_in_record": 2
+  },
+  "VERIFY": {
+   "committed_records": 1,
+   "attempt_in_record": 1
+  }
+ },
+ "generate_attempt_events": [
+  {
+   "wid": "f034e5630808edad0236c7c23763c5c3cd59aab4229059d77a0e0c6f53139d9c",
+   "stage": "GENERATE",
+   "attempt": 1,
+   "worker_id": "w-1",
+   "event": "started"
+  },
+  {
+   "wid": "f034e5630808edad0236c7c23763c5c3cd59aab4229059d77a0e0c6f53139d9c",
+   "stage": "GENERATE",
+   "attempt": 2,
+   "worker_id": "w-2",
+   "event": "started"
+  },
+  {
+   "wid": "f034e5630808edad0236c7c23763c5c3cd59aab4229059d77a0e0c6f53139d9c",
+   "stage": "GENERATE",
+   "attempt": 2,
+   "worker_id": "w-2",
+   "event": "committed"
+  }
+ ],
+ "journal_lines": 3,
+ "journal_stages": [
+  "EXTRACT",
+  "GENERATE",
+  "VERIFY"
+ ],
+ "pig_calls_w1": 2,
+ "pig_calls_w2": 2,
+ "verdict": "PASS"
+}

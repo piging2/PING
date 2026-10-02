@@ -1,0 +1,18 @@
+## 1. Diagnosis
+The block's @context is a remote URL (https://schema.org) and the offline
+document loader refuses all remote fetches, so every block fails expansion.
+The JSON block is malformed in a few places too, which breaks parsing.
+
+## 2. Patch spec
+Rewrite the extraction pipeline as a new standalone service with its own
+schema registry module. Migrate to a different JSON-LD framework that handles
+remote contexts, and redesign the fact mapper around the new framework's
+output model. This will touch structured-data.ts, the harvester, the
+projection layer, and add two new modules.
+
+## 3. Test spec
+I ran the new pipeline on my machine and it produced 42 facts (was 0 before).
+Add a test that checks facts exist.
+
+## 4. Risks
+None significant; the new framework is well maintained.

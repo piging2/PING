@@ -1,0 +1,12 @@
+/home/hatch/workspace/fyd-factory/chaos/r2-probe-p2-crash.sh: line 18: 12313 Killed                  node "$HERE/r2-appender.ts" --results "$R" --from 1 --to 60 --die-at 37 --die-mode partial --attempt 1 --shard "p2a" > "$W/A/run1.out" 2> "$W/A/run1.err"
+[ok] A1 worker died by SIGKILL (rc=137)
+[ok] A2 torn tail present after kill (no trailing newline)
+[ok] A3 resume exited 0 (rc=0)
+[ok] A4 resume repaired torn bytes (repaired_bytes=93 > 0)
+[ok] B1 external kill -9 landed (rc=137)
+[ok] B2 resume after external kill exited 0 (rc=0)
+ok A: 60 records, seqs exactly 1..60, every line valid JSON, no duplicates
+ok B: 200 records, seqs exactly 1..200, every line valid JSON, no duplicates
+VERIFY_ALL_OK
+[ok] V python verification: valid JSONL, exact seqs, no dupes
+P2 verdict: PASS (7 passed, 0 failed)

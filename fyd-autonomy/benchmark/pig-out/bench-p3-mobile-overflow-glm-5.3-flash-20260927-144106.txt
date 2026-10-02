@@ -1,0 +1,80 @@
+[REASONING]
+Let me work through this carefully.
+
+The problem: at 320px viewport, `document.documentElement.scrollWidth = 331` while `innerWidth = 320`. Overflow of 11px. At 375px clean. Desktop clean.
+
+The probe output is key:
+
+```json
+{
+  "docScrollW": 331,
+  "innerW": 320,
+  "owners": [
+    { "tag": "button", "cls": "proposal-btn", "text": "Propose",
+      "clientW": 42, "scrollW": 55, "minW": "44px" },
+    { "tag": "input", "cls": "token-input",
+      "clientW": 150, "scrollW": 150, "minW": "auto" },
+    { "tag": "label", "cls": "token-label",
+      "clientW": 80, "scrollW": 80, "minW": "auto" }
+  ]
+}
+```
+
+The invariant says: "The actual overflowing *owner* must be identified (smallest element whose scrollWidth exceeds its clientWidth)". Looking at the owners:
+
+- button: clientW 42, scrollW 55 → scrollWidth exceeds clientWidth by 13px. This is the only element in the probe whose scrollWidth > clientWidth. The input has scrollW = clientW = 150 (no internal overflow), label scrollW = clientW = 80 (no internal overflow).
+
+So the owner is the "Propose" button (`proposal-btn`). Its scrollWidth (55) exceeds its clientWidth (42) by 13px. Interesting: docScrollW is 331, innerW 320, overflow = 11px. The button's internal overflow is 13px. Hmm, 13 vs 11 — not exactly equal, but the button's overflow being clipped/contained... Actually wait. Let me think about how a button's scrollWidth > clientWidth causes document-level overflow.
+
+Actually, let's think about the mechanism. The button has `min-width: 44px` (a 44px minimum touch target — this is a common a11y pattern, e.g., `min-w-11` in Tailwind = 44px, or a custom `.proposal-btn { min-width: 44px }`). Its min-content width is 55px (the text "Propose" plus padding — the probe says "55px min-content width").
+
+Wait, but the probe says clientW = 42 and scrollW = 55. So the button is being squeezed to 42px by its flex container (the row is a flex row: label + input + button), but its content needs 55px. The content overflows the button box by 13px. But how does that translate to document scrollWidth = 331?
+
+Hmm. Actually, if the button's content overflows the button, that overflow would normally be visible overflow spilling out of the button, but that alone doesn't widen the document scrollWidth unless the overflow extends past the right edge of the viewport. Let's compute.
+
+The row: label (80px) + input (150px) + button (42px) = 272px, plus gaps. The container is `max-w-5xl` with `px-4` padding → content width at 320px viewport = 320 − 32 = 288px. Hmm, 272 + gaps... If gap is, say, 8px × 2 = 16px, total = 288. That fits exactly in 288. Hmm interesting.
+
+Wait, but then where does 331 come from? Let me reconsider.
+
+Actually, maybe the mechanism is different. Let me think about flex min-width:auto. The row is `display: flex`. Items: label (flex item, min-width:auto → min-content width), input (flex:1, min-width:auto → won't shrink below intrinsic/default size), button (min-width:44px, min-content 55px).
+
+In a flex row, if the container is 288px wide and the sum of items' flex base sizes + min-content floors exceeds 288, the flex algorithm shrinks items down to their min-content floors, and then the row overflows its container. The row itself (the flex container) would then have scrollWidth > clientWidth? Actually the flex container's scrollWidth would reflect overflow of its items.
+
+But the probe found the button as the smallest element with scrollWidth > clientWidth. Hmm, but the probe lists only three elements — maybe it lists the smallest ones and the row/container weren't listed because... Actually the probe says "finds the smallest elements with scrollWidth > clientWidth" — the button is the smallest (42px). The input and label are listed but they have scrollW == clientW, so they're not actually overflowing internally. Wait, why would they be listed then? Maybe the probe lists the ancestors chain of the owner? Label (80), input (150), button (42) — these are the three children of the row. The probe may list all flex children of the row, or the smallest elements it found. The only one with scrollW > clientW is the button.
+
+Hmm wait, actually re-read: "owners-probe.js finds the smallest elements with scrollWidth > clientWidth". So the output lists elements with scrollWidth > clientWidth? But input and label have scrollW == clientW. Unless the probe lists the owner plus its flex siblings for context. The JSON key is "owners" plural. The only true owner by the invariant's definition (smallest element whose scrollWidth exceeds its clientWidth) is the button: 55 > 42.
+
+Now, how does the button's internal overflow cause docScrollW = 331?
+
+Mechanism candidate: The button is a flex item in the row. The row is a flex item (or block) in the content column. The button's min-content contribution... Actually here's the thing: a flex container's automatic minimum size. If the row itself is a flex item in a column flex container (the body is flex-column per H5 mention: "A flex-column body"), then the row's min-width:auto would make its min-content width = sum of children's min-content floors = label min-content + input min-content + button min-content + gaps. Hmm, but the input has flex:1 with min-width:auto — its min-content floor... For a flex item with flex:1 and min-width:auto, the automatic minimum size is min(specified, content-based minimum) — the content-based minimum for an input is its default/intrinsic size (inputs have a default preferred width ~170-200px based on size attribute; but here clientW=150).
+
+Hmm, let me try to reconstruct numbers to get 331.
+
+320 viewport. px-4 → 16px padding each side → content 288. If the row overflows to 331 − 16 (left padding) = 315 content width? Or the row's width becomes 331 − 16 = 315? Then right edge at 16 + 315 = 331. So the row's laid-out width would be 315 if it starts at x=16.
+
+Row width 315 = label + gap + input + gap + button. With label 80, input 150, button 42: 272 + 2 gaps = 315 → gaps = 21.5 each. Odd. Alternatively the row's min-content width is 315: label min-content + input min-content + button min-content + gaps.
+
+Hmm, but the probe shows the laid-out sizes: label 80, input 150, button 42. These are the actual clientWidths at 320px. So the row's content sums to 272 + gaps. If gap-2 (8px): 288 total — exactly the container width. So the row fits at 288? Then why does the document overflow to 331?
+
+Wait — maybe the button's *content* overflows. Button clientW = 42, scrollW = 55. The button's content (text "Propose" + padding) needs 55px. The button is the last item in the row, at the right edge. If the button's content overflows to the right (in LTR, overflow goes right), the overflow extends 13px past the button's right edge. The button's right edge is at... row content ends at 16 + 288 = 304. Button right edge at 304. Content overflows 13px → 317. That's not 331.
+
+Hmm, that doesn't add up either. Let me reconsider.
+
+Alternative: maybe the row doesn't fit and the flex algorithm pushes things. Let me reconsider: maybe the container isn't 288. Maybe there are nested paddings. Or maybe the row is inside something with more padding.
+
+Actually, wait. Let me reconsider the numbers. docScrollW = 331. Overflow = 11px past 320.
+
+Button: clientW 42, scrollW 55 → 13px internal overflow.
+
+Hmm, 13 ≠ 11. But maybe part of the button's overflow is absorbed... Actually scrollWidth of an element includes its own padding but content overflow. If the button's content box overflows by 13px, and the button's right edge is at x = 318 (not 304), then 318 + 13 = 331. So button right edge at 318? Then row right edge at 318, meaning the row extends to 318, i.e., row width = 318 − 16 = 302 if starting at 16. Hmm.
+
+Alternatively, maybe the mechanism is entirely different: the button's min-width:44px combined with the flex row's min-content calculation. Let me think about what forces the *document* to be 331 wide.
+
+For document scrollWidth to be 331, some element's border box (or overflow) must extend to x=331. The probe found only the button with internal overflow. But the probe only reports the smallest elements — the actual element whose border box extends to 331 might be an ancestor (the row, the section, etc.) that the probe didn't list because it lists "smallest elements". Hmm, but the invariant says the owner is "the smallest element whose scrollWidth exceeds its clientWidth". The button qualifies: scrollW 55 > clientW 42.
+
+But wait — does the button's overflow actually propagate to the document? Overflow of inline content in a button: buttons have `overflow: visible` by default? Actually buttons in Chrome have overflow visible but their content is centered; text overflow in a too-narrow button... The button's scrollWidth = 55 means content extends 13px beyond. With `overflow: visible`, the text would visually spill out but scrollWidth of ancestors doesn't include descendants' overflow unless... actually scrollWidth of an ancestor DOES include overflow of descendants (visible overflow propagates up through scroll area calculations). Yes: an element's scrollable overflow region includes the overflow of descendant boxes (for visible overflow). So the button's 13px right-overflow contributes to the row's scroll area, the section's, and ultimately the document's scrollWidth — IF the button is positioned such that its overflow extends past the viewport's right edge.
+
+So: docScrollW = 331 requires the button's overflowing content to reach x=331. Button right edge + 13 = 331 → button right edge at 318. Hmm, but if the row fits in 288 content width ending at 304, button right edge = 304, overflow to 317, docScrollW would be 317, not 331.
+
+Unless the row itself is wider than 288. Let's suppose the row is a flex item in a column-flex body (
+[/REASONING]

@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && grep -n "wrapModuleLoad" node_modules/tsx/dist/register-C557imBs.cjs | head -5; echo ---; grep -n "_extensions\[" node_modules/tsx/dist/register-C557imBs.cjs | head -10

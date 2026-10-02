@@ -1,0 +1,17 @@
+const fs = require("fs");
+const j = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const p = j.projection;
+console.log("ok:", j.ok, "siteId:", j.siteId);
+console.log("name:", p.name, "| kind:", p.kindLabel);
+console.log("category:", JSON.stringify(p.category));
+console.log("location:", JSON.stringify(p.location));
+console.log("summary:", JSON.stringify((p.summary && p.summary.value) || null));
+console.log("facts:", JSON.stringify(p.facts.map((f) => f.label + ": " + String(f.value).slice(0, 70))));
+console.log("capabilities:", JSON.stringify(p.capabilities));
+console.log("serviceRefs:", JSON.stringify(p.serviceRefs.map((s) => ({ name: s.name, relation: s.relation, kind: s.kindLabel }))));
+console.log("people:", JSON.stringify(p.people.map((s) => s.name)));
+console.log("extIds:", JSON.stringify(p.externalIdentities.map((s) => ({ name: s.name, relation: s.relation }))));
+console.log("locationRef:", JSON.stringify(p.locationRef && p.locationRef.name));
+console.log("contact:", JSON.stringify({ phone: p.contact.phone && p.contact.phone.value, email: p.contact.email && p.contact.email.value, website: p.contact.website && p.contact.website.value }));
+console.log("provenance:", p.provenance.label, "| ref:", p.provenance.ref, "| derivedAt:", p.provenance.derivedAt);
+console.log("samples:", JSON.stringify(p.sampleQuestions));

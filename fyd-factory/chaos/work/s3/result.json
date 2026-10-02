@@ -1,0 +1,35 @@
+{
+ "experiment": "S3 HTTP 500 / 429 / DNS timeout (SIMULATED)",
+ "mode": "SIMULATED",
+ "simulation": "scripted fake HTTP client; no live network fault injected",
+ "max_attempts": 3,
+ "scenarios": {
+  "A_500_flaky": {
+   "recovered": true,
+   "attempts": 3,
+   "error": null
+  },
+  "B_429_flaky": {
+   "recovered": true,
+   "attempts": 3,
+   "error": null
+  },
+  "C_429_dead": {
+   "recovered": false,
+   "attempts": 3,
+   "error": "rate_limited"
+  },
+  "D_dns_dead": {
+   "recovered": false,
+   "attempts": 3,
+   "error": "DnsTimeout"
+  },
+  "E_500_dead": {
+   "recovered": false,
+   "attempts": 3,
+   "error": "Http500"
+  }
+ },
+ "retry_after_honored": true,
+ "verdict": "PASS"
+}

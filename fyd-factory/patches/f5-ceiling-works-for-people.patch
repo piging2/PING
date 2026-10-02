@@ -1,0 +1,138 @@
+F5-CEILING patch proposal: generator drops reverse-direction works_for team members
+==============================================================================
+Branch: fyd-factory (PING repo /home/nolan/projects/ping). NOT APPLIED.
+Read-only investigation; apply deliberately.
+
+PROBLEM
+-------
+The eligibility module (src/fyd/builder/eligibility.ts) counts a team when a
+person object links to the owner via works_for "in either direction", and its
+report marked coppersmith-plumbing team=1 / People eligible. But the spec
+generator (src/fyd/proceduralize/generator.ts :: group()) only matches
+owner-as-subject edges with predicates employs|has_member, so the person that
+website ingestion recorded as person -> works_for -> business never enters the
+people group, no People section is emitted, and the planner (which correctly
+filters by the eligibility report) has nothing to keep. Two modules disagree
+on the same predicate vocabulary; the narrower one wins silently.
+
+Evidence (F5-CEILING run 2026-09-23, ~/workspace/fyd-factory/ceiling/):
+- coppersmith fixture relationship rel-8627fe1497c235f5:
+  subject=website-business-2f1327c09d622175-person-377048d67856,
+  predicate=works_for, object=website-business-2f1327c09d622175 (the owner).
+- deriveEligibility(coppersmith graph): team=1, People eligible.
+- planSite(coppersmith graph): home page has NO People section; about page has
+  none either. Fingerprint identical to happy-place (which has no people at
+  all): composite similarity 1.000, exact home sequence.
+- happy-place-rich fixture (employs direction, team=2) DOES emit People on
+  home + about. Same component, same planner: only the edge direction differs.
+
+FIX (generator boundary only; no planner/renderer/resolver changes)
+-------------------------------------------------------------------
+1. group(): merge reverse-direction works_for persons into the people group,
+   mirroring eligibility's rule. Deterministic: dedup by id, re-sort by id.
+2. Emit People sections with kind:"reference" + the grouped ids instead of the
+   owner-centric roleQuery("person"). Resolvers (planner resolveQueryObjects,
+   renderer resolveQuery, render-model) all handle "reference" and cannot
+   reach reverse-direction members through "related" (they require
+   r.subject === from). The resolved set is exactly the grouped team.
+3. Bump SITE_PLANNER_VERSION to fyd-site-planner@2: emitted spec bytes change
+   (section query kind), and the version stamp exists precisely to mark that.
+
+EXPECTED EFFECT
+---------------
+- coppersmith-plumbing gains a People section (home + about), bound to the
+  works_for person. Its fingerprint diverges from happy-place exactly where
+  the entities diverge: variation for the right reason.
+- happy-place-rich (employs direction) resolves the same person set as
+  before; only the query encoding changes (related -> reference).
+- No other site changes: services/products/locations/posts paths untouched.
+
+VERIFICATION (to run after applying)
+-------------------------------------
+- tsx fingerprint harness: coppersmith People section present with
+  objectIds=[person id]; happy-place resolved sets unchanged.
+- jest: src/fyd/proceduralize, src/fyd/builder, src/fyd/sitespec suites.
+- tsc clean.
+
+diff --git a/src/fyd/proceduralize/generator.ts b/src/fyd/proceduralize/generator.ts
+index 0000000..0000000 100644
+--- a/src/fyd/proceduralize/generator.ts
++++ b/src/fyd/proceduralize/generator.ts
+@@ -105,6 +105,24 @@ function group(graph: ObjectGraph): Grouped {
+   const services = related("service");
+   const products = related("product");
+   const locations = related("location");
+   const people = related("person");
++  // Reverse-direction employment: website ingestion records works_for as
++  // person -> business, but related() only matches owner -> person edges
++  // (employs|has_member). Eligibility (deriveEligibility in
++  // src/fyd/builder/eligibility.ts) honors works_for in either direction;
++  // when the grouping does not, team members the eligibility report counts
++  // never reach section emission and the People section silently vanishes
++  // (observed: coppersmith-plumbing has a works_for team member,
++  // eligibility team=1, yet no People section was emitted). Merge the
++  // reverse edges here so the two modules agree on who the team is.
++  // Deterministic: dedup by id, re-sorted by id like related().
++  if (owner) {
++    const seen = new Set(people.map((p) => p.id));
++    for (const r of graph.relationships) {
++      if (r.status !== "active" || r.predicate !== "works_for" || r.object !== owner.id) continue;
++      const p = objects.get(r.subject);
++      if (p && SCHEMA_ROLES.person.includes(p.schema) && p.visibility === "public" && !seen.has(p.id)) {
++        seen.add(p.id);
++        people.push(p);
++      }
++    }
++    people.sort(byId);
++  }
+   // Published content spans the post and article roles; the split reads
+   // the central role map, never hardcoded schema ids.
+   const published = [...related("post"), ...related("article")].sort(byId);
+@@ -176,7 +194,12 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
+     add("Locations", roleQuery(ownerId, "location"));
+   }
+   if (g.people.length > 0) {
+-    add("People", roleQuery(ownerId, "person"));
++    // Reference query, not owner-centric "related": the people set may now
++    // include reverse-direction works_for members, which the resolvers
++    // cannot reach through "related" (they require r.subject === from).
++    // Listing the grouped ids binds the section to exactly the team
++    // group() computed, deterministically. Resolved identically by the
++    // planner (resolveQueryObjects), the renderer (resolveQuery), and the
++    // semantic render model.
++    add("People", { kind: "reference", objectIds: g.people.map((p) => p.id) });
+   }
+   if (g.articles.length > 0 || g.posts.length > 0) {
+     add("RecentObjects", roleQueryUnion(ownerId, ["post", "article"], 6));
+@@ -238,11 +261,16 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
+ /** ABOUT: BusinessSummary plus People. Exists when there is something to say. */
+ function aboutPage(g: Grouped): FYDPage | null {
+   if (!g.owner) return null;
+-  const ownerId = g.owner.id;
+   const sections: FYDSection[] = [];
+   const add = (component: string, query: FYDSection["query"]) => {
+     sections.push(section("about", sections.length, component, query));
+   };
+   if (g.owner.description.trim() !== "") {
+     add("BusinessSummary", { kind: "owner" });
+   }
+   if (g.people.length > 0) {
+-    add("People", roleQuery(ownerId, "person"));
++    // Same direction-agnostic binding as the home page People section.
++    add("People", { kind: "reference", objectIds: g.people.map((p) => p.id) });
+   }
+   if (sections.length === 0) return null;
+   return { slug: "about", title: "About " + g.owner.title, navLabel: "About", sections };
+diff --git a/src/fyd/builder/planner.ts b/src/fyd/builder/planner.ts
+--- a/src/fyd/builder/planner.ts
++++ b/src/fyd/builder/planner.ts
+@@ -78,7 +78,7 @@ import {
+   buildVerifiedRenderModel,
+   ownerAssertionsFromGraph,
+   type PresentationBinding,
+   type VerifiedRenderModel,
+ } from "../sitespec/binding-verifier";
+
+-export const SITE_PLANNER_VERSION = "fyd-site-planner@1";
++// Bumped: People sections now emit kind:"reference" queries (works_for fix).
++export const SITE_PLANNER_VERSION = "fyd-site-planner@2";

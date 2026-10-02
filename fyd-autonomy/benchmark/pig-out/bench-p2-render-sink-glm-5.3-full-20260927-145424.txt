@@ -1,0 +1,67 @@
+## 1. Diagnosis
+
+**Root cause: raw observed strings from `fields.website` and `fields.socials` are interpolated directly into the `href` attribute sink (`renderer.tsx` Excerpts 1 and 2), with no scheme validation.** React escapes *text content* (which is why the `<script>` / `<img onerror>` description payloads rendered inert — PASS), but attribute values in JSX are not scheme-filtered: React (per the problem statement) only *warns* on `javascript:` URLs, it does not block them. So `href={website}` with `website = "javascript:alert(1)"` produces a genuinely executable link — clicking it runs script with the page's origin.
+
+This is not a text sink (H2 is wrong — text probes PASS), not `dangerouslySetInnerHTML` (H1 is wrong — probe found none), not a trusted route table (H3 is wrong — the values demonstrably originate from `fields`, observed data per Invariant 1), and not a probe artifact (H4/H5 are wrong — the rendered `href` attributes verbatim contain the hostile strings, exactly what a browser would execute). The analyst hypotheses miss the real issue: **JSX escaping and URL-scheme neutralization are orthogonal mechanisms; the renderer has the former and lacks the latter.**
+
+## 2. Patch spec
+
+Single file: `renderer.tsx`. Add a scheme-guard helper and route both `href` interpolations through it. No renderer redesign.
+
+```diff
++ // top of renderer.tsx
++ const SAFE_URL = /^(https?:|mailto:|tel:|#|\/)/i;
++ function safeHref(raw: string): string {
++   // strip leading whitespace/control chars (browsers ignore them when
++   // parsing schemes), then check the scheme
++   const cleaned = raw.replace(/^[\s\x00-\x1f]+/, "");
++   return SAFE_URL.test(cleaned) ? cleaned : "#";
++ }
+
+  // Excerpt 1
+  <a href={safeHref(website)} className="underline">
+    {website}
+  </a>
+
+  // Excerpt 2
+  {socials.map((url) => (
+-   <a key={url} href={url}>
++   <a key={url} href={safeHref(url)}>
+      {hostOf(url)}
+    </a>
+  ))}
+```
+
+Mechanism notes: the control-char strip must run *before* the scheme test, because `jav&#x09;ascript:`-style smuggling relies on the browser tolerating embedded `\x00`–`\x1f` and whitespace inside the scheme. Falling back to `"#"` (matching the existing internal-anchor pattern `href="#ask"`) keeps the anchor inert and clickable-no-op. Display text stays raw (React escapes it). Note the whitelist is the right polarity: a `javascript:`-blacklist is fragile; only http(s), mailto, tel, and internal/relative forms are rendered as live links.
+
+One caveat: I am inferring the fallback `"#"` is acceptable; if the site's router intercepts `#` anchors specially, the fallback should be whatever the codebase already uses for a dead link — evidence that would settle it: any existing placeholder-link pattern in the renderer.
+
+## 3. Test spec
+
+Run through the real probe path (Excerpt 3: synthetic ObjectGraph → `generateSiteSpec` → `renderToStaticMarkup` with `SitePageView`), then assert on the rendered `href` attributes.
+
+**Hostile inputs (each in `fields.website` and each as a single-item `fields.socials`):**
+
+1. `javascript:alert(1)`
+2. `JaVaScRiPt:alert(1)` (mixed case)
+3. `" javascript:alert(1)"` (leading space)
+4. `"jav\tascript:alert(1)"` / `"jav\x01ascript:alert(1)"` (control-char smuggling)
+5. `data:text/html,<script>alert(1)</script>`
+6. `vbscript:msgbox(1)`
+
+**Assertions:**
+
+- For every input above, the rendered attribute is **not** a live executable scheme: `rendered` must contain `href="#"` (or otherwise must fail `href`-matches `/(javascript|data|vbscript)\s*:/i` after control-char stripping). Concretely: parse the static markup, take every `<a>` whose `href` derives from website/socials, and assert `SAFE_URL.test(href) === true`.
+- **Control (must not regress):** `website = "https://example.com"` renders `href="https://example.com"` verbatim; `socials = ["mailto:a@b.c"]`, `["tel:+15551234"]`, and internal `#ask` anchors all render verbatim.
+- **Controls from existing evidence (must keep passing):** hostile `description` strings still render escaped/inert.
+
+**Current-code falsifiability:** on the unpatched renderer, assertions for inputs 1–6 fail (inputs 1 and 2 are directly evidenced by the probe; 3–6 fail by the same mechanism — no guard exists — though only 1 and 2 are shown verbatim in evidence; 3–6's failure should be confirmed by running the probe). After the patch, all pass and controls pass.
+
+## 4. Risks
+
+- **Legitimate non-whitelisted schemes break.** `ftp:`, `sms:`, `irc:` links in harvested socials would be downgraded to `#`. Check: inventory what schemes real harvested data actually produces; extend the whitelist deliberately, not by removing the guard.
+- **Protocol-relative and relative URLs.** `//evil.com` and `page.html` — the regex allows `/`-prefixed and `#` forms but a bare `page.html` (relative, same-origin) would be rejected. Decide explicitly whether relative paths are allowed; the evidence shows internal routes are `"/o/" + encodeURIComponent(id)`, so `/`-prefix suffices for the demonstrated cases.
+- **`hostOf(url)` display.** If `hostOf` naively strips a scheme prefix, a neutralized link could still *display* a plausible host while pointing at `#` — cosmetic, not a vulnerability, but check UX.
+- **Whitelist over-trust in `https:`.** `https:` URLs are still capable of navigation/phishing; that's accepted scope (links are meant to navigate), but confirm the demo context is fine linking off-site.
+- **Key stability:** `key={url}` uses the raw string — unchanged, so no React key issues introduced.
+- **Not covered by this patch:** `src` sinks — evidence says none exist, but the guard should be reused if any appear later.

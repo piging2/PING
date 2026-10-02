@@ -1,0 +1,128 @@
+{
+  "site_id": "f2b-mesa-shield-pest",
+  "redacted": true,
+  "synthetic_marker": "DEMO_SYNTHETIC",
+  "variant": "pest control: single service",
+  "fixture_batch": "b",
+  "generated_at": "2026-09-23T18:45:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "fixture-b-mesa-shield",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_batch_b",
+        "visibility": "public",
+        "title": "Mesa Shield Pest Control",
+        "description": "Synthetic demo pest control company for FYD factory testing.",
+        "fields": {
+          "phone": "(970) 555-0124",
+          "email": "contact@mesa-shield-pest.example.com",
+          "website": "https://mesa-shield-pest.example.com",
+          "locality": "Fruita, CO, US",
+          "area_served": "Fruita and Loma, Colorado",
+          "price_range": "$",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T18:45:00Z",
+        "updatedAt": "2026-09-23T18:45:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:f2b-mesa-shield-pest",
+          "derivedAt": "2026-09-23T18:45:00Z"
+        }
+      },
+      {
+        "id": "fixture-b-mesa-shield-loc-fruita",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_batch_b",
+        "visibility": "public",
+        "title": "Fruita, CO, US",
+        "description": "Coarse public location claim from the synthetic fixture.",
+        "fields": {
+          "address_locality": "Fruita",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Fruita, CO, US",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T18:45:00Z",
+        "updatedAt": "2026-09-23T18:45:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:f2b-mesa-shield-pest",
+          "derivedAt": "2026-09-23T18:45:00Z"
+        }
+      },
+      {
+        "id": "fixture-b-mesa-shield-service-01",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_batch_b",
+        "visibility": "public",
+        "title": "General Pest Treatment",
+        "description": "Quarterly visits covering common household pests.",
+        "fields": {
+          "name": "General Pest Treatment",
+          "description": "Quarterly visits covering common household pests.",
+          "service_href": "https://mesa-shield-pest.example.com/services/treatment",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T18:45:00Z",
+        "updatedAt": "2026-09-23T18:45:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:f2b-mesa-shield-pest",
+          "derivedAt": "2026-09-23T18:45:00Z"
+        }
+      },
+      {
+        "id": "fixture-b-mesa-shield-person-jordan",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_batch_b",
+        "visibility": "public",
+        "title": "Jordan Reyes",
+        "description": "Synthetic team member in the fixture.",
+        "fields": {
+          "name": "Jordan Reyes",
+          "role": "Service technician",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T18:45:00Z",
+        "updatedAt": "2026-09-23T18:45:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:f2b-mesa-shield-pest",
+          "derivedAt": "2026-09-23T18:45:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-b-pest-offer-01",
+        "subject": "fixture-b-mesa-shield",
+        "predicate": "offers",
+        "object": "fixture-b-mesa-shield-service-01",
+        "status": "active",
+        "createdAt": "2026-09-23T18:45:00Z",
+        "evidenceRef": "fixture:synthetic:f2b-mesa-shield-pest:service-card:01"
+      },
+      {
+        "id": "rel-b-pest-located",
+        "subject": "fixture-b-mesa-shield",
+        "predicate": "located_at",
+        "object": "fixture-b-mesa-shield-loc-fruita",
+        "status": "active",
+        "createdAt": "2026-09-23T18:45:00Z",
+        "evidenceRef": "fixture:synthetic:f2b-mesa-shield-pest:postal-address"
+      },
+      {
+        "id": "rel-b-pest-works",
+        "subject": "fixture-b-mesa-shield-person-jordan",
+        "predicate": "works_for",
+        "object": "fixture-b-mesa-shield",
+        "status": "active",
+        "createdAt": "2026-09-23T18:45:00Z",
+        "evidenceRef": "fixture:synthetic:f2b-mesa-shield-pest:team"
+      }
+    ]
+  }
+}

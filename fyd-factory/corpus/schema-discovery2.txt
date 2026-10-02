@@ -1,0 +1,75 @@
+=== claimKind values in fixtures ===
+--- /home/nolan/ping/var/fyd-projections/happy-place.json
+{('ping.social.location@1', 'website_statement'): 1, ('ping.social.service@1', 'website_statement'): 5}
+--- /home/nolan/ping/var/fyd-projections/coppersmith-plumbing.json
+{('ping.social.external_identity@1', 'website_statement'): 1, ('ping.social.location@1', 'website_statement'): 1, ('ping.social.person@1', 'website_statement'): 1, ('ping.social.service@1', 'website_statement'): 4}
+--- /home/nolan/ping/var/fyd-projections/ping-fyd.json
+{}
+=== faq schema anywhere in src/fyd? ===
+=== claim schema ids ===
+45:  id: "ping.social.business@1",
+60:    { predicate: "provides", targetSchemas: ["ping.social.service@1", "ping.social.product@1"], meaning: "Services or products the business offers." },
+61:    { predicate: "publishes", targetSchemas: ["ping.social.post@1", "ping.social.article@1"], meaning: "Posts or articles the business published." },
+62:    { predicate: "located_at", targetSchemas: ["ping.social.location@1"], meaning: "Where the business operates." },
+63:    { predicate: "employs", targetSchemas: ["ping.social.person@1"], meaning: "People behind the business." },
+70:  id: "ping.social.service@1",
+81:    { predicate: "provided_by", targetSchemas: ["ping.social.business@1"], meaning: "The business offering this service." },
+88:  id: "ping.social.post@1",
+100:    { predicate: "published_by", targetSchemas: ["ping.social.business@1"], meaning: "The business that published this post." },
+101:    { predicate: "replies_to", targetSchemas: ["ping.social.post@1"], meaning: "The post this replies to." },
+135:  business: ["ping.social.business@1", "ping.knowledge.business@1"],
+136:  service: ["ping.social.service@1", "ping.knowledge.service@1"],
+137:  product: ["ping.social.product@1"],
+138:  location: ["ping.social.location@1", "ping.knowledge.location@1"],
+139:  person: ["ping.social.person@1", "ping.knowledge.person@1"],
+143:  post: ["ping.social.post@1", "ping.knowledge.post@1"],
+144:  article: ["ping.social.article@1", "ping.knowledge.article@1"],
+246:  "ping.social.business@1": [
+258:  "ping.social.service@1": ["Services", "ObjectGrid", "ObjectFeed", "CTA", "ObjectRail"],
+259:  "ping.social.post@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
+=== person object sample (coppersmith) ===
+{
+ "id": "website-business-2f1327c09d622175-person-377048d67856",
+ "schema": "ping.social.person@1",
+ "controllerId": "identity_fyd_compiler_test",
+ "visibility": "public",
+ "title": "coppersmithplm",
+ "description": "Person described in the website's structured data.",
+ "fields": {
+  "name": "coppersmithplm",
+  "claimKind": "website_statement"
+ },
+ "createdAt": "2026-09-21T13:50:00Z",
+ "updatedAt": "2026-09-21T13:50:00Z",
+ "provenance": {
+  "kind": "website-derived",
+  "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+  "derivedAt": "2026-09-21T13:50:00Z"
+ }
+}
+=== external_identity sample ===
+{
+ "id": "website-business-2f1327c09d622175-ext-89604af059c2",
+ "schema": "ping.social.external_identity@1",
+ "controllerId": "identity_fyd_compiler_test",
+ "visibility": "public",
+ "title": "coppersmithplumbing.com",
+ "description": "External profile linked from the website's structured data.",
+ "fields": {
+  "url": "https://coppersmithplumbing.com",
+  "platform": "coppersmithplumbing.com",
+  "claimKind": "website_statement"
+ },
+ "createdAt": "2026-09-21T13:50:00Z",
+ "updatedAt": "2026-09-21T13:50:00Z",
+ "provenance": {
+  "kind": "website-derived",
+  "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+  "derivedAt": "2026-09-21T13:50:00Z"
+ }
+}
+=== phones across all fixtures (uniqueness check) ===
+      1 (970) 589-3309
+      1 970-245-3869
+=== 555 numbers anywhere? ===
+none

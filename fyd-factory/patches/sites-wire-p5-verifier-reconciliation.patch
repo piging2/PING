@@ -1,0 +1,107 @@
+WIRE-SPEC P-5: reconcile the two verifiers (LANE-CLAIM H4/R-H4).
+
+WHAT IT DOES: new resolveBoundFieldVerified in binding-verifier.ts delegates to the STRONG verifyBinding; renderer boundField uses it with ownerAssertionsFromGraph; comments corrected; graph.ts docblock disclaims publish authority. The weak primitive is untouched (pinned by bindings.test.ts:125). Full rationale in workspace patch file.
+
+--- a/src/fyd/sitespec/binding-verifier.ts
++++ b/src/fyd/sitespec/binding-verifier.ts
+@@ -190,6 +190,27 @@ export function verifyBinding(
+   }
+ }
+ 
++/**
++ * Render-seam field resolution through the STRONG verifier (LANE-CLAIM
++ * H4/R-H4 reconciliation). This is the publish-path counterpart of
++ * verifyBinding: the renderer's boundField/boundTitle/boundDescription
++ * resolve through here, so owner_authored bindings require a recorded
++ * owner assertion, exactly as the planner's emission seam enforces.
++ * Returns undefined when the binding does not verify; the caller must
++ * OMIT the value, never guess.
++ *
++ * graph.ts resolveBoundField remains the low-level resolution primitive
++ * (no publish-verdict authority); new publish paths must use this seam.
++ */
++export function resolveBoundFieldVerified(
++  graph: ObjectGraph,
++  binding: PresentationBinding,
++  ownerAssertions: readonly OwnerAssertion[] = [],
++): string | undefined {
++  const verdict = verifyBinding(binding, graph, ownerAssertions);
++  return verdict.status === "BOUND" ? verdict.value : undefined;
++}
++
+ /** One verdict per input binding, in input order, plus the split. */
+ export interface SpecBindingReport {
+   verdicts: SpecBindingVerdict[];
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -19,7 +19,10 @@ import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
+ import { ObjectCard } from "../object/card";
+ import { ObjectCircle } from "../ui/object-circle";
+ import { WhyThis, type EvidenceStep } from "../ui/why-this";
+-import { resolveBoundField } from "../sitespec/graph";
++import {
++  ownerAssertionsFromGraph,
++  resolveBoundFieldVerified,
++} from "../sitespec/binding-verifier";
+ import type { BindingClassification } from "../sitespec/graph";
+ import {
+   applyFieldVisibility,
+@@ -685,10 +688,13 @@ function FydObjectCard({
+ // Projection seam: binding verification + safe links.
+ //
+ // Every FACTUAL value rendered below is read through boundField /
+-// boundTitle / boundDescription, which resolve the value via the
+-// presentation-binding verifier (resolveBoundField). A value whose binding
+-// does not verify returns undefined, and the caller OMITS it: no binding,
+-// no factual output. This is the verifier wired into the actual
++// boundTitle / boundDescription, which resolve the value via the STRONG
++// BindingVerifier (verifyBinding in sitespec/binding-verifier.ts, through
++// resolveBoundFieldVerified). A value whose binding does not verify
++// returns undefined, and the caller OMITS it: no binding, no factual
++// output. In particular, owner_authored bindings require a recorded owner
++// assertion, exactly as the planner's emission seam enforces (LANE-CLAIM
++// H4/R-H4 reconciliation). This is the verifier wired into the actual
+ // projection path, not a sidecar.
+ //
+ // Labels, action text ("Visit website", "Ask FYD"), section headings that
+@@ -704,7 +710,8 @@ function FydObjectCard({
+ 
+ /**
+  * Verified factual field read. Returns the value only when the binding
+- * verifies; undefined means the caller must OMIT the value, never guess.
++ * verifies against the STRONG BindingVerifier (LANE-CLAIM H4/R-H4);
++ * undefined means the caller must OMIT the value, never guess.
+  */
+ function boundField(
+   ctx: RenderContext,
+@@ -712,7 +719,14 @@ function boundField(
+   field: string,
+   classification: BindingClassification = "direct",
+ ): string | undefined {
+-  return resolveBoundField(ctx.graph, { objectId: o.id, field, classification });
++  // Owner assertions ride on the render graph; the strong verifier
++  // requires a recorded assertion for owner_authored bindings. Pure and
++  // deterministic; trivial cost at demo graph sizes.
++  return resolveBoundFieldVerified(
++    ctx.graph,
++    { objectId: o.id, field, classification },
++    ownerAssertionsFromGraph(ctx.graph),
++  );
+ }
+ 
+ /** Verified title read (object-level factual identity). */
+--- a/src/fyd/sitespec/graph.ts
++++ b/src/fyd/sitespec/graph.ts
+@@ -150,6 +150,12 @@ export function verifyPresentationBinding(
+  *
+  * Returns the verified value, or undefined when the binding does not
+  * verify. undefined means the caller must OMIT the value, never guess.
++ *
++ * Resolution primitive only, not a publish verdict: owner_authored and
++ * derived bindings are NOT evidence-checked here (LANE-CLAIM H4). Publish
++ * paths must use resolveBoundFieldVerified in sitespec/binding-verifier.ts,
++ * which enforces the strong verifier's rules. Retained for non-publish
++ * consumers such as lineage tracing.
+  */
+ export function resolveBoundField(
+   graph: ObjectGraph,

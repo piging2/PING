@@ -1,0 +1,32 @@
+WIRE-SPEC P-2: rights-basis step labeled "inferred", not "observed" (QA-TRUTH F-002).
+
+WHAT IT DOES
+------------
+src/fyd/components/renderer.tsx: the Rights basis EvidenceStep is pushed
+with state "inferred" instead of "observed". Golden route renders no
+rights step (no media), so zero DOM change on golden.
+
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -911,7 +911,9 @@ function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
+     steps.push({
+       step: "Rights basis",
+       detail: media.rightsBasis,
+-      state: "observed",
++      // Policy inference, not an observation: classifyRights is a URL
++      // heuristic with no authorization evidence (QA-TRUTH F-002).
++      state: "inferred",
+     });
+   }
+   if (media.observedAt) {
+@@ -1670,7 +1672,9 @@ function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
+     steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
+   }
+   if (media.rightsBasis) {
+-    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "observed" });
++    // Policy inference, not an observation: classifyRights is a URL
++    // heuristic with no authorization evidence (QA-TRUTH F-002).
++    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "inferred" });
+   }
+   if (media.observedAt) {
+     steps.push({ step: "Observed", detail: media.observedAt, state: "observed" });

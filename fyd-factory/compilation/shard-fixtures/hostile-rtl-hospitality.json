@@ -1,0 +1,139 @@
+{
+  "site_id": "hostile-rtl-hospitality",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "hospitality: RTL name and description (Arabic synthetic inn)",
+  "variation_thesis": "Stresses bidirectional text handling: Hebrew/Arabic business names and descriptions mixed with Latin fields.",
+  "expected_failure_mode": "warn: compiler must preserve RTL runs exactly, escape bidi control characters in HTML, and never reorder Latin metadata around RTL text.",
+  "hostile_properties": [
+    "rtl-text",
+    "arabic",
+    "bidi"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-rtl-hospitality-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "نُزُل تجريبي",
+        "description": "نُزُل تجريبي مع وصف باللغة العربية. Synthetic Arabic test inn. إقامة مريحة. (Arabic synthetic inn)",
+        "fields": {
+          "phone": "(970) 555-0123",
+          "business_type": "hospitality",
+          "website": "https://hostile-rtl-hospitality.example.com",
+          "address": "1 Test Bazaar Ln, Delta, CO",
+          "conflicts": [
+            "HOSTILE rtl: business name and description are right-to-left script (Hebrew/Arabic) mixed with Latin metadata. Bidi rendering and search indexing must not garble or invert the Latin segments."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-hospitality",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-hospitality-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Delta, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-rtl-hospitality.",
+        "fields": {
+          "address_locality": "Delta",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Delta, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-hospitality-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-hospitality-p-owner",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Test Owner (Owner)",
+        "description": "Person listed for synthetic fixture hostile-rtl-hospitality: Test Owner, Owner.",
+        "fields": {
+          "name": "Test Owner",
+          "role": "Owner",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-hospitality-p-owner",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-hospitality-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "خدمة رئيسية",
+        "description": "Primary service, RTL title; description: synthetic test service.",
+        "fields": {
+          "name": "خدمة رئيسية",
+          "description": "Primary service, RTL title; description: synthetic test service.",
+          "category": "service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-hospitality-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-rtl-hospitality-0001",
+        "subject": "hostile-rtl-hospitality-biz",
+        "predicate": "located_at",
+        "object": "hostile-rtl-hospitality-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-hospitality:site"
+      },
+      {
+        "id": "rel-hostile-rtl-hospitality-0002",
+        "subject": "hostile-rtl-hospitality-p-owner",
+        "predicate": "works_for",
+        "object": "hostile-rtl-hospitality-biz",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-hospitality:site"
+      },
+      {
+        "id": "rel-hostile-rtl-hospitality-0003",
+        "subject": "hostile-rtl-hospitality-biz",
+        "predicate": "offers",
+        "object": "hostile-rtl-hospitality-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-hospitality:site"
+      }
+    ]
+  }
+}

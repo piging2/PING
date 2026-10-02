@@ -1,0 +1,1 @@
+cd /home/nolan/projects/ping && grep -rln "object-circle" src/fyd --include=*.tsx --include=*.ts | grep -v __tests__ | head; echo ---; grep -n "import" src/fyd/components/renderer.tsx | grep -i "object\|rail\|build-client" | head

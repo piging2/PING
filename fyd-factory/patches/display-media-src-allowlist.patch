@@ -1,0 +1,64 @@
+# Patch 2 (OPTIONAL hardening): render-seam allowlist for DisplayMedia src/blurUrl
+#
+# Residual risk (verdict item 2): <img src> values come from pipeline manifests
+# via toDisplayMedia() in src/fyd/media/select.ts with no URL gate at the
+# render seam. The pipeline mints same-origin /fyd-media/<hash>/ paths and the
+# ingest fetch is SSRF-gated to http/https, so this is defense-in-depth, not
+# a found bypass: a poisoned manifest on disk must not become an <img src>.
+#
+# Fix: same-origin relative paths pass; anything else must clear the existing
+# resolveSafeLink "navigate" allowlist (http/https only, parser-based).
+# Unsafe variants make toDisplayMedia return null, and the renderer already
+# renders its typographic fallback when media is null.
+#
+# No new authority: reuses src/fyd/sitespec/safe-link.ts (already the single
+# link choke point; it imports nothing, so no cycle).
+#
+# Apply: git apply ~/workspace/fyd-factory/patches/display-media-src-allowlist.patch
+# (from repo root /home/nolan/projects/ping, branch fyd-factory)
+
+--- a/src/fyd/media/select.ts
++++ b/src/fyd/media/select.ts
+@@ -17,6 +17,7 @@
+ import type { ObjectGraph } from "../sitespec/types";
+ import { attachMediaToGraph, mediaForObject } from "./attach";
+ import { getPipelineManifest } from "./bundle-media";
++import { resolveSafeLink } from "../sitespec/safe-link";
+ import {
+   isAcquirable,
+   type FydMediaObject,
+@@ -71,15 +72,32 @@
+   return pickWidest(variants);
+ }
+ 
++/**
++ * Render-seam gate for display URLs. The pipeline mints same-origin paths
++ * (/fyd-media/<hash>/file); anything else must clear the shared
++ * resolveSafeLink allowlist (http/https, parser-based). Returns null for
++ * anything unsafe: the caller then renders its no-media fallback.
++ */
++function safeDisplayUrl(raw: unknown): string | null {
++  if (typeof raw !== "string" || raw === "") return null;
++  // Same-origin path: no scheme, no host, no whitespace/control chars.
++  if (/^\/[^\s\\]*$/.test(raw) && !/^\/\//.test(raw)) return raw;
++  const r = resolveSafeLink(raw, "navigate");
++  return r.kind === "safe" ? r.href : null;
++}
++
+ function toDisplayMedia(m: FydMediaObject, heroBias: boolean): DisplayMedia | null {
+   const v = heroBias ? pickHeroVariant(m.variants ?? []) : pickWidest(m.variants ?? []);
+   if (!v) return null;
++  const src = safeDisplayUrl(v.url);
++  if (!src) return null;
+   const blur = m.variants.find((v) => v.name.startsWith("blur")) ?? null;
++  const blurUrl = blur ? safeDisplayUrl(blur.url) : null;
+   return {
+     id: m.id,
+     role: m.roles?.[0] ?? "gallery",
+-    src: v.url,
+-    blurUrl: blur ? blur.url : null,
++    src,
++    blurUrl,
+     width: v.width,
+     height: v.height,
+     alt: (m.altText ?? "").trim() || m.title || "Business photo",

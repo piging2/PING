@@ -1,0 +1,15 @@
+diff --git a/src/fyd/ask/concierge.ts b/src/fyd/ask/concierge.ts
+--- a/src/fyd/ask/concierge.ts
++++ b/src/fyd/ask/concierge.ts
+@@ -348,4 +348,10 @@ function isServiceSchema(schema: string): boolean {
+ function buildGraphView(target: PingObject, objects: PingObject[], relationships: PingRelationship[]): GraphView {
+-  const byId = new Map(objects.map((o) => [o.id, o]));
++  // Fail closed: the input contract says this is the visible (public) graph,
++  // but a caller that passes the full graph would otherwise leak non-public
++  // objects through relationship traversal (services, locations, persons).
++  // Non-public objects are never citable: they are absent from the id index,
++  // so traversal and evidence building cannot reach them.
++  const visible = objects.filter((o) => o.visibility === "public");
++  const byId = new Map(visible.map((o) => [o.id, o]));
+   const active = relationships.filter((r) => r.status === "active");
+   const incident = active.filter((r) => r.subject === target.id || r.object === target.id);

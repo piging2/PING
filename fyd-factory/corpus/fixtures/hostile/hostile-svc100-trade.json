@@ -1,0 +1,3082 @@
+{
+  "site_id": "hostile-svc100-trade",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "trades: 100 services, sitemap vs directory mismatch",
+  "variation_thesis": "Stresses combinatorial fan-out: 100 service objects under one business with a count discrepancy.",
+  "expected_failure_mode": "warn: compiler must page/cap service rendering and flag the 100-vs-12 count mismatch; must not silently drop services or crash.",
+  "hostile_properties": [
+    "hundred-services",
+    "fan-out",
+    "count-discrepancy"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-svc100-trade-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Test HVAC",
+        "description": "Synthetic test trades business with exactly 100 services.",
+        "fields": {
+          "phone": "(970) 555-0108",
+          "business_type": "trades",
+          "website": "https://hostile-svc100-trade.example.com",
+          "address": "100 Test Way, Grand Junction, CO",
+          "service_count": 100,
+          "service_count_source": "website sitemap page",
+          "conflicts": [
+            "HOSTILE service-fanout: 100 services enumerated on the website. Directory listing only acknowledges ~12 core services. Count discrepancy preserved, not reconciled."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Grand Junction, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-svc100-trade.",
+        "fields": {
+          "address_locality": "Grand Junction",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Grand Junction, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #001",
+        "description": "Synthetic service listing 1 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #001",
+          "description": "Synthetic service listing 1 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-002",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #002",
+        "description": "Synthetic service listing 2 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #002",
+          "description": "Synthetic service listing 2 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-002",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-003",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #003",
+        "description": "Synthetic service listing 3 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #003",
+          "description": "Synthetic service listing 3 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-003",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-004",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #004",
+        "description": "Synthetic service listing 4 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #004",
+          "description": "Synthetic service listing 4 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-004",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-005",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #005",
+        "description": "Synthetic service listing 5 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #005",
+          "description": "Synthetic service listing 5 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-005",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-006",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #006",
+        "description": "Synthetic service listing 6 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #006",
+          "description": "Synthetic service listing 6 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-006",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-007",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #007",
+        "description": "Synthetic service listing 7 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #007",
+          "description": "Synthetic service listing 7 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-007",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-008",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #008",
+        "description": "Synthetic service listing 8 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #008",
+          "description": "Synthetic service listing 8 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-008",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-009",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #009",
+        "description": "Synthetic service listing 9 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #009",
+          "description": "Synthetic service listing 9 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-009",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-010",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #010",
+        "description": "Synthetic service listing 10 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #010",
+          "description": "Synthetic service listing 10 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-010",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-011",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #011",
+        "description": "Synthetic service listing 11 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #011",
+          "description": "Synthetic service listing 11 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-011",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-012",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #012",
+        "description": "Synthetic service listing 12 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #012",
+          "description": "Synthetic service listing 12 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-012",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-013",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #013",
+        "description": "Synthetic service listing 13 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #013",
+          "description": "Synthetic service listing 13 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-013",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-014",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #014",
+        "description": "Synthetic service listing 14 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #014",
+          "description": "Synthetic service listing 14 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-014",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-015",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #015",
+        "description": "Synthetic service listing 15 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #015",
+          "description": "Synthetic service listing 15 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-015",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-016",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #016",
+        "description": "Synthetic service listing 16 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #016",
+          "description": "Synthetic service listing 16 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-016",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-017",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #017",
+        "description": "Synthetic service listing 17 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #017",
+          "description": "Synthetic service listing 17 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-017",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-018",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #018",
+        "description": "Synthetic service listing 18 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #018",
+          "description": "Synthetic service listing 18 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-018",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-019",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #019",
+        "description": "Synthetic service listing 19 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #019",
+          "description": "Synthetic service listing 19 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-019",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-020",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #020",
+        "description": "Synthetic service listing 20 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #020",
+          "description": "Synthetic service listing 20 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-020",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-021",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #021",
+        "description": "Synthetic service listing 21 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #021",
+          "description": "Synthetic service listing 21 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-021",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-022",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #022",
+        "description": "Synthetic service listing 22 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #022",
+          "description": "Synthetic service listing 22 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-022",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-023",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #023",
+        "description": "Synthetic service listing 23 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #023",
+          "description": "Synthetic service listing 23 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-023",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-024",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #024",
+        "description": "Synthetic service listing 24 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #024",
+          "description": "Synthetic service listing 24 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-024",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-025",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #025",
+        "description": "Synthetic service listing 25 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #025",
+          "description": "Synthetic service listing 25 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-025",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-026",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #026",
+        "description": "Synthetic service listing 26 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #026",
+          "description": "Synthetic service listing 26 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-026",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-027",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #027",
+        "description": "Synthetic service listing 27 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #027",
+          "description": "Synthetic service listing 27 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-027",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-028",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #028",
+        "description": "Synthetic service listing 28 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #028",
+          "description": "Synthetic service listing 28 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-028",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-029",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #029",
+        "description": "Synthetic service listing 29 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #029",
+          "description": "Synthetic service listing 29 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-029",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-030",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #030",
+        "description": "Synthetic service listing 30 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #030",
+          "description": "Synthetic service listing 30 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-030",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-031",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #031",
+        "description": "Synthetic service listing 31 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #031",
+          "description": "Synthetic service listing 31 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-031",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-032",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #032",
+        "description": "Synthetic service listing 32 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #032",
+          "description": "Synthetic service listing 32 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-032",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-033",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #033",
+        "description": "Synthetic service listing 33 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #033",
+          "description": "Synthetic service listing 33 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-033",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-034",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #034",
+        "description": "Synthetic service listing 34 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #034",
+          "description": "Synthetic service listing 34 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-034",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-035",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #035",
+        "description": "Synthetic service listing 35 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #035",
+          "description": "Synthetic service listing 35 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-035",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-036",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #036",
+        "description": "Synthetic service listing 36 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #036",
+          "description": "Synthetic service listing 36 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-036",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-037",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #037",
+        "description": "Synthetic service listing 37 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #037",
+          "description": "Synthetic service listing 37 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-037",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-038",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #038",
+        "description": "Synthetic service listing 38 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #038",
+          "description": "Synthetic service listing 38 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-038",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-039",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #039",
+        "description": "Synthetic service listing 39 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #039",
+          "description": "Synthetic service listing 39 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-039",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-040",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #040",
+        "description": "Synthetic service listing 40 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #040",
+          "description": "Synthetic service listing 40 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-040",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-041",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #041",
+        "description": "Synthetic service listing 41 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #041",
+          "description": "Synthetic service listing 41 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-041",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-042",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #042",
+        "description": "Synthetic service listing 42 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #042",
+          "description": "Synthetic service listing 42 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-042",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-043",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #043",
+        "description": "Synthetic service listing 43 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #043",
+          "description": "Synthetic service listing 43 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-043",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-044",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #044",
+        "description": "Synthetic service listing 44 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #044",
+          "description": "Synthetic service listing 44 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-044",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-045",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #045",
+        "description": "Synthetic service listing 45 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #045",
+          "description": "Synthetic service listing 45 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-045",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-046",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #046",
+        "description": "Synthetic service listing 46 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #046",
+          "description": "Synthetic service listing 46 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-046",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-047",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #047",
+        "description": "Synthetic service listing 47 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #047",
+          "description": "Synthetic service listing 47 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-047",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-048",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #048",
+        "description": "Synthetic service listing 48 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #048",
+          "description": "Synthetic service listing 48 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-048",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-049",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #049",
+        "description": "Synthetic service listing 49 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #049",
+          "description": "Synthetic service listing 49 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-049",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-050",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #050",
+        "description": "Synthetic service listing 50 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #050",
+          "description": "Synthetic service listing 50 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-050",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-051",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #051",
+        "description": "Synthetic service listing 51 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #051",
+          "description": "Synthetic service listing 51 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-051",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-052",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #052",
+        "description": "Synthetic service listing 52 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #052",
+          "description": "Synthetic service listing 52 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-052",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-053",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #053",
+        "description": "Synthetic service listing 53 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #053",
+          "description": "Synthetic service listing 53 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-053",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-054",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #054",
+        "description": "Synthetic service listing 54 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #054",
+          "description": "Synthetic service listing 54 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-054",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-055",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #055",
+        "description": "Synthetic service listing 55 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #055",
+          "description": "Synthetic service listing 55 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-055",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-056",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #056",
+        "description": "Synthetic service listing 56 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #056",
+          "description": "Synthetic service listing 56 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-056",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-057",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #057",
+        "description": "Synthetic service listing 57 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #057",
+          "description": "Synthetic service listing 57 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-057",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-058",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #058",
+        "description": "Synthetic service listing 58 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #058",
+          "description": "Synthetic service listing 58 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-058",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-059",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #059",
+        "description": "Synthetic service listing 59 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #059",
+          "description": "Synthetic service listing 59 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-059",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-060",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #060",
+        "description": "Synthetic service listing 60 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #060",
+          "description": "Synthetic service listing 60 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-060",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-061",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #061",
+        "description": "Synthetic service listing 61 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #061",
+          "description": "Synthetic service listing 61 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-061",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-062",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #062",
+        "description": "Synthetic service listing 62 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #062",
+          "description": "Synthetic service listing 62 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-062",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-063",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #063",
+        "description": "Synthetic service listing 63 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #063",
+          "description": "Synthetic service listing 63 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-063",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-064",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #064",
+        "description": "Synthetic service listing 64 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #064",
+          "description": "Synthetic service listing 64 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-064",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-065",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #065",
+        "description": "Synthetic service listing 65 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #065",
+          "description": "Synthetic service listing 65 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-065",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-066",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #066",
+        "description": "Synthetic service listing 66 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #066",
+          "description": "Synthetic service listing 66 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-066",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-067",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #067",
+        "description": "Synthetic service listing 67 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #067",
+          "description": "Synthetic service listing 67 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-067",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-068",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #068",
+        "description": "Synthetic service listing 68 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #068",
+          "description": "Synthetic service listing 68 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-068",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-069",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #069",
+        "description": "Synthetic service listing 69 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #069",
+          "description": "Synthetic service listing 69 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-069",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-070",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #070",
+        "description": "Synthetic service listing 70 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #070",
+          "description": "Synthetic service listing 70 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-070",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-071",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #071",
+        "description": "Synthetic service listing 71 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #071",
+          "description": "Synthetic service listing 71 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-071",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-072",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #072",
+        "description": "Synthetic service listing 72 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #072",
+          "description": "Synthetic service listing 72 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-072",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-073",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #073",
+        "description": "Synthetic service listing 73 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #073",
+          "description": "Synthetic service listing 73 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-073",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-074",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #074",
+        "description": "Synthetic service listing 74 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #074",
+          "description": "Synthetic service listing 74 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-074",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-075",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #075",
+        "description": "Synthetic service listing 75 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #075",
+          "description": "Synthetic service listing 75 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-075",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-076",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #076",
+        "description": "Synthetic service listing 76 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #076",
+          "description": "Synthetic service listing 76 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-076",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-077",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #077",
+        "description": "Synthetic service listing 77 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #077",
+          "description": "Synthetic service listing 77 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-077",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-078",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #078",
+        "description": "Synthetic service listing 78 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #078",
+          "description": "Synthetic service listing 78 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-078",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-079",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #079",
+        "description": "Synthetic service listing 79 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #079",
+          "description": "Synthetic service listing 79 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-079",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-080",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #080",
+        "description": "Synthetic service listing 80 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #080",
+          "description": "Synthetic service listing 80 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-080",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-081",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #081",
+        "description": "Synthetic service listing 81 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #081",
+          "description": "Synthetic service listing 81 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-081",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-082",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #082",
+        "description": "Synthetic service listing 82 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #082",
+          "description": "Synthetic service listing 82 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-082",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-083",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #083",
+        "description": "Synthetic service listing 83 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #083",
+          "description": "Synthetic service listing 83 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-083",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-084",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #084",
+        "description": "Synthetic service listing 84 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #084",
+          "description": "Synthetic service listing 84 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-084",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-085",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #085",
+        "description": "Synthetic service listing 85 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #085",
+          "description": "Synthetic service listing 85 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-085",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-086",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #086",
+        "description": "Synthetic service listing 86 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #086",
+          "description": "Synthetic service listing 86 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-086",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-087",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #087",
+        "description": "Synthetic service listing 87 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #087",
+          "description": "Synthetic service listing 87 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-087",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-088",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #088",
+        "description": "Synthetic service listing 88 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #088",
+          "description": "Synthetic service listing 88 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-088",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-089",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #089",
+        "description": "Synthetic service listing 89 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #089",
+          "description": "Synthetic service listing 89 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-089",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-090",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #090",
+        "description": "Synthetic service listing 90 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #090",
+          "description": "Synthetic service listing 90 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-090",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-091",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #091",
+        "description": "Synthetic service listing 91 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #091",
+          "description": "Synthetic service listing 91 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-091",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-092",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #092",
+        "description": "Synthetic service listing 92 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #092",
+          "description": "Synthetic service listing 92 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-092",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-093",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #093",
+        "description": "Synthetic service listing 93 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #093",
+          "description": "Synthetic service listing 93 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-093",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-094",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #094",
+        "description": "Synthetic service listing 94 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #094",
+          "description": "Synthetic service listing 94 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-094",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-095",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #095",
+        "description": "Synthetic service listing 95 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #095",
+          "description": "Synthetic service listing 95 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-095",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-096",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #096",
+        "description": "Synthetic service listing 96 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #096",
+          "description": "Synthetic service listing 96 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-096",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-097",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #097",
+        "description": "Synthetic service listing 97 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #097",
+          "description": "Synthetic service listing 97 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-097",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-098",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #098",
+        "description": "Synthetic service listing 98 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #098",
+          "description": "Synthetic service listing 98 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-098",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-099",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #099",
+        "description": "Synthetic service listing 99 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #099",
+          "description": "Synthetic service listing 99 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-099",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-svc100-trade-svc-100",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Summit Service #100",
+        "description": "Synthetic service listing 100 of 100. Stress test for service fan-out.",
+        "fields": {
+          "name": "Summit Service #100",
+          "description": "Synthetic service listing 100 of 100. Stress test for service fan-out.",
+          "category": "trade-service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-svc100-trade-svc-100",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-svc100-trade-0001",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "located_at",
+        "object": "hostile-svc100-trade-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:site"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0002",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0003",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-002",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0004",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-003",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0005",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-004",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0006",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-005",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0007",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-006",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0008",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-007",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0009",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-008",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0010",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-009",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0011",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-010",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0012",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-011",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0013",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-012",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0014",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-013",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0015",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-014",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0016",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-015",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0017",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-016",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0018",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-017",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0019",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-018",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0020",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-019",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0021",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-020",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0022",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-021",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0023",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-022",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0024",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-023",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0025",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-024",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0026",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-025",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0027",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-026",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0028",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-027",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0029",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-028",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0030",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-029",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0031",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-030",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0032",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-031",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0033",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-032",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0034",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-033",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0035",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-034",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0036",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-035",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0037",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-036",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0038",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-037",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0039",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-038",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0040",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-039",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0041",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-040",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0042",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-041",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0043",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-042",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0044",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-043",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0045",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-044",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0046",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-045",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0047",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-046",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0048",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-047",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0049",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-048",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0050",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-049",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0051",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-050",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0052",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-051",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0053",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-052",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0054",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-053",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0055",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-054",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0056",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-055",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0057",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-056",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0058",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-057",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0059",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-058",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0060",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-059",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0061",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-060",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0062",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-061",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0063",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-062",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0064",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-063",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0065",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-064",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0066",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-065",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0067",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-066",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0068",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-067",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0069",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-068",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0070",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-069",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0071",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-070",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0072",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-071",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0073",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-072",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0074",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-073",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0075",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-074",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0076",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-075",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0077",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-076",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0078",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-077",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0079",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-078",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0080",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-079",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0081",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-080",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0082",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-081",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0083",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-082",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0084",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-083",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0085",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-084",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0086",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-085",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0087",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-086",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0088",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-087",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0089",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-088",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0090",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-089",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0091",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-090",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0092",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-091",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0093",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-092",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0094",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-093",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0095",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-094",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0096",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-095",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0097",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-096",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0098",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-097",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0099",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-098",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0100",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-099",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      },
+      {
+        "id": "rel-hostile-svc100-trade-0101",
+        "subject": "hostile-svc100-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-svc100-trade-svc-100",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-svc100-trade:sitemap"
+      }
+    ]
+  }
+}

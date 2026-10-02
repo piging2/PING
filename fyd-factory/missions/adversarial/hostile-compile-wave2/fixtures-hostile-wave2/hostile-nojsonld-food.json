@@ -1,0 +1,173 @@
+{
+  "site_id": "hostile-nojsonld-food",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "food: no structured data anywhere",
+  "variation_thesis": "Stresses the compiler when zero JSON-LD exists: every claim is weak-indication HTML scrape.",
+  "expected_failure_mode": "warn: emit low-confidence compilation with evidence_quality degraded; do not fail closed, do not invent structured fields.",
+  "hostile_properties": [
+    "no-jsonld",
+    "html-scrape-only",
+    "weak-indication"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-nojsonld-food-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Cinder Test Bakery",
+        "description": "Synthetic test bakery with no structured data anywhere.",
+        "fields": {
+          "phone": "(970) 555-0101",
+          "business_type": "food",
+          "website": "https://cindertest.example.com",
+          "address": "10 Test Bench Rd, Fruita, CO",
+          "hours": "Mo-Fr 08:00-17:00",
+          "structured_data_present": false,
+          "jsonld_source_count": 0,
+          "evidence_quality": "html-scrape-only",
+          "conflicts": [
+            "HOSTILE no-jsonld: zero JSON-LD found on website, social profiles, or directory listings. All claims derive from unstructured HTML scrape only. Phone, hours, and services are WEAK INDICATION."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-food",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-food-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Fruita, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-nojsonld-food.",
+        "fields": {
+          "address_locality": "Fruita",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Fruita, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-food-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-food-p-owner",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Casey Rivera (Owner)",
+        "description": "Person listed for synthetic fixture hostile-nojsonld-food: Casey Rivera, Owner.",
+        "fields": {
+          "name": "Casey Rivera",
+          "role": "Owner",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-food-p-owner",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-food-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Primary food service",
+        "description": "Core offering, claimed only in page H1 text.",
+        "fields": {
+          "name": "Primary food service",
+          "description": "Core offering, claimed only in page H1 text.",
+          "category": "service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-food-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-food-ext",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "https://social.example.com/hostile-nojsonld-food",
+        "description": "Social profile placeholder; contains no structured business data.",
+        "fields": {
+          "url": "https://social.example.com/hostile-nojsonld-food",
+          "platform": "social.example.com",
+          "structured_data_present": false,
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-food-ext",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-nojsonld-food-0001",
+        "subject": "hostile-nojsonld-food-biz",
+        "predicate": "located_at",
+        "object": "hostile-nojsonld-food-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-food:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-food-0002",
+        "subject": "hostile-nojsonld-food-p-owner",
+        "predicate": "works_for",
+        "object": "hostile-nojsonld-food-biz",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-food:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-food-0003",
+        "subject": "hostile-nojsonld-food-biz",
+        "predicate": "offers",
+        "object": "hostile-nojsonld-food-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-food:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-food-0004",
+        "subject": "hostile-nojsonld-food-biz",
+        "predicate": "links_to",
+        "object": "hostile-nojsonld-food-ext",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-food:html"
+      }
+    ]
+  }
+}

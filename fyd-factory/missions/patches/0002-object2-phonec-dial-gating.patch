@@ -1,0 +1,68 @@
+diff --git a/src/fyd/components/renderer.tsx b/src/fyd/components/renderer.tsx
+--- a/src/fyd/components/renderer.tsx
++++ b/src/fyd/components/renderer.tsx
+@@ -766,13 +766,64 @@ function contactMethod(
+ function contactMethod(
+   ctx: RenderContext,
+   o: PingObject,
+   kind: ContactMethodKind,
+   correction: OwnerFieldCorrection | null,
+ ): ContactMethod | null {
+   const value = boundField(ctx, o, kind, correction ? "owner_authored" : "direct");
+   if (value === undefined) return null;
++  // Fail-closed dial gating (OBJECT-SHARD-2): an explicit field-conflict
++  // marker blocks the dial/mailto action. An explicit owner correction is a
++  // human resolution of the field and outranks preserved conflict markers.
++  if (!correction && contactFieldConflicted(ctx, o, kind)) return null;
+   return contactMethodFor(kind, value, contactEvidence(o, kind, correction));
+ }
++
++/**
++ * Explicit conflict marker for one contact kind ("phone" | "email") on a
++ * single object. Two marker shapes are honored, both explicit:
++ *   - a "<kind>_conflicts_with" field naming the disputed value, or
++ *   - a "conflicts" entry that names both the field kind and a conflict
++ *     (e.g. "PHONE CONFLICT: website lists X; directory lists Y").
++ * Free-text notes that do not name the kind are not markers.
++ */
++function fieldConflictMarker(o: PingObject, kind: ContactMethodKind): boolean {
++  const fields = o.fields as Record<string, unknown>;
++  const explicit = fields[`${kind}_conflicts_with`];
++  if (typeof explicit === "string" && explicit.trim().length > 0) return true;
++  const conflicts = fields["conflicts"];
++  if (Array.isArray(conflicts)) {
++    const needle = kind.toLowerCase();
++    for (const c of conflicts) {
++      if (typeof c !== "string") continue;
++      const lc = c.toLowerCase();
++      if (lc.includes("conflict") && lc.includes(needle)) return true;
++    }
++  }
++  return false;
++}
++
++/**
++ * Whether a dial/mailto action must be blocked for this contact field.
++ * Checks the object's own fields plus one-hop active public relationships
++ * (conflict evidence often lives on a linked external-identity object).
++ * The conflicting values stay in the graph (both claims preserved); only
++ * the action is blocked.
++ */
++function contactFieldConflicted(
++  ctx: RenderContext,
++  o: PingObject,
++  kind: ContactMethodKind,
++): boolean {
++  if (fieldConflictMarker(o, kind)) return true;
++  for (const r of ctx.graph.relationships) {
++    if (r.status !== "active") continue;
++    const otherId = r.subject === o.id ? r.object : r.object === o.id ? r.subject : null;
++    if (!otherId) continue;
++    const t = ctx.graph.objects.find((x) => x.id === otherId);
++    if (t && t.visibility === "public" && fieldConflictMarker(t, kind)) return true;
++  }
++  return false;
++}
+ 
+ /** Evidence basis for a rendered contact method. */
+ function contactEvidence(

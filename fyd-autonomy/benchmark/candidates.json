@@ -1,0 +1,88 @@
+{
+ "candidates": [
+  {
+   "id": "hermes-baseline",
+   "invoke": "hermes-bridge",
+   "max_input_tokens": 6000,
+   "max_output_tokens": 1500,
+   "note": "Tier-1 headless baseline: the already-allocated Hermes headless agent on the Pig (free OpenRouter model). This is the labor-force baseline every paid tier must beat per dollar.",
+   "pricing_usd_per_1m": {
+    "input": 0.0,
+    "output": 0.0
+   },
+   "tier": 1
+  },
+  {
+   "id": "deepseek-v4-flash-free",
+   "invoke": "openrouter-pigside",
+   "max_input_tokens": 4000,
+   "max_output_tokens": 1500,
+   "model": "RESOLVE_AT_RUNTIME: deepseek :free (prefer v4-flash-0731; resolve via GET /v1/models at run time, never hardcode a guessed slug)",
+   "note": "Tier-2 free candidate. Doctrine default: DeepSeek V4 Flash 0731 FREE endpoint (rate-limited). Reasoning models: max_tokens raised so reasoning fits; content still capped by the four-section task block.",
+   "pricing_usd_per_1m": {
+    "input": 0.0,
+    "output": 0.0
+   },
+   "tier": 2,
+   "max_tokens": 2500
+  },
+  {
+   "id": "glm-5.3-flash",
+   "invoke": "openrouter-pigside",
+   "max_input_tokens": 4000,
+   "max_output_tokens": 1500,
+   "model": "z-ai/glm-5.3-flash",
+   "note": "Tier-2 fallback cheap candidate. Live-catalog pricing (2026-09-27): $0.045 in / $0.14 out per 1M. (Doctrine draft listed $0.075/$0.25; live catalog wins.) Reasoning models: max_tokens raised so reasoning fits; content still capped by the four-section task block.",
+   "pricing_usd_per_1m": {
+    "input": 0.045,
+    "output": 0.14
+   },
+   "tier": 2,
+   "max_tokens": 2500
+  },
+  {
+   "id": "mimo-v2.6-flash",
+   "invoke": "openrouter-pigside",
+   "max_input_tokens": 4000,
+   "max_output_tokens": 1500,
+   "model": "xiaomi/mimo-v2.6-flash",
+   "note": "Tier-2 fallback cheap candidate. Live-catalog pricing (2026-09-27): $0.14 in / $0.28 out per 1M. Reasoning models: max_tokens raised so reasoning fits; content still capped by the four-section task block.",
+   "pricing_usd_per_1m": {
+    "input": 0.14,
+    "output": 0.28
+   },
+   "tier": 2,
+   "max_tokens": 2500
+  },
+  {
+   "id": "mimo-v2.6-pro",
+   "invoke": "openrouter-pigside",
+   "max_input_tokens": 4000,
+   "max_output_tokens": 1500,
+   "model": "xiaomi/mimo-v2.6-pro",
+   "note": "Tier-3 default paid escalation (doctrine): architecture synthesis / hard debugging / agent-plan criticism. Live-catalog pricing (2026-09-27): $0.435 in / $0.87 out per 1M. ~1.05M context, multimodal, tool calling, structured outputs. Reasoning models: max_tokens raised so reasoning fits; content still capped by the four-section task block.",
+   "pricing_usd_per_1m": {
+    "input": 0.435,
+    "output": 0.87
+   },
+   "tier": 3,
+   "max_tokens": 4000
+  },
+  {
+   "id": "glm-5.3-full",
+   "invoke": "openrouter-pigside",
+   "max_input_tokens": 4000,
+   "max_output_tokens": 1500,
+   "model": "z-ai/glm-5.3",
+   "note": "Tier-3 premium escalation for hardest reasoning: software architecture, long-horizon reasoning, adversarial review. Live-catalog pricing (2026-09-27): $1.40 in / $4.40 out per 1M. Text-only input. GLM-5.3 License (not MIT) - matters only for self-hosting. Reasoning models: max_tokens raised so reasoning fits; content still capped by the four-section task block.",
+   "pricing_usd_per_1m": {
+    "input": 1.4,
+    "output": 4.4
+   },
+   "tier": 3,
+   "max_tokens": 4000
+  }
+ ],
+ "pricing_source": "Live OpenRouter /v1/models catalog as recorded 2026-09-27 in ~/workspace/openrouter-model-shortlist-2026-09-27.md. Model names are routing CONFIGURATION, not constants (doctrine: do not constitutionalize exact model names).",
+ "schema": "benchmark-candidates/v1"
+}

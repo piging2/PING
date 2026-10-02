@@ -1,0 +1,43 @@
+--- a/src/fyd/object/owner-overlay.ts
++++ b/src/fyd/object/owner-overlay.ts
+@@ -92,6 +92,29 @@
+ }
+ 
+ /**
++ * Drift comparison, normalization-symmetric with the correction record
++ * path. rawFieldValue trims the live source value on read, but
++ * sourceValue was recorded raw at correction time; comparing the two
++ * exactly flags a whitespace / bidi-mark re-emission as drift and raises
++ * a spurious CorrectionConflict downstream ("source now says X" when the
++ * source says the same thing with different spacing). Normalize both
++ * sides identically: trim, collapse whitespace runs, strip Unicode bidi
++ * controls. Dashes, case, and punctuation are NOT folded: those can be
++ * semantic (an en-dash vs hyphen change is real drift).
++ */
++function driftValuesEqual(a: string | null, b: string | null): boolean {
++  const norm = (v: string | null): string | null => {
++    if (v == null) return null;
++    const t = v
++      .replace(/[\u200E\u200F\u202A-\u202E]/g, "")
++      .replace(/\s+/g, " ")
++      .trim();
++    return t.length > 0 ? t : null;
++  };
++  return norm(a) === norm(b);
++}
++
++/**
+  * Compose the owner store's field corrections onto a projection graph.
+  * Never mutates the input graph: the source layer's objects are left
+  * untouched and a new graph is returned.
+@@ -120,7 +143,9 @@
+       // Derived per read, never persisted: true when the source was
+       // re-observed after the correction and now says something
+       // different than it did then. The owner value still wins.
+-      sourceDrifted: currentSource !== correction.sourceValue,
++      // Comparison is normalization-symmetric (driftValuesEqual): a
++      // whitespace / bidi-mark re-emission is not drift.
++      sourceDrifted: !driftValuesEqual(currentSource, correction.sourceValue),
+     });
+   }
+   // Preserve any corrections already attached (there should be none on a

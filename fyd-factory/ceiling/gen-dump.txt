@@ -1,0 +1,140 @@
+===== generator.ts section builders =====
+16: *     pageSlug:component:index. Every sort is by id, never by database or
+121:  component: string,
+122:  query: FYDSection["query"],
+164:  const add = (component: string, query: FYDSection["query"]) => {
+168:  add("Hero", { kind: "owner" });
+243:  const add = (component: string, query: FYDSection["query"]) => {
+
+===== eligibility.ts =====
+/**
+ * Deterministic eligibility: which components may appear in a planned spec.
+ *
+ * The planner never invents sections; eligibility is the explicit, testable
+ * statement of the data rules. The generator already emits sections only
+ * when their data exists; the planner defensively filters its output
+ * through this report so a future generator change cannot smuggle an
+ * ungrounded section into a spec.
+ *
+ * Rules (all deterministic over the object graph):
+ *  - service count > 0            -> Services eligible
+ *  - product count > 0            -> Products eligible
+ *  - location count > 0           -> Locations eligible
+ *  - person + works_for (either direction to the owner) -> People ("team") eligible
+ *  - external identity linked to the owner, or owner website field -> Links ("connected") eligible
+ *  - posts + articles > 0         -> Posts / RecentObjects / ObjectFeed ("recent") eligible
+ *  - owner has phone/email/website -> Contact eligible
+ *  - owner present                -> Hero / BusinessSummary / AskFYD / CTA eligible
+ *  - related services/products/people/posts/articles > 0 -> ObjectRail
+ *    (featured-object doorway) eligible
+ *
+ * Role membership mirrors the generator's ROLE_PREDICATES
+ * (src/fyd/proceduralize/generator.ts): service/product via
+ * provides|offers, location via located_at|has_location, person via
+ * employs|has_member, post/article via publishes. Team eligibility
+ * additionally honors the works_for predicate in either direction, which
+ * is how website-ingested graphs record employment.
+ */
+
+import type { PingObject } from "@/lib/ping/types";
+import { SCHEMA_ROLES, type FYDSchemaRole } from "../sitespec/schemas";
+import { resolveWebsiteUrl } from "../sitespec/graph";
+import type { ObjectGraph } from "../sitespec/types";
+
+const ROLE_PREDICATES: Record<FYDSchemaRole, string[]> = {
+  business: [],
+  service: ["provides", "offers"],
+  product: ["provides", "offers"],
+  location: ["located_at", "has_location"],
+  person: ["employs", "has_member"],
+  post: ["publishes"],
+  article: ["publishes"],
+};
+
+/** Schema id for external identities (no SCHEMA_ROLES entry; observed vocabulary). */
+export const EXTERNAL_IDENTITY_SCHEMA = "ping.social.external_identity@1";
+
+export interface EligibilityCounts {
+  services: number;
+  products: number;
+  locations: number;
+  team: number;
+  connected: number;
+  posts: number;
+  articles: number;
+  /** Related objects the inline ObjectRail doorway can feature. */
+  featureable: number;
+  ownerPresent: boolean;
+}
+
+export interface EligibilityReport {
+  counts: EligibilityCounts;
+  /** Component name -> eligible. Only components the generator can emit are keys. */
+  eligible: Record<string, boolean>;
+  /** Component name -> human-readable reason for the eligibility decision. */
+  reasons: Record<string, string>;
+}
+
+function relatedFrom(
+  graph: ObjectGraph,
+  ownerId: string,
+  role: FYDSchemaRole,
+): PingObject[] {
+  const objects = new Map(graph.objects.map((o) => [o.id, o]));
+  const predicates = ROLE_PREDICATES[role];
+  const schemas = SCHEMA_ROLES[role];
+  const out = new Map<string, PingObject>();
+  for (const r of graph.relationships) {
+    if (r.subject !== ownerId || r.status !== "active") continue;
+    if (!predicates.includes(r.predicate)) continue;
+    const target = objects.get(r.object);
+    if (target && schemas.includes(target.schema) && target.visibility === "public") {
+      out.set(target.id, target);
+    }
+  }
+  return [...out.values()];
+}
+
+function ownerObject(graph: ObjectGraph): PingObject | null {
+  const businesses = graph.objects
+    .filter((o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public")
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return businesses[0] ?? null;
+}
+
+function fieldValue(o: PingObject, name: string): string {
+  const v = o.fields[name];
+  return typeof v === "string" ? v : Array.isArray(v) ? v.join(",") : "";
+}
+
+export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
+  const owner = ownerObject(graph);
+  const counts: EligibilityCounts = {
+    services: 0,
+    products: 0,
+    locations: 0,
+    team: 0,
+    connected: 0,
+    posts: 0,
+    articles: 0,
+    featureable: 0,
+    ownerPresent: owner !== null,
+  };
+  const eligible: Record<string, boolean> = {};
+  const reasons: Record<string, string> = {};
+  const set = (component: string, ok: boolean, reason: string) => {
+    eligible[component] = ok;
+    reasons[component] = reason;
+  };
+
+
+===== tsconfig paths =====
+25:    "paths": {
+26-      "@/*": [
+27-        "./src/*"
+28-      ]
+29-    }
+30-  },
+31-  "include": [
+32-    "next-env.d.ts",
+33-    "src/app/**/*.ts",

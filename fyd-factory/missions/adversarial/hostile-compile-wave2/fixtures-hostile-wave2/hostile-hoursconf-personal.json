@@ -1,0 +1,114 @@
+{
+  "site_id": "hostile-hoursconf-personal",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "personal services: Saturday 9-5 vs closed conflict",
+  "variation_thesis": "Stresses conflict preservation: Saturday open-9-5 on the website vs closed in the directory.",
+  "expected_failure_mode": "warn: emit explicit HOURS CONFLICT flag; never pick a winner; quarantine any booking/scheduling projection until human verifies.",
+  "hostile_properties": [
+    "hours-conflict",
+    "saturday-open-vs-closed",
+    "preserved"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-hoursconf-personal-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Desert Bloom Test Nails",
+        "description": "Synthetic test personal services business with a hard Saturday hours conflict.",
+        "fields": {
+          "phone": "(970) 555-0107",
+          "business_type": "personal services",
+          "website": "https://hostile-hoursconf-personal.example.com",
+          "address": "77 Test Mesa Ave, Delta, CO",
+          "hours": "Tu-Sa 10:00-19:00; Sa conflicting (see conflicts)",
+          "conflicts": [
+            "HOURS CONFLICT: website claims Saturday 09:00-17:00. Directory listing (reserve.example.com) claims Saturday CLOSED. Both claims preserved; no canonical Saturday hours asserted."
+          ],
+          "claim_saturday_website": "Sa 09:00-17:00",
+          "claim_saturday_directory": "Sa closed",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-personal",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-hoursconf-personal-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Delta, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-hoursconf-personal.",
+        "fields": {
+          "address_locality": "Delta",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Delta, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-personal-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-hoursconf-personal-ext-dir",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "https://reserve.example.com/hostile-hoursconf-personal",
+        "description": "Directory listing carrying the conflicting Saturday claim.",
+        "fields": {
+          "url": "https://reserve.example.com/hostile-hoursconf-personal",
+          "platform": "reserve.example.com",
+          "hours": "Mo-Fr 08:00-17:00; Sa closed",
+          "phone": "(970) 555-0150",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-hoursconf-personal-ext-dir",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-hoursconf-personal-0001",
+        "subject": "hostile-hoursconf-personal-biz",
+        "predicate": "located_at",
+        "object": "hostile-hoursconf-personal-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-hoursconf-personal:site"
+      },
+      {
+        "id": "rel-hostile-hoursconf-personal-0002",
+        "subject": "hostile-hoursconf-personal-biz",
+        "predicate": "links_to",
+        "object": "hostile-hoursconf-personal-ext-dir",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-hoursconf-personal:directory"
+      }
+    ]
+  }
+}

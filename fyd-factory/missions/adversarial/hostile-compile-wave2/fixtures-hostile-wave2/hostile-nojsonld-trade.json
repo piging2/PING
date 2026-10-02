@@ -1,0 +1,173 @@
+{
+  "site_id": "hostile-nojsonld-trade",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "trades: no structured data anywhere",
+  "variation_thesis": "Stresses the compiler when zero JSON-LD exists: every claim is weak-indication HTML scrape.",
+  "expected_failure_mode": "warn: emit low-confidence compilation with evidence_quality degraded; do not fail closed, do not invent structured fields.",
+  "hostile_properties": [
+    "no-jsonld",
+    "html-scrape-only",
+    "weak-indication"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-nojsonld-trade-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Foothill Test Plumbing",
+        "description": "Synthetic test plumbing shop with no structured data anywhere.",
+        "fields": {
+          "phone": "(970) 555-0100",
+          "business_type": "trades",
+          "website": "https://foothilltest.example.com",
+          "address": "10 Test Bench Rd, Grand Junction, CO",
+          "hours": "Mo-Fr 08:00-17:00",
+          "structured_data_present": false,
+          "jsonld_source_count": 0,
+          "evidence_quality": "html-scrape-only",
+          "conflicts": [
+            "HOSTILE no-jsonld: zero JSON-LD found on website, social profiles, or directory listings. All claims derive from unstructured HTML scrape only. Phone, hours, and services are WEAK INDICATION."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-trade",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-trade-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Grand Junction, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-nojsonld-trade.",
+        "fields": {
+          "address_locality": "Grand Junction",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Grand Junction, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-trade-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-trade-p-owner",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Casey Rivera (Owner)",
+        "description": "Person listed for synthetic fixture hostile-nojsonld-trade: Casey Rivera, Owner.",
+        "fields": {
+          "name": "Casey Rivera",
+          "role": "Owner",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-trade-p-owner",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-trade-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Primary trades service",
+        "description": "Core offering, claimed only in page H1 text.",
+        "fields": {
+          "name": "Primary trades service",
+          "description": "Core offering, claimed only in page H1 text.",
+          "category": "service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-trade-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-nojsonld-trade-ext",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "https://social.example.com/hostile-nojsonld-trade",
+        "description": "Social profile placeholder; contains no structured business data.",
+        "fields": {
+          "url": "https://social.example.com/hostile-nojsonld-trade",
+          "platform": "social.example.com",
+          "structured_data_present": false,
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-nojsonld-trade-ext",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-nojsonld-trade-0001",
+        "subject": "hostile-nojsonld-trade-biz",
+        "predicate": "located_at",
+        "object": "hostile-nojsonld-trade-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-trade:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-trade-0002",
+        "subject": "hostile-nojsonld-trade-p-owner",
+        "predicate": "works_for",
+        "object": "hostile-nojsonld-trade-biz",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-trade:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-trade-0003",
+        "subject": "hostile-nojsonld-trade-biz",
+        "predicate": "offers",
+        "object": "hostile-nojsonld-trade-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-trade:html"
+      },
+      {
+        "id": "rel-hostile-nojsonld-trade-0004",
+        "subject": "hostile-nojsonld-trade-biz",
+        "predicate": "links_to",
+        "object": "hostile-nojsonld-trade-ext",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-nojsonld-trade:html"
+      }
+    ]
+  }
+}

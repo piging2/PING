@@ -1,0 +1,17 @@
+#!/bin/bash
+# pilot20 phase 1: run until first batch (5 results) lands, then SIGKILL mid-queue.
+H=/home/nolan/fyd-compile-harness
+rm -f "$H/pilot20.log" "$H/pilot20.pid" "$H/queue-pilot20/manifest.jsonl.lock" "$H/results-pilot20.jsonl"
+cd /home/nolan/projects/ping
+nohup node_modules/.bin/tsx --tsconfig=/home/nolan/projects/ping/tsconfig.json "$H/runner/queue-runner.ts" \
+  --manifest "$H/queue-pilot20/manifest.jsonl" \
+  --results-dir "$H/results-pilot20" \
+  --results-jsonl "$H/results-pilot20.jsonl" \
+  --runner-dir "$H/runner" \
+  --job-timeout-ms 120000 \
+  --concurrency 1 \
+  --batch-size 5 \
+  --stall-ms 10000 \
+  > "$H/pilot20.log" 2>&1 &
+echo $! > "$H/pilot20.pid"
+echo "runner pid $(cat $H/pilot20.pid)"

@@ -1,0 +1,195 @@
+[REASONING]
+We need to reason carefully. The key: jsonld.js `flatten(input, [ctx], [options])` signature. The call `jsonld.flatten(block.parsed, { documentLoader: offlineDocumentLoader })` passes the options object as the *second* argument, which is the `ctx` (context) parameter — i.e., they pass the options as the context to flatten into. So flatten treats `{documentLoader: offlineDocumentLoader}` as a context object. In JSON-LD, a context is a map of term definitions; `documentLoader` is not a valid term definition string or object — hence the error "Invalid JSON-LD syntax; @context term values must be strings or objects". Wait, actually that error arises when the context term value is not a string or object — `documentLoader: offlineDocumentLoader` where offlineDocumentLoader is a function. Functions are typeof "function", not "string" or "object"? Actually typeof function is "function", so it fails the check "term values must be strings or objects". Yes! That matches exactly the probe error: `Invalid JSON-LD syntax; @context term values must be strings or objects`. So the options object is being interpreted as a context, and `documentLoader` (a function value) is not a valid term definition → expansion throws → caught → `expansion-failed` unsupported evidence for every block → zero nodes, zero facts.
+
+But wait — the observed error is thrown as an exception, and expansion-failed evidence is produced for every block. So the throw is caught somewhere and converted to unsupported evidence "expansion-failed". The test evidence says "A direct node-level probe of the library threw: Invalid JSON-LD syntax; @context term values must be strings or objects." That matches the mis-passed options as ctx.
+
+However, the third issue: `offlineDocumentLoader` never used, so remote @context would be fetched... but since the pipeline is offline and remote contexts are never fetched, we need the documentLoader to be passed as an option. The fix: `jsonld.flatten(block.parsed, null, { documentLoader: offlineDocumentLoader })` or `jsonld.flatten(block.parsed, undefined, {documentLoader: ...})`.
+
+But also: second independent defect — `extractGraph`. The jsonld.js `flatten(input)` without a ctx returns a flattened *array* of nodes (a node array), not an object with `@graph`. Actually let's check: jsonld.flatten(input, [ctx], [options]) — "Flattens the given input according to the steps in the JSON-LD Flattening Algorithm. The context argument is an optional context to use. If no context is given, then the output is an array of flattened nodes." Actually the docs: "Returns a promise that resolves to the flattened output. If no context is given, the output is an array of nodes. Otherwise, the output is a JSON-LD object with a @graph array." So when no ctx is provided, flatten returns an array. extractGraph handles `Array.isArray(rec["@graph"])` and `typeof rec["@id"] === "string"` but NOT the top-level array case! So `extractGraph` returns [] when flattened is a top-level array of nodes. That's the second independent defect: extractGraph must handle `Array.isArray(flattened)` and return the array elements.
+
+Also `extractGraph` checks `flattened === null || typeof flattened !== "object"` returns [] — arrays are objects, so they fall through: rec["@graph"] undefined, rec["@id"] undefined (arrays don't have @id), returns []. So zero nodes even if expansion succeeded! That's a silent zero-node extraction from a successfully expanded block — which violates invariant 1. So even after fixing the flatten call, nodes would be zero because flatten returns an array (when ctx is null/undefined), and extractGraph doesn't handle arrays.
+
+Hmm, but wait: what if we pass `null` as ctx? Then flatten returns array. If we pass a context object, flatten returns `{"@graph": [...]}`. So the fix could be to pass null and fix extractGraph, or pass an empty context `{}`... but passing `{}` as ctx would make output a JSON-LD object with @graph. However, minimal and safest: call `jsonld.flatten(block.parsed, null, {documentLoader: offlineDocumentLoader})` and fix extractGraph to handle arrays.
+
+Actually, there's a subtlety: If the second argument is `null`, jsonld.js returns an array of flattened nodes. Let me recall the jsonld.js implementation:
+
+```js
+jsonld.flatten = async function(input, ctx, options) {
+  if (typeof ctx === 'function') { options = ctx; ctx = null; } // hmm maybe  ...
+}
+```
+
+Hmm, actually in jsonld.js the flatten signature: `flatten(input, [ctx], [options])`. Implementation:
+
+```js
+jsonld.flatten = async (input, ctx, options) => {
+  ...
+  // set default context to null
+  if (!('context' in options)) ...
+  const flattened = await jsonld.frame(...)? 
+```
+
+Let me think about the actual implementation:
+
+```js
+jsonld.flatten = async function(input, ctx, options) {
+  if (typeof options === 'function') { ... }
+  ...
+  const flattened = await (new _ContextGenerator()?)...
+```
+
+I recall:
+
+```js
+jsonld.flatten = async (input, ctx, options) => {
+  ...
+  //1) flatten  const flattened = await _flatten(input, options);
+  // 2) frame
+  ...
+  if(ctx) {
+    // compact to ctx
+    framed = await jsonld.compact(framed, ctx, options);
+  }
+  return framed;
+}
+```
+
+Hmm — more precisely, in jsonld.js:
+
+```js
+jsonld.flatten = async function(input, ctx, options) {
+  ...
+  const opts = _processArgs?```
+
+Let me just reason from docs: "flatten(input, [ctx], [options]) — Flattens the given input according to the steps in the JSON-LD Flattening Algorithm. The context argument is an optional context to use. If no context is given, then the output is an array of flattened nodes." Actually I think the docs say: "Returns a Promise that resolves to the flattened output. The output is an array of flattened nodes, or if a context is given, it's compacted with that context producing an object with a `@graph` key." Something like that.
+
+Actually, I recall the jsonld.js README:
+
+```
+jsonld.flatten(input, [ctx], [options])
+Flattens the given input according to the steps in the JSON-LD Flattening Algorithm. The context argument is an optional context to use. If no context is given, then the output is an array of flattened nodes. If a context is given, then the output is compacted with the context.
+
+...
+const flattened = await jsonld.flatten(doc, null, options); // array
+const compacted = await jsonld.flatten(doc, context, options); // compacted
+```
+
+Hmm. Also there's `options.namer` for the blank node namer. Regardless, the docs' signature `flatten(input, [ctx], [options])` is given in the problem statement, so the mis-passing of options as ctx is clearly the intended root cause. And the probe error "term values must be strings or objects" confirms: the object `{documentLoader: fn}` was treated as a context; its term definition value `offlineDocumentLoader` is a function → error.
+
+Wait, but would it error? Let's think about the JSON-LD context processing: a context that is an object whose keys are terms... Actually a "simple context" object like `{"documentLoader": fn}` — each key's value must be a term definition (string, object, or null). A function value → error "@context term values must be strings or objects". Yes. And it fails during expansion of the document because expansion applies the context given via options... Hmm, actually flatten(input, ctx, options): the ctx is used to compact the flattened output. But the error is thrown during expansion? The expansion of the document itself uses the document's own @context (the remote URL, resolved via documentLoader). Hmm.
+
+Wait — but the error "Invalid JSON-LD syntax; @context term values must be strings or objects" could arise when the *given ctx* is validated. Let's think about when jsonld.js validates a context object passed as `ctx` in flatten. In jsonld.js flatten implementation:
+
+```js
+jsonld.flatten = async function(input, ctx, options) {
+  ...
+  const opts = ...;
+  // set default options
+  if(!('context' in opts)) ...
+```
+
+Actually the real code (jsonld.js 8.x):
+
+```js
+jsonld.flatten = async (input, ctx, options) => {
+  if(typeof options === 'function') {
+    ...
+  }
+  ...
+  const flattened = await _flatten(input, options);
+  if(ctx) {
+    const compacted = await jsonld.compact(flatted, ctx, options);
+    ...
+  }
+  return flattened;
+};
+```
+
+Hmm, if ctx is `{documentLoader: fn}`, then after flattening (which would use options = undefined → default options with default documentLoader — which would try to fetch the remote context https://schema.org — offline → fail → maybe a fetch error), then compact with ctx → invalid context → throw "term values must be strings or objects".
+
+But the observed test evidence says: "every block reports `expansion-failed` unsupported evidence" — meaning the whole operation threw, and the catch produced expansion-failed. And the direct node-level probe threw the term-values error. So there is one throw. The precise internal order doesn't matter too much; the root cause is the argument misplacement: `options` passed as `ctx`, so (a) the options (documentLoader) are never honored, and (b) the options object is misinterpreted as a compaction context → invalid term definition → throw → caught → expansion-failed →0 nodes/0 facts.
+
+But hold on: there's also `offlineContext(doc)` in Excerpt 3. It rewrites `rec["@context"]` via `rewriteContextValue`. For a block whose @context is a remote URL, `rewriteContextValue` presumably maps to an offline table entry or a stub context. For a block with NO @context, `rec["@context"]` is `undefined`, and the spread `{...rec, "@context": rewriteContextValue(undefined)}` — what does `rewriteContextValue(undefined)` return? If it returns undefined or something, then the doc gets `"@context": undefined` — which in JSON-LD processing: a key with value undefined... When passed as JS object to jsonld.js, `@context: undefined` may be treated as null? Hmm. Actually the comment says "blocks with no declared @context are passed through unchanged" — but the code does NOT do that! It unconditionally spreads and sets `@context` to `rewriteContextValue(rec["@context"])`. For a doc without @context, it injects `@context: rewriteContextValue(undefined)`. If `rewriteContextValue` returns undefined for undefined, the resulting object has key `"@context"` with value `undefined`. Hmm, but `JSON.stringify` drops undefined values... but if passed as JS object to jsonld.js, the context value would be `undefined`. What does jsonld.js do with `@context: undefined`? It might throw "Invalid JSON-LD syntax; @context must be an object" or treat it... Actually, in the expansion algorithm, if `@context` is undefined... Hmm, in JS, `doc["@context"]` is `undefined`; the algorithm checks `if('@context' in node)`? The expansion code typically does `const context = node['@context']` and processes. Undefined context: In jsonld.js `_expand` → `const ctx = node['@context']` ... then `_processContext`? Hmm. In the JSON-LD API, if the context is undefined/null, it's an error: "invalid local context, context cannot be an array unless it is a valid context"... Actually null is allowed (treated as empty context after "null" keyword semantics), undefined might be treated as... hmm.
+
+But careful: the problem says "a separate pre-existing unit test, 'parse harvests JSON-LD first', uses a block with NO @context (`{"@type":"LocalBusiness","name":"Acme",...}`) and produced zero facts from that block (only OG/meta titles survived)." That's evidence that the no-@context path is also broken. Why? Two candidates:
+
+(a) `offlineContext` injects `@context: rewriteContextValue(undefined)` which might throw or produce an invalid context → expansion-failed → zero facts.
+(b) `extractGraph` doesn't handle the array output of flatten → zero nodes.
+
+Hmm. Which is "the second independent defect"? The task says: "Name any second, independent defect you find in the excerpts." The primary defect: flatten called with options in the ctx slot. The second: extractGraph fails to handle top-level array output of jsonld.flatten (when no ctx is given, flatten returns an array of nodes). That is a "silent zero-node extraction from a successfully expanded block" — violating invariant 1 — and it's exactly why the unit test with no @context produced zero facts (once expansion succeeds, extraction returns [] because the flattened output is an array).
+
+Wait — but in that unit test, would expansion succeed? The block has no @context. If `offlineContext` injects `@context: rewriteContextValue(undefined)`, what happens? Let's consider `rewriteContextValue` — not shown in the excerpts; we're told not to invent functions. It's referenced but not shown. Its behavior for undefined is unknown. The comment says "blocks with no declared @context are passed through unchanged", implying the intent that a missing @context is left alone. But the implementation always assigns `@context` key. If `rewriteContextValue(undefined)` returns `undefined`, then the object gets `@context: undefined`. In JSON-LD 1.1 processing via jsonld.js, `expand` with a document object: `_expand` iterates over keys; if `@context` key present... Actually let's look at jsonld.js's expansion: `jsonld.expand(input, options)` → `expand(activeCtx, activeProperty, element, options, insideList)`. For a node object: `ctx = element['@context']` ... In `expand` (expand-api.js):
+
+```js
+async function expand({activeCtx, activeProperty, element, ...}) {
+  ...
+  // if element is a string ...
+  if(_isScalar(element)) {...}
+  // recursively process array
+  if(Array.isArray(element)) {...}
+  // if element is not a plain object, error
+  ...
+  // get the context
+  const ctx = element['@context'];
+  ...
+  if(ctx !== undefined) {
+    activeCtx = await _processContext({activeCtx, localCtx: ctx, options});
+  }
+  ...
+}
+```
+
+If `ctx === undefined`, no processing — fine. But careful: `element['@context']` is `undefined` if the key exists with value undefined → `ctx !== undefined` false → skipped. So injection of `@context: undefined` is harmless! So the no-@context block would expand fine... but then flatten returns an array of nodes, and `extractGraph` returns [] → zero facts. That matches the unit test evidence: "produced zero facts from that block (only OG/meta titles survived)" and "No exception was ever observed from extractGraph itself" — extractGraph silently returns []!So the second defect is exactly `extractGraph`'s failure to handle the array shape of `jsonld.flatten` output. That's consistent: "No exception was ever observed from extractGraph itself" is a hint that extractGraph silently returns [] rather than throwing — evidence for the silent zero-node path.
+
+But wait — for the no-@context block, was there also the flatten arg bug? Yes, the same `jsonld.flatten(block.parsed, {documentLoader})` call is used for all blocks. For the no-@context block: flatten(input, ctx={documentLoader:fn}, options=undefined). Then flatten: flattens input using default options (with default documentLoader — but no remote context needed since no @context in doc, so no fetch). Then compacts output with ctx = {documentLoader: fn} → invalid context → throw → expansion-failed → zero facts. Hmm! That would also explain zero facts in the unit test, and the unit test would fail due to the primary defect too. Hmm.
+
+But then the unit test's failure could be entirely due to defect 1. But the evidence says the unit test "produced zero facts from that block (only OG/meta titles survived)" — that's consistent with the throw path (expansion-failed) OR the silent array path. We don't know which. But the statement "No exception was ever observed from extractGraph itself" hints there's a silent path.
+
+Hmm, but careful about how jsonld.js handles ctx in flatten. Let me recall the actual code of jsonld.js flatten (v5+):
+
+```js
+jsonld.flatten = async (input, ctx, options) => {
+  if(typeof options === 'function') {
+    options = ctx;
+    ctx = null;
+  } else {
+    options = options || {};
+    ctx = ctx || null;
+  }
+  ...
+```
+
+Hmm, actually I believe there's `_processArgs` handling. Let me think about jsonld.js 8:
+
+```js
+/**
+ * Performs JSON-LD flattening.
+ */
+jsonld.flatten = async (input, ctx, options) => {
+  if(typeof options === 'function') {
+    ...
+  }
+  ...
+  const opts = options ?? {};
+  ...
+};
+```
+
+Hmm. Actually, I strongly recall the signature in the jsonld.js README:
+
+```
+jsonld.flatten(input, [ctx], [options])
+Flattens the given input according to the steps in the JSON-LD Flattening Algorithm. The context argument is an optional context to use. If no context is given, then the output is an array of flattened nodes.
+
+await jsonld.flatten(doc, null, {documentLoader: myLoader});
+```
+
+Hmm, "If no context is given, then the output is an array of flattened nodes." Actually let me recall the real README:
+
+```
+jsonld.flatten(input, [ctx], [options])
+
+Flattens the given input according to the steps in the JSON-LD Flattening Algorithm. The context argument is an optional context to use. If no context is given, then the output is an array of flattened nodes. If a context is given, then the output is compacted with the context and the result is an object with a @graph key.
+
+const flattened = await jsonld.flatten(doc, null
+[/REASONING]

@@ -1,0 +1,139 @@
+{
+  "site_id": "hostile-rtl-personal",
+  "redacted": true,
+  "synthetic": true,
+  "synthetic_marker": "TESTING_ONLY_SYNTHETIC",
+  "testing_only": true,
+  "variant": "personal services: RTL name and description (Arabic synthetic salon)",
+  "variation_thesis": "Stresses bidirectional text handling: Hebrew/Arabic business names and descriptions mixed with Latin fields.",
+  "expected_failure_mode": "warn: compiler must preserve RTL runs exactly, escape bidi control characters in HTML, and never reorder Latin metadata around RTL text.",
+  "hostile_properties": [
+    "rtl-text",
+    "arabic",
+    "bidi"
+  ],
+  "fixture_batch": "hostile",
+  "generated_at": "2026-09-23T20:00:00Z",
+  "graph": {
+    "objects": [
+      {
+        "id": "hostile-rtl-personal-biz",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "صالون تجريبي",
+        "description": "صالون تجريبي مع وصف باللغة العربية. Synthetic Arabic test salon. خدمات التجميل. (Arabic synthetic salon)",
+        "fields": {
+          "phone": "(970) 555-0119",
+          "business_type": "personal services",
+          "website": "https://hostile-rtl-personal.example.com",
+          "address": "1 Test Bazaar Ln, Fruita, CO",
+          "conflicts": [
+            "HOSTILE rtl: business name and description are right-to-left script (Hebrew/Arabic) mixed with Latin metadata. Bidi rendering and search indexing must not garble or invert the Latin segments."
+          ],
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-personal",
+          "derivedAt": "2026-09-23T20:00:00Z",
+          "observed_at": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-personal-loc",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Fruita, CO",
+        "description": "Coarse public location claim for synthetic fixture hostile-rtl-personal.",
+        "fields": {
+          "address_locality": "Fruita",
+          "address_region": "CO",
+          "address_country": "US",
+          "locality": "Fruita, CO",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-personal-loc",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-personal-p-owner",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "Test Owner (Owner)",
+        "description": "Person listed for synthetic fixture hostile-rtl-personal: Test Owner, Owner.",
+        "fields": {
+          "name": "Test Owner",
+          "role": "Owner",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-personal-p-owner",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      },
+      {
+        "id": "hostile-rtl-personal-svc-001",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_fixture_hostile",
+        "visibility": "public",
+        "title": "خدمة رئيسية",
+        "description": "Primary service, RTL title; description: synthetic test service.",
+        "fields": {
+          "name": "خدمة رئيسية",
+          "description": "Primary service, RTL title; description: synthetic test service.",
+          "category": "service",
+          "claimKind": "synthetic_statement"
+        },
+        "createdAt": "2026-09-23T20:00:00Z",
+        "updatedAt": "2026-09-23T20:00:00Z",
+        "provenance": {
+          "kind": "synthetic",
+          "ref": "fixture:synthetic:hostile-rtl-personal-svc-001",
+          "derivedAt": "2026-09-23T20:00:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-hostile-rtl-personal-0001",
+        "subject": "hostile-rtl-personal-biz",
+        "predicate": "located_at",
+        "object": "hostile-rtl-personal-loc",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-personal:site"
+      },
+      {
+        "id": "rel-hostile-rtl-personal-0002",
+        "subject": "hostile-rtl-personal-p-owner",
+        "predicate": "works_for",
+        "object": "hostile-rtl-personal-biz",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-personal:site"
+      },
+      {
+        "id": "rel-hostile-rtl-personal-0003",
+        "subject": "hostile-rtl-personal-biz",
+        "predicate": "offers",
+        "object": "hostile-rtl-personal-svc-001",
+        "status": "active",
+        "createdAt": "2026-09-23T20:00:00Z",
+        "evidenceRef": "corpus:hostile:hostile-rtl-personal:site"
+      }
+    ]
+  }
+}

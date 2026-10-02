@@ -1,0 +1,1432 @@
+{
+ "inventory": {
+  "schemas": [
+   {
+    "id": "ping.social.business@1",
+    "label": "Business",
+    "fields": [
+     "title:string (required)",
+     "description:string (required)",
+     "category:string",
+     "website:url",
+     "phone:string",
+     "email:string",
+     "hours:string",
+     "socials:string[]"
+    ],
+    "relationships": [
+     "provides -> [ping.social.service@1, ping.social.product@1]",
+     "publishes -> [ping.social.post@1, ping.social.article@1]",
+     "located_at -> [ping.social.location@1]",
+     "employs -> [ping.social.person@1]"
+    ],
+    "identityBacked": true,
+    "likeable": false
+   },
+   {
+    "id": "ping.social.service@1",
+    "label": "Service",
+    "fields": [
+     "title:string (required)",
+     "description:string (required)",
+     "price_hint:string",
+     "duration:string"
+    ],
+    "relationships": [
+     "provided_by -> [ping.social.business@1]"
+    ],
+    "identityBacked": false,
+    "likeable": true
+   },
+   {
+    "id": "ping.social.post@1",
+    "label": "Post",
+    "fields": [
+     "title:string (required)",
+     "text:string",
+     "date:string",
+     "tags:string[]",
+     "url:url"
+    ],
+    "relationships": [
+     "published_by -> [ping.social.business@1]",
+     "replies_to -> [ping.social.post@1]"
+    ],
+    "identityBacked": false,
+    "likeable": true
+   }
+  ],
+  "roles": {
+   "business": [
+    "ping.social.business@1",
+    "ping.knowledge.business@1"
+   ],
+   "service": [
+    "ping.social.service@1",
+    "ping.knowledge.service@1"
+   ],
+   "product": [
+    "ping.social.product@1"
+   ],
+   "location": [
+    "ping.social.location@1",
+    "ping.knowledge.location@1"
+   ],
+   "person": [
+    "ping.social.person@1",
+    "ping.knowledge.person@1"
+   ],
+   "post": [
+    "ping.social.post@1",
+    "ping.knowledge.post@1"
+   ],
+   "article": [
+    "ping.social.article@1",
+    "ping.knowledge.article@1"
+   ]
+  },
+  "componentsBySchema": {
+   "ping.social.business@1": [
+    "Hero",
+    "IdentityCard",
+    "BusinessSummary",
+    "Contact",
+    "CTA",
+    "Links",
+    "SocialProof",
+    "AskFYD",
+    "ObjectGrid",
+    "ObjectFeed"
+   ],
+   "ping.social.service@1": [
+    "Services",
+    "ObjectGrid",
+    "ObjectFeed",
+    "CTA",
+    "ObjectRail"
+   ],
+   "ping.social.post@1": [
+    "Posts",
+    "ObjectGrid",
+    "ObjectFeed",
+    "RecentObjects",
+    "ObjectRail"
+   ],
+   "ping.social.product@1": [
+    "Products",
+    "ObjectGrid",
+    "ObjectFeed",
+    "ObjectRail"
+   ],
+   "ping.social.location@1": [
+    "Locations",
+    "ObjectGrid",
+    "ObjectFeed"
+   ],
+   "ping.social.person@1": [
+    "People",
+    "ObjectGrid",
+    "ObjectFeed",
+    "ObjectRail"
+   ],
+   "ping.social.article@1": [
+    "Posts",
+    "ObjectGrid",
+    "ObjectFeed",
+    "RecentObjects",
+    "ObjectRail"
+   ],
+   "ping.knowledge.website@1": [
+    "ObjectGrid",
+    "ObjectFeed"
+   ],
+   "ping.knowledge.business@1": [
+    "Hero",
+    "IdentityCard",
+    "BusinessSummary",
+    "Contact",
+    "CTA",
+    "Links",
+    "SocialProof",
+    "AskFYD",
+    "ObjectGrid",
+    "ObjectFeed"
+   ],
+   "ping.knowledge.service@1": [
+    "Services",
+    "ObjectGrid",
+    "ObjectFeed",
+    "CTA",
+    "ObjectRail"
+   ],
+   "ping.knowledge.location@1": [
+    "Locations",
+    "ObjectGrid",
+    "ObjectFeed"
+   ],
+   "ping.knowledge.person@1": [
+    "People",
+    "ObjectGrid",
+    "ObjectFeed",
+    "ObjectRail"
+   ],
+   "ping.knowledge.post@1": [
+    "Posts",
+    "ObjectGrid",
+    "ObjectFeed",
+    "RecentObjects",
+    "ObjectRail"
+   ],
+   "ping.knowledge.article@1": [
+    "Posts",
+    "ObjectGrid",
+    "ObjectFeed",
+    "RecentObjects",
+    "ObjectRail"
+   ],
+   "ping.social.unknown@1": [
+    "GenericObjectCard"
+   ],
+   "(empty)": [
+    "GenericObjectCard"
+   ]
+  },
+  "relationshipRulesBySchema": {
+   "ping.social.business@1": [
+    "provides -> [ping.social.service@1, ping.social.product@1]",
+    "publishes -> [ping.social.post@1, ping.social.article@1]",
+    "located_at -> [ping.social.location@1]",
+    "employs -> [ping.social.person@1]"
+   ],
+   "ping.social.service@1": [
+    "provided_by -> [ping.social.business@1]"
+   ],
+   "ping.social.post@1": [
+    "published_by -> [ping.social.business@1]",
+    "replies_to -> [ping.social.post@1]"
+   ],
+   "ping.knowledge.service@1": [],
+   "ping.social.product@1": []
+  },
+  "evidenceStates": [
+   "observed",
+   "inferred",
+   "unverified",
+   "unknown",
+   "unavailable",
+   "withheld"
+  ]
+ },
+ "summary": {
+  "valid": {
+   "total": 12,
+   "pass": 12,
+   "rate": "100.0%"
+  },
+  "hostile": {
+   "total": 20,
+   "failClosed": 15,
+   "rate": "75.0%",
+   "gaps": [
+    "H4",
+    "H9",
+    "H10",
+    "H11",
+    "H17"
+   ]
+  }
+ },
+ "valid": [
+  {
+   "id": "V1",
+   "set": "valid",
+   "name": "minimal business, required fields only",
+   "expectation": "renders: no false rejection of a bare valid business",
+   "threw": null,
+   "pages": 2,
+   "sections": 5,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 4,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 1,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V2",
+   "set": "valid",
+   "name": "full trade graph: all roles, all predicates, reply chain, 2-cycle",
+   "expectation": "renders with every role/component/relationship exercised",
+   "threw": null,
+   "pages": 4,
+   "sections": 16,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 44,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 8,
+   "closed": null,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.social.product@1' (object p1): schema gate skipped",
+    "no schema def for 'ping.social.location@1' (object l1): schema gate skipped",
+    "no schema def for 'ping.social.location@1' (object l2): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object pe1): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object pe2): schema gate skipped",
+    "no schema def for 'ping.social.article@1' (object a1): schema gate skipped",
+    "determinism: byte-identical spec across two runs",
+    "components bound: AskFYD,BusinessSummary,CTA,Contact,Hero,Links,Locations,ObjectFeed,ObjectRail,People,Products,RecentObjects,Services"
+   ]
+  },
+  {
+   "id": "V3",
+   "set": "valid",
+   "name": "knowledge vocabulary only, role-projected",
+   "expectation": "renders via schemaRole projection, no hardcoded social ids",
+   "threw": null,
+   "pages": 4,
+   "sections": 13,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 21,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.knowledge.business@1' (object kb): schema gate skipped",
+    "no schema def for 'ping.knowledge.service@1' (object ks): schema gate skipped",
+    "no schema def for 'ping.knowledge.location@1' (object kl): schema gate skipped",
+    "no schema def for 'ping.knowledge.person@1' (object kpe): schema gate skipped",
+    "no schema def for 'ping.knowledge.post@1' (object kpo): schema gate skipped",
+    "no schema def for 'ping.knowledge.article@1' (object kar): schema gate skipped"
+   ]
+  },
+  {
+   "id": "V4",
+   "set": "valid",
+   "name": "mixed social + knowledge services on one owner",
+   "expectation": "renders; both predicates populate the service role",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 12,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 1,
+   "closed": null,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.knowledge.service@1' (object ks4): schema gate skipped"
+   ]
+  },
+  {
+   "id": "V5",
+   "set": "valid",
+   "name": "provenance mix, private objects, inactive + duplicate edges",
+   "expectation": "renders; private excluded, duplicate active edges deduped per section",
+   "threw": null,
+   "pages": 4,
+   "sections": 11,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 19,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.social.person@1' (object pe5): schema gate skipped",
+    "no within-section duplicates"
+   ]
+  },
+  {
+   "id": "V6-anon",
+   "set": "valid",
+   "name": "viewer matrix: anon",
+   "expectation": "render context builds for every viewer state",
+   "threw": null,
+   "pages": 3,
+   "sections": 11,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 11,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V6-controller",
+   "set": "valid",
+   "name": "viewer matrix: controller",
+   "expectation": "render context builds for every viewer state",
+   "threw": null,
+   "pages": 3,
+   "sections": 11,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 11,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 1,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V6-stranger",
+   "set": "valid",
+   "name": "viewer matrix: stranger",
+   "expectation": "render context builds for every viewer state",
+   "threw": null,
+   "pages": 3,
+   "sections": 11,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 11,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V7",
+   "set": "valid",
+   "name": "scale: 421 objects, 420 relationships",
+   "expectation": "renders in bounded time, no false rejection at scale",
+   "threw": null,
+   "pages": 4,
+   "sections": 16,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 608,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 6,
+   "closed": null,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.social.person@1' (object x300): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object x301): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object x302): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object x303): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object x304): schema gate skipped",
+    "no schema def for 'ping.social.person@1' (object x305): schema gate skipped",
+    "pipeline ms: 6"
+   ]
+  },
+  {
+   "id": "V8",
+   "set": "valid",
+   "name": "every eligible component x schema validates",
+   "expectation": "validator accepts every schema-declared component pairing",
+   "threw": null,
+   "pages": 1,
+   "sections": 38,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V9",
+   "set": "valid",
+   "name": "whitespace-only description",
+   "expectation": "renders without BusinessSummary, no false rejection",
+   "threw": null,
+   "pages": 1,
+   "sections": 3,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 2,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "V10",
+   "set": "valid",
+   "name": "boundary URL values (https + relative)",
+   "expectation": "renders; no url warnings for well-formed values",
+   "threw": null,
+   "pages": 2,
+   "sections": 7,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 6,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": null,
+   "pass": true,
+   "notes": []
+  }
+ ],
+ "hostile": [
+  {
+   "id": "H1",
+   "set": "hostile",
+   "name": "unregistered schema object only",
+   "expectation": "typed failure: spec not renderable, no crash",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages :: A site needs at least one page.",
+    "no schema def for 'ping.social.unknown@1' (object u1): schema gate skipped",
+    "closed=true"
+   ]
+  },
+  {
+   "id": "H2",
+   "set": "hostile",
+   "name": "empty-string schema object",
+   "expectation": "typed failure: spec not renderable, no crash",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages :: A site needs at least one page.",
+    "no schema def for '' (object u2): schema gate skipped",
+    "eligibleComponents('')=[\"GenericObjectCard\"]"
+   ]
+  },
+  {
+   "id": "H3",
+   "set": "hostile",
+   "name": "schema id with injected markup",
+   "expectation": "not treated as business; no markup reaches any output",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages :: A site needs at least one page.",
+    "no schema def for 'ping.social.business@1\"><svg onload=alert(1)>' (object u3): schema gate skipped",
+    "schemaRole=null",
+    "eligible=[\"GenericObjectCard\"]"
+   ]
+  },
+  {
+   "id": "H4",
+   "set": "hostile",
+   "name": "business missing required description",
+   "expectation": "schema gate must flag; pipeline alone renders (gap probe)",
+   "threw": null,
+   "pages": 1,
+   "sections": 3,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 2,
+   "unknownObjectIds": [],
+   "schemaErrors": 1,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": false,
+   "pass": true,
+   "notes": [
+    "schema error: object.description Required field 'description' is missing.",
+    "pipeline renderable=true (renders schema-invalid object: GAP if true)",
+    "schema-gate errors=1 (gate catches it: true)"
+   ]
+  },
+  {
+   "id": "H5",
+   "set": "hostile",
+   "name": "relationship to missing object id",
+   "expectation": "dangling edges dropped silently; no invented claims",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 9,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "services section present=true",
+    "ghost-1 never bound"
+   ]
+  },
+  {
+   "id": "H6",
+   "set": "hostile",
+   "name": "provides edge to a person (schema mismatch)",
+   "expectation": "mismatched target never rendered as a service",
+   "threw": null,
+   "pages": 2,
+   "sections": 7,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 6,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "no schema def for 'ping.social.person@1' (object pe6h): schema gate skipped",
+    "person bound anywhere=false",
+    "isAllowedPredicate(business,'provides')=true",
+    "provides targets=[\"ping.social.service@1\",\"ping.social.product@1\"]"
+   ]
+  },
+  {
+   "id": "H7",
+   "set": "hostile",
+   "name": "active and inactive edge on same triple",
+   "expectation": "no duplication within a section; revocation semantics observed",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 9,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "per-section s7h counts: home:1x, services:1x",
+    "no within-section duplicates",
+    "active won; inactive revocation NOT honored (semantic gap)"
+   ]
+  },
+  {
+   "id": "H8",
+   "set": "hostile",
+   "name": "reply cycle A<->B plus self-loop",
+   "expectation": "no hang, no crash; cycles pass through undetected (gap probe)",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 16,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 1,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "no cycle detection exists in schema/relationship authorities: latent traversal risk"
+   ]
+  },
+  {
+   "id": "H9",
+   "set": "hostile",
+   "name": "capability granted with zero evidence basis",
+   "expectation": "capability layer should consult evidence state; it does not (gap probe)",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": false,
+   "pass": true,
+   "notes": [
+    "capabilityOptions(post, signed-in viewer)=[\"open\",\"ask\",\"reference\",\"like\",\"reply\"]",
+    "reply granted=true with no evidence input in the signature (GAP: evidence-blind)"
+   ]
+  },
+  {
+   "id": "H10",
+   "set": "hostile",
+   "name": "javascript: URL in website field",
+   "expectation": "schema type 'url' should reject; currently warning-only (gap probe)",
+   "threw": null,
+   "pages": 2,
+   "sections": 7,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 6,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 1,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": false,
+   "pass": true,
+   "notes": [
+    "schema errors=0 warnings=1",
+    "GAP: hostile URL is warning-only; real guard is downstream safe-link"
+   ]
+  },
+  {
+   "id": "H11",
+   "set": "hostile",
+   "name": "wrong field types (number title, string socials)",
+   "expectation": "schema gate must flag type violations",
+   "threw": null,
+   "pages": 2,
+   "sections": 6,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 5,
+   "unknownObjectIds": [],
+   "schemaErrors": 1,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": false,
+   "pass": true,
+   "notes": [
+    "schema error: object.socials Field 'socials' must be string[] (schema evolution law: types never change).",
+    "schema errors=1",
+    "pipeline renderable=true (pipeline ignores field types: GAP, same as H4)"
+   ]
+  },
+  {
+   "id": "H12a",
+   "set": "hostile",
+   "name": "mutated spec: duplicate page slug",
+   "expectation": "typed error, not renderable",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 2,
+   "validationWarnings": 1,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages.home :: Duplicate page slug 'home'.",
+    "validator: navigation :: Nav item 'About' points at missing page 'about'."
+   ]
+  },
+  {
+   "id": "H12b",
+   "set": "hostile",
+   "name": "mutated spec: unknown component",
+   "expectation": "typed error, not renderable",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 1,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages.home.sections[0].component :: Unknown component 'EvilWidget'."
+   ]
+  },
+  {
+   "id": "H12c",
+   "set": "hostile",
+   "name": "mutated spec: nav to missing page",
+   "expectation": "typed error, not renderable",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: navigation :: Nav item 'Ghost' points at missing page 'ghost'."
+   ]
+  },
+  {
+   "id": "H12d",
+   "set": "hostile",
+   "name": "mutated spec: duplicate section id",
+   "expectation": "typed error, not renderable",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 1,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages.home.sections[1].id :: Duplicate section id 'home:Hero:0'."
+   ]
+  },
+  {
+   "id": "H13",
+   "set": "hostile",
+   "name": "unknown schema with Services component",
+   "expectation": "typed error: component does not accept schema",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 1,
+   "renderable": false,
+   "ctxBuilt": false,
+   "modelBuilt": false,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages.home.sections[8].query :: Component 'Services' does not accept schema 'ping.social.unknown@1'."
+   ]
+  },
+  {
+   "id": "H14",
+   "set": "hostile",
+   "name": "duplicate object ids, different schemas",
+   "expectation": "no crash; duplicate ids undetected (gap probe)",
+   "threw": null,
+   "pages": 2,
+   "sections": 7,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 6,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "hero bound: dup",
+    "last-wins silently, no duplicate-id finding (GAP)"
+   ]
+  },
+  {
+   "id": "H15",
+   "set": "hostile",
+   "name": "business/service 2-cycle",
+   "expectation": "no infinite loop anywhere in the pipeline",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 9,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": []
+  },
+  {
+   "id": "H16",
+   "set": "hostile",
+   "name": "private owner only",
+   "expectation": "typed failure: no public owner, spec not renderable",
+   "threw": null,
+   "pages": 0,
+   "sections": 0,
+   "validationErrors": 1,
+   "validationWarnings": 0,
+   "renderable": false,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 0,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 0,
+   "closed": true,
+   "pass": true,
+   "notes": [
+    "validator: pages :: A site needs at least one page."
+   ]
+  },
+  {
+   "id": "H17",
+   "set": "hostile",
+   "name": "duplicate active edges on same triple",
+   "expectation": "same object must not bind twice inside one section",
+   "threw": null,
+   "pages": 3,
+   "sections": 10,
+   "validationErrors": 0,
+   "validationWarnings": 0,
+   "renderable": true,
+   "ctxBuilt": true,
+   "modelBuilt": true,
+   "boundObjectIds": 12,
+   "unknownObjectIds": [],
+   "schemaErrors": 0,
+   "schemaWarnings": 0,
+   "graphMutated": false,
+   "ms": 1,
+   "closed": false,
+   "pass": true,
+   "notes": [
+    "GAP: home:home:Services:2 binds s17h twice; home:home:ObjectRail:7 binds s17h twice; services:services:Services:0 binds s17h twice",
+    "generator dedupes (Map) but resolveQuery does not"
+   ]
+  }
+ ],
+ "probes": [
+  {
+   "id": "S1",
+   "name": "predicate allowlist matrix",
+   "rows": [
+    {
+     "schema": "ping.social.business@1",
+     "provides": true,
+     "publishes": true,
+     "located_at": true,
+     "employs": true,
+     "provided_by": false,
+     "published_by": false,
+     "replies_to": false,
+     "offers": false,
+     "evil_pred": false
+    },
+    {
+     "schema": "ping.social.service@1",
+     "provides": false,
+     "publishes": false,
+     "located_at": false,
+     "employs": false,
+     "provided_by": true,
+     "published_by": false,
+     "replies_to": false,
+     "offers": false,
+     "evil_pred": false
+    },
+    {
+     "schema": "ping.social.post@1",
+     "provides": false,
+     "publishes": false,
+     "located_at": false,
+     "employs": false,
+     "provided_by": false,
+     "published_by": true,
+     "replies_to": true,
+     "offers": false,
+     "evil_pred": false
+    },
+    {
+     "schema": "ping.knowledge.service@1",
+     "provides": false,
+     "publishes": false,
+     "located_at": false,
+     "employs": false,
+     "provided_by": false,
+     "published_by": false,
+     "replies_to": false,
+     "offers": false,
+     "evil_pred": false
+    }
+   ]
+  },
+  {
+   "id": "S2",
+   "name": "capability options matrix + invariants",
+   "rows": [
+    {
+     "schema": "ping.social.business@1",
+     "viewer": "anon",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "follow"
+     ]
+    },
+    {
+     "schema": "ping.social.business@1",
+     "viewer": "anon+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "follow",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.business@1",
+     "viewer": "controller",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "follow",
+      "propose_update",
+      "site_propose",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.business@1",
+     "viewer": "stranger+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "follow",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.service@1",
+     "viewer": "anon",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like"
+     ]
+    },
+    {
+     "schema": "ping.social.service@1",
+     "viewer": "anon+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.service@1",
+     "viewer": "controller",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "propose_update",
+      "site_propose",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.service@1",
+     "viewer": "stranger+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.post@1",
+     "viewer": "anon",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like"
+     ]
+    },
+    {
+     "schema": "ping.social.post@1",
+     "viewer": "anon+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.post@1",
+     "viewer": "controller",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "reply",
+      "propose_update",
+      "site_propose",
+      "open_website"
+     ]
+    },
+    {
+     "schema": "ping.social.post@1",
+     "viewer": "stranger+site",
+     "actions": [
+      "open",
+      "ask",
+      "reference",
+      "like",
+      "reply",
+      "open_website"
+     ]
+    }
+   ],
+   "invariantViolations": []
+  },
+  {
+   "id": "S3",
+   "name": "agent tool description determinism",
+   "rows": [
+    {
+     "schema": "ping.social.business@1",
+     "deterministic": true,
+     "mentionsCapabilities": true,
+     "length": 1107
+    },
+    {
+     "schema": "ping.social.service@1",
+     "deterministic": true,
+     "mentionsCapabilities": true,
+     "length": 618
+    },
+    {
+     "schema": "ping.social.post@1",
+     "deterministic": true,
+     "mentionsCapabilities": true,
+     "length": 682
+    }
+   ]
+  },
+  {
+   "id": "S4",
+   "name": "validateAgainstSchema boundaries",
+   "rows": [
+    {
+     "name": "ok https url",
+     "errors": 0,
+     "warnings": 0,
+     "info": 0,
+     "expected": "0e/0w",
+     "match": true
+    },
+    {
+     "name": "ok relative url",
+     "errors": 0,
+     "warnings": 0,
+     "info": 0,
+     "expected": "0e/0w",
+     "match": true
+    },
+    {
+     "name": "bad url warning",
+     "errors": 0,
+     "warnings": 1,
+     "info": 0,
+     "expected": "0e/1w",
+     "match": true
+    },
+    {
+     "name": "javascript url",
+     "errors": 0,
+     "warnings": 1,
+     "info": 0,
+     "expected": "0e/1w",
+     "match": true
+    },
+    {
+     "name": "missing required",
+     "errors": 1,
+     "warnings": 0,
+     "info": 0,
+     "expected": "1e/0w",
+     "match": true
+    },
+    {
+     "name": "wrong type string[]",
+     "errors": 1,
+     "warnings": 0,
+     "info": 0,
+     "expected": "1e/0w",
+     "match": true
+    },
+    {
+     "name": "array with non-string",
+     "errors": 1,
+     "warnings": 0,
+     "info": 0,
+     "expected": "1e/0w",
+     "match": true
+    },
+    {
+     "name": "unknown field tolerated",
+     "errors": 0,
+     "warnings": 0,
+     "info": 1,
+     "expected": "0e/0w",
+     "match": true
+    }
+   ]
+  },
+  {
+   "id": "S5",
+   "name": "schemaRole coverage",
+   "rows": [
+    {
+     "schema": "ping.social.business@1",
+     "role": "business"
+    },
+    {
+     "schema": "ping.knowledge.business@1",
+     "role": "business"
+    },
+    {
+     "schema": "ping.social.service@1",
+     "role": "service"
+    },
+    {
+     "schema": "ping.knowledge.service@1",
+     "role": "service"
+    },
+    {
+     "schema": "ping.social.product@1",
+     "role": "product"
+    },
+    {
+     "schema": "ping.social.location@1",
+     "role": "location"
+    },
+    {
+     "schema": "ping.knowledge.location@1",
+     "role": "location"
+    },
+    {
+     "schema": "ping.social.person@1",
+     "role": "person"
+    },
+    {
+     "schema": "ping.knowledge.person@1",
+     "role": "person"
+    },
+    {
+     "schema": "ping.social.post@1",
+     "role": "post"
+    },
+    {
+     "schema": "ping.knowledge.post@1",
+     "role": "post"
+    },
+    {
+     "schema": "ping.social.article@1",
+     "role": "article"
+    },
+    {
+     "schema": "ping.knowledge.article@1",
+     "role": "article"
+    },
+    {
+     "schema": "ping.knowledge.website@1",
+     "role": null
+    },
+    {
+     "schema": "ping.social.unknown@1",
+     "role": null
+    },
+    {
+     "schema": "(empty)",
+     "role": null
+    }
+   ]
+  }
+ ]
+}

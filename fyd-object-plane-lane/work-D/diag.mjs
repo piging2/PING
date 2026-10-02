@@ -1,0 +1,20 @@
+import { chromium } from "playwright";
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+const p = await ctx.newPage();
+await p.goto("http://localhost:3100/");
+await p.waitForLoadState("networkidle");
+await p.waitForTimeout(800);
+const d = await p.evaluate(() => {
+  const slots = [...document.querySelectorAll('[data-testid="margin-object"]')].map((el) => el.getAttribute("data-object-id"));
+  const clusters = [...document.querySelectorAll('[data-testid="margin-cluster"]')].map((el) => el.getAttribute("data-cluster-id"));
+  const hp = document.querySelector('[data-testid="margin-object"][data-object-id="happy-place"]');
+  const btns = hp ? [...hp.querySelectorAll("button")].map((x) => x.getAttribute("aria-label")) : null;
+  const hpHTML = hp ? hp.outerHTML.slice(0, 700) : null;
+  return { slots, clusters, btns, hpHTML };
+});
+console.log("slots:", JSON.stringify(d.slots));
+console.log("clusters:", JSON.stringify(d.clusters));
+console.log("hp buttons:", JSON.stringify(d.btns));
+console.log("hp html:", d.hpHTML);
+await b.close();
