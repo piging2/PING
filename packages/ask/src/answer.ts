@@ -11,8 +11,11 @@
  * core: intent detection, evidence lookup, classification, citation, and
  * the refusal contract. The proof-3 answerer handles exactly one intent
  * (the services question). Any other question is refused with its topic
- * recorded in unknowns. No LLM in the answer path: classification and
- * evidence binding are mechanical.
+ * recorded in unknowns. Absence/negation questions ("a service they don't
+ * advertise") also refuse: the record only names what the site states, so
+ * an unadvertised service can never be evidenced and is never named.
+ * No LLM in the answer path: classification and evidence binding are
+ * mechanical.
  * DEPENDENCIES: ./types, ./viewer, ./cite
  * PROOFS: [3]
  *
@@ -46,6 +49,19 @@ const MAX_QUESTION_CHARS = 2000;
 /** The one intent this slice answers: questions about offered services. */
 function isServicesQuestion(question: string): boolean {
   return /\bservices?\b/i.test(question);
+}
+
+/**
+ * Absence/negation questions about services ("a service they don't
+ * advertise", "services not advertised") cannot be evidenced: the record
+ * only names what the site states. They fail closed to refusal even
+ * though they contain the word "service"; naming an unadvertised
+ * service would be a guess.
+ */
+function isUnadvertisedAsk(question: string): boolean {
+  return /\b(unadvertised|not advertised|doesn'?t advertise|does not advertise|never (advertised|offered|offer))\b/i.test(
+    question,
+  );
 }
 
 function refusalAnswer(answer: string, unknowns: string[]): AskAnswer {
@@ -107,6 +123,15 @@ export function askFyd(input: AskInput): AskAnswer {
     return refusalAnswer(
       "FYD does not have evidence to answer that question. " +
         "Try asking about the business, its services, contact details, or location.",
+      [question.slice(0, 120)],
+    );
+  }
+
+  if (isUnadvertisedAsk(question)) {
+    return refusalAnswer(
+      "FYD cannot evidence what this business does not advertise: the record " +
+        "only names what the site states, and naming an unadvertised service " +
+        "would be a guess.",
       [question.slice(0, 120)],
     );
   }
