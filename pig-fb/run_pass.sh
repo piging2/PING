@@ -201,6 +201,21 @@ pig_scp "$STAMPED_JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || { echo '{"ok":false
 pig_scp "$(dirname "$0")/engage.js" "$PIG:$WORKER_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "worker scp to Pig failed; job never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
 pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:$WAKE_WRAP_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "wake-wrap scp to Pig failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
 
+# Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+# authority repair): re-read CURRENT holds.json immediately before dispatch,
+# AFTER scp but BEFORE mark-execution. A hold that landed after the top gate
+# (stale schedule, queued worker, restart, manual trigger) denies here with
+# zero new external effects: the pass intents are recorded NOT_ATTEMPTED
+# (proven non-execution, the worker never launched) and the staged remote
+# job is removed from the Pig inbox.
+"$(dirname "$0")/../outreach/authority-check.py" facebook || {
+  echo "run_pass.sh: owner hold re-check denied at pre-launch boundary; failing closed" >&2
+  record_not_attempted "owner hold in force at pre-launch re-check; worker never launched"
+  pig_ssh "powershell -NoProfile -EncodedCommand $(printf '%s' "Remove-Item '$REMOTE_JOB' -ErrorAction SilentlyContinue" | iconv -t UTF-16LE | base64 -w0)" >/dev/null 2>&1 || true
+  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"
+  exit 2
+}
+
 # Mark EXECUTION (2026-09-24, orphan model: AFTER successful scp, not
 # before). A crash between scp and this point leaves intents in
 # ACTION_INTENT_DURABLE (never launched, never UNKNOWN); a crash after this

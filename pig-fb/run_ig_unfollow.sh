@@ -48,6 +48,12 @@ pig_scp "$(dirname "$0")/ig-unfollow.js" "$PIG:$REMOTE_DIR/ig-unfollow.js" >/dev
 pig_scp "$JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || {
   echo '{"ok":false,"infra":"job_scp_failed"}'; exit 2; }
 
+# Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+# authority repair): re-read CURRENT holds.json immediately before dispatch. A
+# hold that landed after the top gate (stale schedule, queued worker, restart,
+# manual trigger) denies here with zero new external effects.
+"$(dirname "$0")/../outreach/authority-check.py" instagram || { echo "run_ig_unfollow.sh: owner hold re-check denied at pre-launch boundary; failing closed" >&2; exit 2; }
+
 # Job-scoped wake lease (2026-09-27, Nolan): hold ES_CONTINUOUS |
 # ES_SYSTEM_REQUIRED for exactly the worker's lifetime. Warn-and-proceed on
 # deploy failure; the bracket degrades to today's behavior (no inhibition).

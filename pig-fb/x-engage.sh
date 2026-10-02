@@ -91,6 +91,14 @@ while IFS= read -r item; do
     waited=0
     while follow_active && [ $waited -lt 600 ]; do sleep 30; waited=$((waited+30)); done
   fi
+  # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+  # authority repair): the hold is re-read from CURRENT holds.json before EVERY
+  # like. A hold that landed mid-run denies here; the run stops with zero new
+  # external effects (already-recorded likes stay as historical evidence).
+  if ! "$(dirname "$0")/../outreach/authority-check.py" x >/dev/null 2>&1; then
+    echo "x-engage.sh: owner hold re-check denied at pre-action boundary; stopping run" >&2
+    break
+  fi
   # Each like runs under its own job-scoped wake lease (quiet mode: no wake
   # telemetry lines, so $out stays purely the driver's stdout and the
   # tail -1 / rc=3 contract below is unchanged). The driver's exit code

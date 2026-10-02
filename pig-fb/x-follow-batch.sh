@@ -53,6 +53,14 @@ while IFS= read -r h || [ -n "$h" ]; do
     sleep $wait
   fi
   first=0
+  # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+  # authority repair): the hold is re-read from CURRENT holds.json before EVERY
+  # follow. A hold that landed mid-run denies here with zero new external
+  # effects (already-recorded follows stay as historical evidence).
+  if ! "$(dirname "$0")/../outreach/authority-check.py" x >/dev/null 2>&1; then
+    log "owner hold re-check denied at pre-action boundary; stopping batch"
+    exit 2
+  fi
   # NOTE: </dev/null is load-bearing. pig_ssh wraps ssh, which reads stdin;
   # without it ssh swallows the rest of the queue file and the loop ends early.
   out=$(PIG_TIMEOUT=150 pig_ssh "powershell -NoProfile -ExecutionPolicy Bypass -File C:/Windows/Temp/x-follow-run.ps1 $h" < /dev/null 2>&1)

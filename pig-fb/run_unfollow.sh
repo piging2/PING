@@ -40,6 +40,12 @@ pig_scp "$JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || {
 pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:C:/Users/nolan/.local/share/pigi/wake-wrap.ps1" >/dev/null 2>&1 || {
   echo '{"ok":false,"infra":"wake_wrap_scp_failed"}'; exit 2; }
 
+# Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+# authority repair): re-read CURRENT holds.json immediately before dispatch. A
+# hold that landed after the top gate (stale schedule, queued worker, restart,
+# manual trigger) denies here with zero new external effects.
+"$(dirname "$0")/../outreach/authority-check.py" facebook || { echo "run_unfollow.sh: owner hold re-check denied at pre-launch boundary; failing closed" >&2; exit 2; }
+
 # Launch the worker DETACHED and poll for the result file. The worker MUST
 # survive this SSH session dropping. Start-Process -NoNewWindow does NOT
 # survive: OpenSSH for Windows places session processes in a Job Object with

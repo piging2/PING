@@ -95,6 +95,14 @@ while IFS= read -r item; do
     waited=0
     while other_driver_active && [ $waited -lt 600 ]; do sleep 30; waited=$((waited+30)); done
   fi
+  # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+  # authority repair): the hold is re-read from CURRENT holds.json before EVERY
+  # comment. A hold that landed mid-run denies here; the run stops with zero
+  # new external effects (already-recorded comments stay as historical evidence).
+  if ! "$(dirname "$0")/../outreach/authority-check.py" x >/dev/null 2>&1; then
+    echo "x-comment.sh: owner hold re-check denied at pre-action boundary; stopping run" >&2
+    break
+  fi
   if [ ! -f "$cfile" ]; then
     note="comment file missing: $cfile"; ok=false
   else

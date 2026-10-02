@@ -24,6 +24,12 @@ PIG_WORKER="C:/Users/nolan/.local/share/pigi/li-engage/engage.js"
 
 pig_scp "$JOB" "$PIG:$REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_failed"}'; exit 2; }
 
+# Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+# authority repair): re-read CURRENT holds.json immediately before dispatch. A
+# hold that landed after the top gate (stale schedule, queued worker, restart,
+# manual trigger) denies here with zero new external effects.
+"$(dirname "$0")/../outreach/authority-check.py" linkedin || { echo "run_pass.sh (linkedin): owner hold re-check denied at pre-launch boundary; failing closed" >&2; exit 2; }
+
 REMOTE_PS=$(cat <<EOF
 \$job = '$REMOTE'
 \$res = "\$job.result.json"

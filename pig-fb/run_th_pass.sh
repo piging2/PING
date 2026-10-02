@@ -29,6 +29,12 @@ source "$(dirname "$0")/wake-bracket.sh"  # job-scoped wake lease (2026-09-27)
 pig_scp "$(dirname "$0")/th-engage.js" "$PIG:C:/Users/nolan/.local/share/pigi/ig-engage/th-engage.js" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_script_failed"}'; exit 2; }
 pig_scp "$JOB" "$PIG:$REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_failed"}'; exit 2; }
 
+# Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
+# authority repair): re-read CURRENT holds.json immediately before dispatch. A
+# hold that landed after the top gate (stale schedule, queued worker, restart,
+# manual trigger) denies here with zero new external effects.
+"$(dirname "$0")/../outreach/authority-check.py" threads || { echo "run_th_pass.sh: owner hold re-check denied at pre-launch boundary; failing closed" >&2; exit 2; }
+
 # Job-scoped wake lease (2026-09-27, Nolan): hold ES_CONTINUOUS |
 # ES_SYSTEM_REQUIRED for exactly the worker's lifetime. Warn-and-proceed on
 # deploy failure; the bracket degrades to today's behavior (no inhibition).
