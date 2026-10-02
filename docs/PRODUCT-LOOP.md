@@ -19,3 +19,24 @@ RENDERED NODE ↔ SiteSpec path ↔ object/field ↔ claim ↔ evidence
 ```
 
 That one relationship unlocks: WHY THIS? / EDIT / CORRECT / HIDE / FEATURE / ASK FYD / AGENT CONTEXT / REGENERATION DIFF.
+
+## Mechanical close gate (Nolan, 2026-10-02, binding)
+
+The FYD slice closes when ONE EXTERNAL BUSINESS completes the entire customer loop with ZERO ENGINEERING INTERVENTION:
+
+1. Owner provides a real URL; FYD acquires it.
+2. Deterministic evidence-backed graph is produced.
+3. Generated site opens on desktop and mobile.
+4. Ask FYD answers one material business question WITH EVIDENCE.
+5. Owner corrects / hides / confirms one fact; correction PERSISTS.
+6. Owner requests one plain-English site change; FYD produces a proposal; owner APPROVES it; site changes; reload preserves it.
+7. Second source observation detects a change; regeneration PRESERVES the owner's correction/customization.
+8. The owner can explain what FYD did WITHOUT understanding PING internals.
+
+TWO HARD GATES (both must pass):
+- ZERO customer-specific code anywhere in the path.
+- ONE REAL EXTERNAL OWNER has actually used it.
+
+Until both gates pass, A2A/MCP remain harvested designs/prototypes, not another architecture wave.
+
+Steering line for all lanes: external systems report observations, PING decides truth; ports translate protocols, not semantics; projections explain truth, not replace it.
