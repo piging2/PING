@@ -24,7 +24,7 @@ byte-identical no-op.
 - `src/types.ts` — `PlannedIntent`, `SiteSpecPatchOp` (reorder_section /
   set_visibility / set_component_option), `PatchProposal` (id =
   `pp-` + digest of patch + spec digest), `SpecTransition`, `ProposalsState`,
-  `PresentationOverride`, the provisional `OwnerAssertion` shape,
+  `PresentationOverride`, re-exported owner `OwnerAssertion` types,
   regeneration types.
 - `src/compiler.ts` — `proposePatch`: intent + spec (+ graph) → validated
   proposal. Target resolution: section name first (with the tiny
@@ -36,9 +36,11 @@ byte-identical no-op.
 - `src/proposal.ts` — `approveProposal` (real gate), `applyProposal`
   (stale/tamper/validation refusals, idempotent re-apply, transition
   journal, override derivation), `applyOverrides` (absolute, idempotent).
-- `src/assertions.ts` — provisional assertion algebra: `draftAssertion`,
-  `chainHeads`, `applyAssertionsToGraph` (CORRECT wins over source drift
-  with an explicit conflict; HIDE is visibility-only).
+- `src/assertions.ts` — adapter over the owner package's canonical
+  assertion algebra (`applyCorrections`, `assertCorrection`,
+  `chainHeads`): one assertion authority, no fork. Derives
+  `changedObjectIds` for the affected-path computation and surfaces
+  `hiddenFactIds` for the visibility layer.
 - `src/regenerate.ts` — `diffEvidence`, `affectedSpecPaths` (bound-set
   comparison across old/new graphs through the real query seam),
   `regenerate`.
@@ -75,7 +77,7 @@ regenerated spec. Re-rendering is byte-identical. Tests pin all clocks.
 | `src/fyd/customize/owner-command-compiler.ts` | ADAPT (resolution semantics, intent vocabulary) | Plain-English parsing stays upstream (LLM); name matching tightened (candidate-contains-target only) so the compiler never guesses |
 | `src/fyd/customize/owner-proposal.ts` | ADAPT (draft→approve→apply→replay lifecycle, digest-bound ids, append-only state) | Capability-verdict approval replaced by explicit `{approvedBy, approvedAt}` (no capability system in piging2 yet); replay = `applyOverrides` + assertion re-projection inside `regenerate` |
 | `src/fyd/ask/site-patch.ts` | ADAPT (typed patch ops bound to a spec digest, before/after card) | Ops re-typed to the piging2 SiteSpec (`reorder_section`, `set_visibility`, `set_component_option`); digest-bound proposal ids kept |
-| `src/fyd/owner-mode/corrections.ts` | ADAPT (assertion algebra semantics) | Shape provisional pending `packages/owner`; semantics identical (append-only, chain heads, regen projection, conflicts) |
+| `src/fyd/owner-mode/corrections.ts` | ADAPT (assertion algebra semantics) | `src/assertions.ts` delegates to the canonical algebra in `packages/owner` (converged 2026-10-02; no duplicate authority) |
 
 ## Tests
 

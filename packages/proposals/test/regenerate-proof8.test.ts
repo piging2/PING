@@ -16,7 +16,7 @@ import {
   approveProposal,
   chainHeads,
   deepClone,
-  draftAssertion,
+  assertCorrection,
   emptyProposalsState,
   proposePatch,
   regenerate,
@@ -73,15 +73,14 @@ describe("proof 8: regeneration", () => {
     const state = proof7State(graph);
 
     // The owner corrects the phone number (source said OLD_PHONE).
-    const phoneAssertion = draftAssertion({
-      objectId: OWNER_ID,
-      field: "phone",
+    const phoneAssertion = assertCorrection({
+      factRef: { objectId: OWNER_ID, field: "phone" },
       op: "CORRECT",
       value: OWNER_PHONE,
-      provenance: { owner: "owner", assertedAt: APPROVED_AT },
+      provenance: { owner: "owner", assertedAt: APPROVED_AT, supersedes: null },
       sourceValueSeen: OLD_PHONE,
     });
-    expect(phoneAssertion.assertionId).toMatch(/^oa-[0-9a-f]{64}$/);
+    expect(phoneAssertion.assertionId).toMatch(/^oa-[0-9a-f]{16}$/);
 
     // New observation: the HVAC service description changed on the source site.
     const newObservation = JSON.parse(JSON.stringify(graph)) as ObjectGraph;
@@ -220,12 +219,11 @@ describe("proof 8: regeneration", () => {
     const graph = coppersmithWithEmergency();
     const state = proof7State(graph);
 
-    const phoneAssertion = draftAssertion({
-      objectId: OWNER_ID,
-      field: "phone",
+    const phoneAssertion = assertCorrection({
+      factRef: { objectId: OWNER_ID, field: "phone" },
       op: "CORRECT",
       value: OWNER_PHONE,
-      provenance: { owner: "owner", assertedAt: APPROVED_AT },
+      provenance: { owner: "owner", assertedAt: APPROVED_AT, supersedes: null },
       sourceValueSeen: OLD_PHONE,
     });
 
@@ -253,17 +251,15 @@ describe("proof 8: regeneration", () => {
   });
 
   test("chain heads: only the latest assertion in a supersedes chain applies", () => {
-    const first = draftAssertion({
-      objectId: OWNER_ID,
-      field: "phone",
+    const first = assertCorrection({
+      factRef: { objectId: OWNER_ID, field: "phone" },
       op: "CORRECT",
       value: "970-555-0001",
-      provenance: { owner: "owner", assertedAt: "2026-10-02T13:00:00.000Z" },
+      provenance: { owner: "owner", assertedAt: "2026-10-02T13:00:00.000Z", supersedes: null },
       sourceValueSeen: OLD_PHONE,
     });
-    const second = draftAssertion({
-      objectId: OWNER_ID,
-      field: "phone",
+    const second = assertCorrection({
+      factRef: { objectId: OWNER_ID, field: "phone" },
       op: "CORRECT",
       value: OWNER_PHONE,
       provenance: { owner: "owner", assertedAt: APPROVED_AT, supersedes: first.assertionId },

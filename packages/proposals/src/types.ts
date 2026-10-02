@@ -39,10 +39,10 @@
  * - Patch ops are SiteSpec-typed (reorder_section, set_visibility,
  *   set_component_option) instead of the source's SitePatchBody, because
  *   the piging2 SiteSpec carries presentation.* as the override surface.
- * - The OwnerAssertion shape is PROVISIONAL (see ./assertions.ts): the
- *   sibling packages/owner worker had not landed at build time. The
- *   semantics mirror the source corrections.ts exactly so the shapes can
- *   converge without behavior change.
+ * - Owner assertions: the canonical shape and algebra live in the owner
+ *   package (packages/owner/src/corrections.ts). The provisional shape
+ *   sketched here first was retired when that package landed (2026-10-02);
+ *   the semantics were identical, so convergence changed no behavior.
  */
 
 import type { FYDSiteSpec } from "../../sitespec/src/types";
@@ -187,69 +187,28 @@ export interface ProposalsState {
 }
 
 // ---------------------------------------------------------------------------
-// Owner assertions (PROVISIONAL SHAPE).
-//
-// The sibling packages/owner worker had not landed when this was built.
-// This minimal shape mirrors ping-fyd-converged
-// src/fyd/owner-mode/corrections.ts semantics exactly:
-//   - assertions are append-only; only chain heads apply
-//   - REGENERATION projects assertions over freshly extracted facts
-//   - a CORRECT keeps the owner's value when the source drifts, and the
-//     drift surfaces as an explicit conflict (never a silent win)
-//   - HIDE does not change values; it is consumed by the visibility layer
-// When packages/owner lands, this shape converges to its OwnerAssertion;
-// the field names were chosen to map 1:1.
+// ---------------------------------------------------------------------------
+// Owner assertions: the canonical shape and algebra live in the owner
+// package (packages/owner/src/corrections.ts). Re-exported here so this
+// package's inputs reference the single assertion authority. (The
+// provisional shape sketched here first was retired when that package
+// landed on 2026-10-02; the semantics were identical, so convergence
+// changed no behavior.)
 // ---------------------------------------------------------------------------
 
-export type AssertionOp = "CONFIRM" | "CORRECT" | "HIDE";
+import type {
+  AppliedAssertion,
+  CorrectionConflict,
+  OrphanedAssertion,
+  OwnerAssertion,
+} from "../../owner/src/corrections";
 
-export interface AssertionProvenance {
-  owner: string;
-  assertedAt: string;
-  /** assertionId this one supersedes, for append-only correction chains. */
-  supersedes?: string;
-}
-
-export interface OwnerAssertion {
-  /** Deterministic: "oa-" + digestCanonical of the canonical assertion body. */
-  assertionId: string;
-  objectId: string;
-  /** "title" | "description" | a PingObject fields key. */
-  field: string;
-  op: AssertionOp;
-  /** Required for CORRECT; absent otherwise. */
-  value?: string;
-  provenance: AssertionProvenance;
-  /**
-   * What the source said when the owner asserted. The conflict detector
-   * compares this against the source's current value.
-   */
-  sourceValueSeen?: string | null;
-}
-
-export interface AppliedAssertion {
-  assertionId: string;
-  op: AssertionOp;
-  objectId: string;
-  field: string;
-}
-
-export interface OrphanedAssertion {
-  assertionId: string;
-  reason: string;
-}
-
-export interface AssertionConflict {
-  assertionId: string;
-  objectId: string;
-  field: string;
-  /** What the source says now. */
-  sourceValue: string;
-  /** What the owner asserted (CORRECT value, or the confirmed value). */
-  ownerValue: string;
-  assertedAt: string;
-  reason: string;
-}
+export type {
+  AppliedAssertion,
+  CorrectionConflict,
+  OrphanedAssertion,
+  OwnerAssertion,
+};
 
 // ---------------------------------------------------------------------------
 // Regeneration.
@@ -290,8 +249,10 @@ export interface RegenerateResult {
   assertions: {
     applied: AppliedAssertion[];
     orphaned: OrphanedAssertion[];
-    conflicts: AssertionConflict[];
+    conflicts: CorrectionConflict[];
   };
+  /** factIds hidden by HIDE assertions, for the visibility layer. */
+  hiddenFactIds: string[];
   /** How many presentation overrides were re-applied after regeneration. */
   overridesReapplied: number;
   /** digestCanonical of the resulting spec. Equals the input digest when noOp. */

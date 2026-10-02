@@ -151,6 +151,7 @@ export function regenerate(input: RegenerateInput): RegenerateResult {
         orphaned: assertionResult.orphaned,
         conflicts: assertionResult.conflicts,
       },
+      hiddenFactIds: assertionResult.hiddenFactIds,
       overridesReapplied: 0,
       specDigest,
     };
@@ -188,6 +189,7 @@ export function regenerate(input: RegenerateInput): RegenerateResult {
       orphaned: assertionResult.orphaned,
       conflicts: assertionResult.conflicts,
     },
+    hiddenFactIds: assertionResult.hiddenFactIds,
     overridesReapplied: reapplied,
     specDigest: digestCanonical(finalSpec),
   };
