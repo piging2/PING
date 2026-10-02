@@ -1,0 +1,58 @@
+=== Tailscale adapter IPv4 on Windows side ===
+Unknown adapter Tailscale:
+
+   Connection-specific DNS Suffix  . : tail10c39b.ts.net
+   IPv6 Address. . . . . . . . . . . : fd7a:115c:a1e0::2733:9a2c
+   Link-local IPv6 Address . . . . . : fe80::c95d:f637:68f3:9a07%42
+=== existing v4tov4 portproxy entries ===
+
+Listen on ipv4:             Connect to ipv4:
+
+Address         Port        Address         Port
+--------------- ----------  --------------- ----------
+100.79.154.43   3100        172.21.65.209   3100
+
+=== (re)adding portproxy: 100.79.154.43:3100 -> 172.21.65.209:3100 ===
+
+
+add exit=0
+=== portproxy after ===
+
+Listen on ipv4:             Connect to ipv4:
+
+Address         Port        Address         Port
+--------------- ----------  --------------- ----------
+100.79.154.43   3100        172.21.65.209   3100
+
+=== existing 3100 firewall rules ===
+Action:                               Allow
+
+Rule Name:                            FYD-Tailscale-3100
+--
+RemoteIP:                             100.64.0.0/10
+Protocol:                             TCP
+LocalPort:                            3100
+=== (re)adding tailnet-scoped inbound rule TCP 3100 ===
+
+No rules match the specified criteria.
+
+Ok.
+
+add exit=0
+=== rule detail ===
+
+Rule Name:                            PING FYD 3100 tailnet
+----------------------------------------------------------------------
+Enabled:                              Yes
+Direction:                            In
+Profiles:                             Domain,Private,Public
+Grouping:                             
+LocalIP:                              Any
+RemoteIP:                             100.64.0.0/10
+Protocol:                             TCP
+LocalPort:                            3100
+RemotePort:                           Any
+Edge traversal:                       No
+Action:                               Allow
+Ok.
+

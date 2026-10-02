@@ -1,0 +1,24 @@
+Writer A (CEO order Ledger 03): close PING -> ASK FYD -> EVIDENCE for the ping-fyd tenant
+
+One semantic unit: make the existing PING tenant legible to the existing
+Ask path. No new resolver, no new registry, no Qdrant, no generic RAG,
+no UI work; HPP and Coppersmith remain regression fixtures only.
+
+- src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts (new): faithful
+  fixture of the 2026-09-21 PING dump (7 objects, 6 rels); base digest
+  bd56fbed...2d982ec1562 matches the dump's recorded graphDigest.
+- src/fyd/data/fyd-tenant-graph.ts: ping-fyd tenant pin with canonical
+  digest, generatedAt, eventSequences null; explicit overlay-story
+  decision (overlays stay journal-governed above the pinned base) and
+  recorded build/ask site-resolution duplication debt. Closed-read
+  boundary preserved: no filesystem projection read.
+- src/fyd/ask/context-compiler.ts: legacy hyphenated "owner-asserted"
+  maps to USER_OVERRIDE (aligns with the binding-verifier fix in
+  b9a0201a); Ask shares one semantic evidence identity with objects.
+- src/app/api/fyd/ask/__tests__/ask-ping-fyd-contract.test.ts (new):
+  7 tests: tenant resolution, SUPPORTED boring proof, PARTIAL
+  separation, UNSUPPORTED refusal (financing, pricing), CONFLICTED
+  determinism (unit + full-answer with a synthetic conflict).
+
+Green chain proven on live :3100 (POST /api/fyd/ask/ping-fyd):
+GRAPH -> ASK RETRIEVAL -> CLAIM -> EVIDENCE -> SERVED RESPONSE.

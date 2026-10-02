@@ -1,0 +1,96 @@
+#!/bin/bash
+# keep-awake-start.sh -- INDEPENDENT keep-awake holder lifecycle.
+# Decoupled from :3100 (2026-09-24, Nolan): power-management restart must
+# NEVER restart FYD, and :3100 restarts must NEVER touch the holder.
+# Usage: keep-awake-start.sh {start|stop|restart|status}   (default: status)
+#
+# The holder is ONE powershell.exe running C:\Users\nolan\keep-awake.ps1,
+# holding ES_CONTINUOUS|ES_SYSTEM_REQUIRED while on AC (released on battery,
+# per the .ps1 itself).
+# Launch is via WMI Win32_Process.Create, NOT setsid/&: OpenSSH for Windows
+# puts SSH-session processes in a Job Object, and a setsid-launched holder
+# freezes within minutes of the SSH session exiting (process stays alive,
+# loop stops, SYSTEM request is lost). WMI spawns outside the job object.
+# The WMI holder is invisible to WSL pgrep, so it is tracked by PID file
+# (C:\Users\nolan\keep-awake.pid) + tasklist. No console redirection is
+# possible; the .ps1 logs fatals to keep-awake-error.log and heartbeats to
+# keep-awake.status every ~55s.
+# Health has teeth: status checks the process AND the SYSTEM power request
+# AND heartbeat freshness (proves the loop is iterating, not just alive).
+set -u
+
+PIDFILE='/mnt/c/Users/nolan/keep-awake.pid'
+HEARTBEAT='/mnt/c/Users/nolan/keep-awake.status'
+
+holder_pid() {
+  # Prints the holder PID when the pidfile names a live process.
+  [ -f "$PIDFILE" ] || return 1
+  local pid
+  pid=$(tr -dc '0-9' < "$PIDFILE" 2>/dev/null)
+  [ -n "$pid" ] || return 1
+  if timeout 20 tasklist.exe /FI "PID eq $pid" /NH 2>/dev/null | grep -q "$pid"; then
+    echo "$pid"
+    return 0
+  fi
+  return 1
+}
+
+do_status() {
+  local pid age hb_mtime now
+  if pid=$(holder_pid); then
+    echo "holders: 1 (pid $pid)"
+  else
+    echo "holders: 0"
+  fi
+  echo "--- powercfg /requests ---"
+  if powercfg.exe /requests < /dev/null 2>/dev/null | grep -q 'powershell.exe'; then
+    echo "request: HELD"
+  else
+    echo "request: NOT HELD"
+  fi
+  echo "--- heartbeat ---"
+  if [ -f "$HEARTBEAT" ]; then
+    echo "heartbeat: $(cat "$HEARTBEAT" 2>/dev/null)"
+    hb_mtime=$(stat -c %Y "$HEARTBEAT" 2>/dev/null || echo 0)
+    now=$(date +%s)
+    age=$((now - hb_mtime))
+    echo "heartbeat age: ${age}s"
+    if [ "$age" -gt 120 ]; then echo "WARN: heartbeat stale, loop may be stuck"; fi
+  else
+    echo "heartbeat: (no file yet)"
+  fi
+}
+
+do_stop() {
+  local pid
+  # Belt and suspenders: pidfile-targeted kill, plus a sweep for any
+  # WSL-visible keep-awake.ps1 processes (legacy setsid launches).
+  if pid=$(holder_pid); then
+    echo "[keep-awake] stopping holder pid $pid"
+    timeout 20 taskkill.exe /PID "$pid" /F > /dev/null 2>&1 || true
+    sleep 1
+  fi
+  pkill -f 'keep-awake\.ps1' 2>/dev/null || true
+  rm -f "$PIDFILE"
+  if holder_pid > /dev/null 2>&1; then
+    echo "holders after stop: 1 (STILL RUNNING -- investigate)"
+  else
+    echo "holders after stop: 0"
+  fi
+}
+
+do_start() {
+  do_stop > /dev/null 2>&1
+  echo "[keep-awake] starting holder via WMI"
+  powershell.exe -NoProfile -NonInteractive -Command "( [wmiclass]'Win32_Process' ).Create('powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Users\nolan\keep-awake.ps1')" < /dev/null 2>&1 | grep -e 'ReturnValue' -e 'ProcessId' || true
+  sleep 10
+  do_status
+}
+
+case "${1:-status}" in
+  start)   do_start ;;
+  stop)    do_stop ;;
+  restart) do_stop; do_start ;;
+  status)  do_status ;;
+  *) echo "usage: $0 {start|stop|restart|status}" >&2; exit 2 ;;
+esac

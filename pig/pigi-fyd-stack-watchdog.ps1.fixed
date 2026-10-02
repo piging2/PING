@@ -1,0 +1,191 @@
+# pigi-fyd-stack-watchdog.ps1
+# Single recovery authority for the FYD stack (extends the PigiGatewayWatch pattern).
+# Dependency-ordered probe chain: postgres -> :18199 journal gateway -> :3100 -> Ask read path.
+# Each run checks IN ORDER, stops at the first unhealthy layer, repairs it (bounded),
+# then exits. The next run continues down the chain.
+# Bounded: per-layer stamp-file backoff (10 min between restarts, max 3 restarts/hour/layer),
+# then alert-only until the window clears. Never loops, never sleeps to order.
+$ErrorActionPreference = 'SilentlyContinue'
+$pigiDir   = 'C:/Users/nolan/.local/share/pigi'
+$logFile   = "$pigiDir/pigi-fyd-stack-watchdog.log"
+$stampDir  = "$pigiDir/pigi-fyd-stack-watchdog.stamps"
+if (!(Test-Path $stampDir)) { New-Item -ItemType Directory -Path $stampDir | Out-Null }
+
+function Write-WatchLog($msg) {
+  $stamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+  Add-Content -Path $logFile -Value "$stamp $msg"
+  if ((Get-Content $logFile).Count -gt 5000) {
+    (Get-Content $logFile | Select-Object -Last 500) | Set-Content $logFile
+  }
+}
+
+function Write-Jsonl($layer, $outcome, $action, $detail) {
+  $rec = @{
+    ts = (Get-Date).ToUniversalTime().ToString('o')
+    source = 'pigi-fyd-stack-watchdog'
+    layer = $layer; outcome = $outcome; action = $action; detail = $detail
+  } | ConvertTo-Json -Compress
+  Add-Content -Path $logFile -Value "JSONL $rec"
+}
+
+function Test-RestartBudget($layer) {
+  # Returns $true if a restart is allowed now (10-min backoff, max 3/hour).
+  $now = Get-Date
+  $stampFile = "$stampDir/$layer.lastrestart"
+  $countFile = "$stampDir/$layer.hourcount"
+  if (Test-Path $stampFile) {
+    try { $last = Get-Date (Get-Content $stampFile -Raw).Trim() } catch { $last = $null }
+    if ($last -and ($now - $last).TotalMinutes -lt 10) { return $false }
+  }
+  $count = 0; $windowStart = $null
+  if (Test-Path $countFile) {
+    try {
+      $parts = (Get-Content $countFile -Raw).Trim() -split '\|'
+      $windowStart = Get-Date $parts[0]; $count = [int]$parts[1]
+    } catch { $count = 0; $windowStart = $null }
+  }
+  if ($windowStart -and ($now - $windowStart).TotalHours -lt 1 -and $count -ge 3) { return $false }
+  return $true
+}
+
+function Register-Restart($layer) {
+  $now = Get-Date
+  $stampFile = "$stampDir/$layer.lastrestart"
+  $countFile = "$stampDir/$layer.hourcount"
+  $now.ToString('o') | Set-Content $stampFile
+  $count = 0; $windowStart = $null
+  if (Test-Path $countFile) {
+    try {
+      $parts = (Get-Content $countFile -Raw).Trim() -split '\|'
+      $windowStart = Get-Date $parts[0]; $count = [int]$parts[1]
+    } catch { }
+  }
+  if (-not $windowStart -or ($now - $windowStart).TotalHours -ge 1) { $windowStart = $now; $count = 0 }
+  "$($windowStart.ToString('o'))|$($count + 1)" | Set-Content $countFile
+}
+
+function Invoke-Wsl($cmd) {
+  # Runs a command in the Ubuntu WSL distro as nolan; returns stdout string.
+  $out = & wsl.exe -u nolan -- bash -c $cmd 2>&1 | Out-String
+  return $out.Trim()
+}
+
+
+# Active-run wake lock (2026-09-26): hold ES_SYSTEM_REQUIRED only while this run
+# executes, so idle sleep cannot interrupt a probe mid-flight. Released in the
+# finally block even on exit. Never wakes a sleeping machine; never blocks
+# shutdown or the user's own sleep. If the lock cannot be acquired, the run
+# proceeds normally without it.
+$wakeHeld = $false
+try {
+  Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class PigiWakeLock {
+    [DllImport("kernel32.dll")]
+    public static extern int SetThreadExecutionState(int esFlags);
+}
+'@ -ErrorAction Stop
+  # NB: 0x80000001 is int32-negative in PowerShell; the P/Invoke takes int so
+  # the bit pattern (ES_CONTINUOUS | ES_SYSTEM_REQUIRED) passes through intact.
+  [PigiWakeLock]::SetThreadExecutionState(0x80000001) | Out-Null
+  $wakeHeld = $true
+} catch { }
+try {
+  # ---- LAYER 1: postgres ----
+  $pgReady = Invoke-Wsl "docker exec ping-postgres pg_isready -U crx_user -d crx_runtime 2>&1"
+  if ($pgReady -notmatch 'accepting connections') {
+    $pgState = Invoke-Wsl "docker inspect ping-postgres --format '{{.State.Status}}' 2>&1"
+    Write-WatchLog "LAYER postgres UNHEALTHY (pg_isready: $pgReady; container: $pgState)"
+    if ($pgState -match 'exited|dead|created') {
+      if (Test-RestartBudget 'postgres') {
+        Write-WatchLog "restarting ping-postgres (docker start)"
+        Invoke-Wsl "docker start ping-postgres" | Out-Null
+        Register-Restart 'postgres'
+        Start-Sleep -Seconds 15
+        $after = Invoke-Wsl "docker exec ping-postgres pg_isready -U crx_user -d crx_runtime 2>&1"
+        Write-Jsonl 'postgres' 'unhealthy' 'docker_start' "before=$pgReady after=$after"
+        Write-WatchLog "postgres after restart: $after"
+      } else {
+        Write-WatchLog "postgres restart budget exhausted; alert-only"
+        Write-Jsonl 'postgres' 'unhealthy' 'alert_only' "budget exhausted; $pgReady"
+      }
+    } else {
+      Write-WatchLog "postgres container state=$pgState (not exited); no docker action taken"
+      Write-Jsonl 'postgres' 'unhealthy' 'none' "container state=$pgState"
+    }
+    exit 0
+  }
+  Write-WatchLog "LAYER postgres healthy"
+
+  # ---- LAYER 2: :18199 journal gateway ----
+  $jgw = Invoke-Wsl "curl -s --max-time 8 http://127.0.0.1:18199/ 2>&1"
+  if ($jgw -notmatch '"ok":true') {
+    Write-WatchLog "LAYER journal-gateway UNHEALTHY (:18199 response: $($jgw.Substring(0, [Math]::Min(120, $jgw.Length))))"
+    if (Test-RestartBudget 'journal-gateway') {
+      Write-WatchLog "relaunching :18199 via /home/nolan/start-18199.sh"
+      $r = Invoke-Wsl "/home/nolan/start-18199.sh 2>&1"
+      Register-Restart 'journal-gateway'
+      Write-Jsonl 'journal-gateway' 'unhealthy' 'start-18199.sh' $r
+      Write-WatchLog "start-18199.sh result: $($r.Substring(0, [Math]::Min(200, $r.Length)))"
+    } else {
+      Write-WatchLog "journal-gateway restart budget exhausted; alert-only"
+      Write-Jsonl 'journal-gateway' 'unhealthy' 'alert_only' 'budget exhausted'
+    }
+    exit 0
+  }
+  Write-WatchLog "LAYER journal-gateway healthy"
+
+  # ---- LAYER 3: :3100 Mission Control / FYD ----
+  # Health is a vector, not a boolean. Probe PROCESS health (WSL-local) and
+  # TRANSPORT health (Windows -> tailnet) as independent layers.
+  # 2026-09-28 fix: a transport failure with a healthy process must NEVER
+  # restart the process. On 2026-09-28 06:06 the old single-criterion layer
+  # saw tailnet probe code=-1 and restarted a locally-200 process; the
+  # tailnet path stayed down at 06:11 and 06:16 and recovered on its own at
+  # 06:21. Transport failure is not process failure.
+  $local3100 = Invoke-Wsl "curl -s -o /dev/null -w '%{http_code}' --max-time 8 http://127.0.0.1:3100/ 2>&1"
+  $prior3100Pid = Invoke-Wsl "ss -tlnp 2>/dev/null | grep ':3100' | grep -oP 'pid=\K[0-9]+' | head -1 2>&1"
+  try {
+    $r3100 = Invoke-WebRequest -UseBasicParsing 'http://100.79.154.43:3100/' -TimeoutSec 10
+    $code3100 = [int]$r3100.StatusCode
+  } catch {
+    $resp = $_.Exception.Response
+    $code3100 = if ($resp) { [int]$resp.StatusCode } else { -1 }
+  }
+  if ($local3100 -ne '200') {
+    Write-WatchLog "LAYER fyd-3100-process UNHEALTHY (WSL-local http=$local3100; prior_pid=$prior3100Pid)"
+    if (Test-RestartBudget 'fyd-3100') {
+      Write-WatchLog "restarting :3100 via /home/nolan/start-3100.sh (reason=process-unhealthy local=$local3100 prior_pid=$prior3100Pid)"
+      $r = Invoke-Wsl "/home/nolan/start-3100.sh 2>&1"
+      Register-Restart 'fyd-3100'
+      $new3100Pid = Invoke-Wsl "ss -tlnp 2>/dev/null | grep ':3100' | grep -oP 'pid=\K[0-9]+' | head -1 2>&1"
+      $flagOk = Invoke-Wsl "ps aux | grep '[n]ext-server' | grep -c 'NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1' 2>&1"
+      Write-Jsonl 'fyd-3100' 'unhealthy' 'start-3100.sh' "reason=process-unhealthy local_http=$local3100 prior_pid=$prior3100Pid new_pid=$new3100Pid demo_owner_mode_procs=$flagOk"
+      Write-WatchLog "start-3100.sh result: prior_pid=$prior3100Pid new_pid=$new3100Pid demo_owner_mode_procs=$flagOk"
+    } else {
+      Write-WatchLog "fyd-3100 restart budget exhausted; alert-only"
+      Write-Jsonl 'fyd-3100' 'unhealthy' 'alert_only' 'budget exhausted'
+    }
+    exit 0
+  }
+  Write-WatchLog "LAYER fyd-3100-process healthy (WSL-local 200 pid=$prior3100Pid)"
+  if ($code3100 -ne 200) {
+    Write-WatchLog "LAYER fyd-3100-transport UNHEALTHY (tailnet probe code=$code3100; process healthy locally pid=$prior3100Pid - transport-only failure, no process restart)"
+    Write-Jsonl 'fyd-3100' 'unhealthy' 'none' "transport-only failure; local_http=200 local_pid=$prior3100Pid tailnet_code=$code3100"
+    exit 0
+  }
+  Write-WatchLog "LAYER fyd-3100 healthy (local 200, tailnet 200)"
+
+  # ---- LAYER 4: Ask read path (probe only, no restart action) ----
+  $ask = Invoke-Wsl "/home/nolan/ask-probe.sh 2>&1"
+  if ($ask -match '"ok":true') {
+    Write-WatchLog "LAYER ask-read-path healthy"
+    Write-Jsonl 'ask-read-path' 'healthy' 'none' 'ok:true'
+  } else {
+    Write-WatchLog "LAYER ask-read-path UNHEALTHY (probe-only; response: $($ask.Substring(0, [Math]::Min(150, $ask.Length))))"
+    Write-Jsonl 'ask-read-path' 'unhealthy' 'none' 'probe-only, no restart target'
+  }
+} finally {
+  if ($wakeHeld) { [PigiWakeLock]::SetThreadExecutionState(0x80000000) | Out-Null }  # ES_CONTINUOUS: release
+}

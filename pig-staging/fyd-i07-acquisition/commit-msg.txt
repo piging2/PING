@@ -1,0 +1,36 @@
+fyd/i07-acquisition: PING acquisition rebuild from declared sources (Writer C)
+
+Rebuilds the ping-fyd tenant base from already-known legitimate sources
+only, using existing acquisition machinery (compile-tenant +
+anonymous-preview own acquisition; diffTwin and refreshSource own
+diff/survival proof). No crawler, cron, new ontology, or new authority.
+
+Sources (src/fyd/acquisition/ping-sources.json):
+- S1 src/config/tenant.ping.v1.json (owner-authored tenant authority)
+- S2 src/config/products.ping.v1.json (owner-authored product authority)
+- S3 PING Facebook Page (website-ingestion leg only, observed not merged)
+- S4 2026-09-21 dump projection (diffTwin baseline + explicit carry basis)
+
+Outcome: zero semantic change. diffTwin verdict no-op (0 object changes,
+0 relationship changes, 0 conflicts); all 7 object IDs and 6 relationship
+IDs byte-stable; only provenance.derivedAt re-stamped to the 2026-09-29
+re-observation. Owner facts re-derived only via exact deterministic copy
+(business title from products.ping.v1.json, facebook.url from
+tenant.ping.v1.json); everything else carried from the prior observation
+with explicit per-field attribution. The thin substrate (four service
+objects with empty fields) stays visible; not "fixed".
+
+Pin: bd56fbed...2d982ec1562 -> 728757b0...1fa4fd (sha256 over
+canonicalize(graph), the seam's exact rule).
+generatedAt: 2026-09-21T00:00:00.000Z -> 2026-09-29T18:07:00.000Z.
+
+Proofs (all produced before the pin swap):
+- review/ping-difftwin-20260929.json: no-op diff
+- review/ping-refresh-proof-20260929.json: refreshSource owner layer
+  byte-identical across refresh (ownerLayerIntact true)
+- Tests: 33/33 pass (ask-ping-fyd contract, graph-read route,
+  source-refresh, semantic-diff); tsc clean for new files
+
+Reproduce: FYD_CLAIM_DIR=$(mktemp -d) tsx src/fyd/acquisition/rebuild-ping.ts
+--manifest src/fyd/acquisition/ping-sources.json --observed-at <iso>
+--review-dir src/fyd/acquisition/review [--write-fixture <path>]

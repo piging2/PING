@@ -1,0 +1,53 @@
+#!/bin/bash
+# Restart the :3100 served surface (FYD sites) on the Pig.
+# Launched with setsid so it survives SSH session exit.
+# ALL lanes restart :3100 ONLY via this script (never by hand, never from a
+# PTY); stdio goes to /home/nolan/3100.log so the process detaches cleanly.
+set -u
+
+# Nolan standing directive (2026-09-24): :3100 serves demo-owner tenants only,
+# so demo owner mode is explicitly ON for every restart.
+export NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1
+
+cd /home/nolan/projects/ping
+
+# Restart attribution log (2026-09-27, Falsifier-F): append-only proof of which
+# restarts used this script. Additive only; no restart behavior changed.
+RLOG=/home/nolan/3100-restarts.log
+OLD_PIDS=$(fuser 3100/tcp 2>&1 | sed 's/^[^:]*: *//' | tr -s ' ' ',' | sed 's/^,//;s/,$//')
+[ -z "$OLD_PIDS" ] && OLD_PIDS=none
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] RESTART-START user=$(whoami) ssh_client=${SSH_CLIENT:-none} ppid=$PPID old_pids=$OLD_PIDS" >>"$RLOG" || true
+
+# POWER HOLDER IS DECOUPLED (2026-09-24, Nolan: independent lifecycle).
+# This script MUST NOT start, stop, or restart the keep-awake holder:
+# power-management changes must NEVER restart FYD.
+# Manage the holder ONLY via /home/nolan/keep-awake-start.sh {start|stop|restart|status}.
+
+echo "[start-3100] stopping any existing :3100 listener"
+fuser -k 3100/tcp 2>/dev/null || true
+sleep 3
+
+echo "[start-3100] starting next on :3100 with setsid"
+setsid bash -c 'cd /home/nolan/projects/ping && exec npm start -- -p 3100' \
+  >>/home/nolan/3100.log 2>&1 < /dev/null &
+disown 2>/dev/null || true
+
+echo "[start-3100] waiting for health"
+for i in $(seq 1 40); do
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
+    http://localhost:3100/sites/happy-place 2>/dev/null || true)
+  if [ "$code" = "200" ]; then
+    echo "[start-3100] healthy: happy-place 200"
+    ss -tlnp 2>/dev/null | grep ':3100' | head -2
+    NEW_PID=$(ss -tlnp 2>/dev/null | grep ':3100' | grep -o 'pid=[0-9]*' | cut -d= -f2 | tr '\n' ',' | sed 's/,$//')
+    [ -z "$NEW_PID" ] && NEW_PID=none
+    BUILD_ID=$(cat /home/nolan/projects/ping/.next/BUILD_ID 2>/dev/null || echo unknown)
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] RESTART-OK new_pid=$NEW_PID build_id=$BUILD_ID" >>"$RLOG" || true
+    exit 0
+  fi
+  sleep 3
+done
+echo "[start-3100] FAILED to become healthy; last log lines:"
+tail -30 /home/nolan/3100.log
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] RESTART-FAILED" >>"$RLOG" || true
+exit 1

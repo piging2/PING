@@ -1,0 +1,77 @@
+INCIDENT ZERO — PHASE 1 BACKUP MANIFEST
+=====================================
+Phase: 1 (backup of live PING/CRX source truth)
+Date: 2026-09-30
+Operator: Phase 1 worker (subagent), via pigwsl-exec as nolan on Pig
+
+SOURCE
+------
+Container: brain-postgres
+Image: postgres:15-alpine
+PostgreSQL version: PostgreSQL 15.18 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Data volume: compose_postgres_data (live size ~114.6 MB per 2026-09-30 baseline)
+Auth method for dump: local Unix-socket trust inside container (no password used or recorded)
+Dump tool: pg_dump / pg_dumpall from the container image (docker exec)
+
+DATABASES COVERED (all live non-template databases in the cluster)
+------------------------------------------------------------------
+postgres, crx_runtime, ping_runtime, h13_approvals, h13_dur, h13_effect, h13_social
+Skipped: none. Template databases (template0/template1) excluded by design.
+Note: h13_* databases covered as a precaution; their ownership/semantics not adjudicated.
+
+TIMING (UTC)
+------------
+Identification: 2026-09-30T12:05:51Z
+Dump START:     2026-09-30T12:06:42Z
+Dump END:       2026-09-30T12:06:45Z
+
+DESTINATION
+-----------
+Intended: D: (/mnt/d) — NOT AVAILABLE: /mnt/d is not mounted in Pig WSL
+Fallback used: C: staging at /mnt/c/PIG-BACKUPS/incident-zero-20260930/
+  (actual Windows C:, NOT inside any VHDX; C: had ~26 GB free at dump time)
+E: was not touched (dead hardware, retired).
+
+FILES
+-----
+crx_runtime.dump   497519 bytes  sha256 afb54af7987667d03467a1217a6a428c7c09bc2f45ea7940cb4bb1ccb36529f1
+ping_runtime.dump  456167 bytes  sha256 18e4c99590688e3301ab9f20ef8b2f0486436c3b242de384dbc9e3a55718634b
+postgres.dump        1036 bytes  sha256 a817b3330414791b257d3a9765e3a66e1c2f17f5e00652e5be18b7992027bb19
+h13_approvals.dump   4478 bytes  sha256 d8b67c15cfd10dd97651e4f2adbfaa0d7f8f14038e4aa7aa8ebb496522924bab
+h13_dur.dump         4454 bytes  sha256 258aec54aafd4ff695ab00e82df82f89fca90ba11e29a8630ab74d767080c2cd
+h13_effect.dump      4423 bytes  sha256 ae594be3cc593560723f9db1f42f3b20e26b581ff2118cbbf8dee902639873f5
+h13_social.dump      4522 bytes  sha256 d5bd9deae39122133ebcb6906b19f3c6d06b59b948036107b4a8020d88972183
+globals.sql           671 bytes  sha256 4c50ea099849e8bd381f62b49d9b0afd1e50eb87384894e8f6e81ce51e966cef
+cluster-plain.sql 3972143 bytes  sha256 ea9f3f36e713fb49b0c76eb8729d77fcaf25e1343a2e15661eb9d317b462659f
+SHA256SUMS.txt — full hash list written at dump time (authoritative)
+*.err — all zero bytes (no warnings/errors from pg_dump)
+
+pg_restore --list TOC ENTRY COUNTS (validates archive integrity)
+---------------------------------------------------------------
+postgres: 15 | crx_runtime: 320 | ping_runtime: 225
+h13_approvals: 23 | h13_dur: 23 | h13_effect: 23 | h13_social: 23
+ping_runtime spot check: TABLE DATA present for public.ping_events, public.ping_missions, public.knowledge_nodes
+crx_runtime spot check: TABLE DATA present (ai_workspace_results, artifact_registry, audit_log, authority_lineage, ...)
+
+RESTORE TEST
+------------
+Method: isolated temp container pg-restore-test-20260930 (postgres:15-alpine,
+tmpfs PGDATA, read-only mount of backup dir, no production volumes, no published ports).
+All 7 dumps pg_restored with rc=0. Container stopped and removed afterwards.
+Ephemeral throwaway password used only for container init; discarded, not recorded.
+
+Integrity comparison LIVE (brain-postgres) vs RESTORED:
+  ping_runtime tables:            33 == 33
+  ping_events rows:              2546 == 2546
+  ping_missions rows:             502 == 502
+  knowledge_nodes rows:           230 == 230
+  crx_runtime tables (public):     43 == 43
+
+RESTORE PROVEN: YES
+
+CREDENTIALS
+-----------
+None recorded. Dump used socket trust; no password appears in this manifest,
+in SHA256SUMS.txt, in logs, or in chat output.
+
+VERDICT: BACKUP GREEN

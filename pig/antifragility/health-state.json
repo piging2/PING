@@ -1,0 +1,65 @@
+{
+ "ts": "2026-10-02T01:11:42Z",
+ "status": "UP",
+ "denver_time": "19:11",
+ "domains": {
+  "HOST": "UP",
+  "NETWORK": "UP",
+  "FYD": "UP"
+ },
+ "checks": {
+  "journal_gateway": "ok (:18199 ok:true)",
+  "win_boot": "ok 2026-09-28T05:24",
+  "wsl": "ok uptime_s=129512",
+  "postgres": "ok running/unless-stopped",
+  "ssh": "ok",
+  "fyd": "ok (WSL-local 200, tailnet 200)",
+  "win_disk": "ok 10% free on C:",
+  "docker": "ok",
+  "gateway": "ok",
+  "last_wake": "ok 1616s ago",
+  "watchdog_gateway": "ambiguous streak: 12 consecutive (last='2026-09-30 18:29:02 ambiguous probe (code=-1); no action')",
+  "disk": "ok 10%",
+  "cdp": "ok 4/4 alive",
+  "watchdog_fyd": "ok (last_probe=2026-10-01 19:11:03 last_healthy=2026-10-01 19:11:03 last_failure=n/a last_recovery=n/a recoveries=0 state=HEALTHY)",
+  "ask": "ok (Ask FYD ok:true)"
+ },
+ "capabilities": {
+  "machine.reachable": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:42Z",
+   "source": "pig-health.sh HOST domain (SSH probe)",
+   "evidence": "ok"
+  },
+  "wsl.ready": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:42Z",
+   "source": "pig-health.sh WSL probe (uptime)",
+   "evidence": "ok uptime_s=129512"
+  },
+  "docker.workload_ready": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:42Z",
+   "source": "pig-health.sh docker/postgres/gateway probes",
+   "evidence": "docker=ok postgres=ok running/unless-stopped gateway=ok"
+  },
+  "fyd.page_healthy": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:42Z",
+   "source": "pig-health.sh FYD domain (WSL-local + tailnet :3100)",
+   "evidence": "ok (WSL-local 200, tailnet 200)"
+  },
+  "ask.read_path_healthy": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:42Z",
+   "source": "pig-health.sh :18199 + Ask FYD probes",
+   "evidence": "journal_gateway=ok (:18199 ok:true) ask=ok (Ask FYD ok:true)"
+  },
+  "watchdog.fyd_stack": {
+   "state": "UP",
+   "as_of": "2026-10-02T01:11:03Z",
+   "source": "pig-health.sh projection of PigiFydStackWatch durable log",
+   "evidence": "last_probe=2026-10-01 19:11:03 last_healthy=2026-10-01 19:11:03 last_failure=n/a last_recovery=n/a recoveries=0 state=HEALTHY"
+  }
+ }
+}

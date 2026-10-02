@@ -1,0 +1,32 @@
+# Candidate Dockerfile for PING gateway release candidate.
+# Modeled on the PROVEN Oracle deploy Dockerfile (FL-20260919-LANED-001):
+#   FROM node:20-alpine; COPY package*.json; RUN npm install; COPY . .
+# Provenance labels per Lane C release sequence (non-secret only).
+# Source SHA 4d522a6bd823e980bb97b76f95caeb2252a9c5d2 (clean tree, pre-promotion CERTIFIED).
+
+FROM node:20-alpine
+
+RUN apk add --no-cache git python3 make g++ gcc libstdc++
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production --no-audit --no-fund
+
+COPY . .
+
+RUN mkdir -p /app/workspace
+
+LABEL org.opencontainers.image.revision="4d522a6bd823e980bb97b76f95caeb2252a9c5d2" \
+      org.opencontainers.image.source="local:constitutional-convergence-v2@4d522a6bd823e980bb97b76f95caeb2252a9c5d2" \
+      org.opencontainers.image.title="ping-gateway release candidate" \
+      org.opencontainers.image.description="PING gateway release candidate; pre-promotion CERTIFIED (8/8 gates) against manifest ae45fb774c94bf2cccfd7daddd0d6b3b47bf45b3f3ed9e30844ddeaee0179df0"
+
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+USER nodejs
+
+EXPOSE 8080
+
+ENV NODE_ENV=production
+
+CMD ["node", "gateway/server.js"]

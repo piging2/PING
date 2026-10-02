@@ -1,0 +1,52 @@
+2026-09-24T18:26:00Z POLICY_RECORD (Nolan directive: never auto-sleep on AC while serving)
+BEFORE: powercfg SCHEME_CURRENT(Balanced) SUB_SLEEP STANDBYIDLE: AC=0x00000000 (Never), DC=0x000004b0 (20 min); HIBERNATEIDLE: AC=0x00000000 (Never), DC=0x7fffffff (Never). VIDEOIDLE (display off): AC=0x00000078 (2 min), DC=0x00000078 (2 min).
+BEFORE: AC never-sleep already in effect (pre-existing, not set by this change). Verified by direct powercfg /query.
+COMMAND: no powercfg change required (AC indexes already 0x00000000). Verification: powercfg /query SCHEME_CURRENT SUB_SLEEP 29f6c1db-... / 9d7815a6-...
+MECHANISM FOUND: sleepstudy (36 entries) shows Enter Reason = "Video Idle Timeout"; 506 events Reason=12 at 2-min display-off cadence. On this Modern Standby S0 Dell, display-off triggers standby entry despite AC sleep-after=Never. WiFi low-power during standby stalls Tailscale -> proxy CONNECT fail -> SSH unreachable.
+SUPPLEMENT (same intent, one central holder, not per-workload): C:/Users/nolan/keep-awake.ps1 holds ES_CONTINUOUS|ES_SYSTEM_REQUIRED on AC only, released on battery. Launched with setsid from /home/nolan/start-3100.sh (single holder, pkill first). Screen timeout/lock untouched; manual sleep/shutdown/lid unaffected.
+AFTER: AC standby idle Never (verified), AC hibernate Never (verified), DC policy untouched, keep-awake armed on next :3100 start.
+TIMESTAMP: 2026-09-24T18:26Z (America/Denver 12:26 MDT)
+
+=== CORRECTION 2026-09-24T18:42Z (12:42 MDT) ===
+1. :3100 OUTAGE (my fault): restarting via start-3100.sh at ~12:29 MDT killed the
+   working :3100, then `next start` failed: /home/nolan/projects/ping/.next had
+   NO BUILD_ID. Root cause: the dirty type-error lane's failed `next build` at
+   ~11:50 MDT wiped the previous good build output (artifacts dated 11:50-11:51,
+   BUILD_ID missing). The old server had kept running from memory.
+   Recovery (no dirty-lane sources touched): clean worktree at HEAD e474c89b ->
+   /home/nolan/build-clean, `npm ci`, `npx next build` SUCCEEDED (proves the type
+   error lives only in the lane's uncommitted work), copied clean .next over the
+   broken one (BUILD_ID k64_bH92dwS3DNa9mqf9z), restarted via start-3100.sh.
+   Verified: :3100 healthy (happy-place 200), NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1
+   in process env, tailnet root 200. Production now serves pure HEAD e474c89b.
+   Rejected: serving /home/nolan/projects/ping-fyd-deploy (older 'website' build,
+   wrong app lineage).
+2. KEEP-AWAKE HOLDER BUG + FIX: first two ps1 versions threw on
+   SetThreadExecutionState (Win PS 5.1: 0x80000000 parses as negative Int32;
+   [uint32] cast of the hex literal and the `u` suffix both fail). Working form:
+   $ES_CONTINUOUS = [uint32]2147483648 ; $ES_SYSTEM_REQUIRED = [uint32]1.
+   Verified 12:36 MDT: exactly 1 holder, `powercfg /requests` shows
+   SYSTEM: [PROCESS] ...\WindowsPowerShell\v1.0\powershell.exe. Request HELD.
+   The earlier log line "armed on next :3100 start" is superseded by this.
+3. PROOF WINDOW: holder verified working 12:36 MDT. observe-506.sh created;
+   runonce cron `pig-506-proof-window-check` fires ~13:21 MDT (~45 min window,
+   longer than the observed idle-dip intervals of seconds-to-minutes).
+   Criterion: zero Kernel-Power 506 (Reason 12) entries since 12:36.
+   NOTE: 506 at 12:34:29 MDT predates the verified holder; its 507 exit at
+   12:38:53 is the tail of a pre-holder dip, not a holder failure.
+4. pig-health.sh now classifies HOST / NETWORK / FYD as separate domains
+   (HOST_ASLEEP / NETWORK_DOWN / NETWORK_RECONVERGING / FYD_DOWN / FYD_UNREADY),
+   probes :3100 WSL-local AND via tailnet, suppresses incident noise inside a
+   150s post-507 reconvergence window. Smoke-tested end to end: UP/UP/UP.
+2026-09-24T18:53:37Z powercfg apply rc=0
+2026-09-24T18:53:40Z verify sleep_ac='    Current AC Power Setting Index: 0x00000000' hibernate_ac='    Current AC Power Setting Index: 0x00000000'
+2026-09-24T18:53:40Z VERIFIED: never-sleep-on-AC active (standby idle 0, hibernate 0)
+=== 506/507 observation 2026-09-24T19:21:10Z ===
+window start: 2026-09-24T12:36:00 MDT (keep-awake holder verified working)
+events since window start:
+(none)
+506 count since window start: 0
+keep-awake holders running: 1
+SYSTEM power request: None.
+VERDICT: PASS -- no idle-enter 506 since holder verified, request held
+2026-09-24T20:20Z CORRECTION: the 13:21 observer verdict said "request held" while measuring SYSTEM=None. The old holder (WMI battery query) was alive but stuck, holding nothing since ~12:41. Replaced with WMI-free keep-awake.ps1 (System.Windows.Forms power-line check + heartbeat file C:\Users\nolan\keep-awake.status); verified 1 holder, SYSTEM request HELD, heartbeat fresh. Holder lifecycle decoupled from :3100 (keep-awake-start.sh). Power acceptance per Nolan 2026-09-24 14:13 MDT = zero FYD/automation incidents attributable to power state, not zero 506 telemetry.

@@ -1,0 +1,56 @@
+# keep-awake.ps1 -- ONE central system execution-required power request.
+# Holds the Pig in S0 working state while it serves as automation/FYD host.
+# - Prevents idle-timer standby (including display-off-triggered Modern Standby
+#   entry, which powercfg sleep-after=Never does NOT stop on this platform).
+# - Display may still turn off and lock per VIDEOIDLE policy (screen timeout
+#   untouched). Manual sleep/shutdown/lid still work (user-initiated power
+#   transitions are not blocked by ES_SYSTEM_REQUIRED).
+# - Battery (DC): request is released so normal battery-conscious sleep applies.
+# Power-line state comes from System.Windows.Forms (no WMI: a hanging
+# Get-CimInstance once left this process alive for hours while holding
+# nothing, caught 2026-09-24).
+# Heartbeat: every iteration writes UTC timestamp + state to
+# C:\Users\nolan\keep-awake.status so health checks verify the loop is
+# actually iterating, not just that the process exists.
+# Lifecycle is INDEPENDENT of :3100: manage only via
+# /home/nolan/keep-awake-start.sh {start|stop|restart|status}.
+# The holder is launched via WMI Win32_Process.Create (see
+# keep-awake-start.sh): OpenSSH for Windows puts SSH-session processes in a
+# Job Object, and a setsid/& launch from an SSH session freezes within
+# minutes of session exit (process alive, loop dead, request lost).
+# Fatal startup errors go to C:\Users\nolan\keep-awake-error.log since a
+# WMI-launched process has no console to inherit.
+trap {
+  "FATAL $([DateTime]::UtcNow.ToString('o')) : $_" | Out-File -FilePath 'C:\Users\nolan\keep-awake-error.log' -Append -Encoding ascii
+  exit 1
+}
+# PID file: the WMI-launched holder is invisible to WSL pgrep, so lifecycle
+# tooling tracks it by PID file + tasklist instead of command-line matching.
+$PID | Out-File -FilePath 'C:\Users\nolan\keep-awake.pid' -Encoding ascii -NoNewline
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class Power {
+  [DllImport("kernel32.dll")]
+  public static extern uint SetThreadExecutionState(uint esFlags);
+}
+"@
+$ES_CONTINUOUS = [uint32]2147483648
+$ES_SYSTEM_REQUIRED = [uint32]1
+$statusPath = 'C:\Users\nolan\keep-awake.status'
+while ($true) {
+  try {
+    $pls = [System.Windows.Forms.SystemInformation]::PowerStatus.PowerLineStatus.ToString()
+  } catch { $pls = 'Unknown' }
+  $onAc = $pls -ne 'Offline'
+  if ($onAc) {
+    $r = [Power]::SetThreadExecutionState($ES_CONTINUOUS -bor $ES_SYSTEM_REQUIRED)
+  } else {
+    $r = [Power]::SetThreadExecutionState($ES_CONTINUOUS)
+  }
+  try {
+    "$([DateTime]::UtcNow.ToString('o')) onAc=$onAc powerLineStatus=$pls esResult=$r" | Out-File -FilePath $statusPath -Encoding ascii
+  } catch { }
+  Start-Sleep -Seconds 55
+}

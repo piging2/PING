@@ -1,0 +1,8 @@
+#!/bin/bash
+# usage: runpig <local-script> [timeout-secs]
+T="${2:-120}"
+NAME="pigaudit_$(date +%s%N).sh"
+scp -F /home/hatch/workspace/pig-audit/pig.conf "$1" "pig:C:/Windows/Temp/$NAME" >/dev/null 2>&1 || { echo "SCP_FAIL"; exit 1; }
+timeout "$T" ssh -F /home/hatch/workspace/pig-audit/pig.conf pig "wsl -u nolan -- bash /mnt/c/Windows/Temp/$NAME"; RC=$?
+ssh -F /home/hatch/workspace/pig-audit/pig.conf pig "del C:\\Windows\\Temp\\$NAME" >/dev/null 2>&1
+exit $RC
