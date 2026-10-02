@@ -21,8 +21,11 @@
  */
 
 // ---------------------------------------------------------------------------
-// Query resolution. Deterministic: related sorts by id, feeds sort newest
-// first with id as tie-break. Never by insertion or database order.
+// Query resolution. Deterministic and locale-independent: related sorts
+// by id, feeds sort newest first (updatedAt, UTF-16 code-unit order)
+// with id as tie-break. Never by insertion order, database order, or
+// locale collation (SOUL section 10: constitutional outputs must not
+// depend on locale).
 // ---------------------------------------------------------------------------
 
 import type { PingObject } from "./ping-types";
@@ -86,13 +89,18 @@ export function resolveQuery(
             ? o.schema === query.schema
             : (query.schemas ?? []).includes(o.schema);
       const out = graph.objects.filter((o) => pub(o) && schemaOk(o));
-      out.sort((a, b) =>
-        a.updatedAt !== b.updatedAt
-          ? b.updatedAt.localeCompare(a.updatedAt)
-          : a.id < b.id
-            ? -1
-            : 1,
-      );
+      // Newest first, UTF-16 code-unit order, id as a TOTAL tie-break.
+      // localeCompare is banned here: collation is environment-dependent
+      // (ICU tables, ambient default locale) and calls byte-distinct
+      // timestamps "equal" (e.g. NFC vs NFD), which silently disables the
+      // tie-break and makes V8's stable sort preserve input order. SOUL
+      // section 10.
+      out.sort((a, b) => {
+        if (a.updatedAt !== b.updatedAt)
+          return a.updatedAt < b.updatedAt ? 1 : -1; // newest first
+        if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+        return 0;
+      });
       return query.limit ? out.slice(0, query.limit) : out;
     }
   }
