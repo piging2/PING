@@ -1,0 +1,5 @@
+TASK: trade segment deep dive.
+
+Pick ONE trade segment from this list that looks least covered (concrete contractors, fence companies, well and pump services, septic services, chimney sweeps, appliance repair). FENCE IS SATURATED: six straight deep-dives returned 9 to 11 of 12 names already in our pipeline; do NOT pick fence unless every other segment is demonstrably emptier. Research it across the geography above. Find 12 real businesses in that segment, and for each give: business name, town, website URL (or "no website found"), whether they have online booking or quote forms, Google review count and rating, and one concrete observable weakness or opportunity.
+
+Also add a 3-5 sentence segment note: how these businesses typically get customers, whether they look phone-first, and the most common website/online weakness in the segment. Only businesses you can verify exist right now. Do not invent businesses. Numbered list plus the segment note.

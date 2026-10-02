@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "checked_at": "2026-09-18T22:03:30.925056+00:00",
+    "rules": [
+      "R1 capture/validate completeness: 25 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 8 accepted ids, 0 found (UNCHECKED)",
+      "R4 sweep distill decisions checked",
+      "R5 stale in-flight runs checked"
+    ],
+    "projection": "NOT_APPLICABLE: canonical_events is the upstream tenant-event inbox, not a ping_events projection; 0 rows expected, EventBridge live and polling"
+  },
+  "gap_count": 2,
+  "gaps": [
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 13.0h with no terminal verify/emit/skip decision",
+      "run_id": "d-segment-deep-dive",
+      "input": "20260918-090448-d-segment-deep-dive.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true
+    },
+    {
+      "rule": "R3",
+      "step": "EMIT",
+      "state": "UNCHECKED",
+      "reason": "could not verify event durability: scp to Pig failed",
+      "run_id": "-",
+      "input": "8 accepted event_ids",
+      "next_eligible_step": "re-run when Pig/gateway reachable",
+      "resumable": true
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+TASK: seasonal demand calendar research.
+
+Build a month-by-month seasonal demand calendar for home-service trades across the geography above (Western Colorado: Grand Junction, Fruita, Palisade, Clifton, Montrose, Delta, Gunnison, Durango, Glenwood Springs, Rifle, Carbondale, Aspen, Steamboat Springs, Craig, Meeker and surrounding towns).
+
+For each of the 12 months, name the trades that see seasonal demand surges in Western Colorado and the specific seasonal driver (e.g., chimney sweeps before heating season, irrigation blowouts in October, snow-contract selling in September, HVAC tune-ups before summer/winter, pest pressure in spring, roof work in dry months, gutter cleaning after fall leaf drop). Ground each entry in something observable: a local business website advertising seasonal services, a trade association recommendation, or a well-known regional climate pattern.
+
+Deliver as a numbered list with at least 12 entries (one per month, more if a month has multiple distinct surges). Each entry: month, trade, seasonal driver, and how you verified it (website URL, association source, or climate basis). Only verifiable entries; say plainly where you are inferring from climate rather than citing a source. Numbered list.

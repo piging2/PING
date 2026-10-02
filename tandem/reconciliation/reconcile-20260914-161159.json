@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "checked_at": "2026-09-14T16:11:59.689161+00:00",
+    "rules": [
+      "R1 capture/validate completeness: 4 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 2 accepted ids, 2 found",
+      "R4 sweep distill decisions checked",
+      "R5 stale in-flight runs checked"
+    ],
+    "projection": "NOT_APPLICABLE: canonical_events is the upstream tenant-event inbox, not a ping_events projection; 0 rows expected, EventBridge live and polling"
+  },
+  "gap_count": 1,
+  "gaps": [
+    {
+      "rule": "R5",
+      "step": "CAPTURE",
+      "state": "FAILED",
+      "reason": "in-flight sidecar 20.6h old, brief never captured ok (2 later attempt(s) in ledger)",
+      "run_id": "b-new-business-radar",
+      "input": "20260913-193408-b-new-business-radar.provenance.json",
+      "next_eligible_step": "safe to retry brief (captures are idempotent per resume notes)",
+      "resumable": true
+    }
+  ]
+}

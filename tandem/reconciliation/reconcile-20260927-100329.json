@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "checked_at": "2026-09-27T10:03:29.785251+00:00",
+    "rules": [
+      "R1 capture/validate completeness: 77 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 60 accepted ids, 0 found (UNCHECKED)",
+      "R4 sweep distill decisions checked",
+      "R7 capture_failed terminal outcomes: 20 recognized terminal, 0 non-terminal, 0 orphan evidence files",
+      "R5 stale in-flight runs checked",
+      "R7 scheduler tick coverage: meta-ai-intel-pass 03:04:06 tick ran; ping-social-outreach-engine 02:12:55 tick ran; 23:12:55 tick on stale 3h anchor never scheduled (live interval@6h); 1 R7 gap appended"
+    ],
+    "projection": "NOT_APPLICABLE: canonical_events is the upstream tenant-event inbox, not a ping_events projection; 0 rows expected, EventBridge live and polling",
+    "lifecycle": "lifecycle: 1 actionable (OPEN/REOPENED), 8 suppressed (KNOWN_PERMANENT), 0 resolved this run, 0 reopened this run; 2 disposition(s) parsed"
+  },
+  "gap_count": 2,
+  "gaps": [
+    {
+      "rule": "R3",
+      "step": "EMIT",
+      "state": "UNCHECKED",
+      "reason": "could not verify event durability: scp to Pig failed",
+      "run_id": "-",
+      "input": "60 accepted event_ids",
+      "next_eligible_step": "re-run when Pig/gateway reachable",
+      "resumable": true,
+      "lifecycle": "REOPENED",
+      "gap_key": "R3|EMIT|-|60 accepted event_ids"
+    },
+    {
+      "rule": "R7",
+      "step": "SCHEDULE",
+      "state": "GAP",
+      "reason": "expected tick 2026-09-26T23:12:55-06:00 (America/Denver) has no scheduler run record",
+      "run_id": "ping-social-outreach-engine",
+      "input": "expected_tick 2026-09-26T23:12:55-06:00",
+      "next_eligible_step": "visibility record only; rotation retry and watermark ingest cover the work",
+      "note": "dispatch gap: tick never queued (or job was disabled at tick time); no worker failure. Rotation retry and watermark ingest cover the work; this record is the visibility. Cause observed: live schedule is interval@6h so the body-anchored 3h tick was never scheduled; stale-anchor phantom, same class as 11:12:55 (2026-09-26) and 17:12:55 (2026-09-26).",
+      "lifecycle": "OPEN",
+      "gap_key": "R7|SCHEDULE|ping-social-outreach-engine|2026-09-26T23:12:55-06:00"
+    }
+  ],
+  "suppressed_count": 8,
+  "suppressed": [
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 217.0h with no terminal verify/emit/skip decision",
+      "run_id": "d-segment-deep-dive",
+      "input": "20260918-090448-d-segment-deep-dive.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|d-segment-deep-dive|20260918-090448-d-segment-deep-dive.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 211.0h with no terminal verify/emit/skip decision",
+      "run_id": "b-new-business-radar",
+      "input": "20260918-150420-b-new-business-radar.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260918-150420-b-new-business-radar.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 199.0h with no terminal verify/emit/skip decision",
+      "run_id": "h-marketing-intelligence",
+      "input": "20260919-030420-h-marketing-intelligence.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|h-marketing-intelligence|20260919-030420-h-marketing-intelligence.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 199.0h with no terminal verify/emit/skip decision",
+      "run_id": "a-weak-website-hunt",
+      "input": "20260919-030617-a-weak-website-hunt.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|a-weak-website-hunt|20260919-030617-a-weak-website-hunt.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 193.0h with no terminal verify/emit/skip decision",
+      "run_id": "b-new-business-radar",
+      "input": "20260919-090444-b-new-business-radar.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260919-090444-b-new-business-radar.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 192.9h with no terminal verify/emit/skip decision",
+      "run_id": "h-marketing-intelligence",
+      "input": "20260919-090658-h-marketing-intelligence.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|h-marketing-intelligence|20260919-090658-h-marketing-intelligence.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 187.0h with no terminal verify/emit/skip decision",
+      "run_id": "a-weak-website-hunt",
+      "input": "20260919-150459-a-weak-website-hunt.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|a-weak-website-hunt|20260919-150459-a-weak-website-hunt.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 186.9h with no terminal verify/emit/skip decision",
+      "run_id": "b-new-business-radar",
+      "input": "20260919-150705-b-new-business-radar.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true,
+      "lifecycle": "KNOWN_PERMANENT",
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260919-150705-b-new-business-radar.provenance.json",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    }
+  ],
+  "resolved_this_run": [],
+  "reopened_this_run": [],
+  "newly_suppressed_this_run": [],
+  "lifecycle_store": "/home/hatch/workspace/tandem/reconciliation/gap-lifecycle.json",
+  "dispositions": [
+    {
+      "path": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md",
+      "rule": "R2",
+      "valid": true,
+      "authority": "Nolan directive, 2026-09-20 12:58 MDT:",
+      "items_cited": 8
+    },
+    {
+      "path": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md",
+      "rule": "R3",
+      "valid": true,
+      "authority": "Nolan directive, 2026-09-20 12:58 MDT:",
+      "items_cited": 11
+    }
+  ]
+}

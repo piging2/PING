@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "checked_at": "2026-09-14T16:03:07.752873+00:00",
+    "rules": [
+      "R1 capture/validate completeness: 4 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 2 accepted ids, 2 found",
+      "R4 sweep distill decisions checked",
+      "R5 stale in-flight runs checked"
+    ],
+    "projection": "UNDER_INVESTIGATION: ping_events vs canonical_events gap pending EventBridge implementation audit; not scored as a gap yet"
+  },
+  "gap_count": 3,
+  "gaps": [
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 17.2h with no terminal verify/emit/skip decision",
+      "run_id": "e-seasonal-demand-calendar",
+      "input": "20260913-225058-e-seasonal-demand-calendar.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true
+    },
+    {
+      "rule": "R2",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "answer_captured for 17.2h with no terminal verify/emit/skip decision",
+      "run_id": "f-trade-network-scan",
+      "input": "20260913-225334-f-trade-network-scan.provenance.json",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "resumable": true
+    },
+    {
+      "rule": "R5",
+      "step": "CAPTURE",
+      "state": "FAILED",
+      "reason": "in-flight sidecar 20.5h old, brief never captured ok (2 later attempt(s) in ledger)",
+      "run_id": "b-new-business-radar",
+      "input": "20260913-193408-b-new-business-radar.provenance.json",
+      "next_eligible_step": "safe to retry brief (captures are idempotent per resume notes)",
+      "resumable": true
+    }
+  ]
+}

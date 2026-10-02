@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "checked_at": "2026-09-14T16:02:23.267169+00:00",
+    "rules": [
+      "R1 capture/validate completeness: 4 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 2 accepted ids, 0 found (UNCHECKED)",
+      "R4 sweep distill decisions checked",
+      "R5 stale in-flight runs checked"
+    ],
+    "projection": "UNDER_INVESTIGATION: ping_events vs canonical_events gap pending EventBridge implementation audit; not scored as a gap yet"
+  },
+  "gap_count": 6,
+  "gaps": [
+    {
+      "rule": "R3",
+      "step": "EMIT",
+      "state": "UNCHECKED",
+      "reason": "could not verify event durability: pig/gateway unreachable: = : The term '=' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the \nspell",
+      "run_id": "-",
+      "input": "2 accepted event_ids",
+      "next_eligible_step": "re-run when Pig/gateway reachable",
+      "resumable": true
+    },
+    {
+      "rule": "R4",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "sweep summary has LEARNING but no PING-DISTILL decision line",
+      "run_id": "sweep-2026-09-14-round49",
+      "input": "/home/hatch/workspace/goals/ping-social-outreach-campaign/hidden_files/sweep-2026-09-14-round49.md",
+      "next_eligible_step": "append PING-DISTILL distilled|skipped line to LEARNING",
+      "resumable": true
+    },
+    {
+      "rule": "R4",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "sweep summary has LEARNING but no PING-DISTILL decision line",
+      "run_id": "sweep-2026-09-14-round50",
+      "input": "/home/hatch/workspace/goals/ping-social-outreach-campaign/hidden_files/sweep-2026-09-14-round50.md",
+      "next_eligible_step": "append PING-DISTILL distilled|skipped line to LEARNING",
+      "resumable": true
+    },
+    {
+      "rule": "R4",
+      "step": "DISTILL",
+      "state": "NOT_RUN",
+      "reason": "sweep summary has LEARNING but no PING-DISTILL decision line",
+      "run_id": "sweep-2026-09-14-round51",
+      "input": "/home/hatch/workspace/goals/ping-social-outreach-campaign/hidden_files/sweep-2026-09-14-round51.md",
+      "next_eligible_step": "append PING-DISTILL distilled|skipped line to LEARNING",
+      "resumable": true
+    },
+    {
+      "rule": "R5",
+      "step": "CAPTURE",
+      "state": "FAILED",
+      "reason": "in-flight sidecar 27.1h old with no completed run; worker likely crashed",
+      "run_id": "bogus-slug-xyz",
+      "input": "20260913-125602-bogus-slug-xyz.provenance.json",
+      "next_eligible_step": "safe to retry brief (captures are idempotent per resume notes)",
+      "resumable": true
+    },
+    {
+      "rule": "R5",
+      "step": "CAPTURE",
+      "state": "FAILED",
+      "reason": "in-flight sidecar 20.5h old with no completed run; worker likely crashed",
+      "run_id": "b-new-business-radar",
+      "input": "20260913-193408-b-new-business-radar.provenance.json",
+      "next_eligible_step": "safe to retry brief (captures are idempotent per resume notes)",
+      "resumable": true
+    }
+  ]
+}

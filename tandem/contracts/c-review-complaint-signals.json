@@ -1,0 +1,166 @@
+{
+  "acceptable_ratings": [
+    1,
+    2,
+    3
+  ],
+  "brief_id": "c-review-complaint-signals",
+  "classification_precedence": [
+    "CONTRADICTED",
+    "OUT_OF_GEOGRAPHY",
+    "WRONG_TRADE",
+    "DUPLICATE",
+    "STALE_REVIEW",
+    "WRONG_SIGNAL",
+    "BUSINESS_NOT_VERIFIED",
+    "INSUFFICIENT_EVIDENCE",
+    "VALID"
+  ],
+  "classifications": [
+    "VALID",
+    "INSUFFICIENT_EVIDENCE",
+    "OUT_OF_GEOGRAPHY",
+    "DUPLICATE",
+    "STALE_REVIEW",
+    "WRONG_TRADE",
+    "WRONG_SIGNAL",
+    "BUSINESS_NOT_VERIFIED",
+    "CONTRADICTED"
+  ],
+  "contract_version": "1.0.0",
+  "created": "2026-09-15",
+  "forbid_reviewer_quotes_in": [
+    "problem_category",
+    "review_timing"
+  ],
+  "geography_source": "pack:GEOGRAPHY (strict priority)",
+  "min_valid": 3,
+  "name_suffixes_dropped": [
+    "llc",
+    "inc",
+    "co",
+    "corp",
+    "ltd",
+    "pllc",
+    "llp",
+    "dba",
+    "company",
+    "services",
+    "service"
+  ],
+  "note": "Machine-checkable research contract. The prompt_block below is rendered into the Meta AI prompt as the authoritative output contract for this brief, and this same file drives validate-research-contract.py. The two cannot drift: one source of truth.",
+  "problem_categories": [
+    "phone problems",
+    "missed calls",
+    "no response",
+    "no callback",
+    "slow response",
+    "waiting",
+    "scheduling trouble",
+    "poor communication"
+  ],
+  "prompt_block": "BRIEF CONTRACT: review-complaint signals. This section is authoritative for this brief and overrides any conflicting output instructions.\nReply with a numbered list. For EACH business you considered, including ones you reject, output ALL of these labeled fields:\n  1. Business Name - Town - Trade\n  Business: <name>\n  Town: <town>\n  Trade: <trade>\n  Problem category: <exactly one of: phone problems | missed calls | no response | no callback | slow response | waiting | scheduling trouble | poor communication>\n  Review timing: <when the 1, 2, or 3 star review was posted: exact date, or N days/weeks/months ago>\n  Review rating: <1, 2, or 3: the actual low star rating, not the business average>\n  Verification: <how you verified the business exists right now: Google Business Profile, own website, or Facebook page>\n  Classification: <exactly one of: VALID | INSUFFICIENT_EVIDENCE | OUT_OF_GEOGRAPHY | DUPLICATE | STALE_REVIEW | WRONG_TRADE | WRONG_SIGNAL | BUSINESS_NOT_VERIFIED | CONTRADICTED>\nRules:\n- The cited review must be dated within the last 90 days. If you cannot date it, classify INSUFFICIENT_EVIDENCE, never VALID.\n- A review older than 90 days is STALE_REVIEW, never VALID.\n- A business-average rating is not a review. Cite an actual 1, 2, or 3 star review.\n- List every candidate you considered. Never silently drop one.\n- Never name or quote reviewers. Paraphrase the problem category only; no quoted text in the problem or timing fields.\n- End with 2-3 sentences on what you could NOT verify. The output is UNVERIFIED external research.",
+  "recency_days": 90,
+  "require_uncertainty_statement": true,
+  "require_unverified_marking": true,
+  "required_fields": [
+    "business",
+    "town",
+    "trade",
+    "problem_category",
+    "review_timing",
+    "verification_method"
+  ],
+  "target_source": "pack:TARGET",
+  "target_valid": 10,
+  "trade_match_rules": [
+    [
+      "hvac",
+      "hvac"
+    ],
+    [
+      "heat",
+      "hvac"
+    ],
+    [
+      "plumb",
+      "plumbing"
+    ],
+    [
+      "electric",
+      "electrical"
+    ],
+    [
+      "roof",
+      "roofing"
+    ],
+    [
+      "landscap",
+      "landscaping"
+    ],
+    [
+      "lawn",
+      "landscaping"
+    ],
+    [
+      "turf",
+      "landscaping"
+    ],
+    [
+      "garage door",
+      "garage door"
+    ],
+    [
+      "pest",
+      "pest control"
+    ],
+    [
+      "concrete",
+      "concrete"
+    ],
+    [
+      "fence",
+      "fence"
+    ],
+    [
+      "snow",
+      "snow removal"
+    ],
+    [
+      "carpet",
+      "carpet cleaning"
+    ],
+    [
+      "well",
+      "well/pump"
+    ],
+    [
+      "pump",
+      "well/pump"
+    ],
+    [
+      "septic",
+      "septic"
+    ],
+    [
+      "chimney",
+      "chimney"
+    ],
+    [
+      "appliance",
+      "appliance repair"
+    ]
+  ],
+  "verification_source_tokens": [
+    "website",
+    "google",
+    "facebook",
+    "place",
+    "listing",
+    "chamber",
+    "yelp",
+    "birdeye",
+    "bbb",
+    "profile"
+  ]
+}

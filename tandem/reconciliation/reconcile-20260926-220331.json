@@ -1,0 +1,269 @@
+{
+  "dispositions": [
+    {
+      "authority": "Nolan directive, 2026-09-20 12:58 MDT:",
+      "items_cited": 8,
+      "path": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md",
+      "rule": "R2",
+      "valid": true
+    },
+    {
+      "authority": "Nolan directive, 2026-09-20 12:58 MDT:",
+      "items_cited": 11,
+      "path": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md",
+      "rule": "R3",
+      "valid": true
+    }
+  ],
+  "gap_count": 1,
+  "gaps": [
+    {
+      "gap_key": "R7|SCHEDULE|ping-social-outreach-engine|2026-09-26T11:12:55-06:00",
+      "input": "expected_tick=2026-09-26T11:12:55-06:00",
+      "note": "dispatch gap: tick never queued (or job was disabled at tick time); no worker failure. Rotation retry and watermark ingest cover the work; this record is the visibility. CAUSE OBSERVED: live schedule is interval@6h (cron.status: expr interval@6h, next 2026-09-26 20:12:55 MDT), so the body-anchored 3h tick at 11:12:55 was never scheduled; not a dispatch failure. Body anchor for ping-social-outreach-engine (3h @ 2026-09-09T02:12:55) is stale vs the live 6h cadence (6h grid in effect since the 2026-09-25 09:00 MDT sprint-revert). The 14:12:55 MDT tick ran (failed worker, round 150, e7e4cf6d); meta-ai-intel-pass 15:04:06 MDT tick ran (succeeded).",
+      "reason": "expected tick 2026-09-26T11:12:55-06:00 (America/Denver) has no scheduler run record",
+      "resumable": true,
+      "rule": "R7",
+      "run_id": "ping-social-outreach-engine",
+      "state": "GAP",
+      "step": "SCHEDULE",
+      "tick_coverage": {
+        "meta-ai-intel-pass": {
+          "all_have_run_records": true,
+          "expected": [
+            "2026-09-26T15:04:06-06:00"
+          ]
+        },
+        "ping-social-outreach-engine": {
+          "expected": [
+            "2026-09-26T11:12:55-06:00",
+            "2026-09-26T14:12:55-06:00"
+          ],
+          "missing": [
+            "2026-09-26T11:12:55-06:00"
+          ]
+        }
+      }
+    }
+  ],
+  "lifecycle_store": "/home/hatch/workspace/tandem/reconciliation/gap-lifecycle.json",
+  "meta": {
+    "checked_at": "2026-09-26T22:03:31.711442+00:00",
+    "lifecycle": "lifecycle: 0 actionable (OPEN/REOPENED), 15 suppressed (KNOWN_PERMANENT), 1 resolved this run, 0 reopened this run; 2 disposition(s) parsed",
+    "projection": "NOT_APPLICABLE: canonical_events is the upstream tenant-event inbox, not a ping_events projection; 0 rows expected, EventBridge live and polling",
+    "rules": [
+      "R1 capture/validate completeness: 77 runs checked",
+      "R2 terminal distill decisions checked",
+      "R3 emit durability: 60 accepted ids, 53 found",
+      "R4 sweep distill decisions checked",
+      "R7 capture_failed terminal outcomes: 20 recognized terminal, 0 non-terminal, 0 orphan evidence files",
+      "R5 stale in-flight runs checked"
+    ]
+  },
+  "newly_suppressed_this_run": [],
+  "reopened_this_run": [],
+  "resolved_this_run": [
+    {
+      "key": "R3|EMIT|-|60 accepted event_ids",
+      "reason": "condition cleared"
+    }
+  ],
+  "suppressed": [
+    {
+      "gap_key": "R2|DISTILL|d-segment-deep-dive|20260918-090448-d-segment-deep-dive.provenance.json",
+      "input": "20260918-090448-d-segment-deep-dive.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 205.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "d-segment-deep-dive",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260918-150420-b-new-business-radar.provenance.json",
+      "input": "20260918-150420-b-new-business-radar.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 199.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "b-new-business-radar",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|h-marketing-intelligence|20260919-030420-h-marketing-intelligence.provenance.json",
+      "input": "20260919-030420-h-marketing-intelligence.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 187.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "h-marketing-intelligence",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|a-weak-website-hunt|20260919-030617-a-weak-website-hunt.provenance.json",
+      "input": "20260919-030617-a-weak-website-hunt.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 187.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "a-weak-website-hunt",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260919-090444-b-new-business-radar.provenance.json",
+      "input": "20260919-090444-b-new-business-radar.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 181.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "b-new-business-radar",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|h-marketing-intelligence|20260919-090658-h-marketing-intelligence.provenance.json",
+      "input": "20260919-090658-h-marketing-intelligence.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 180.9h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "h-marketing-intelligence",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|a-weak-website-hunt|20260919-150459-a-weak-website-hunt.provenance.json",
+      "input": "20260919-150459-a-weak-website-hunt.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 175.0h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "a-weak-website-hunt",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R2|DISTILL|b-new-business-radar|20260919-150705-b-new-business-radar.provenance.json",
+      "input": "20260919-150705-b-new-business-radar.provenance.json",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "run mark-verified.sh then emit-observation.py, or record skipped with reason",
+      "reason": "answer_captured for 174.9h with no terminal verify/emit/skip decision",
+      "resumable": true,
+      "rule": "R2",
+      "run_id": "b-new-business-radar",
+      "state": "NOT_RUN",
+      "step": "DISTILL",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r2-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|learn-20260913-round44.provenance.json|3c7db6727f666b39b15782ad0810ef7525719051e34f70bd033b28f318fc56b5",
+      "input": "3c7db6727f666b39b15782ad0810ef7525719051e34f70bd033b28f318fc56b5",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "learn-20260913-round44.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260913-225603-c-review-complaint-signals.provenance.json|428b561f974e1acf48d7ffc52cd55cf9a6c595a45fdeee8d7c3eb5967b22f19f",
+      "input": "428b561f974e1acf48d7ffc52cd55cf9a6c595a45fdeee8d7c3eb5967b22f19f",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260913-225603-c-review-complaint-signals.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260914-102446-b-new-business-radar.provenance.json|874da5eea9503c023011061b1482b9cb206525989e242661b43f8c28217caeb7",
+      "input": "874da5eea9503c023011061b1482b9cb206525989e242661b43f8c28217caeb7",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260914-102446-b-new-business-radar.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260914-201906-b-new-business-radar.provenance.json|eed7671b3e6ba802c4dc7e431d9bd90c7a3d24003e99056f081689bfec51de1a",
+      "input": "eed7671b3e6ba802c4dc7e431d9bd90c7a3d24003e99056f081689bfec51de1a",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260914-201906-b-new-business-radar.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260914-201906-b-new-business-radar.provenance.json|5e1ad638023ab1e35b851302a35437c0ba57f9222312d9934ea9183944bd62a4",
+      "input": "5e1ad638023ab1e35b851302a35437c0ba57f9222312d9934ea9183944bd62a4",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260914-201906-b-new-business-radar.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260914-201906-b-new-business-radar.provenance.json|ee2fab571a58aba62006c13dfd5af81e4f26523c27ee83cf8d25b787ded48350",
+      "input": "ee2fab571a58aba62006c13dfd5af81e4f26523c27ee83cf8d25b787ded48350",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260914-201906-b-new-business-radar.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    },
+    {
+      "gap_key": "R3|EMIT|20260914-201906-b-new-business-radar.provenance.json|0f5f4b7489d603e7f333529665f1b4f08aa3d8e5a043b804d48bca4eeb267bed",
+      "input": "0f5f4b7489d603e7f333529665f1b4f08aa3d8e5a043b804d48bca4eeb267bed",
+      "lifecycle": "KNOWN_PERMANENT",
+      "next_eligible_step": "investigate gateway acceptance vs sidecar write ordering",
+      "reason": "accepted_by_ping recorded but event_id absent from ping_events",
+      "resumable": false,
+      "rule": "R3",
+      "run_id": "20260914-201906-b-new-business-radar.provenance.json",
+      "state": "GAP",
+      "step": "EMIT",
+      "suppressed_by": "/home/hatch/workspace/tandem/reconciliation/r3-closure-20260920.md"
+    }
+  ],
+  "suppressed_count": 15
+}
