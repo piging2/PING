@@ -1,0 +1,25 @@
+).workers);
+  await check('B0: knowledge-promotion worker registered', async () => {
+    assert.ok(workerNames.includes('knowledge-promotion'), `workers: ${workerNames.join(',')}`);
+  });
+  const scheduler = new MissionScheduler({
+    missionRuntime, workerRuntime, eventRuntime, pollIntervalMs: 50, maxConcurrent: 3,
+  });
+  const bridge = new EventToMissionBridge({ eventRuntime, missionRuntime });
+  bridge.start();
+
+  // ============ Section B: SNIPPET_APPROVED -> KnowledgePromoter ============
+  console.log('');
+  console.log('--- Section B: SNIPPET_APPROVED dispatch ---');
+  await kg.addNode('event', 'snippet candidate h6', { text: 'test snippet' }, {
+    namespace: 'core::owner', confidence: 0.5, status: 'candidate',
+    sourceEventId: 'evt-h6-approve-1', correlationId: 'corr-h6-approve-1',
+  });
+  const emitted = await eventRuntime.emit('SNIPPET_APPROVED', 'h6-drive',
+    { sourceEventId: 'evt-h6-approve-1' },
+    { namespace: 'core::owner', correlation_id: 'corr-h6-approve-1' });
+  await check('B1: SNIPPET_APPROVED emitted ok', async () => {
+    assert.strictEqual(emitted.status, 'ok');
+  });
+  const approvalEventId = emitted.eventId;
+  await drain(scheduler, missionRuntime);

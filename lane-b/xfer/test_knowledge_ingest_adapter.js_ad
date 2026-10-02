@@ -1,0 +1,31 @@
+_NOT_CANONICAL/);
+    }
+  });
+
+  await ok('accepts revocation as status inactive on the same predicate', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'RELATIONSHIP_CREATED',
+      { subject: 'object_b1', predicate: 'offers', object: 'object_s1', status: 'inactive' },
+      PROV
+    );
+    const r = await adapter.normalizeKnowledgeEnvelope(env);
+    assert.strictEqual(r.eventData.status, 'inactive');
+    assert.strictEqual(r.eventData.predicate, 'offers');
+  });
+
+  await ok('rejects OBJECT_UPDATED (knowledge ingest is create/relate only)', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_UPDATED',
+      { object_id: 'object_b1', changes: { name: 'Y' } },
+      PROV
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /UNSUPPORTED_EVENT_TYPE/);
+  });
+
+  await ok('rejects unknown event type', async () => {
+    const env = signEnvelope(kp.privatePem, kp.publicPem, 'OBJECT_DELETED', {}, PROV);
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /UNKNOWN_EVENT_TYPE/);
+  });
+
+  console.log(`\n${passed} knowledge adapter tests passed${process.exitCode ? ' (WITH FAILURES)' : ''}`);
+})();

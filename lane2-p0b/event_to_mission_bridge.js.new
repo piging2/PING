@@ -1,0 +1,459 @@
+/**
+ * Event-to-Mission Bridge — PING Core v1
+ *
+ * Listens to business events on UnifiedEventRuntime and creates missions
+ * that workers can process. This is the missing link between "event emitted"
+ * and "worker executes."
+ *
+ * Flow:
+ *   Business event → Bridge → Mission created → Scheduler dispatches → Worker executes
+ *
+ * Each business event type maps to a mission type and worker.
+ * The bridge does NOT modify state — it only creates missions.
+ *
+ * M1 DURABILITY (LANE 2 / P0B, 2026-09-19):
+ * Axiom M1: DURABLE(event E) AND ROUTING_LAW(E) => mission M
+ *           IMPLIES EVENTUALLY DURABLE(M).
+ * UER persists ping_events then dispatches handlers with no durable
+ * ack/retry: a crash after persistence but before/during handler execution
+ * permanently loses the mission. reconcileMissingMissions() closes the gap:
+ * it re-derives every mapped event whose mission was never derived, using
+ * the SAME routing function as the live path (one event->routing->mission
+ * path, no duplicate derivation logic). MissionRuntime.create() owns mission
+ * identity (deterministic sha256(missionType:event_id)); ON CONFLICT makes
+ * derivation idempotent, so concurrent reconcilers and live handlers racing
+ * reconcile collapse to exactly one durable mission.
+ *
+ * RECONCILIATION CONTRACT (zoom §M, decision (B)+(E)):
+ * Reconciliation derives ONLY obligations never derived, under the CURRENT
+ * routing law, with routing_version pinned on the report. Old accepted
+ * events carry no immutable record of the law version in force at
+ * acceptance (EVENT_MISSION_MAP is unversioned code; git history proves it
+ * mutates), so historical obligations that were already discharged are
+ * NEVER reinterpreted or re-derived. A0 variant: the never-derived join is
+ * the payload join (ping_missions.payload->>'event_id'), a convention, not
+ * yet a contract column — upgrade to A1 (source_event_id/routing_version
+ * columns) only when evidence proves A0 insufficient.
+ *
+ * FAILURE SEMANTICS:
+ * - Per-event failures are classified DETERMINISTIC_REJECTION /
+ *   TRANSIENT_FAILURE / UNKNOWN and reported in report.failures. A poison
+ *   event never makes startup silently "successful": it is logged loudly
+ *   and its obligation stays outstanding (re-selected on the next run).
+ *   TRANSIENT failures are never marked repaired — the mission simply does
+ *   not exist yet, and the next reconcile retries honestly.
+ * - Per-event failure DEGRADES (reported, loud) but does not block startup.
+ * - Systemic reconcile failure (no pool, query throws) is LOUD and
+ *   rethrows: it BLOCKS. The boot-order owner decides readiness from that.
+ *   Note: start() is async; callers that do not await it must attach their
+ *   own catch or accept fail-closed process behavior on systemic failure.
+ */
+
+const { canonicalPriority } = require('../boundaries/priority_boundary.js');
+
+// Business event → mission type mapping
+// Worker identity is resolved by MissionScheduler via MISSION_WORKER_MAP —
+// this map declares mission type and priority only. The 'worker' field was
+// historically present but never read; removed to eliminate dead data.
+// Priority values in this map are ANY valid scale (0-3, 1-10, string).
+// canonicalPriority() normalizes them at the single ingress boundary.
+const EVENT_MISSION_MAP = {
+  // Customer events
+  CUSTOMER_CREATED: { missionType: 'CUSTOMER_ONBOARD', priority: 2 },
+  CUSTOMER_UPDATED: { missionType: 'CUSTOMER_UPDATE', priority: 1 },
+
+  // Lead events
+  LEAD_CREATED: { missionType: 'LEAD_FOLLOWUP', priority: 3 },
+  LEAD_CONVERTED: { missionType: 'LEAD_CONVERT', priority: 2 },
+
+  // Project events
+  PROJECT_CREATED: { missionType: 'PROJECT_SETUP', priority: 2 },
+  PROJECT_UPDATED: { missionType: 'PROJECT_UPDATE', priority: 1 },
+  PROJECT_COMPLETED: { missionType: 'PROJECT_CLOSEOUT', priority: 3 },
+
+  // Estimate events
+  ESTIMATE_CREATED: { missionType: 'ESTIMATE_PREPARE', priority: 2 },
+  ESTIMATE_SENT: { missionType: 'ESTIMATE_FOLLOWUP', priority: 3 },
+  ESTIMATE_ACCEPTED: { missionType: 'ESTIMATE_CONVERT', priority: 3 },
+
+  // Invoice events
+  INVOICE_CREATED: { missionType: 'INVOICE_TRACK', priority: 2 },
+  INVOICE_SENT: { missionType: 'INVOICE_FOLLOWUP', priority: 3 },
+  INVOICE_PAID: { missionType: 'INVOICE_CLOSE', priority: 1 },
+
+  // Review events
+  REVIEW_RECEIVED: { missionType: 'REVIEW_RESPONSE', priority: 3 },
+  REVIEW_RESPONDED: { missionType: 'REVIEW_ACK', priority: 1 },
+
+  // Connector events
+  EMAIL_RECEIVED: { missionType: 'EMAIL_PROCESS', priority: 2 },
+  EMAIL_SENT: { missionType: 'EMAIL_PROCESS', priority: 1 },
+  SMS_SENT: { missionType: 'EMAIL_PROCESS', priority: 1 },
+  GITHUB_COMMIT_SYNCED: { missionType: 'DOCUMENT_IMPORT', priority: 1 },
+  GOOGLE_REVIEW_RECEIVED: { missionType: 'REVIEW_RESPONSE', priority: 3 },
+
+  // Worker events (downstream pipeline)
+  OBSERVATION_CREATED: { missionType: 'CLAIM_GENERATE', priority: 2 },
+  CLAIM_CREATED: { missionType: 'CLASSIFICATION_CREATE', priority: 2 },
+  CLASSIFICATION_CREATED: { missionType: 'RECOMMENDATION_CREATE', priority: 2 },
+  RECOMMENDATION_CREATED: { missionType: 'PROJECTION_CREATE', priority: 1 },
+  PROJECTION_CREATED: { missionType: 'REPLAY_VERIFY', priority: 1 },
+  // W-1A restore-trigger: a certified REPLAY_COMPLETED autonomously spawns a
+  // WITNESS_ATTEST mission. The scheduler dispatches it to the witness worker
+  // (event_type REPLAY_COMPLETED), which authenticates the trigger against the
+  // canonical ping_events row before attesting — it never trusts the mission
+  // payload's replay claims.
+  REPLAY_COMPLETED: { missionType: 'WITNESS_ATTEST', priority: 1 },
+  WITNESS_CREATED: { missionType: 'LINEAGE_CREATE', priority: 1 },
+  // LINEAGE_CREATED is terminal — chain complete. No further missions created.
+
+  // System events
+  SYSTEM_HEALTH_CHECK: { missionType: 'SYSTEM_AUDIT', priority: 0 },
+};
+
+// PATCH-10: the routing law is versioned. Bump ROUTING_LAW_VERSION in the
+// SAME commit as any EVENT_MISSION_MAP change; the version-bump unit test
+// fails when the map's canonical serialization changes without a bump.
+const ROUTING_LAW_VERSION = '2026-09-19.1';
+
+/**
+ * Deterministic canonical serialization of the routing law, for the
+ * version-bump guard test and for audit logging.
+ */
+function canonicalRoutingLaw() {
+  return Object.keys(EVENT_MISSION_MAP)
+    .sort()
+    .map((t) => `${t}:${EVENT_MISSION_MAP[t].missionType}:${EVENT_MISSION_MAP[t].priority}`)
+    .join('|');
+}
+
+/**
+ * Classify a per-event derivation failure. Drives the honest retry story:
+ * TRANSIENT failures are never marked repaired; the obligation stays
+ * outstanding and the next reconcile retries it.
+ */
+function classifyFailure(err) {
+  const msg = (err && err.message) || '';
+  const code = err && err.code;
+  if (
+    code === 'ECONNREFUSED' || code === 'ETIMEDOUT' || code === 'ECONNRESET' ||
+    code === '57P01' || code === '57P02' || code === '40001' || code === '40P01' ||
+    /timeout|terminat|connection refused|ECONNRESET/i.test(msg)
+  ) {
+    return 'TRANSIENT_FAILURE';
+  }
+  if (
+    code === '23502' || code === '23514' || code === '22P02' || code === '42883' ||
+    /null value in column|violates not-null|violates check constraint|invalid input syntax/i.test(msg)
+  ) {
+    return 'DETERMINISTIC_REJECTION';
+  }
+  return 'UNKNOWN';
+}
+
+class EventToMissionBridge {
+  /**
+   * @param {object} options
+   * @param {object} options.eventRuntime — UnifiedEventRuntime
+   * @param {object} options.missionRuntime — MissionRuntime
+   * @param {object} options.pool — pg.Pool for reconcile scans (defaults to missionRuntime's pool)
+   */
+  constructor(options = {}) {
+    this._eventRuntime = options.eventRuntime || null;
+    this._missionRuntime = options.missionRuntime || null;
+    this._pool = options.pool || (this._missionRuntime && this._missionRuntime._pool) || null;
+    this._stats = { listened: 0, missionsCreated: 0, skipped: 0, failed: 0 };
+    this._reconcileTimer = null;
+    this._lastReconcileReport = null;
+  }
+
+  /**
+   * Start listening to business events, reconcile never-derived obligations,
+   * then confirm live consumption.
+   *
+   * @param {object} options
+   * @param {number} options.reconcileIntervalMs — 0 (default): reconcile once
+   *   at startup. >0: also run reconcileMissingMissions() on that interval
+   *   (the periodic sweep; same function, second trigger).
+   * @returns {Promise<object>} the startup reconcile report.
+   */
+  async start(options = {}) {
+    if (!this._eventRuntime || !this._missionRuntime) {
+      console.log('[EventToMissionBridge] Degraded — missing eventRuntime or missionRuntime');
+      return { status: 'degraded' };
+    }
+
+    // 1. Register the live handler FIRST so no new event is lost while the
+    //    historical gap is being reconciled.
+    for (const eventType of Object.keys(EVENT_MISSION_MAP)) {
+      this._eventRuntime.on(eventType, async (event) => {
+        await this._handleEvent(event);
+      });
+    }
+    console.log(`[EventToMissionBridge] Listening to ${Object.keys(EVENT_MISSION_MAP).length} event types`);
+
+    // 2. Reconcile obligations never derived (crash-before-handler losses).
+    //    Systemic failure is loud and rethrows (blocks); per-event failures
+    //    are reported in the report (degrade, never silent).
+    const report = await this.reconcileMissingMissions();
+    this._lastReconcileReport = report;
+    if (report.events_failed > 0) {
+      console.error(
+        `[EventToMissionBridge] reconcile completed WITH ${report.events_failed} per-event failures ` +
+        `(classes: ${report.failures.map((f) => f.error_class).join(',')}); ` +
+        'obligations remain outstanding and will be retried — startup is NOT silently clean'
+      );
+    }
+
+    // 3. Confirm live consumption is in place.
+    console.log(
+      `[EventToMissionBridge] Live consumption confirmed; reconcile: scanned=${report.events_scanned} ` +
+      `existing=${report.missions_existing} created=${report.missions_created} ` +
+      `unroutable=${report.events_unroutable} failed=${report.events_failed} ` +
+      `law=${report.routing_law_version}`
+    );
+
+    // Optional periodic sweep (same reconcile(), second trigger).
+    const intervalMs = options.reconcileIntervalMs || 0;
+    if (intervalMs > 0) {
+      this._reconcileTimer = setInterval(() => {
+        this.reconcileMissingMissions()
+          .then((r) => { this._lastReconcileReport = r; })
+          .catch((err) => console.error('[EventToMissionBridge] periodic reconcile failed:', err.message));
+      }, intervalMs);
+      if (this._reconcileTimer.unref) this._reconcileTimer.unref();
+    }
+
+    return report;
+  }
+
+  /**
+   * Stop the periodic sweep, if any.
+   */
+  stop() {
+    if (this._reconcileTimer) {
+      clearInterval(this._reconcileTimer);
+      this._reconcileTimer = null;
+    }
+  }
+
+  /**
+   * The routing law lookup. Single owner of event_type -> mission intent.
+   */
+  _routeEvent(event) {
+    return EVENT_MISSION_MAP[event.event_type] || null;
+  }
+
+  /**
+   * Build the mission payload for an event. Shared by the live path and
+   * reconcile(): one derivation shape, no duplicate logic.
+   */
+  _buildMissionPayload(event) {
+    // Thread the root correlation_id through the entire chain. The spine
+    // sets correlation_id = eventId on the originating event; every subsequent
+    // worker must preserve it so all events from one observation share a
+    // single correlation group. Without this, each worker creates a new
+    // correlation_id (= its trigger's event_id), breaking causal traceability.
+    const correlationId = (event.metadata && event.metadata.correlation_id)
+      || event.correlation_id
+      || event.event_id;
+    return {
+      event_id: event.event_id,
+      event_type: event.event_type,
+      source: event.source,
+      namespace: event.namespace,
+      correlation_id: correlationId,
+      canonical_hash: (event.metadata && event.metadata.canonical_hash) || null,
+      confidence: (event.metadata && event.metadata.confidence != null) ? event.metadata.confidence : null,
+      payload: event.payload,
+    };
+  }
+
+  /**
+   * Derive the mission for one event through the routing law.
+   * ONE event->routing->mission-intent path: the live handler and
+   * reconcile() both call this. MissionRuntime.create() owns mission
+   * identity (deterministic sha256(missionType:event_id)); ON CONFLICT
+   * makes derivation idempotent.
+   *
+   * @returns {Promise<string|null>} missionId, or null when unroutable.
+   */
+  async _deriveMission(event) {
+    const mapping = this._routeEvent(event);
+    if (!mapping) return null;
+    return this._missionRuntime.create(
+      mapping.missionType,
+      this._buildMissionPayload(event),
+      {
+        priority: canonicalPriority(mapping.priority),
+        createdBy: 'event-to-mission-bridge',
+      }
+    );
+  }
+
+  /**
+   * Handle an incoming event — create a mission for it.
+   * Failures are LOUD (logged + rethrown, never swallowed): UER contains
+   * handler throws so event acceptance is unaffected, and the supervisor /
+   * next reconcile() recovers the obligation.
+   */
+  async _handleEvent(event) {
+    const mapping = this._routeEvent(event);
+    if (!mapping) {
+      this._stats.skipped++;
+      return;
+    }
+
+    this._stats.listened++;
+
+    try {
+      const missionId = await this._deriveMission(event);
+      this._stats.missionsCreated++;
+      console.log(`[EventToMissionBridge] ${event.event_type} → mission ${missionId} (${mapping.missionType})`);
+    } catch (err) {
+      this._stats.failed++;
+      console.error(`[EventToMissionBridge] Failed to create mission for ${event.event_type}: ${err.message}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Reconcile obligations never derived: scan ping_events for mapped event
+   * types whose logical mission does not exist yet (A0 payload join:
+   * ping_missions.payload->>'event_id' = event_id AND mission_type = mapped
+   * type — a convention, honestly documented, not a contract column), in
+   * canonical sequence order, and derive each through _deriveMission().
+   *
+   * Bounded: batches of batchSize, at most maxBatches per invocation.
+   *
+   * @param {object} options
+   * @param {number} options.batchSize — rows per batch (default 100)
+   * @param {number} options.maxBatches — batches per invocation (default 50)
+   * @returns {Promise<object>} structured report:
+   *   { status, routing_law_version, events_scanned, missions_existing,
+   *     missions_created, events_unroutable, events_failed, failures[],
+   *     last_sequence }
+   */
+  async reconcileMissingMissions(options = {}) {
+    const batchSize = options.batchSize || 100;
+    const maxBatches = options.maxBatches || 50;
+    const pool = options.pool || this._pool;
+    if (!pool) {
+      throw new Error('[EventToMissionBridge] reconcileMissingMissions: no pg pool available');
+    }
+    if (!this._missionRuntime) {
+      throw new Error('[EventToMissionBridge] reconcileMissingMissions: no missionRuntime available');
+    }
+
+    const report = {
+      status: 'completed',
+      routing_law_version: ROUTING_LAW_VERSION,
+      events_scanned: 0,
+      missions_existing: 0,
+      missions_created: 0,
+      events_unroutable: 0,
+      events_failed: 0,
+      failures: [],
+      last_sequence: null,
+    };
+
+    const eventTypes = Object.keys(EVENT_MISSION_MAP);
+    const missionTypes = eventTypes.map((t) => EVENT_MISSION_MAP[t].missionType);
+
+    console.log(
+      `[EventToMissionBridge] reconcile: deriving never-derived obligations under ` +
+      `routing law ${ROUTING_LAW_VERSION} (A0 payload-join; historical obligations are never reinterpreted)`
+    );
+
+    for (let batch = 0; batch < maxBatches; batch++) {
+      const { rows } = await pool.query(
+        `SELECT e.event_id, e.event_type, e.source, e.namespace, e.payload, e.metadata, e.sequence
+         FROM ping_events e
+         WHERE e.event_type = ANY($1::text[])
+           AND NOT EXISTS (
+             SELECT 1 FROM ping_missions m
+             WHERE m.payload->>'event_id' = e.event_id
+               AND m.mission_type = (
+                 SELECT map.mission_type
+                 FROM unnest($2::text[], $3::text[]) AS map(event_type, mission_type)
+                 WHERE map.event_type = e.event_type
+               )
+           )
+         ORDER BY e.sequence ASC NULLS LAST, e.event_id ASC
+         LIMIT $4`,
+        [eventTypes, eventTypes, missionTypes, batchSize]
+      );
+
+      if (rows.length === 0) break;
+
+      for (const row of rows) {
+        report.events_scanned++;
+        if (row.sequence != null) report.last_sequence = Number(row.sequence);
+        const mapping = this._routeEvent(row);
+        if (!mapping) {
+          // Defensive: the query already filters to mapped types.
+          report.events_unroutable++;
+          continue;
+        }
+        try {
+          await this._deriveMission({
+            event_id: row.event_id,
+            event_type: row.event_type,
+            source: row.source,
+            namespace: row.namespace,
+            payload: row.payload,
+            metadata: row.metadata,
+          });
+          report.missions_created++;
+        } catch (err) {
+          report.events_failed++;
+          report.failures.push({
+            event_id: row.event_id,
+            event_type: row.event_type,
+            error_class: classifyFailure(err),
+            error: err.message,
+          });
+        }
+      }
+
+      if (rows.length < batchSize) break;
+    }
+
+    // missions_existing: how many mapped events already had their logical
+    // mission durable at reconcile time (the anti-join filtered them out of
+    // the candidate stream, so count them once, honestly, here).
+    const existing = await pool.query(
+      `SELECT COUNT(*)::int AS n
+       FROM ping_events e
+       WHERE e.event_type = ANY($1::text[])
+         AND EXISTS (
+           SELECT 1 FROM ping_missions m
+           WHERE m.payload->>'event_id' = e.event_id
+             AND m.mission_type = (
+               SELECT map.mission_type
+               FROM unnest($2::text[], $3::text[]) AS map(event_type, mission_type)
+               WHERE map.event_type = e.event_type
+             )
+         )`,
+      [eventTypes, eventTypes, missionTypes]
+    );
+    report.missions_existing = existing.rows[0].n;
+
+    return report;
+  }
+
+  /**
+   * Get stats.
+   */
+  getStats() {
+    return { ...this._stats, scope: 'session', lastReconcile: this._lastReconcileReport };
+  }
+}
+
+module.exports = {
+  EventToMissionBridge,
+  EVENT_MISSION_MAP,
+  ROUTING_LAW_VERSION,
+  canonicalRoutingLaw,
+  classifyFailure,
+};

@@ -1,0 +1,64 @@
+nstruction: sorted keys, recursive, undefined dropped.
+ * Used ONLY to verify submitter-originated signatures.
+ */
+function knowledgeCanonicalize(value) {
+  if (value === null || value === undefined) return 'null';
+  if (Array.isArray(value)) return `[${value.map(knowledgeCanonicalize).join(',')}]`;
+  if (typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${knowledgeCanonicalize(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  const s = JSON.stringify(value);
+  return s === undefined ? 'null' : s;
+}
+
+function sha256Hex(bytes) {
+  return crypto.createHash('sha256').update(bytes, 'utf8').digest('hex');
+}
+
+/** Canonical bytes per the recovered Patch 7B construction. */
+function canonicalBytes(value) {
+  return JSON.stringify(HashAuthority.canonicalizeObject(value));
+}
+
+/** payload_hash = raw SHA-256 hex of canonical bytes of (payload - proof - payload_hash). */
+function computePayloadHash(normalized) {
+  const stripped = { ...normalized };
+  delete stripped.proof;
+  delete stripped.payload_hash;
+  return sha256Hex(canonicalBytes(stripped));
+}
+
+const SECRET_KEY_RE = /private_?key|privatepem|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY/i;
+
+function rejectSecrets(value, path) {
+  if (Array.isArray(value)) {
+    value.forEach((v, i) => rejectSecrets(v, `${path}[${i}]`));
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value)) {
+      if (SECRET_KEY_RE.test(k)) {
+        throw new Error(`SECRET_REJECTED: private-key-looking field '${path}.${k}' is never accepted by the ingest path`);
+      }
+      rejectSecrets(v, `${path}.${k}`);
+    }
+    return;
+  }
+  if (typeof value === 'string' && SECRET_KEY_RE.test(value)) {
+    throw new Error(`SECRET_REJECTED: private-key-looking value at '${path}' is never accepted by the ingest path`);
+  }
+}
+
+/**
+ * Verify the envelope proof. Returns the signer's public key as
+ * { keyObject, spkiDerHex }.
+ */
+function verifyKnowledgeProof(type, payload, metadata, proof) {
+  if (!proof || typeof proof !== 'object') throw new Error('INVALID_PROOF: envelope proof is required');
+  if (proof.algorithm !== 'ed25519') throw new Error('INVALID_PROOF: proof.algorithm must be ed25519');
+  if (!proof.signature || !proof.publicKey) {
+    throw 

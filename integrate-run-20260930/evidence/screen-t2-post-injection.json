@@ -1,0 +1,328 @@
+{
+ "as_of": "2026-09-30T15:05:03.922Z",
+ "honesty": {
+  "mocked_fields": 0,
+  "question_count": 12,
+  "unknown_count": 1
+ },
+ "projection": "mission-control/fyd-run-screen",
+ "run_id": "integrate-coppersmith-20260930",
+ "screen": {
+  "authorized": {
+   "answer": {
+    "authorized_at": "2026-09-30T15:05:03.489Z",
+    "authorized_by": "MissionScheduler._authorizeDispatch (Lane AG eab4f714a)",
+    "constraints": "UNKNOWN",
+    "mechanism": "UNKNOWN",
+    "scope": "UNKNOWN"
+   },
+   "question": "What was authorized?",
+   "source": "journal mc-integrate-c34547a7dd10 (MC_AGENT_AUTHORIZED)"
+  },
+  "effect": {
+   "answer": {
+    "effect_state": "effect_unknown",
+    "note": "artifact reached the publication boundary; no post-effect observation recorded. Per harvested Orca effect-ledger semantics: partial or unknown evidence reconciles as HOLD, never as FAILED; an unknown external effect is never FAILED.",
+    "post_effect_failure_evidence": null,
+    "publications": 1
+   },
+   "question": "What effect occurred?",
+   "source": "journal publication boundary + post-effect records; semantics from orca-adapter/effect_ledger.js @ 57df2cc"
+  },
+  "evidence_used": {
+   "answer": {
+    "by_stage": {
+     "ACQUIRE": [
+      {
+       "kind": "run-log",
+       "ref": "run-log:integrate-coppersmith-20260930.jsonl#ACQUIRE"
+      }
+     ],
+     "EXTRACT": [
+      {
+       "kind": "run-log",
+       "ref": "run-log:integrate-coppersmith-20260930.jsonl#EXTRACT"
+      }
+     ],
+     "PLAN": "UNKNOWN",
+     "PROJECT": "UNKNOWN",
+     "RENDER": [
+      {
+       "kind": "run-log",
+       "ref": "run-log:integrate-coppersmith-20260930.jsonl#RENDER"
+      }
+     ],
+     "RESOLVE": [
+      {
+       "kind": "run-log",
+       "ref": "run-log:integrate-coppersmith-20260930.jsonl#RESOLVE"
+      }
+     ],
+     "VERIFY": "UNKNOWN"
+    },
+    "union": [
+     {
+      "kind": "run-log",
+      "ref": "run-log:integrate-coppersmith-20260930.jsonl#ACQUIRE"
+     },
+     {
+      "kind": "run-log",
+      "ref": "run-log:integrate-coppersmith-20260930.jsonl#EXTRACT"
+     },
+     {
+      "kind": "run-log",
+      "ref": "run-log:integrate-coppersmith-20260930.jsonl#RENDER"
+     },
+     {
+      "kind": "run-log",
+      "ref": "run-log:integrate-coppersmith-20260930.jsonl#RESOLVE"
+     }
+    ]
+   },
+   "question": "What evidence was used?",
+   "source": "stage evidence_refs from this run's journal slice"
+  },
+  "independently_verified": {
+   "answer": "UNKNOWN",
+   "question": "Was the effect independently verified?",
+   "source": "no independent observer record in journal; the VERIFY stage is the pipeline's own check, not an independent channel"
+  },
+  "learning": {
+   "answer": {
+    "reason": "n=1: a single run is below the evidence gate; no candidate-learning records in the journal for this run",
+    "status": "none proposed"
+   },
+   "question": "What learning, if any, was proposed?",
+   "source": "journal scan for learning_proposal records (empty)"
+  },
+  "mission_ran": {
+   "answer": {
+    "lifecycle": [
+     {
+      "event_type": "MC_RUN_QUEUED",
+      "timestamp": "2026-09-30T15:05:03.469Z"
+     },
+     {
+      "event_type": "MC_EXECUTION_STARTED",
+      "timestamp": "2026-09-30T15:05:03.490Z"
+     },
+     {
+      "event_type": "MC_RUN_SUCCEEDED",
+      "timestamp": "2026-09-30T15:05:03.882Z"
+     },
+     {
+      "event_type": "MC_RUN_QUEUED",
+      "timestamp": "2026-09-30T15:05:03.896Z"
+     },
+     {
+      "event_type": "MC_EXECUTION_STARTED",
+      "timestamp": "2026-09-30T15:05:03.913Z"
+     },
+     {
+      "event_type": "MC_RUN_UNKNOWN",
+      "timestamp": "2026-09-30T15:05:03.915Z"
+     }
+    ],
+    "lifecycle_status": "UNKNOWN",
+    "mission_id": "a32db704f0aa81c3",
+    "run_id": "integrate-coppersmith-20260930",
+    "tenant": "tenant::ping"
+   },
+   "question": "What mission ran?",
+   "source": "journal: 6 run-lifecycle events for this run"
+  },
+  "objects_produced": {
+   "answer": {
+    "publications": [
+     {
+      "artifacts": "UNKNOWN",
+      "destination": "UNKNOWN",
+      "published_at": "2026-09-30T15:05:03.882Z",
+      "source": "mc-integrate-ae16e07337c0 (MC_ARTIFACT_PUBLISHED)"
+     }
+    ],
+    "stage_outputs": {
+     "ACQUIRE": "30b185b289bac0c1a97e3c82b9b34ed887d994747d6947919a289b189839e557",
+     "EXTRACT": "a16720b7f3299e9dd451d89c3fb66f4ed2232a19b578df2f44913a629b948ef9",
+     "PLAN": "UNKNOWN",
+     "PROJECT": "UNKNOWN",
+     "RENDER": "2687a4af372d174c8f4fc12a38c8cab6d9260bda61cd3027e00a055e1512c52c",
+     "RESOLVE": "7ead187e24ed3ebc008640d548fabe5e39cfecb0ae846ebc2ea8b2f9a950dd94",
+     "VERIFY": "UNKNOWN"
+    }
+   },
+   "question": "What objects were produced?",
+   "source": "journal MC_ARTIFACT_PUBLISHED plus stage output_refs"
+  },
+  "outcome": {
+   "answer": {
+    "note": "derived from the run's stage events; a Lane D MC_RUN_* terminal, when present, is cited as context; MISSION STATE != OBJECT STATE",
+    "run_status": "UNKNOWN"
+   },
+   "question": "What outcome exists?",
+   "source": "project_fyd_run run-status derivation"
+  },
+  "remains_unknown": {
+   "answer": [
+    "stage PROJECT: no journal record (status UNKNOWN)",
+    "stage PLAN: no journal record (status UNKNOWN)",
+    "stage VERIFY: no journal record (status UNKNOWN)",
+    "whether the published artifact had any post-publication effect (effect_unknown: HOLD/reconcile per Orca semantics, never FAILED)",
+    "whether the effect was independently verified (no independent observer record)",
+    "derived from the run's stage events; a Lane D MC_RUN_* terminal, when present, is cited as context; MISSION STATE != OBJECT STATE"
+   ],
+   "question": "What remains unknown?",
+   "source": "derived from explicit gaps in the records above"
+  },
+  "requested": {
+   "answer": {
+    "mission_id": "a32db704f0aa81c3",
+    "request": "Run one real Coppersmith FYD generation for the PING tenant, place one generated asset through media.placement, emit stage evidence to the Mission Control journal.",
+    "requested_at": "2026-09-30T15:05:03.468Z",
+    "tenant": "tenant::ping"
+   },
+   "question": "What was requested?",
+   "source": "journal mc-integrate-971dd1bdebe8 (MC_MISSION_CREATED)"
+  },
+  "requester": {
+   "answer": "integrate-run-driver (Nolan binding order 2026-09-30 ~08:10 MDT)",
+   "question": "Who requested it?",
+   "source": "journal mc-integrate-971dd1bdebe8 (MC_MISSION_CREATED)"
+  },
+  "run_id": "integrate-coppersmith-20260930",
+  "stages_ran": {
+   "answer": {
+    "note": "latest event per stage wins; superseded failures stay on the record; unanswered stages are UNKNOWN",
+    "stages": [
+     {
+      "attempts": 2,
+      "backfill": false,
+      "error": null,
+      "evidence_refs": [
+       {
+        "kind": "run-log",
+        "ref": "run-log:integrate-coppersmith-20260930.jsonl#ACQUIRE"
+       }
+      ],
+      "finished_at": "2026-09-30T15:05:03.606Z",
+      "input_refs": null,
+      "output_refs": "30b185b289bac0c1a97e3c82b9b34ed887d994747d6947919a289b189839e557",
+      "source": "mc-integrate-f4a13b978264 (MC_FYD_STAGE_COMPLETED)",
+      "stage": "ACQUIRE",
+      "started_at": "2026-09-30T15:05:03.605Z",
+      "status": "SUCCEEDED",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 2,
+      "backfill": false,
+      "error": null,
+      "evidence_refs": [
+       {
+        "kind": "run-log",
+        "ref": "run-log:integrate-coppersmith-20260930.jsonl#EXTRACT"
+       }
+      ],
+      "finished_at": "2026-09-30T15:05:03.611Z",
+      "input_refs": "30b185b289bac0c1a97e3c82b9b34ed887d994747d6947919a289b189839e557",
+      "output_refs": "a16720b7f3299e9dd451d89c3fb66f4ed2232a19b578df2f44913a629b948ef9",
+      "source": "mc-integrate-fb0c95bdc29c (MC_FYD_STAGE_COMPLETED)",
+      "stage": "EXTRACT",
+      "started_at": "2026-09-30T15:05:03.610Z",
+      "status": "SUCCEEDED",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 2,
+      "backfill": false,
+      "error": null,
+      "evidence_refs": [
+       {
+        "kind": "run-log",
+        "ref": "run-log:integrate-coppersmith-20260930.jsonl#RESOLVE"
+       }
+      ],
+      "finished_at": "2026-09-30T15:05:03.611Z",
+      "input_refs": "a16720b7f3299e9dd451d89c3fb66f4ed2232a19b578df2f44913a629b948ef9",
+      "output_refs": "7ead187e24ed3ebc008640d548fabe5e39cfecb0ae846ebc2ea8b2f9a950dd94",
+      "source": "mc-integrate-bc701ef6a0f4 (MC_FYD_STAGE_COMPLETED)",
+      "stage": "RESOLVE",
+      "started_at": "2026-09-30T15:05:03.610Z",
+      "status": "SUCCEEDED",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 0,
+      "backfill": null,
+      "error": null,
+      "evidence_refs": "UNKNOWN",
+      "finished_at": "UNKNOWN",
+      "input_refs": "UNKNOWN",
+      "output_refs": "UNKNOWN",
+      "source": "no stage event in journal for this run",
+      "stage": "PROJECT",
+      "started_at": "UNKNOWN",
+      "status": "UNKNOWN",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 0,
+      "backfill": null,
+      "error": null,
+      "evidence_refs": "UNKNOWN",
+      "finished_at": "UNKNOWN",
+      "input_refs": "UNKNOWN",
+      "output_refs": "UNKNOWN",
+      "source": "no stage event in journal for this run",
+      "stage": "PLAN",
+      "started_at": "UNKNOWN",
+      "status": "UNKNOWN",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 2,
+      "backfill": false,
+      "error": null,
+      "evidence_refs": [
+       {
+        "kind": "run-log",
+        "ref": "run-log:integrate-coppersmith-20260930.jsonl#RENDER"
+       }
+      ],
+      "finished_at": "2026-09-30T15:05:03.852Z",
+      "input_refs": "9fedb22158a3454971a2d5c5a52312cd58cfa0bdb8274f75523dfa96a6e9c8bc",
+      "output_refs": "2687a4af372d174c8f4fc12a38c8cab6d9260bda61cd3027e00a055e1512c52c",
+      "source": "mc-integrate-e0c6b9b3671a (MC_FYD_STAGE_COMPLETED)",
+      "stage": "RENDER",
+      "started_at": "2026-09-30T15:05:03.851Z",
+      "status": "SUCCEEDED",
+      "superseded_failures": []
+     },
+     {
+      "attempts": 0,
+      "backfill": null,
+      "error": null,
+      "evidence_refs": "UNKNOWN",
+      "finished_at": "UNKNOWN",
+      "input_refs": "UNKNOWN",
+      "output_refs": "UNKNOWN",
+      "source": "no stage event in journal for this run",
+      "stage": "VERIFY",
+      "started_at": "UNKNOWN",
+      "status": "UNKNOWN",
+      "superseded_failures": []
+     }
+    ]
+   },
+   "question": "Which stages ran?",
+   "source": "project_fyd_run stage fold over this run's journal slice"
+  }
+ },
+ "source": {
+  "event_count": 23,
+  "events_sha256": "b08233731b1e79c5271e36c8fef0ae4bb986bb3abddd972790497152dc195741",
+  "journal": "/home/hatch/workspace/fyd-journal-gateway/events.jsonl",
+  "mission_id": "a32db704f0aa81c3",
+  "note": "projection only; the journal remains the sole authority; MISSION STATE != OBJECT STATE"
+ }
+}

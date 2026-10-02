@@ -1,0 +1,35 @@
+&& m.status === 'created') { m.status = 'assigned'; m.assigned_to = worker; return 1; }
+    return 0;
+  }
+  async start(id) {
+    const m = this.missions.get(id);
+    if (m && m.status === 'assigned') { m.status = 'running'; return 1; }
+    return 0;
+  }
+  async complete(id, result) {
+    const m = this.missions.get(id);
+    if (m && m.status === 'running') { m.status = 'completed'; m.result = result; return 1; }
+    return 0;
+  }
+  async renewLease(id) { return this.missions.has(id) ? 1 : 0; }
+  async reapExpiredLeases() { return 0; }
+  async failWithRetry(id, error, policy) {
+    const m = this.missions.get(id);
+    m.retries += 1;
+    m.error = String(error);
+    m.status = m.retries >= (policy.max_attempts || 3) ? 'failed' : 'retry_pending';
+    return m.retries;
+  }
+  pendingCount() {
+    return [...this.missions.values()]
+      .filter((m) => m.status === 'created' || m.status === 'retry_pending').length;
+  }
+}
+
+const stubReplayProvider = {
+  async executeReplay() {
+    return {
+      status: 'ok', violations: [], fingerprint: 'h6-fp-001',
+      witness_root: 'h6-wr-001', replay_id: 'h6-rid-001',
+      event_count: 1, artifact_count: 0, state_version: 'h6-sv-1',
+      leaf_co

@@ -1,0 +1,30 @@
+'use strict';
+/**
+ * Wave H6 live-drive harness (Pig WSL, in-process, no production touch).
+ *
+ * Drives the REAL classes (no mocks of the units under test):
+ *  - Section A: gateway/routes/knowledge.js POST /nodes (the knowledge-node adapter)
+ *  - Section B: UnifiedEventRuntime -> EventToMissionBridge -> MissionScheduler
+ *                -> WorkerRuntime -> KnowledgePromoter (SNIPPET_APPROVED chain)
+ *  - Section C: same spine for REPLAY_VERIFY -> mission bridge -> replay worker
+ *
+ * Fakes are storage-only: FakePool (pg), FakeMissionRuntime (ping_missions),
+ * express stub (the route module requires it; not installed here).
+ *
+ * Run: node drive.js
+ * Exit 0 = all assertions passed; exit 1 = at least one failed.
+ */
+const assert = require('assert');
+const crypto = require('crypto');
+const Module = require('module');
+const path = require('path');
+
+const ROOT = '/home/nolan/worktrees/ping-harvest-12h';
+
+// ---- express stub: gateway/routes/knowledge.js does require('express') ----
+const routeHandlers = {};
+const expressStub = {
+  Router: () => ({
+    get: (p, h) => { routeHandlers['GET ' + p] = h; },
+    post: (p, h) => { routeHandlers['POST ' + p] = h; },
+    put: (p, h) => { ro

@@ -1,0 +1,25 @@
+uteHandlers['PUT ' + p] = h; },
+    delete: (p, h) => { routeHandlers['DELETE ' + p] = h; },
+  }),
+};
+const origLoad = Module._load;
+Module._load = function (request, parent, isMain) {
+  if (request === 'express') return expressStub;
+  return origLoad.call(this, request, parent, isMain);
+};
+
+const { EventToMissionBridge } = require(path.join(ROOT, 'ping-runtime/orchestration/event_to_mission_bridge.js'));
+const { MissionScheduler } = require(path.join(ROOT, 'ping-runtime/orchestration/mission_scheduler.js'));
+const { UnifiedEventRuntime } = require(path.join(ROOT, 'ping-runtime/events/unified_event_runtime.js'));
+const { WorkerRuntime } = require(path.join(ROOT, 'ping-runtime/workers/worker_runtime.js'));
+const { registerCanonicalWorkers } = require(path.join(ROOT, 'ping-runtime/workers/canonical_workers.js'));
+const { KnowledgeGraph } = require(path.join(ROOT, 'ping-runtime/knowledge/knowledge_graph.js'));
+const createKnowledgeRoutes = require(path.join(ROOT, 'gateway/routes/knowledge.js'));
+
+// ---------------- storage fakes ----------------
+
+class FakePool {
+  constructor() { this.nodes = []; }
+  async query(sql, params = []) {
+    const S = sql.trim();
+    if (/CREATE TABLE|ALT

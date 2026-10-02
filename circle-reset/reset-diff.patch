@@ -1,0 +1,584 @@
+diff --git a/package.json b/package.json
+index 467ca961..1f7327c8 100644
+--- a/package.json
++++ b/package.json
+@@ -11,6 +11,7 @@
+     "test": "jest",
+     "test:compiler": "jest --testPathPattern=compiler",
+     "test:media-invariant": "tsx scripts/test-media-invariant.ts",
++    "test:circle-reset": "tsx scripts/test-circle-reset.ts",
+     "test:oauth": "jest --testPathPatterns=oauth",
+     "images": "node scripts/image-pipeline.mjs",
+     "qa:images": "node scripts/image-qa.mjs",
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 69ef849c..247265f7 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -9,7 +9,7 @@ import { BlueprintGrid } from "@/components/blueprint-grid";
+ import { MaturityLabel, type Maturity } from "@/components/maturity-label";
+ import { buildPortalProjection } from "@/fyd/preview/pipeline";
+ import { listObjectIds } from "@/fyd/object/view";
+-import { PortalHost } from "@/fyd/ui/portal-host";
++import { HomeCircles } from "@/fyd/ui/home-circles";
+ import {
+   KnowledgeLoop,
+   BusinessGraph,
+@@ -141,7 +141,7 @@ const CHANGELOG = [
+ 
+ export default function HomePage() {
+   const tenant = getTenant();
+-  const portalProjections = listObjectIds().flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [pr] : []; });
++  const portalProjections = listObjectIds().flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [{ siteId: id, projection: pr }] : []; });
+   return (
+     <>
+       {/* 01 HERO: the living system moment */}
+@@ -189,7 +189,7 @@ export default function HomePage() {
+       </Section>
+ 
+       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
+-      <PortalHost portals={portalProjections} />
++      <HomeCircles portals={portalProjections} />
+ 
+       {/* 02 THE CONTINUITY PROBLEM, compressed */}
+       <div id="problem"><Section size="minor">
+diff --git a/src/app/portal-rail/rail-client.tsx b/src/app/portal-rail/rail-client.tsx
+index de09bc97..000abfba 100644
+--- a/src/app/portal-rail/rail-client.tsx
++++ b/src/app/portal-rail/rail-client.tsx
+@@ -166,6 +166,9 @@ export function RailClient({ portal, business, side, mode }: RailClientProps) {
+         onUnaware={(id) => setAwareId((cur) => (cur === id ? null : cur))}
+         onEngageRequest={(id) => setEngagedId(id)}
+         onRelease={(id) => setEngagedId((cur) => (cur === id ? null : cur))}
++        // Geometry fixture only: no global assistant on this page, so the
++        // Ask FYD orbit control is inert here (orbit geometry is preserved).
++        onAskRequest={() => {}}
+       />
+     </div>
+   );
+diff --git a/src/fyd/ui/portal-circle.tsx b/src/fyd/ui/portal-circle.tsx
+index 841aeae2..9648f8bf 100644
+--- a/src/fyd/ui/portal-circle.tsx
++++ b/src/fyd/ui/portal-circle.tsx
+@@ -3,7 +3,8 @@
+ /**
+  * PortalCircle: the PING circle as a portal-grade margin object.
+  *
+- * Phases (one physical object, no teleport):
++ * The ONE Circle primitive for the PING homepage (Circle-Only Product Reset,
++ * 2026-09-22). One physical object, no teleport:
+  * - rest:    64px circle. The website preview (or logo/gradient) fills it.
+  *            Almost static; PING chrome almost absent.
+  * - aware:   hover/focus proximity. Rim wakes, spring to 112px, slight
+@@ -11,11 +12,14 @@
+  * - engaged: the circle expands spatially from its exact origin to
+  *            SIZE = f(available safe rectangle), clamped 200..480px.
+  *            The website preview becomes legible; perimeter controls
+- *            (Follow, Like, Ask, Web) appear around the rim. The host page
+- *            is never covered: the diameter is clamped to the largest
++ *            (Follow, Like, Ask FYD, Web) appear around the rim. The host
++ *            page is never covered: the diameter is clamped to the largest
+  *            circle fitting inside the assigned peripheral slot.
+- * - ask:     interior swaps to a compact conversational state, still
+- *            inside the circle. Talk TO the object, not a chatbot.
++ *
++ * Ask FYD is NOT per-circle. The "Ask FYD" orbit control hands the circle's
++ * identity to the ONE global assistant (see ../ui/global-ask-dock.tsx) via
++ * the onAskRequest callback; it never opens an in-circle ask view. There is
++ * exactly one assistant for the entire experience; the Circle is discovery.
+  *
+  * Motion: transform + opacity only, framer-motion springs harvested from
+  * src/motion/motionTokens.ts. prefers-reduced-motion: instant opacity
+@@ -30,7 +34,6 @@ import { createPortal } from "react-dom";
+ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+ import {
+   Check,
+-  ChevronLeft,
+   ExternalLink,
+   Heart,
+   MessageCircleQuestion,
+@@ -49,14 +52,10 @@ import {
+   executeLike,
+   hasCapability,
+   openWebsite,
+-  submitAsk as submitAskCapability,
+ } from "@/fyd/capabilities/runtime";
+ 
+ const COLLAPSED_D = 64;
+ const AWARE_D = 112;
+-const NO_EVIDENCE_COPY = "I do not have evidence for that yet.";
+-
+-type AskStatus = "idle" | "asking" | "answered" | "empty";
+ 
+ interface PortalCircleProps {
+   portal: PortalProjection;
+@@ -69,6 +68,12 @@ interface PortalCircleProps {
+   onUnaware: (id: string) => void;
+   onEngageRequest: (id: string) => void;
+   onRelease: (id: string) => void;
++  /**
++   * The circle's "Ask FYD" control calls this with the circle id instead of
++   * opening a per-circle ask view. The host routes it to the ONE global
++   * assistant, which adopts this circle as its context.
++   */
++  onAskRequest: (id: string) => void;
+ }
+ 
+ const rimRest =
+@@ -83,10 +88,6 @@ export function PortalCircle(props: PortalCircleProps) {
+   const buttonRef = React.useRef<HTMLButtonElement>(null);
+   const [following, setFollowing] = React.useState<boolean | null>(null);
+   const [liked, setLiked] = React.useState<boolean | null>(null);
+-  const [askOpen, setAskOpen] = React.useState(false);
+-  const [question, setQuestion] = React.useState("");
+-  const [answer, setAnswer] = React.useState("");
+-  const [askStatus, setAskStatus] = React.useState<AskStatus>("idle");
+   const [showEvidence, setShowEvidence] = React.useState(false);
+   const [center, setCenter] = React.useState<{ x: number; y: number } | null>(null);
+   const [engagedD, setEngagedD] = React.useState(320);
+@@ -166,10 +167,8 @@ export function PortalCircle(props: PortalCircleProps) {
+ 
+   // Scroll while engaged: the circles are fixed-positioned, so host
+   // scrolling never moves them, but a host-page scroll means the reading
+-  // context moved on, so release. (Scrolling inside the dialog's own
+-  // answer pane does not scroll the window and does not trigger this.)
+-  // Resize while engaged: the slot geometry changed, so release rather
+-  // than sit on stale measurements.
++  // context moved on, so release. Resize while engaged: the slot geometry
++  // changed, so release rather than sit on stale measurements.
+   React.useEffect(() => {
+     if (!engaged) return;
+     const onScroll = () => props.onRelease(id);
+@@ -202,20 +201,6 @@ export function PortalCircle(props: PortalCircleProps) {
+     setLiked(await executeLike(id, liked));
+   };
+ 
+-  const submitAsk = async () => {
+-    const q = question.trim();
+-    if (!q) return;
+-    setAskStatus("asking");
+-    const result = await submitAskCapability(id, q);
+-    if (!result.ok || result.refusal) {
+-      setAskStatus("empty");
+-      setAnswer("");
+-    } else {
+-      setAskStatus("answered");
+-      setAnswer(result.answer ?? "");
+-    }
+-  };
+-
+   const preview = portal.preview;
+   const focalPos = preview ? focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) : "50% 30%";
+   const collapsedBg = preview ? (
+@@ -315,22 +300,11 @@ export function PortalCircle(props: PortalCircleProps) {
+               canLike={canLike}
+               canAsk={canAsk}
+               webHref={webHref}
+-              askOpen={askOpen}
+-              setAskOpen={setAskOpen}
+-              question={question}
+-              setQuestion={setQuestion}
+-              answer={answer}
+-              askStatus={askStatus}
+-              submitAsk={submitAsk}
+-              resetAsk={() => {
+-                setQuestion("");
+-                setAnswer("");
+-                setAskStatus("idle");
+-              }}
+               showEvidence={showEvidence}
+               setShowEvidence={setShowEvidence}
+               onToggleFollow={toggleFollow}
+               onToggleLike={toggleLike}
++              onAskRequest={props.onAskRequest}
+               onClose={() => props.onRelease(id)}
+               txGentle={txGentle}
+               reduceMotion={!!reduceMotion}
+@@ -355,18 +329,12 @@ interface EngagedProps {
+   canLike: boolean;
+   canAsk: boolean;
+   webHref: string | null;
+-  askOpen: boolean;
+-  setAskOpen: (v: boolean) => void;
+-  question: string;
+-  setQuestion: (v: string) => void;
+-  answer: string;
+-  askStatus: AskStatus;
+-  submitAsk: () => void;
+-  resetAsk: () => void;
+   showEvidence: boolean;
+   setShowEvidence: (v: boolean) => void;
+   onToggleFollow: () => void;
+   onToggleLike: () => void;
++  /** Routes the circle's Ask FYD control to the ONE global assistant. */
++  onAskRequest: (id: string) => void;
+   onClose: () => void;
+   txGentle: { type: "spring"; stiffness: number; damping: number } | { duration: number };
+   reduceMotion: boolean;
+@@ -528,109 +496,46 @@ function EngagedPortal(p: EngagedProps) {
+         {/* Interior chrome: native object projection, quiet until asked.
+             Text width is constrained to the circle's chord so long names
+             wrap instead of clipping on the curve. */}
+-        {!p.askOpen && (
+-          <div className="absolute inset-x-0 top-0 p-[7%] text-center">
+-            <div
+-              className="absolute inset-x-0 top-0 h-[46%]"
+-              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
+-            />
+-            <p
+-              className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
+-              style={{ maxWidth: d * 0.6 }}
+-            >
+-              {portal.circle.name}
+-            </p>
+-            <p
+-              className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
+-              style={{ maxWidth: d * 0.62 }}
+-            >
+-              {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
++        <div className="absolute inset-x-0 top-0 p-[7%] text-center">
++          <div
++            className="absolute inset-x-0 top-0 h-[46%]"
++            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
++          />
++          <p
++            className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
++            style={{ maxWidth: d * 0.6 }}
++          >
++            {portal.circle.name}
++          </p>
++          <p
++            className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
++            style={{ maxWidth: d * 0.62 }}
++          >
++            {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
++          </p>
++          {facts.length > 0 && (
++            <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
++              {facts.join(" · ")}
+             </p>
+-            {facts.length > 0 && (
+-              <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
+-                {facts.join(" · ")}
+-              </p>
+-            )}
+-          </div>
+-        )}
++          )}
++        </div>
+ 
+         {/* Evidence affordance: one subtle check, detail on demand. */}
+-        {!p.askOpen && (
+-          <button
+-            type="button"
+-            onClick={() => p.setShowEvidence(!p.showEvidence)}
+-            aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
+-            className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
+-            style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
+-          >
+-            {p.showEvidence ? <X size={13} /> : <Check size={13} />}
+-          </button>
+-        )}
+-        {p.showEvidence && !p.askOpen && (
++        <button
++          type="button"
++          onClick={() => p.setShowEvidence(!p.showEvidence)}
++          aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
++          className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
++          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
++        >
++          {p.showEvidence ? <X size={13} /> : <Check size={13} />}
++        </button>
++        {p.showEvidence && (
+           <div className="absolute inset-x-[10%] bottom-[14%] rounded-2xl bg-black/78 px-3 py-2 text-center backdrop-blur">
+             <p className="text-[11px] leading-snug text-white/85">{portal.circle.provenanceLabel}</p>
+             <p className="mt-0.5 text-[10px] leading-snug text-white/55">{portal.circle.provenanceDetail}</p>
+           </div>
+         )}
+-
+-        {/* Ask: talk TO the object, still inside the circle. */}
+-        {p.askOpen && (
+-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/80 p-[10%] backdrop-blur-sm">
+-            <p className="text-[13px] font-semibold text-white">Ask FYD about {portal.circle.name}</p>
+-            {p.askStatus === "idle" || p.askStatus === "asking" ? (
+-              <form
+-                className="mt-2 flex w-full items-center gap-2"
+-                onSubmit={(e) => {
+-                  e.preventDefault();
+-                  p.submitAsk();
+-                }}
+-              >
+-                <input
+-                  autoFocus
+-                  value={p.question}
+-                  onChange={(e) => p.setQuestion(e.target.value)}
+-                  placeholder={portal.circle.sampleQuestions[0] ?? "Ask a question"}
+-                  aria-label={`Ask about ${portal.circle.name}`}
+-                  className="h-9 min-w-0 flex-1 rounded-full bg-white/12 px-3 text-[13px] text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-amber-300/70"
+-                />
+-                <button
+-                  type="submit"
+-                  disabled={p.askStatus === "asking"}
+-                  className="h-9 shrink-0 rounded-full bg-amber-300 px-3 text-[13px] font-semibold text-black disabled:opacity-50"
+-                >
+-                  {p.askStatus === "asking" ? "…" : "Ask"}
+-                </button>
+-              </form>
+-            ) : (
+-              <div className="mt-2 max-h-[46%] w-full overflow-y-auto rounded-2xl bg-white/8 p-3">
+-                <p className="text-[12.5px] leading-snug text-white/90">
+-                  {p.askStatus === "answered" && p.answer ? p.answer : NO_EVIDENCE_COPY}
+-                </p>
+-                <p className="mt-1.5 text-[10.5px] text-emerald-300/90">
+-                  {p.askStatus === "answered" && p.answer ? "✓ Answered from verified business evidence" : "✓ No evidence found, nothing invented"}
+-                </p>
+-              </div>
+-            )}
+-            <div className="mt-2 flex items-center gap-2">
+-              {(p.askStatus === "answered" || p.askStatus === "empty") && (
+-                <button
+-                  type="button"
+-                  onClick={() => p.resetAsk()}
+-                  className="rounded-full bg-white/12 px-3 py-1.5 text-[12px] text-white"
+-                >
+-                  New question
+-                </button>
+-              )}
+-              <button
+-                type="button"
+-                onClick={() => p.setAskOpen(false)}
+-                className="flex items-center gap-1 rounded-full bg-white/12 px-3 py-1.5 text-[12px] text-white"
+-              >
+-                <ChevronLeft size={13} /> Back
+-              </button>
+-            </div>
+-          </div>
+-        )}
+       </motion.div>
+ 
+       {/* Restrained orbit: small glyphs at rest, explicit on hover/focus.
+@@ -654,7 +559,7 @@ function EngagedPortal(p: EngagedProps) {
+       {p.canAsk && (
+         <PerimeterButton
+           label="Ask FYD"
+-          onClick={() => p.setAskOpen(true)}
++          onClick={() => p.onAskRequest(portal.circle.id)}
+           angleDeg={angles.ask}
+           radius={orbitR}
+           size={p.orbitBtn}
+diff --git a/src/fyd/ui/portal-host.tsx b/src/fyd/ui/portal-host.tsx
+index e8563432..acbc5bcd 100644
+--- a/src/fyd/ui/portal-host.tsx
++++ b/src/fyd/ui/portal-host.tsx
+@@ -10,10 +10,19 @@
+  *   band (right preferred, then left). Each circle's engaged diameter is
+  *   clamped to the largest circle fitting its slot: host content is
+  *   never occluded, by construction.
+- * - Narrow viewports: no honest margin exists, so no portal renders.
++ * - Narrow viewports: no honest margin exists, so the circles render as an
++ *   inline strip in the page flow (same Circle component, tap to engage).
+  *   Per the placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL
+- *   anywhere. The dock branch collapses to null; margins are never faked
+- *   and mobile placement is a separate interaction problem.
++ *   anywhere. The fixed dock branch collapses to null; the inline strip
++ *   is document flow, not an overlay, so margins are never faked and
++ *   content is never covered.
++ *
++ * Circle-Only Product Reset (2026-09-22): the host also owns two thin
++ * event seams for the ONE global assistant. onAskRequest fires when a
++ * circle's "Ask FYD" orbit control is pressed (the circle never opens a
++ * per-circle ask view). onContextChange reports the currently
++ * aware-or-engaged circle id so the assistant's context follows
++ * hover/selection; null when no circle holds attention.
+  */
+ 
+ import * as React from "react";
+@@ -38,18 +47,36 @@ interface Assignment {
+   y: number;
+ }
+ 
+-export function PortalHost({ portals }: { portals: PortalProjection[] }) {
++interface PortalHostProps {
++  portals: PortalProjection[];
++  /** A circle's Ask FYD control was pressed: route to the ONE global assistant. */
++  onAskRequest?: (id: string) => void;
++  /** The aware-or-engaged circle changed (null = no circle holds attention). */
++  onContextChange?: (id: string | null) => void;
++}
++
++export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHostProps) {
+   const [mounted, setMounted] = React.useState(false);
+   const [slots, setSlots] = React.useState<PeripheralSlot[]>([]);
++  const [slotsReady, setSlotsReady] = React.useState(false);
+   const [awareId, setAwareId] = React.useState<string | null>(null);
+   const [engagedId, setEngagedId] = React.useState<string | null>(null);
+   const [followed, setFollowed] = React.useState<Record<string, boolean>>({});
+   const controllerRef = React.useRef<AttentionController | null>(null);
+   if (!controllerRef.current) controllerRef.current = new AttentionController();
+ 
++  // Keep the latest callbacks in refs so the context effect never loops.
++  const contextCbRef = React.useRef(onContextChange);
++  contextCbRef.current = onContextChange;
++  const askCbRef = React.useRef(onAskRequest);
++  askCbRef.current = onAskRequest;
++
+   React.useEffect(() => {
+     setMounted(true);
+-    const mgr = createSlotManager(setSlots);
++    const mgr = createSlotManager((s) => {
++      setSlots(s);
++      setSlotsReady(true);
++    });
+     let cancelled = false;
+     portals.forEach((p) => {
+       fetch(`/api/fyd/follow?objectId=${encodeURIComponent(p.circle.id)}`)
+@@ -69,6 +96,13 @@ export function PortalHost({ portals }: { portals: PortalProjection[] }) {
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, []);
+ 
++  // The ONE global assistant's context follows attention: engaged wins,
++  // then aware, then null. Reported through a ref-held callback so the
++  // parent never re-renders the host in a loop.
++  React.useEffect(() => {
++    contextCbRef.current?.(engagedId ?? awareId ?? null);
++  }, [engagedId, awareId]);
++
+   const assignments: Assignment[] = React.useMemo(() => {
+     if (!mounted || portals.length === 0) return [];
+     const usable = slots
+@@ -163,6 +197,10 @@ export function PortalHost({ portals }: { portals: PortalProjection[] }) {
+     setAwareId((cur) => (cur === id ? null : cur));
+   }, []);
+ 
++  const handleAskRequest = React.useCallback((id: string) => {
++    askCbRef.current?.(id);
++  }, []);
++
+   // Engagement/placement reconciliation (adaptive plane): the engaged
+   // portal's placement mode is its peripheral slot id, or "none" when it
+   // holds no safe slot. Docked portals render null per the no-bottom-portal
+@@ -188,6 +226,45 @@ export function PortalHost({ portals }: { portals: PortalProjection[] }) {
+ 
+   if (!mounted) return null;
+ 
++  // No honest margin anywhere (narrow viewports): the circles render as an
++  // inline strip in the page flow instead of fixed margin portals. Same
++  // Circle component, same information; tap engages, tap-outside or Escape
++  // collapses. This is not a bottom portal and never overlays content: it
++  // lives in the document flow like any other section. The engaged circle
++  // itself is viewport-fixed (dock geometry), so expansion works at any
++  // width. The strip appears only when geometry reports zero usable slots,
++  // so it never competes with the margin portals.
++  if (slotsReady && portals.length > 0 && slotted.length === 0) {
++    return (
++      <div className="px-4 py-8" data-ping-host data-ping-inline-strip>
++        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-text-muted">
++          Businesses on PING
++        </p>
++        <div
++          className="flex items-start justify-center gap-6"
++          role="list"
++          aria-label="Featured businesses"
++        >
++          {portals.map((portal) => (
++            <div key={portal.circle.id} role="listitem" className="relative">
++              <PortalCircle
++                portal={portal}
++                slot={null}
++                aware={awareId === portal.circle.id}
++                engaged={engagedId === portal.circle.id}
++                onAware={handleAware}
++                onUnaware={handleUnaware}
++                onEngageRequest={handleEngageRequest}
++                onRelease={handleRelease}
++                onAskRequest={handleAskRequest}
++              />
++            </div>
++          ))}
++        </div>
++      </div>
++    );
++  }
++
+   return (
+     <>
+       {slotted.map((a) => (
+@@ -208,16 +285,18 @@ export function PortalHost({ portals }: { portals: PortalProjection[] }) {
+               onUnaware={handleUnaware}
+               onEngageRequest={handleEngageRequest}
+               onRelease={handleRelease}
++              onAskRequest={handleAskRequest}
+             />
+           </div>
+         </div>
+       ))}
+ 
+       {/* Placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL anywhere.
+-          The dock branch collapses to null. A portal with no safe side
+-          margin is not rendered at all; narrow/mobile placement is a
+-          separate interaction problem and never becomes a bottom overlay
+-          covering customer content. */}
++          A portal with a safe side margin renders fixed in that margin. A
++          portal with no safe margin renders nothing here; when NO portal
++          has a safe margin (narrow viewports), the inline strip above
++          carries the circles in the document flow instead. The fixed dock
++          branch always collapses to null. */}
+       {docked.length > 0 ? null : null}
+     </>
+   );
+diff --git a/src/middleware.ts b/src/middleware.ts
+index 1a4e9032..c1afe015 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -1,16 +1,50 @@
+ /**
+- * Minimal middleware: expose the request pathname to server components.
++ * Minimal middleware: expose the request pathname to server components,
++ * and disable experimental product routes from the router.
+  *
+  * The root layout reads `x-pathname` to decide whether to render the PING
+  * marketing chrome. Object routes (/o/*) belong visually to the object, so
+  * they render without the PING header and footer.
++ *
++ * Circle-Only Product Reset (2026-09-22): experimental FYD product routes
++ * are disabled from the user-facing router. This changes routing only:
++ * the route code, runtime APIs, evidence machinery, and tests are all
++ * preserved. Revert by deleting DISABLED_PAGE_PREFIXES and the /o check.
++ *
++ * Deliberately kept live:
++ * - /node/*   (practice surface open_site target)
++ * - /embed/*  (chromeless embeds for third-party pages)
++ * - /dev/*    (dev lab, not customer-facing)
++ * - /fyd      (FYD onboarding entry)
++ * - /api/*    (all runtime APIs; never page-disabled)
+  */
+ 
+ import { NextRequest, NextResponse } from "next/server";
+ 
++const DISABLED_PAGE_PREFIXES = [
++  "/objects", // /objects, /objects/spatial (lane product surface)
++  "/sites", // generated site previews
++  "/build", // website builder (out of reset scope)
++  "/portal-rail", // geometry fixture
++];
++
++function isDisabledPage(pathname: string): boolean {
++  // /o and /o/[objectId] (demoted object pages). Matched exactly: no other
++  // app route starts with "/o/" or equals "/o".
++  if (pathname === "/o" || pathname.startsWith("/o/")) return true;
++  return DISABLED_PAGE_PREFIXES.some(
++    (p) => pathname === p || pathname.startsWith(p + "/"),
++  );
++}
++
+ export function middleware(request: NextRequest) {
++  const pathname = request.nextUrl.pathname;
++  // API routes are never page-disabled.
++  if (!pathname.startsWith("/api/") && isDisabledPage(pathname)) {
++    return new NextResponse("Not found", { status: 404 });
++  }
+   const headers = new Headers(request.headers);
+-  headers.set("x-pathname", request.nextUrl.pathname);
++  headers.set("x-pathname", pathname);
+   return NextResponse.next({ request: { headers } });
+ }
+ 

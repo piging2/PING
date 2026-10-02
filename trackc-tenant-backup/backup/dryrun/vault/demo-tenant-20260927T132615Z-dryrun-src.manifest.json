@@ -1,0 +1,43 @@
+{
+  "contract_version": "backup-contract/1",
+  "tenant": "demo-tenant",
+  "source_id": "dryrun-src",
+  "source_git_sha": "none",
+  "created_at_utc": "2026-09-27T13:26:15Z",
+  "artifact": "demo-tenant-20260927T132615Z-dryrun-src.tar.gz.enc",
+  "plaintext_sha256": "5d91d87676d960a67cfbd189d25a862e59c1783307ed9dc37dcbcd9c7b81be68",
+  "ciphertext_sha256": "70cfaec04db084816d479474b2f0a79caeb66986442c1303b8bc647e511dbe1b",
+  "plaintext_size_bytes": 4501,
+  "ciphertext_size_bytes": 4581,
+  "encryption": {
+    "scheme": "gpg-symmetric",
+    "cipher": "AES256"
+  },
+  "files": [
+    {
+      "path": "config.txt",
+      "size_bytes": 17,
+      "sha256": "277578e589186554a03e27eabf1ecabe48b6b82d2c47eebd3539d96146f43760"
+    },
+    {
+      "path": "data/blob.bin",
+      "size_bytes": 4096,
+      "sha256": "6a92035a79a535355de4374ff51801689770da755ef4d9d69261275550af3e06"
+    },
+    {
+      "path": "data/nested/state.json",
+      "size_bytes": 37,
+      "sha256": "29abaaec8ecff475bfcdc2e322ef5326d31691b3de318e2352783dca6fd15661"
+    },
+    {
+      "path": "notes.txt",
+      "size_bytes": 28,
+      "sha256": "4696bf68640a74ce7babd705b4a40485739e19c027b32e67f4a742aac7ba6248"
+    }
+  ],
+  "retention": {
+    "keep_last_n": 10,
+    "keep_days": 30
+  },
+  "restore_command": "./restore-verify.sh <artifact> <manifest> <keyfile> <destdir>"
+}

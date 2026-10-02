@@ -1,0 +1,52 @@
+== assembling snapshots ==
+fail snapshot contents:
+fixture/snapshot-fail/gateway/bootstrap/composition/core_event_spine.js
+fixture/snapshot-fail/gateway/bootstrap/gateway_runtime.js
+fixture/snapshot-fail/gateway/bootstrap/optional/example_optional_provider.js
+fixture/snapshot-fail/gateway/server.js
+
+== 1. checker FAIL-BEFORE (pruned snapshot) ==
+expected FAIL ok: closure-certify on snapshot-fail (exit 1)
+  DEFECT [REQUIRED_NOT_DISTRIBUTED] ping-runtime/events/legacy_ingress_adapter.js (LEGACY_REQUIRED) — source-reachable and LEGACY_REQUIRED but ABSENT from the distribution snapshot
+  DEFECT [REQUIRED_NOT_DISTRIBUTED] ping-runtime/events/ingress_types.js (LEGACY_REQUIRED) — source-reachable and LEGACY_REQUIRED but ABSENT from the distribution snapshot
+FAILED: closure incomplete (2 defect(s))
+
+== 2. smoke FAIL-BEFORE (pruned snapshot) ==
+expected FAIL ok: gateway-smoke on snapshot-fail (exit 2)
+SMOKE FAIL
+  [FAIL] initialize to safe boundary — Cannot find module '../../../ping-runtime/events/legacy_ingress_adapter'
+  module resolution failure: Cannot find module '../../../ping-runtime/events/legacy_ingress_adapter'
+
+== 3. checker PASS-AFTER (complete snapshot) ==
+expected PASS ok: closure-certify on snapshot-pass
+  classes: REQUIRED_RUNTIME=3 OPTIONAL_RUNTIME=1 LEGACY_REQUIRED=2
+  WARN [DYNAMIC_REQUIRE] gateway/bootstrap/gateway_runtime.js:17 — non-literal require/import; not statically followed
+CERTIFIED: closure complete
+
+== 4. smoke PASS-AFTER (complete snapshot) ==
+expected PASS ok: gateway-smoke on snapshot-pass
+SMOKE PASS
+  [ok] resolve entrypoint — /home/hatch/workspace/p0-lane1/fixture/snapshot-pass/gateway/server.js
+  [ok] load runtime module graph — GatewayRuntime exported
+  [ok] construct GatewayRuntime — constructed, state=constructed
+  [ok] initialize to safe boundary — boundary=composition-wired-no-listen-no-db
+  [ok] controlled shutdown — shutdown clean
+
+== 5. UNKNOWN classification blocks certification ==
+expected FAIL ok: closure-certify with unclassified reachable module (exit 1)
+  classes: REQUIRED_RUNTIME=3 OPTIONAL_RUNTIME=1 LEGACY_REQUIRED=1 UNKNOWN=1
+  DEFECT [UNKNOWN_CLASSIFICATION] ping-runtime/events/ingress_types.js — reachable from a runtime entrypoint but unclassified; mandatory reachability fails certification
+FAILED: closure incomplete (1 defect(s))
+
+== 6. optional provider pruned: warns, still certifies ==
+expected PASS ok: closure-certify with optional provider absent
+  WARN [OPTIONAL_NOT_DISTRIBUTED] gateway/bootstrap/optional/example_optional_provider.js — optional provider absent from snapshot; allowed, feature degrades gracefully
+  WARN [DYNAMIC_REQUIRE] gateway/bootstrap/gateway_runtime.js:17 — non-literal require/import; not statically followed
+CERTIFIED: closure complete
+
+== 7. optional provider misclassified REQUIRED + pruned: fails ==
+expected FAIL ok: closure-certify with promoted optional provider absent (exit 1)
+  DEFECT [REQUIRED_NOT_DISTRIBUTED] gateway/bootstrap/optional/example_optional_provider.js (REQUIRED_RUNTIME) — source-reachable and REQUIRED_RUNTIME but ABSENT from the distribution snapshot
+FAILED: closure incomplete (1 defect(s))
+
+== RESULT: 7 expectations met, 0 violated ==

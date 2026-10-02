@@ -1,0 +1,83 @@
+/**
+ * Tests for the PING Knowledge Ingest Adapter (Lane B).
+ * Pure unit tests: no Postgres, no gateway boot.
+ * Run: node gateway/test_knowledge_ingest_adapter.js
+ */
+'use strict';
+
+const assert = require('assert');
+const crypto = require('crypto');
+const path = require('path');
+
+const adapterPath = path.join(__dirname, 'knowledge_ingest_adapter.js');
+const adapter = require(adapterPath);
+
+let passed = 0;
+function ok(name, fn) {
+  return Promise.resolve()
+    .then(fn)
+    .then(() => {
+      passed += 1;
+      console.log(`  ok - ${name}`);
+    })
+    .catch((e) => {
+      console.error(`  FAIL - ${name}: ${e.message}`);
+      console.error(e.stack);
+      process.exitCode = 1;
+    });
+}
+
+/** Build a signed envelope exactly as the extractor signer does. */
+function signEnvelope(privatePem, publicPem, type, payload, metadata) {
+  const canonical = adapter.knowledgeCanonicalize({ type, payload, metadata });
+  const sig = crypto.sign(null, Buffer.from(canonical, 'utf8'), crypto.createPrivateKey(privatePem));
+  return {
+    type,
+    payload,
+    metadata,
+    proof: {
+      algorithm: 'ed25519',
+      signature: sig.toString('base64'),
+      publicKey: publicPem,
+    },
+  };
+}
+
+function freshKeypair() {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  return {
+    privatePem: privateKey.export({ format: 'pem', type: 'pkcs8' }).toString(),
+    publicPem: publicKey.export({ format: 'pem', type: 'spki' }).toString(),
+  };
+}
+
+const PROV = {
+  provenance: {
+    source_url: 'https://happy-place-platform.vercel.app/',
+    source_type: 'website_text_extraction',
+    observed_at: '2026-09-21T02:45:00.000Z',
+    evidence_ref: 'lane-b-observation-001',
+  },
+};
+
+(async () => {
+  console.log('knowledge_ingest_adapter tests');
+
+  const kp = freshKeypair();
+
+  await ok('accepts a valid signed knowledge OBJECT_CREATED with deterministic id', async () => {
+    const env = signEnvelope(
+      kp.privatePem,
+      kp.publicPem,
+      'OBJECT_CREATED',
+      {
+        schema: 'ping.knowledge.business@1',
+        controller: 'identity_nolan',
+        key: 'happy-place-carpentry',
+        content: { claim_basis: 'website_statement', name: 'Happy Place Carpentry' },
+      },
+      PROV
+    );
+    const a = await adapter.normalizeKnowledgeEnvelope(env);
+    assert.strictEqual(a.eventType, 'OBJECT_CREATED');
+    assert.strictEqual(a.aggregateType, 'ping_o

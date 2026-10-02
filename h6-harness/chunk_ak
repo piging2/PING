@@ -1,0 +1,24 @@
+
+  eventRuntime.on('REPLAY_COMPLETED', async (e) => seen.replayCompleted.push(e));
+  eventRuntime.on('WITNESS_CREATED', async (e) => seen.witnessCreated.push(e));
+  eventRuntime.on('LINEAGE_CREATED', async (e) => seen.lineageCreated.push(e));
+
+  const emittedRv = await eventRuntime.emit('REPLAY_VERIFY', 'h6-drive',
+    { probe: 'direct replay verify' },
+    { namespace: 'core::system', correlation_id: 'corr-h6-replay-1' });
+  await check('C1: REPLAY_VERIFY emitted ok', async () => {
+    assert.strictEqual(emittedRv.status, 'ok');
+  });
+  const rvEventId = emittedRv.eventId;
+  await drain(scheduler, missionRuntime);
+
+  const expectedRvMission = detMissionId('REPLAY_VERIFY', rvEventId);
+  await check('C2: bridge created REPLAY_VERIFY mission (deterministic id)', async () => {
+    const m = missionRuntime.missions.get(expectedRvMission);
+    assert.ok(m, `mission ${expectedRvMission} exists`);
+    assert.strictEqual(m.mission_type, 'REPLAY_VERIFY');
+  });
+  await check('C3: scheduler routed mission to replay worker and completed', async () => {
+    const m = missionRuntime.missions.get(expectedRvMission);
+    assert.strictEqual(m.assigned_to, 'replay');
+    assert.strictEqual(m.status

@@ -1,0 +1,45 @@
+${type}' is not one of ${EVENT_TYPES.join(', ')}`);
+  }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('INVALID_ENVELOPE: envelope payload must be an object');
+  }
+  rejectSecrets(payload, 'payload');
+  verifyKnowledgeProof(type, payload, metadata || {}, proof);
+
+  const createdAt = new Date().toISOString();
+  const baseMetadata = {
+    ...(metadata || {}),
+    _ingest: { adapter: KNOWLEDGE_ENVELOPE, received_at: createdAt },
+  };
+  assertProvenance(baseMetadata);
+
+  let normalized, aggregateId, aggregateType;
+  if (type === 'OBJECT_CREATED') {
+    ({ normalized, aggregateId, aggregateType } = normalizeKnowledgeObjectCreated(payload, baseMetadata, createdAt));
+  } else if (type === 'RELATIONSHIP_CREATED') {
+    ({ normalized, aggregateId, aggregateType } = normalizeKnowledgeRelationshipCreated(payload, baseMetadata, createdAt));
+  } else {
+    throw new Error('UNSUPPORTED_EVENT_TYPE: knowledge ingest accepts OBJECT_CREATED and RELATIONSHIP_CREATED only');
+  }
+
+  normalized.payload_hash = computePayloadHash(normalized);
+  normalized.proof = {
+    ...proof,
+    signature_construction: KNOWLEDGE_ENVELOPE,
+    signed_bytes: 'canonical-json(type,payload,metadata)',
+    payload_hash: normalized.payload_hash,
+  };
+
+  return { eventType: type, aggregateId, aggregateType, eventData: normalized };
+}
+
+module.exports = {
+  KNOWLEDGE_ENVELOPE,
+  knowledgeCanonicalize,
+  computePayloadHash,
+  normalizeKnowledgeEnvelope,
+  verifyKnowledgeProof,
+  rejectSecrets,
+  KNOWLEDGE_SCHEMAS: [...KNOWLEDGE_SCHEMAS],
+  KNOWLEDGE_PREDICATES: [...KNOWLEDGE_PREDICATES],
+};

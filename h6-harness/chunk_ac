@@ -1,0 +1,26 @@
+ER TABLE|CREATE INDEX/.test(S)) return { rows: [], rowCount: 0 };
+    if (S.startsWith('INSERT INTO knowledge_nodes')) {
+      this.nodes.push({
+        node_id: params[0], node_type: params[1], entity_type: params[2],
+        entity_id: params[3], label: params[4], data: JSON.parse(params[5]),
+        source_event_id: params[6], namespace: params[7], confidence: params[8],
+        status: params[9], correlation_id: params[10], confidence_provenance: params[11],
+      });
+      return { rows: [], rowCount: 1 };
+    }
+    if (S.startsWith('UPDATE knowledge_nodes SET')) {
+      const sourceEventId = params[0];
+      const hasNs = /AND namespace = \$/.test(S);
+      let i = hasNs ? 2 : 1;
+      const ns = hasNs ? params[1] : null;
+      const status = /status = \$/.test(S) ? params[i++] : undefined;
+      const confidence = /confidence = \$/.test(S) ? params[i++] : undefined;
+      let n = 0;
+      for (const node of this.nodes) {
+        if (node.source_event_id === sourceEventId && (ns == null || node.namespace === ns)) {
+          if (status !== undefined) node.status = status;
+          if (confidence !== undefined) node.confidence = confidence;
+          n++;
+        }
+      }
+  

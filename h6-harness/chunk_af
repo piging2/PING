@@ -1,0 +1,33 @@
+unt: 1, tree_height: 1,
+    };
+  },
+};
+
+// ---------------- tiny test runner ----------------
+let passed = 0, failed = 0;
+const failures = [];
+async function check(name, fn) {
+  try { await fn(); passed++; console.log(`PASS  ${name}`); }
+  catch (err) { failed++; failures.push({ name, err }); console.log(`FAIL  ${name}`); console.log(`      ${err.message}`); }
+}
+const detMissionId = (missionType, eventId) =>
+  crypto.createHash('sha256').update(`${missionType}:${eventId}`).digest('hex').slice(0, 16);
+
+async function drain(scheduler, missionRuntime, rounds = 30) {
+  for (let i = 0; i < rounds; i++) {
+    await scheduler._poll();
+    if (missionRuntime.pendingCount() === 0) break;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+
+async function main() {
+  console.log('=== H6 live drive ===');
+  console.log(`root: ${ROOT}`);
+  console.log(`head: ${require('child_process').execSync('git -C ' + ROOT + ' rev-parse --short HEAD').toString().trim()}`);
+  console.log('');
+
+  // ============ Section A: knowledge-node adapter (POST /knowledge/nodes) ============
+  console.log('--- Section A: POST /knowledge/nodes adapter ---');
+  const poolA = new FakePool();
+  const kgA = new KnowledgeG

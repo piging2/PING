@@ -1,0 +1,57 @@
+/**
+ * PING Knowledge Ingest Adapter (Lane B, 2026-09-21).
+ *
+ * Translates website-observation envelopes into canonical journal payloads.
+ *
+ * The extractor submits signed envelopes shaped as
+ *   { type, payload, proof, metadata }
+ * where proof.signature is base64 Ed25519 over the submitter's own canonical
+ * bytes: sorted-key JSON of { type, payload, metadata } (the same BFF
+ * construction the social adapter verifies; see
+ * gateway/social_ingest_adapter.js).
+ *
+ * This adapter:
+ *  - verifies the envelope signature (fail-closed on invalid proof),
+ *  - rejects any private-key-looking material in the submission,
+ *  - accepts ONLY the knowledge schemas/predicates registered in the ONE
+ *    canonical vocabulary (runtime/constitutional/src/ping-vocabulary.ts,
+ *    compiled to gateway/constitutional-dist at Docker build time; never
+ *    reimplemented here),
+ *  - mints object and relationship ids deterministically via the ONE
+ *    IdentityAuthority,
+ *  - computes payload_hash via the recovered Patch 7B construction
+ *    (raw SHA-256 of canonical bytes of payload-minus-proof-minus-hash),
+ *  - FAILS CLOSED when a knowledge object lacks provenance
+ *    (metadata.provenance.{source_url, source_type, observed_at}): a fact
+ *    without a source is not a PING fact. Knowledge content always carries
+ *    claim_basis 'website_statement' (or the extractor's stated basis): the
+ *    website SAID it, PING does not assert it as constitutional truth.
+ *
+ * Revocation: no negative predicates exist. Revocation is a second
+ * RELATIONSHIP_CREATED with the same predicate and status 'inactive'.
+ *
+ * Social schemas/predicates stay in social_ingest_adapter.js; this module
+ * never accepts them (and vice versa). gateway/routes/events.js dispatches
+ * on the payload schema prefix.
+ */
+
+'use strict';
+
+const crypto = require('crypto');
+
+const { IdentityAuthority } = require('./constitutional-dist/identity-authority.js');
+const { HashAuthority } = require('./constitutional-dist/hash-authority.js');
+const {
+  KNOWLEDGE_SCHEMAS,
+  KNOWLEDGE_PREDICATES,
+  isKnowledgePredicate,
+  isKnowledgeSchema,
+} = require('./constitutional-dist/ping-vocabulary.js');
+
+const KNOWLEDGE_ENVELOPE = 'knowledge-envelope@1';
+
+const EVENT_TYPES = ['OBJECT_CREATED', 'OBJECT_UPDATED', 'RELATIONSHIP_CREATED'];
+
+/**
+ * The submitter's dev canonicalization, identical to the social adapter's
+ * BFF co

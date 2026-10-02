@@ -1,0 +1,26 @@
+ter byte-identical', async () => {
+    assert.strictEqual(addNodeCalls[0][3].sourceEventId, 'evt-h6-src-001');
+  });
+  await check('A4: correlationId survives adapter byte-identical', async () => {
+    assert.strictEqual(addNodeCalls[0][3].correlationId, 'corr-h6-001');
+  });
+  await check('A5: persisted row carries all three IDs', async () => {
+    const row = poolA.nodes.find((n) => n.node_id === 'h6-node-001');
+    assert.ok(row, 'node persisted');
+    assert.strictEqual(row.source_event_id, 'evt-h6-src-001');
+    assert.strictEqual(row.correlation_id, 'corr-h6-001');
+  });
+
+  // ============ Shared spine for sections B and C ============
+  console.log('');
+  console.log('--- Sections B+C spine setup (real classes, storage fakes) ---');
+  const eventRuntime = new UnifiedEventRuntime();
+  const missionRuntime = new FakeMissionRuntime();
+  const workerRuntime = new WorkerRuntime();
+  const poolBC = new FakePool();
+  const kg = new KnowledgeGraph({ pool: poolBC });
+  await kg.initialize();
+  registerCanonicalWorkers(workerRuntime, {
+    eventRuntime, pool: poolBC, knowledgeGraph: kg, replayProvider: stubReplayProvider,
+  });
+  const workerNames = Object.keys(workerRuntime.getStats(

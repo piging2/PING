@@ -1,0 +1,27 @@
+raph({ pool: poolA });
+  await kgA.initialize();
+  const addNodeCalls = [];
+  const origAddNode = kgA.addNode.bind(kgA);
+  kgA.addNode = async (...args) => { addNodeCalls.push(args); return origAddNode(...args); };
+  createKnowledgeRoutes(kgA, {});
+  const postNodes = routeHandlers['POST /nodes'];
+  assert.ok(postNodes, 'route handler registered');
+
+  const reqBody = {
+    nodeType: 'playbook', label: 'h6 adapter probe', data: { probe: 1 },
+    nodeId: 'h6-node-001', sourceEventId: 'evt-h6-src-001', correlationId: 'corr-h6-001',
+    namespace: 'core::owner', status: 'candidate', confidence: 0.5,
+  };
+  let jsonBody = null;
+  const res = { json: (b) => { jsonBody = b; }, status: () => res };
+  await postNodes({ body: reqBody, query: {}, params: {} }, res);
+
+  await check('A1: route returns ok + nodeId', async () => {
+    assert.strictEqual(jsonBody.status, 'ok');
+    assert.strictEqual(jsonBody.nodeId, 'h6-node-001');
+  });
+  await check('A2: nodeId survives adapter byte-identical', async () => {
+    assert.strictEqual(addNodeCalls.length, 1, 'addNode called once');
+    assert.strictEqual(addNodeCalls[0][3].nodeId, 'h6-node-001');
+  });
+  await check('A3: sourceEventId survives adap

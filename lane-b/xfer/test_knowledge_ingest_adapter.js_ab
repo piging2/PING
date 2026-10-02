@@ -1,0 +1,48 @@
+bject');
+    assert.ok(/^object_[0-9a-f]{16}$/.test(a.aggregateId), `bad object id ${a.aggregateId}`);
+    const b = await adapter.normalizeKnowledgeEnvelope(env);
+    assert.strictEqual(b.aggregateId, a.aggregateId, 'object id must be deterministic');
+    assert.ok(/^[0-9a-f]{64}$/.test(a.eventData.payload_hash), 'payload_hash must be sha256 hex');
+    assert.strictEqual(a.eventData.proof.signature_construction, 'knowledge-envelope@1');
+    assert.strictEqual(a.eventData.proof.payload_hash, a.eventData.payload_hash);
+    assert.strictEqual(a.eventData.metadata.provenance.source_url, PROV.provenance.source_url);
+  });
+
+  await ok('rejects tampered payload with INVALID_SIGNATURE', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_CREATED',
+      { schema: 'ping.knowledge.business@1', controller: 'identity_nolan', content: { claim_basis: 'website_statement', name: 'X' } },
+      PROV
+    );
+    env.payload.content.name = 'Tampered';
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /INVALID_SIGNATURE/);
+  });
+
+  await ok('rejects social schema with UNSUPPORTED_SCHEMA', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_CREATED',
+      { schema: 'ping.social.post@1', controller: 'identity_nolan', content: { claim_basis: 'website_statement', text: 'hi' } },
+      PROV
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /UNSUPPORTED_SCHEMA/);
+  });
+
+  await ok('rejects knowledge object without provenance (MISSING_PROVENANCE)', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_CREATED',
+      { schema: 'ping.knowledge.business@1', controller: 'identity_nolan', content: { claim_basis: 'website_statement', name: 'X' } },
+      { source: 'no-provenance' }
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /MISSING_PROVENANCE/);
+  });
+
+  await ok('rejects knowledge object without claim_basis (INVALID_CLAIM_BASIS)', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_CREATED',
+      { schema: 'ping.knowledge.business@1', controller: 'identity_nolan', content: { name: 'X' } },
+      PROV
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /INVALID_CLAIM_BASIS/);
+  });
+
+  await ok('rejects private-key-looking material (SECRET_REJECTED)', async () => 

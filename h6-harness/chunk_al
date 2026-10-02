@@ -1,0 +1,25 @@
+, 'completed');
+  });
+  await check('C4: replay worker ran and emitted REPLAY_COMPLETED (verified)', async () => {
+    assert.strictEqual(seen.replayCompleted.length, 1, `got ${seen.replayCompleted.length}`);
+    const rc = seen.replayCompleted[0];
+    assert.strictEqual(rc.payload.replay.verified, true);
+    assert.strictEqual(rc.payload.upstreamEventId, rvEventId);
+    assert.strictEqual(rc.metadata.correlation_id, 'corr-h6-replay-1');
+  });
+  await check('C5: downstream cascade WITNESS_CREATED + LINEAGE_CREATED followed', async () => {
+    assert.strictEqual(seen.witnessCreated.length, 1);
+    assert.strictEqual(seen.lineageCreated.length, 1);
+  });
+  await check('C6: no duplicate missions on identical re-emit (idempotent)', async () => {
+    const before = missionRuntime.missions.size;
+    await eventRuntime.emit('REPLAY_VERIFY', 'h6-drive',
+      { probe: 'direct replay verify' },
+      { namespace: 'core::system', correlation_id: 'corr-h6-replay-1' });
+    await drain(scheduler, missionRuntime);
+    assert.strictEqual(missionRuntime.missions.size, before, 'mission count unchanged');
+  });
+
+  console.log('');
+  console.log('=== Summary ===');
+  console.log(`Passed: ${passed}`)

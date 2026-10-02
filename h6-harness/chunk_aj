@@ -1,0 +1,23 @@
+
+  const expectedPromoteMission = detMissionId('KNOWLEDGE_PROMOTE', approvalEventId);
+  await check('B2: bridge created KNOWLEDGE_PROMOTE mission (deterministic id)', async () => {
+    const m = missionRuntime.missions.get(expectedPromoteMission);
+    assert.ok(m, `mission ${expectedPromoteMission} exists`);
+    assert.strictEqual(m.mission_type, 'KNOWLEDGE_PROMOTE');
+  });
+  await check('B3: scheduler routed mission to knowledge-promotion worker', async () => {
+    const m = missionRuntime.missions.get(expectedPromoteMission);
+    assert.strictEqual(m.assigned_to, 'knowledge-promotion');
+    assert.strictEqual(m.status, 'completed');
+  });
+  await check('B4: node promoted to approved, confidence 1.0 (human gate intact)', async () => {
+    const node = poolBC.nodes.find((n) => n.source_event_id === 'evt-h6-approve-1');
+    assert.ok(node, 'node found');
+    assert.strictEqual(node.status, 'approved');
+    assert.strictEqual(node.confidence, 1.0);
+  });
+
+  // ============ Section C: REPLAY_VERIFY -> mission bridge ============
+  console.log('');
+  console.log('--- Section C: REPLAY_VERIFY dispatch ---');
+  const seen = { replayCompleted: [], witnessCreated: [], lineageCreated: [] };

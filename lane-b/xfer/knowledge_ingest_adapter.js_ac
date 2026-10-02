@@ -1,0 +1,52 @@
+new Error('INVALID_PROOF: proof must carry signature (base64) and publicKey (PEM)');
+  }
+  const bytes = knowledgeCanonicalize({ type, payload, metadata });
+  let keyObject;
+  try {
+    keyObject = crypto.createPublicKey({ key: proof.publicKey, format: 'pem' });
+  } catch (e) {
+    throw new Error(`INVALID_PROOF: publicKey is not a parseable PEM public key: ${e.message}`);
+  }
+  let ok = false;
+  try {
+    ok = crypto.verify(null, Buffer.from(bytes, 'utf8'), keyObject, Buffer.from(proof.signature, 'base64'));
+  } catch (e) {
+    ok = false;
+  }
+  if (!ok) throw new Error('INVALID_SIGNATURE: envelope signature does not verify over canonical-json(type,payload,metadata)');
+  return { keyObject, spkiDerHex: keyObject.export({ format: 'der', type: 'spki' }).toString('hex') };
+}
+
+/** Provenance is mandatory for knowledge: a fact without a source is not a PING fact. */
+function assertProvenance(baseMetadata) {
+  const prov = baseMetadata && baseMetadata.provenance;
+  if (!prov || typeof prov !== 'object') {
+    throw new Error('MISSING_PROVENANCE: knowledge ingest requires metadata.provenance {source_url, source_type, observed_at}');
+  }
+  for (const f of ['source_url', 'source_type', 'observed_at']) {
+    if (typeof prov[f] !== 'string' || !prov[f].trim()) {
+      throw new Error(`MISSING_PROVENANCE: metadata.provenance.${f} is required`);
+    }
+  }
+}
+
+function normalizeKnowledgeObjectCreated(payload, baseMetadata, createdAt) {
+  const schema = payload.schema;
+  if (!isKnowledgeSchema(schema)) {
+    throw new Error(
+      `UNSUPPORTED_SCHEMA: knowledge ingest supports ${[...KNOWLEDGE_SCHEMAS].join(', ')}, got '${schema}'`
+    );
+  }
+  const controller = payload.controller;
+  if (!controller || typeof controller !== 'string') {
+    throw new Error('MISSING_FIELD: knowledge OBJECT_CREATED requires controller (ingest identity id)');
+  }
+  const content = payload.content;
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    throw new Error('MISSING_FIELD: knowledge OBJECT_CREATED requires content object');
+  }
+  if (content.claim_basis !== 'website_statement' && content.claim_basis !== 'extractor_inference') {
+    throw new Error("INVALID_CLAIM_BASIS: knowledge content.claim_basis must be 'website_statement' or 'extractor_inference'");
+  }
+  // Stable dedup key: explicit key, else the observed source URL, else a
+  // hash of the canonical con

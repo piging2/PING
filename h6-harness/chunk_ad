@@ -1,0 +1,35 @@
+    return { rows: [], rowCount: n };
+    }
+    throw new Error('FakePool: unhandled SQL: ' + S.slice(0, 100));
+  }
+}
+
+// Mirrors MissionRuntime.create id semantics: sha256(missionType:event_id)[:16],
+// ON CONFLICT DO NOTHING. Storage-only; no production code touched.
+class FakeMissionRuntime {
+  constructor() { this.missions = new Map(); }
+  _id(missionType, payload) {
+    const key = payload.event_id
+      ? `${missionType}:${payload.event_id}`
+      : `${missionType}:${JSON.stringify(payload)}`;
+    return crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
+  }
+  async create(missionType, payload = {}, options = {}) {
+    const id = this._id(missionType, payload);
+    if (!this.missions.has(id)) {
+      this.missions.set(id, {
+        mission_id: id, mission_type: missionType, payload,
+        priority: options.priority || 0, status: 'created',
+        assigned_to: null, retries: 0, result: null, error: null,
+      });
+    }
+    return id;
+  }
+  async getPending(limit) {
+    return [...this.missions.values()]
+      .filter((m) => m.status === 'created')
+      .slice(0, limit || 10);
+  }
+  async assign(id, worker) {
+    const m = this.missions.get(id);
+    if (m 

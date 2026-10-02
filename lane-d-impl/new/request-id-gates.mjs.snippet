@@ -1,0 +1,104 @@
+
+  // ---- OMITTED REQUEST_ID RETRY: DOUBLE-APPEND (Lane F hypothesis) ----
+  // When the client omits request_id, the server mints a random UUID per
+  // request. If the response is lost before the client ever sees the minted
+  // ID, the retry carries no ID, the server mints a second UUID, and the
+  // gateway appends a second event: the retry becomes a second logical
+  // operation. The server cannot distinguish "client lost the response"
+  // from "client ignored the response". This gate PROVES the hazard, so
+  // PASS means the double-append was observed. The contract is: omit
+  // request_id, forfeit idempotency. The F-1 client fix (one client UUID
+  // per owner action, retained across retry) is what closes this.
+  try {
+    let pass = false;
+    let evidence = "";
+    if (baseOk) {
+      const p = await parseProposal(candidates[0]);
+      const before = (await journalEvents()).length;
+      const first = await approve(p.text, p.proposal, undefined); // no request_id
+      const second = await approve(p.text, p.proposal, undefined); // blind retry
+      const after = (await journalEvents()).length;
+      const twoEvents = after - before === 2;
+      const distinctIds =
+        first.status === 200 &&
+        second.status === 200 &&
+        typeof first.doc.eventId === "string" &&
+        typeof second.doc.eventId === "string" &&
+        first.doc.eventId !== second.doc.eventId;
+      const distinctMinted =
+        typeof first.doc.requestId === "string" &&
+        typeof second.doc.requestId === "string" &&
+        first.doc.requestId !== second.doc.requestId;
+      pass = twoEvents && distinctIds && distinctMinted;
+      evidence = `journalDelta:${after - before} distinctEvents:${distinctIds} distinctMintedIds:${distinctMinted}`;
+    } else {
+      evidence = "baseline approve failed";
+    }
+    verdict("OMITTED REQUEST_ID RETRY: DOUBLE-APPEND PROVEN", pass, evidence);
+  } catch (e) {
+    verdict("OMITTED REQUEST_ID RETRY: DOUBLE-APPEND PROVEN", false, String(e));
+  }
+
+  // ---- SERVER-MINTED ID RETENTION: retry with the minted ID converges ----
+  // Belt-and-suspenders case: the client SAW a response carrying the
+  // server-minted requestId (for example the 504 UNKNOWN body) and retries
+  // with it. Gateway dedupe plus the route ledger converge on the original
+  // event: one journal append, same eventId, idempotentReplay true.
+  try {
+    let pass = false;
+    let evidence = "";
+    if (baseOk) {
+      const p = await parseProposal(candidates[0]);
+      const before = (await journalEvents()).length;
+      const first = await approve(p.text, p.proposal, undefined);
+      const minted = first.doc.requestId;
+      const second = await approve(p.text, p.proposal, minted);
+      const after = (await journalEvents()).length;
+      pass =
+        first.status === 200 &&
+        second.status === 200 &&
+        typeof minted === "string" &&
+        minted.length > 0 &&
+        second.doc.eventId === first.doc.eventId &&
+        second.doc.idempotentReplay === true &&
+        after - before === 1;
+      evidence = `sameEvent:${second.doc.eventId === first.doc.eventId} replay:${second.doc.idempotentReplay} journalDelta:${after - before}`;
+    } else {
+      evidence = "baseline approve failed";
+    }
+    verdict("SERVER-MINTED ID RETENTION CONVERGES", pass, evidence);
+  } catch (e) {
+    verdict("SERVER-MINTED ID RETENTION CONVERGES", false, String(e));
+  }
+
+  // ---- Lane G / F-1: BROWSER CLIENT STABLE ID: ONE APPEND ACROSS RETRY ----
+  // Simulates the panel's F-1 contract exactly: the client mints ONE
+  // crypto.randomUUID() when the owner clicks Approve and sends it on every
+  // attempt for that logical action. A lost response followed by a retry
+  // with the same ID must NOT double-append.
+  {
+    const clientId = randomUUID(); // the browser minted this on Approve click
+    const payload = {
+      event_type: "FYD_SITE_OVERLAY",
+      event_data: { op: "set_presentation_intent", probe: "browser-client-stable-id" },
+      request_id: clientId,
+    };
+    const r1 = await postEvents(port, payload);
+    // Simulate: the response was lost (network failure after journaling).
+    // The panel's Retry button re-sends the SAME request_id.
+    const r2 = await postEvents(port, payload);
+    const j1 = await readJournal(tmp);
+    const probeEvents = j1.filter((e) => e.event_data && e.event_data.probe === "browser-client-stable-id");
+    const pass =
+      r1.status === 200 && r2.status === 200 &&
+      r1.body.event_id === r2.body.event_id &&
+      r2.body.deduped === true &&
+      probeEvents.length === 1;
+    results.push({
+      name: "BROWSER CLIENT STABLE ID: ONE APPEND ACROSS RETRY",
+      pass,
+      detail: pass
+        ? "client-minted ID reused across retry: one journal append, same event id, deduped:true on retry"
+        : `expected single append with stable id; got r1=${r1.status}/${r1.body.event_id} r2=${r2.status}/${r2.body.event_id} deduped=${r2.body.deduped} journalProbeEvents=${probeEvents.length}`,
+    });
+  }

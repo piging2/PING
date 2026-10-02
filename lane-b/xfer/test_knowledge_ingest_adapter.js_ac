@@ -1,0 +1,57 @@
+{
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'OBJECT_CREATED',
+      {
+        schema: 'ping.knowledge.business@1', controller: 'identity_nolan',
+        content: { claim_basis: 'website_statement', name: 'X' },
+        private_key: 'never-in-a-payload',
+      },
+      PROV
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /SECRET_REJECTED/);
+  });
+
+  await ok('accepts a valid knowledge RELATIONSHIP_CREATED with deterministic id', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'RELATIONSHIP_CREATED',
+      { subject: 'object_b1', predicate: 'has_website', object: 'object_w1' },
+      PROV
+    );
+    const a = await adapter.normalizeKnowledgeEnvelope(env);
+    assert.strictEqual(a.eventType, 'RELATIONSHIP_CREATED');
+    assert.ok(/^relationship_[0-9a-f]{16}$/.test(a.aggregateId), `bad relationship id ${a.aggregateId}`);
+    const b = await adapter.normalizeKnowledgeEnvelope(env);
+    assert.strictEqual(b.aggregateId, a.aggregateId, 'relationship id must be deterministic');
+    assert.strictEqual(a.eventData.status, 'active');
+  });
+
+  await ok('accepts all seven knowledge predicates', async () => {
+    for (const predicate of adapter.KNOWLEDGE_PREDICATES) {
+      const env = signEnvelope(
+        kp.privatePem, kp.publicPem, 'RELATIONSHIP_CREATED',
+        { subject: 'object_b1', predicate, object: 'object_x' },
+        PROV
+      );
+      const r = await adapter.normalizeKnowledgeEnvelope(env);
+      assert.strictEqual(r.eventData.predicate, predicate);
+    }
+    assert.strictEqual(adapter.KNOWLEDGE_PREDICATES.length, 7);
+  });
+
+  await ok('rejects social predicate with PREDICATE_NOT_CANONICAL', async () => {
+    const env = signEnvelope(
+      kp.privatePem, kp.publicPem, 'RELATIONSHIP_CREATED',
+      { subject: 'object_b1', predicate: 'follows', object: 'object_w1' },
+      PROV
+    );
+    await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /PREDICATE_NOT_CANONICAL/);
+  });
+
+  await ok('rejects negative predicates (unfollows/unlikes never exist)', async () => {
+    for (const predicate of ['unfollows', 'unlikes']) {
+      const env = signEnvelope(
+        kp.privatePem, kp.publicPem, 'RELATIONSHIP_CREATED',
+        { subject: 'object_b1', predicate, object: 'object_w1' },
+        PROV
+      );
+      await assert.rejects(adapter.normalizeKnowledgeEnvelope(env), /PREDICATE

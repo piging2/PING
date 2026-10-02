@@ -1,0 +1,62 @@
+tent. Deterministic either way.
+  const key =
+    (typeof payload.key === 'string' && payload.key.trim()) ||
+    (baseMetadata.provenance && baseMetadata.provenance.source_url) ||
+    sha256Hex(canonicalBytes(content));
+  const objectId =
+    payload.object_id ||
+    payload.objectId ||
+    IdentityAuthority.generateId('object', { schema, controller, key });
+  const normalized = {
+    schema,
+    object_id: objectId,
+    controller,
+    created_at: createdAt,
+    content,
+    refs: Array.isArray(payload.refs) ? payload.refs : [],
+    visibility: payload.visibility || 'public',
+    status: 'active',
+    metadata: baseMetadata,
+  };
+  return { normalized, aggregateId: objectId, aggregateType: 'ping_object' };
+}
+
+function normalizeKnowledgeRelationshipCreated(payload, baseMetadata, createdAt) {
+  const { subject, predicate, object } = payload;
+  if (!subject) throw new Error('MISSING_FIELD: RELATIONSHIP_CREATED requires subject');
+  if (!object) throw new Error('MISSING_FIELD: RELATIONSHIP_CREATED requires object');
+  if (!isKnowledgePredicate(predicate)) {
+    throw new Error(
+      `PREDICATE_NOT_CANONICAL: '${predicate}' is not a canonical knowledge predicate. ` +
+        `Canonical: ${[...KNOWLEDGE_PREDICATES].join(', ')}. ` +
+        `Revocation is status 'inactive' on the same predicate; negative predicates do not exist.`
+    );
+  }
+  const status = payload.status || 'active';
+  if (!['active', 'inactive'].includes(status)) throw new Error(`INVALID_STATUS: '${status}' must be 'active' or 'inactive'`);
+  const relationshipId =
+    payload.relationship_id ||
+    payload.relationshipId ||
+    IdentityAuthority.generateId('relationship', { subject, predicate, object });
+  const normalized = {
+    relationship_id: relationshipId,
+    subject,
+    predicate,
+    object,
+    status,
+    created_at: createdAt,
+    metadata: baseMetadata,
+  };
+  return { normalized, aggregateId: relationshipId, aggregateType: 'ping_relationship' };
+}
+
+/**
+ * Normalize a knowledge envelope into a canonical journal submission.
+ * Returns { eventType, aggregateId, aggregateType, eventData } ready for
+ * eventRuntime.emit, or throws a typed Error (message prefixed with a
+ * machine-readable code).
+ */
+async function normalizeKnowledgeEnvelope(body) {
+  const { type, payload, proof, metadata } = body || {};
+  if (!EVENT_TYPES.includes(type)) {
+    throw new Error(`UNKNOWN_EVENT_TYPE: '

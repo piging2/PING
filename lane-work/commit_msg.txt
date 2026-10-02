@@ -1,0 +1,15 @@
+feat(orcha): mechanical failure-evidence coupling (FL-20260922-002 invariant)
+
+deriveFailureRecord() derives a complete ledger-shaped failure record from a
+governed execution result alone: ping_missions row + scheduler dispatch
+outcome + governing retry policy. Pure function, node:crypto only.
+
+- failure_id derived (sha256), never minted (MC-16)
+- RetryPolicy reason vocabulary mapped onto the FAILURE_LEDGER.md
+  classification vocabulary, total mapping, both fields carried (MC-28)
+- unknown outcomes derive unknown_hold / HOLD_RECONCILE /
+  UNKNOWN_EXECUTION with the literal OUTCOME UNKNOWN display string;
+  never resolve to failed (standing law)
+- fail-closed: missing identity, non-failure or unknown dispatch outcome
+  throws TypeError; partial records are never returned
+- 11/11 node:test green on the Pig (failure_record.test.js)
