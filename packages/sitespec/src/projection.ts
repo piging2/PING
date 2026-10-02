@@ -13,11 +13,15 @@
  * Rules:
  * - Only visibility === "public" objects survive. Relationships survive
  *   only when active AND both endpoints survive.
+ * - Owner field-visibility decisions are ENFORCED per field before any
+ *   consumer binds a value: a decision hides its field unless its policy
+ *   is exactly "public" (fail closed on unknown policies). The projection
+ *   works on object copies: the caller's graph is never mutated.
  * - graphDigest = digestCanonical over the canonical public-graph form
  *   (objects and relationships sorted by id; input order irrelevant).
- * - decisionsDigest = digestCanonical(decisions); this slice carries no
- *   owner decisions yet (owner overlay / field-visibility is a later
- *   proof: proofs 7-8). The empty set digests deterministically.
+ * - decisionsDigest = digestCanonical(decisions), sorted by
+ *   (objectId, field, policy, index). The empty set digests
+ *   deterministically.
  * - viewerPolicyDigest = digestCanonical({viewerKind, boundaryVersion}).
  * - checkpoint = `${graphDigest}:${decisionsDigest}`: semantic identity,
  *   never a wall-clock asOf.
@@ -29,23 +33,29 @@
  */
 
 import { digestCanonical } from "../../trust/src/digest";
+import type { PingObject } from "./ping-types";
 import type { ObjectGraph } from "./types";
 
 /** Boundary version. Bump when the projection rules above change. */
-export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@1";
+export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@2";
 
 export type PublicViewerKind = "anonymous" | "owner";
 
 /**
- * One owner visibility decision. Minimal shape for this slice: the
- * render model canonicalizes the set sorted by (objectId, field,
- * policy). The source's FieldVisibilityDecision carries more; when
- * field-visibility is harvested, this type extends to match it.
+ * One owner visibility decision.
+ *
+ * Policy is fail-closed: only the exact policy "public" leaves the
+ * field visible. Any other policy ("hidden" or a future vocabulary the
+ * boundary does not understand) HIDES the field. `index` addresses one
+ * element of an array-valued field; without it the whole field hides.
+ * The render model canonicalizes the set sorted by
+ * (objectId, field, policy, index).
  */
 export interface FieldVisibilityDecision {
   objectId: string;
   field: string;
   policy: string;
+  index?: number;
 }
 
 export interface PublicProjectionProvenance {
@@ -88,6 +98,75 @@ export function isVerifiedPublicProjection(
   );
 }
 
+/** Canonical decision order: (objectId, field, policy, index). */
+export function compareDecisions(
+  a: FieldVisibilityDecision,
+  b: FieldVisibilityDecision,
+): number {
+  if (a.objectId !== b.objectId) return a.objectId < b.objectId ? -1 : 1;
+  if (a.field !== b.field) return a.field < b.field ? -1 : 1;
+  if (a.policy !== b.policy) return a.policy < b.policy ? -1 : 1;
+  const ai = a.index ?? -1;
+  const bi = b.index ?? -1;
+  return ai < bi ? -1 : ai > bi ? 1 : 0;
+}
+
+/**
+ * Apply field-visibility decisions to object copies. ONE implementation
+ * shared by the projection builder and the owner package's
+ * projectPublicGraph (which delegates here): field hiding has a single
+ * owner, never two competing implementations.
+ *
+ * Fail-closed: a decision hides its field unless its policy is exactly
+ * "public". "title"/"description" hide to "" (the keys stay: the render
+ * model binds them by key); other fields are deleted; one array element
+ * hides by `index` when the decision carries one and the value is an
+ * array. Decisions naming unknown objects are ignored, never fatal.
+ * The input objects are never mutated: every object is copied.
+ */
+export function applyFieldVisibilityDecisions(
+  objects: PingObject[],
+  decisions: readonly FieldVisibilityDecision[],
+): PingObject[] {
+  const hides = decisions.filter((d) => d.policy !== "public");
+  if (hides.length === 0) {
+    return objects.map((o) => ({ ...o, fields: { ...o.fields } }));
+  }
+  const byObject = new Map<string, FieldVisibilityDecision[]>();
+  for (const d of hides) {
+    const list = byObject.get(d.objectId);
+    if (list) list.push(d);
+    else byObject.set(d.objectId, [d]);
+  }
+  return objects.map((o) => {
+    const ds = byObject.get(o.id);
+    if (ds === undefined || ds.length === 0) {
+      return { ...o, fields: { ...o.fields } };
+    }
+    const next: PingObject = { ...o, fields: { ...o.fields } };
+    for (const d of ds) {
+      if (d.field === "title") {
+        next.title = "";
+        continue;
+      }
+      if (d.field === "description") {
+        next.description = "";
+        continue;
+      }
+      const v = next.fields[d.field];
+      if (d.index !== undefined && Array.isArray(v)) {
+        const arr = v.slice();
+        arr.splice(d.index, 1);
+        if (arr.length === 0) delete next.fields[d.field];
+        else next.fields[d.field] = arr;
+      } else {
+        delete next.fields[d.field];
+      }
+    }
+    return next;
+  });
+}
+
 export interface BuildProjectionOptions {
   viewerKind?: PublicViewerKind;
   decisions?: FieldVisibilityDecision[];
@@ -96,30 +175,24 @@ export interface BuildProjectionOptions {
 /**
  * Build the verified public projection. Pure and deterministic: the same
  * input graph always yields the same projection (same digests, same
- * checkpoint), regardless of object/relationship input order.
+ * checkpoint), regardless of object/relationship input order. The input
+ * graph is never mutated.
  */
 export function buildVerifiedPublicProjection(
   graph: ObjectGraph,
   opts: BuildProjectionOptions = {},
 ): VerifiedPublicProjection {
   const viewerKind = opts.viewerKind ?? "anonymous";
-  const decisions = (opts.decisions ?? []).slice().sort((a, b) =>
-    a.objectId !== b.objectId
-      ? a.objectId < b.objectId
-        ? -1
-        : 1
-      : a.field !== b.field
-        ? a.field < b.field
-          ? -1
-          : 1
-        : a.policy < b.policy
-          ? -1
-          : 1,
+  const decisions = (opts.decisions ?? []).slice().sort(compareDecisions);
+  const visibleObjects = graph.objects.filter(
+    (o) => o.visibility === "public",
   );
-  const publicObjects = graph.objects
-    .filter((o) => o.visibility === "public")
-    .slice()
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // Field hiding runs on copies: every owner HIDE is enforced before any
+  // consumer binds a value, and the caller's graph is never mutated.
+  const publicObjects = applyFieldVisibilityDecisions(
+    visibleObjects,
+    decisions,
+  ).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const publicIds = new Set(publicObjects.map((o) => o.id));
   const publicRelationships = graph.relationships
     .filter(

@@ -27,6 +27,10 @@
  */
 
 import type { ObjectGraph } from "../../sitespec/src/types";
+import {
+  applyFieldVisibilityDecisions,
+  type FieldVisibilityDecision,
+} from "../../sitespec/src/projection";
 import { extractGraphFacts } from "./corrections";
 
 /** Per-field visibility. There is no third state. */
@@ -81,61 +85,48 @@ export function effectiveVisibility(
 }
 
 /**
+ * Convert hidden fact ids (the HIDE-assertion output of applyCorrections)
+ * into enforceable FieldVisibilityDecisions for the public projection
+ * boundary. One decision per hidden fact; array elements carry their
+ * index so the boundary hides exactly the element the owner hid.
+ * Pure and deterministic.
+ */
+export function hiddenFactIdsToDecisions(
+  graph: ObjectGraph,
+  hiddenFactIds: string[],
+): FieldVisibilityDecision[] {
+  if (hiddenFactIds.length === 0) return [];
+  const hidden = new Set(hiddenFactIds);
+  const out: FieldVisibilityDecision[] = [];
+  for (const f of extractGraphFacts(graph)) {
+    if (!hidden.has(f.factId)) continue;
+    const d: FieldVisibilityDecision = {
+      objectId: f.objectId,
+      field: f.field,
+      policy: "hidden",
+    };
+    if (f.field !== "title" && f.field !== "description") d.index = f.index;
+    out.push(d);
+  }
+  return out;
+}
+
+/**
  * Project the public graph: drop every hidden fact's value from a graph
  * copy. Hidden facts are ABSENT from the projection, never redacted in
  * place; the input graph is never mutated. Array elements hide by index;
  * title/description hide to "" (required keys cannot be deleted).
+ *
+ * Delegates to the boundary's applyFieldVisibilityDecisions: field
+ * hiding has ONE implementation, shared with buildVerifiedPublicProjection.
  */
 export function projectPublicGraph(
   graph: ObjectGraph,
   hiddenFactIds: string[],
 ): ObjectGraph {
-  const copyObject = (o: ObjectGraph["objects"][number]) => ({
-    ...o,
-    fields: { ...o.fields },
-  });
-  if (hiddenFactIds.length === 0) {
-    return {
-      objects: graph.objects.map(copyObject),
-      relationships: graph.relationships.map((r) => ({ ...r })),
-    };
-  }
-  const hidden = new Set(hiddenFactIds);
-  const hiddenByObject = new Map<string, Array<{ field: string; index: number }>>();
-  for (const f of extractGraphFacts(graph)) {
-    if (hidden.has(f.factId)) {
-      const list = hiddenByObject.get(f.objectId);
-      if (list) list.push({ field: f.field, index: f.index });
-      else hiddenByObject.set(f.objectId, [{ field: f.field, index: f.index }]);
-    }
-  }
-  const objects = graph.objects.map((o) => {
-    const hides = hiddenByObject.get(o.id);
-    if (!hides || hides.length === 0) return copyObject(o);
-    const next = copyObject(o);
-    for (const h of hides) {
-      if (h.field === "title") {
-        next.title = "";
-        continue;
-      }
-      if (h.field === "description") {
-        next.description = "";
-        continue;
-      }
-      const v = next.fields[h.field];
-      if (Array.isArray(v)) {
-        const arr = [...v];
-        arr.splice(h.index, 1);
-        if (arr.length === 0) delete next.fields[h.field];
-        else next.fields[h.field] = arr;
-      } else {
-        delete next.fields[h.field];
-      }
-    }
-    return next;
-  });
+  const decisions = hiddenFactIdsToDecisions(graph, hiddenFactIds);
   return {
-    objects,
+    objects: applyFieldVisibilityDecisions(graph.objects, decisions),
     relationships: graph.relationships.map((r) => ({ ...r })),
   };
 }

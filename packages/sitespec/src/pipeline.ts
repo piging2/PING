@@ -25,6 +25,11 @@
 import { sha256Hex } from "../../trust/src/digest";
 import type { ObjectGraph } from "./types";
 import {
+  applyCorrections,
+  type OwnerAssertion,
+} from "../../owner/src/corrections";
+import { hiddenFactIdsToDecisions } from "../../owner/src/visibility";
+import {
   deriveEvidence,
   evidenceCoverage,
   type EvidenceDerivation,
@@ -62,6 +67,14 @@ export interface SliceInput {
    */
   now?: string;
   inputKind?: EvidenceRecord["inputKind"];
+  /**
+   * Owner assertions (CORRECT / HIDE) to apply before the public
+   * projection. The owner overlay is part of the shipping slice: an
+   * owner HIDE here is enforced by the projection boundary, so it is a
+   * no-op on the rendered site only when the owner said nothing.
+   * Absent or empty: the slice is byte-identical to the pre-wiring run.
+   */
+  assertions?: OwnerAssertion[];
 }
 
 /**
@@ -150,11 +163,27 @@ export function runSlice(input: SliceInput): SliceReceipt {
   // 1. Evidence: explicit, digested claims from the input graph.
   const evidence: EvidenceDerivation = deriveEvidence(input.graph, inputKind);
 
-  // 2. SiteSpec: deterministic compile of the graph.
-  const spec = generateSiteSpec(input.graph, { generatedAt: input.generatedAt });
+  // 1b. Owner overlay: apply owner assertions (CORRECT/HIDE) before the
+  // public boundary. HIDE assertions become enforceable field-visibility
+  // decisions so the projection drops the hidden values.
+  const corrected =
+    input.assertions !== undefined && input.assertions.length > 0
+      ? applyCorrections(input.graph, input.assertions)
+      : null;
+  const correctedGraph = corrected === null ? input.graph : corrected.graph;
+  const decisions =
+    corrected === null
+      ? []
+      : hiddenFactIdsToDecisions(corrected.graph, corrected.hiddenFactIds);
 
-  // 3. Public projection: the authorized public surface.
-  const projection = buildVerifiedPublicProjection(input.graph);
+  // 2. SiteSpec: deterministic compile of the owner-corrected graph.
+  const spec = generateSiteSpec(correctedGraph, { generatedAt: input.generatedAt });
+
+  // 3. Public projection: the authorized public surface, with owner
+  //    field-visibility decisions enforced.
+  const projection = buildVerifiedPublicProjection(correctedGraph, {
+    decisions,
+  });
 
   // 4. Factual bindings the spec publishes, resolved through the real
   //    query seam against the projected (public) graph.
