@@ -14,6 +14,10 @@
  *   an explicit per-capability allowlist. A hostile string that parses to a
  *   non-allowlisted scheme (javascript:, data:, vbscript:, file:, blob:,
  *   ...) is non-navigable. There is no scheme regex to smuggle past.
+ * - Credential-bearing URLs (user:pass@host, user@host) are non-navigable:
+ *   a rendered link must never carry credentials into the browser (fail
+ *   closed, matching the safe-fetch SSRF boundary). This also applies to
+ *   the baseUrl used to resolve relative references.
  * - Whitespace/control-character smuggling fails closed: leading/trailing
  *   whitespace is trimmed, any remaining control character rejects the
  *   value before parsing, so "java\tscript:" style tricks never reach the
@@ -110,6 +114,10 @@ export function resolveSafeLink(
       // The URL parser lowercases the scheme; check the parsed result,
       // not the raw text, against the allowlist.
       if (!NAVIGABLE_SCHEMES.includes(parsed.protocol.toLowerCase())) {
+        return { kind: "non_navigable" };
+      }
+      // Credential-bearing URLs never become rendered links: fail closed.
+      if (parsed.username !== "" || parsed.password !== "") {
         return { kind: "non_navigable" };
       }
       return { kind: "safe", href: parsed.href };
