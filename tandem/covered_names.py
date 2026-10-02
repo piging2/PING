@@ -162,7 +162,13 @@ def covered_names_pipeline(slug):
         if key not in seen:
             seen.add(key)
             out.append(parsed)
-    return out[-60:]
+    # 2026-10-01: NO tail truncation. A [-60:] cut here silently dropped the
+    # oldest staged rows from the pack's negative-signal list as pipeline.md
+    # grew; the 20261002-030423 a-weak-website-hunt pass re-served 3 round-82
+    # WATCH rows (Rocky Mountain Plumbing and Heating, Palisade Electric
+    # Service, Mesa Door Systems) that had fallen outside the 60-row window.
+    # merged_covered_names() dedups; pack size absorbs the full list.
+    return out
 
 
 def merged_covered_names(slug):
@@ -212,6 +218,13 @@ def self_test():
     a_low = {nm.lower() for nm, _ in a}
     b_low = {nm.lower() for nm, _ in b}
     check('pipeline-only-in-a', 'wesley electric' in a_low)          # pipeline.md NEW row, not JSONL
+    # 2026-10-01 regression: round-82 a-brief WATCH rows must stay covered no
+    # matter how large pipeline.md grows (the old [-60:] tail cut dropped
+    # them; pass 20261002-030423 re-served all three). Data-dependent, same
+    # style as the checks above.
+    check('round82-rocky-mtn-in-a', 'rocky mountain plumbing and heating' in a_low)
+    check('round82-palisade-elec-in-a', 'palisade electric service' in a_low)
+    check('round82-mesa-door-in-a', 'mesa door systems' in a_low)
     check('archive-in-b', 'jacg roofing llc' in b_low)               # archive row, re-served as new
     check('archive-in-b-2', 'western slope fleet washing llc' in b_low)
     check('pack-negative-in-b', 'srs construction, llc' in b_low)   # was in pack list, re-served anyway
