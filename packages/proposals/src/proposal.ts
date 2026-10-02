@@ -42,7 +42,7 @@ export function emptyProposalsState(spec: FYDSiteSpec): ProposalsState {
 }
 
 function recomputedId(p: PatchProposal): string {
-  return proposalIdOf(p.commandText, p.intent, p.patch, p.beforeDigest);
+  return proposalIdOf(p.commandText, p.intent, p.patch, p.beforeDigest, p.preview);
 }
 
 /**

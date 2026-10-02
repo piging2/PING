@@ -315,14 +315,11 @@ function draftProposal(
   const beforeDigest = digestCanonical(spec);
   const afterSpec = applyPatchToSpec(spec, patch);
   const afterDigest = digestCanonical(afterSpec);
-  const id =
-    "pp-" +
-    digestCanonical({
-      commandText,
-      intent,
-      patch,
-      specDigest: beforeDigest,
-    });
+  // The id seals the whole proposal body the owner reviews: command text,
+  // planned intent, patch, the spec it was drafted against, AND the
+  // human-readable preview card. A rewritten review card fails the
+  // deterministic id check at approve and at apply.
+  const id = proposalIdOf(commandText, intent, patch, beforeDigest, preview);
   return {
     id,
     commandText,
@@ -427,16 +424,25 @@ export function proposePatch(
   };
 }
 
-/** Re-export for proposal.ts: the deterministic proposal-id formulation. */
+/**
+ * The deterministic proposal-id formulation: the seal covers the ENTIRE
+ * proposal body the owner reviews (command text, planned intent, patch,
+ * the spec it was drafted against, AND the human-readable preview card).
+ * A rewritten preview card fails recomputedId at approve and at apply,
+ * so the owner always authorizes what they were shown.
+ * Single formulation: draftProposal seals with this; recomputedId
+ * verifies with this. Never duplicate the digest inputs elsewhere.
+ */
 export function proposalIdOf(
   commandText: string,
   intent: PlannedIntent,
   patch: SiteSpecPatchOp[],
   specDigest: string,
+  preview: ProposalPreview,
 ): string {
   return (
     "pp-" +
-    digestCanonical({ commandText, intent, patch, specDigest })
+    digestCanonical({ commandText, intent, patch, specDigest, preview })
   );
 }
 

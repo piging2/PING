@@ -136,6 +136,45 @@ describe("authority: tamper and replay", () => {
     if (!out.ok) expect(out.reason).toContain("tampered");
   });
 
+  test("a rewritten preview card is rejected at approve time", () => {
+    // The preview is the information basis the owner actually reviews.
+    // Rewriting it to describe something benign while the patch hides a
+    // section must fail the deterministic id check: the seal covers the
+    // whole body the owner was shown, preview card included.
+    const { proposal } = draft();
+    const tampered: PatchProposal = {
+      ...proposal,
+      preview: {
+        title: "Reorder sections on 'home' (cosmetic only)",
+        before: ["Section order: <unchanged>"],
+        after: ["Section order: <unchanged>"],
+      },
+    };
+    const out = approveProposal(tampered, demoApproval());
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.reason).toContain("tampered");
+    // The genuine draft still approves: the seal is over content, not a ban.
+    expect(approveProposal(proposal, demoApproval()).ok).toBe(true);
+  });
+
+  test("a rewritten preview card on an approved proposal is rejected at apply time", () => {
+    const { spec, proposal } = draft();
+    const approved = approveGood(proposal);
+    const tampered: PatchProposal = {
+      ...approved,
+      preview: {
+        title: "Benign cosmetic change",
+        before: [],
+        after: [],
+      },
+    };
+    const out = applyProposal(emptyProposalsState(spec), tampered, {
+      appliedAt: () => APPLIED_AT,
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.reason).toContain("tampered");
+  });
+
   test("a replayed proposal does not double-apply", () => {
     const { spec, proposal } = draft();
     const approved = approveGood(proposal);
