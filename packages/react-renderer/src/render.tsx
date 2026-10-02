@@ -56,12 +56,22 @@ import type {
   SemanticSectionModel,
 } from "../../sitespec/src/render-model";
 import type { FactsById, PublicObjectFacts } from "./facts";
+import { BusinessLogoMark, BusinessLogoOverlay, LOGO_OVERLAY_CSS, type LogoMarkId } from "./marks";
 
 /**
  * Adapter version, stamped for traceability. Bump when the render
  * semantics below change (what a component reads or when it renders).
  */
 export const REACT_RENDERER_VERSION = "piging2-react-renderer@1";
+
+/**
+ * Renderer options: presentation config owned by the adapter's caller.
+ * logoMarks overrides the default business -> mark mapping (see marks.tsx);
+ * the semantic model never names a mark.
+ */
+export interface RenderOptions {
+  logoMarks?: Record<string, LogoMarkId>;
+}
 
 /** Non-empty trimmed text, or null. Missing data renders nothing. */
 function text(value: unknown): string | null {
@@ -183,9 +193,10 @@ function CardList({ objects }: { objects: PublicObjectFacts[] }) {
 interface SectionProps {
   section: SemanticSectionModel;
   objects: PublicObjectFacts[];
+  logoMarks?: Record<string, LogoMarkId>;
 }
 
-function HeroSection({ section, objects }: SectionProps) {
+function HeroSection({ section, objects, logoMarks }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const website = safeWebsiteUrl(o);
@@ -197,6 +208,11 @@ function HeroSection({ section, objects }: SectionProps) {
       copy={section.copy}
     >
       <div data-hero>
+        <BusinessLogoOverlay
+          objectId={o.id}
+          title={o.title}
+          overrides={logoMarks}
+        />
         <h1>{o.title}</h1>
         {text(o.description) ? <p>{o.description}</p> : null}
         {website ? (
@@ -543,11 +559,12 @@ function GallerySection() {
 export function renderSectionModel(
   section: SemanticSectionModel,
   facts: FactsById,
+  options?: RenderOptions,
 ): ReactNode {
   const objects = section.objectIds
     .map((id) => facts[id])
     .filter((o): o is PublicObjectFacts => !!o);
-  const props: SectionProps = { section, objects };
+  const props: SectionProps = { section, objects, logoMarks: options?.logoMarks };
   switch (section.component) {
     case "Hero":
       return <HeroSection key={section.id} {...props} />;
@@ -595,8 +612,9 @@ export function renderSectionModel(
 export function renderPageModel(
   page: SemanticPageModel,
   facts: FactsById,
+  options?: RenderOptions,
 ): ReactNode {
-  return <>{page.sections.map((s) => renderSectionModel(s, facts))}</>;
+  return <>{page.sections.map((s) => renderSectionModel(s, facts, options))}</>;
 }
 
 /**
@@ -612,11 +630,14 @@ export function renderPageModel(
  *   public projection by the caller)
  * @param pageSlug which page to render; defaults to the first page.
  *   Unknown slugs throw: failing closed beats rendering the wrong page.
+ * @param options presentation config (logo mark overrides). The semantic
+ *   model never names a mark; the adapter resolves it.
  */
 export function renderModelToStaticHtml(
   model: SemanticRenderModel,
   facts: FactsById,
   pageSlug?: string,
+  options?: RenderOptions,
 ): string {
   const page = pageSlug
     ? model.pages.find((p) => p.slug === pageSlug)
@@ -626,9 +647,12 @@ export function renderModelToStaticHtml(
       `react-renderer: unknown page ${JSON.stringify(pageSlug ?? "(default)")}`,
     );
   }
-  return renderToStaticMarkup(
-    <main data-render-checkpoint={model.checkpoint} data-page={page.slug}>
-      {renderPageModel(page, facts)}
-    </main>,
+  return (
+    `<style>${LOGO_OVERLAY_CSS}</style>` +
+    renderToStaticMarkup(
+      <main data-render-checkpoint={model.checkpoint} data-page={page.slug}>
+        {renderPageModel(page, facts, options)}
+      </main>,
+    )
   );
 }

@@ -16,4 +16,12 @@ export {
   renderModelToStaticHtml,
   renderPageModel,
   renderSectionModel,
+  type RenderOptions,
 } from "./render";
+export {
+  BusinessLogoMark,
+  BusinessLogoOverlay,
+  LOGO_OVERLAY_CSS,
+  resolveLogoMark,
+  type LogoMarkId,
+} from "./marks";
