@@ -1,0 +1,37 @@
+--- /home/nolan/ping/ping-runtime/orchestration/execution/engine.js
++++ /home/nolan/ping/ping-runtime/orchestration/execution/engine.js
+@@ -494,22 +494,29 @@
+       missions: {
+         total: totalMissions,
+         pending: pendingMissions,
+         completed: mergedMissions,
+         failed: failedMissions,
+-        closureRate: totalMissions > 0
+-          ? Math.round(mergedMissions / totalMissions * 100) : 0
++        // UNKNOWN (P-20260923-082): rates over the engine's in-memory session
++        // array are not mission truth, and the loop fabricates findings
++        // (see P-20260923-084). Canonical mission counts: ping_missions via
++        // MissionRuntime.getStats() (GET /mc/missions/stats).
++        closureRate: null,
++        closureRateProvenance: 'unknown: engine-session array is not a mission authority'
+       },
+
+       merge_gate: {
+         blocking: gateResult.blocking || 0,
+         warnings: gateResult.warnings || 0,
+         canCommit: gateResult.can_commit
+       },
+
+       velocity: {
+-        missionClosureRate: totalMissions > 0
+-          ? Math.round((mergedMissions + failedMissions) / totalMissions * 100) : 0,
+-        missionAcceptRate: (mergedMissions + failedMissions) > 0
+-          ? Math.round(mergedMissions / (mergedMissions + failedMissions) * 100) : 0,
++        // UNKNOWN (P-20260923-082): downstream of synthetic loop output.
++        // Any UI rendering these as measured velocity is fabricating.
++        missionClosureRate: null,
++        missionAcceptRate: null,
++        rateProvenance: 'unknown: derived from in-memory session array fed by synthetic loop output',
+         artifactThroughput: storeStats.totalArtifacts || 0,
+         workerEfficiency: stateStats.totalAccepted + stateStats.totalRejected > 0
+           ? Math.round(stateStats.totalAccepted / (stateStats.totalAccepted + stateStats.totalRejected) * 100) : 0

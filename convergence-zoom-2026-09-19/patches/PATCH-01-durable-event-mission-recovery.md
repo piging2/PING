@@ -1,0 +1,26 @@
+# PATCH-01 — Durable Event→Mission Recovery (obligation journal + reconciliation)
+
+- **AXIOMS CLOSED:** M1 (primary), C1. Supports E1.
+- **FILES:** `ping-runtime/orchestration/event_to_mission_bridge.js`; `ping-runtime/orchestration/mission_runtime.js` (create path, unchanged semantics); `gateway/bootstrap/gateway_runtime.js` (startup order + reconcile invocation); new migration SQL.
+- **SYMBOLS:** `EventToMissionBridge._handleEvent`, `EventToMissionBridge.reconcile`, `EVENT_MISSION_MAP`, `ROUTING_LAW_VERSION` (PATCH-10).
+- **SCHEMA CHANGE:** New table `ping_mission_obligations(source_event_id TEXT, mission_type TEXT, mission_id TEXT, namespace TEXT NOT NULL DEFAULT 'core::system', routing_version TEXT NOT NULL, idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'required', attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, derived_at TIMESTAMPTZ DEFAULT NOW(), discharged_at TIMESTAMPTZ, PRIMARY KEY (source_event_id, mission_type))`. Additive `ping_missions.source_event_id TEXT` (PATCH-11 covers the rest).
+- **BEFORE:** Bridge handler inserts mission in its own statement; failure is a session-only counter; crash after `ping_events` commit before handler = permanent miss; startup ordering (adapter :493, bridge :605) loses rows swept in the window.
+- **AFTER:** Bridge writes obligation + mission in ONE tx (`INSERT INTO ping_mission_obligations ... ON CONFLICT DO NOTHING` + `INSERT INTO ping_missions ... ON CONFLICT DO NOTHING`). `reconcile()` runs at startup BEFORE the bridge subscribes (and before the adapter's first sweep) and on a 5-minute interval: selects mapped `ping_events` rows lacking obligations under current `ROUTING_LAW_VERSION`, derives them idempotently. Handler failures become loud (rethrow after logging) so the supervisor restarts into reconcile.
+- **ALGORITHM:** derive(event) -> obligation{source_event_id, mission_type, mission_id=deterministic, namespace=event.namespace, routing_version=ROUTING_LAW_VERSION, idempotency_key} in one tx with mission insert; reconcile = `SELECT e FROM ping_events e LEFT JOIN ping_mission_obligations o ON o.source_event_id=e.event_id AND o.mission_type=mapped(e.event_type) WHERE e.event_type IN (map keys) AND o.source_event_id IS NULL ORDER BY e.sequence LIMIT N` then derive each; poison (attempts > cap) -> `dead_letter` + alert, never head-of-line blocking.
+- **PSEUDODIFF:**
+  - `event_to_mission_bridge.js` `_handleEvent`: wrap `client=pool.connect(); BEGIN; INSERT obligation; INSERT mission; COMMIT; finally release`. On throw: log + rethrow (no silent session counter).
+  - `gateway_runtime.js`: move `EventToMissionBridge.start()` before `legacyIngressAdapter.start()`; call `await bridge.reconcile()` before `bridge.start()`; setInterval(reconcile, 5min).
+- **FAIL-BEFORE TEST:** Boot gateway with bridge subscription delayed 60s and 3 pending legacy rows; assert 3 missions never created (documents the live defect).
+- **PASS-AFTER TEST:** Same boot; assert 3 obligations + 3 missions exist after reconcile, `routing_version` pinned, no duplicates on second reconcile run.
+- **CRASH TEST:** KILL_01 before obligation tx; KILL_02 after obligation commit before mission commit (impossible in one tx -> assert atomicity: both or neither); KILL_03 after bridge tx commit; restart -> reconcile leaves exactly one mission.
+- **CONCURRENCY TEST:** 10 identical events, 2 bridge instances -> one obligation (PK), one mission (ON CONFLICT), attempts counters consistent.
+- **HISTORY TEST:** Pre-patch rows without obligations are derived on first reconcile; no existing mission row modified.
+- **NAMESPACE TEST:** Event with namespace `tenant::x` -> obligation.namespace = `tenant::x`; reconcile never derives cross-namespace obligations.
+- **SECURITY TEST:** Reconcile derives only types in `EVENT_MISSION_MAP`; unmapped event types are ignored (no mission forgery via event injection).
+- **DEPENDENCIES:** PATCH-10 (routing_version), PATCH-11 (namespace column), PATCH-04/M-ID-A (idempotency_key semantics).
+- **MIGRATION:** Additive table + additive column; backfill: none (reconcile derives obligations for history on first run; explicitly logged).
+- **ROLLBACK:** Drop table; bridge reverts to single-insert; reconcile disabled. No data loss (missions remain).
+- **OBSERVABILITY:** `stats.reconciled`, `stats.obligations_created`, `stats.dead_lettered` in bridge stats; alert on dead_letter.
+- **RESIDUAL FAILURE:** Reconcile is eventually consistent (window = interval); obligations are derived-truth, never read as "what happened" (guard with code comment + read-path review).
+- **COMPLEXITY:** Small (~60 lines + migration + reconcile function).
+- **CONFIDENCE:** High. Copies the proven per-row disposition pattern from LegacyIngressAdapter (C-035/C-037) onto the new boundary; no new authority created.

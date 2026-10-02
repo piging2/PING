@@ -1,0 +1,55 @@
+# S18-04: failWithRetry — atomic retry increment (fix SELECT-then-UPDATE race)
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_runtime.js (lines 235-263)
+# Intended target: src/tenanos/orchestration/mission_runtime.js
+# Seam: SEAM-REPORT.md 1G — concurrent failWithRetry lost increments, delayed exhaustion (RISKY)
+# Test: two concurrent failWithRetry calls -> retries advances by 2, not 1.
+# ---
+--- a/tenanos/orchestration/mission_runtime.js
++++ b/tenanos/orchestration/mission_runtime.js
+@@ -235,30 +235,35 @@
+   async failWithRetry(missionId, error, options = {}) {
+     const maxAttempts = options.max_attempts || 3;
+     const backoffMs = options.backoff_delay_ms || 5000;
+
+-    // Read current retries
+-    const row = await this._pool.query(
+-      `SELECT retries FROM ping_missions WHERE mission_id = $1`,
++    // S18-04: atomic increment. The old SELECT-then-UPDATE lost increments
++    // under concurrent failWithRetry calls (both read N, both write N+1),
++    // delaying exhaustion. One conditional UPDATE owns the counter now.
++    const inc = await this._pool.query(
++      `UPDATE ping_missions SET retries = retries + 1
++       WHERE mission_id = $1 AND status IN ('running', 'assigned', 'retry_pending')
++       RETURNING retries`,
+       [missionId]
+     );
+-    const currentRetries = (row.rows[0] && row.rows[0].retries) || 0;
+-    const nextRetry = currentRetries + 1;
++    if ((inc.rowCount || 0) === 0) return 0;
++    const nextRetry = inc.rows[0].retries;
+
+     let affectedRows = 0;
+     if (nextRetry >= maxAttempts) {
+       // Exhausted — mark failed permanently
+       const result = await this._pool.query(
+-        `UPDATE ping_missions SET status = 'failed', error = $1, retries = $2, completed_at = NOW()
+-         WHERE mission_id = $3 AND status IN ('running', 'assigned', 'retry_pending')`,
+-        [error, nextRetry, missionId]
++        `UPDATE ping_missions SET status = 'failed', error = $1, completed_at = NOW()
++         WHERE mission_id = $2 AND status IN ('running', 'assigned', 'retry_pending')`,
++        [error, missionId]
+       );
+       affectedRows = result.rowCount || 0;
+     } else {
+       // Schedule retry
+       const retryAt = new Date(Date.now() + backoffMs);
+       const result = await this._pool.query(
+-        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3
+-         WHERE mission_id = $4 AND status IN ('running', 'assigned')`,
+-        [error, nextRetry, retryAt.toISOString(), missionId]
++        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retry_at = $2
++         WHERE mission_id = $3 AND status IN ('running', 'assigned')`,
++        [error, retryAt.toISOString(), missionId]
+       );
+       affectedRows = result.rowCount || 0;
+     }

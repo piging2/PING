@@ -1,0 +1,201 @@
+--- /tmp/gw-rep/orig_tmp.js	2026-09-24 15:59:10.203845042 -0600
++++ /tmp/gw-rep/fixed-tree/gateway/bootstrap/gateway_runtime.js	2026-09-24 15:56:12.596726788 -0600
+@@ -17,6 +17,7 @@
+ const { DeploymentRegistry } = require('../../ping-runtime/runtime/deployment_registry');
+ const { RuntimeRegistry } = require('../../ping-runtime/runtime/runtime_registry');
+ const createEventRoutes = require('../routes/events');
++const ExteriorAuthMiddleware = require('../exterior_auth_middleware');
+ const createIdentityRoutes = require('../routes/identities');
+ const createRepositoryRoutes = require('../routes/repository');
+ const createContextRoutes = require('../routes/context');
+@@ -154,6 +155,13 @@
+       console.error(`[GatewayRuntime]   ${err.message}`);
+     }
+ 
++    // Exterior-agent auth boundary (backport): HTTP bearer auth for exterior
++    // routes. initialize() degrades to in-memory credentials when Postgres is
++    // unavailable; the guarded mounts below only apply where Postgres is up.
++    const exteriorAuthMiddleware = new ExteriorAuthMiddleware(this._pool);
++    await exteriorAuthMiddleware.initialize();
++    console.log('[GatewayRuntime] Exterior Auth Middleware initialized');
++
+     // ─── Phase 2: Filesystem-only services (always available) ──────
+     const repoRoot = require('path').join(__dirname, '..', '..');
+ 
+@@ -680,6 +688,8 @@
+       canonicalizationService, embeddingService,
+       evidenceAuthority, hybridSearch,
+       deadLetterAuthority,
++      // Exterior-agent auth boundary (backport)
++      exteriorAuthMiddleware,
+       // Capability + OAuth framework
+       capabilityRegistry, oauthManager, tokenStore,
+     });
+@@ -695,16 +705,16 @@
+ 
+     // PG-dependent routes — only mount when Postgres is available
+     if (hasPG) {
+-      this._app.use('/events', createEventRoutes(services.eventReadAuthority, services.unifiedEventRuntime, services.pool));
++      this._app.use('/events', services.exteriorAuthMiddleware.middleware(), createEventRoutes(services.eventReadAuthority, services.unifiedEventRuntime, services.pool));
+       this._app.use('/identities', createIdentityRoutes(services.unifiedEventRuntime, services.pool));
+       this._app.use('/context', createContextRoutes(services.eventReadAuthority));
+       this._app.use('/api/v1/repository', createRepositoryRoutes(services.repoStore));
+       this._app.use('/system', createSystemRoutes(services.eventReadAuthority));
+-      this._app.use('/canonical-events', createCanonicalEventRoutes(services.canonicalEventEnvelope));
++      this._app.use('/canonical-events', services.exteriorAuthMiddleware.middleware(), createCanonicalEventRoutes(services.canonicalEventEnvelope));
+       this._app.use('/tenants', createTenantRoutes(services.tenantRegistry));
+       this._app.use('/deployments', createDeploymentRoutes(services.deploymentRegistry));
+       this._app.use('/runtime', createRuntimeRoutes(services.runtimeRegistry));
+-      this._app.use('/ingest', createIngestRoutes(services.canonicalizationService));
++      this._app.use('/ingest', services.exteriorAuthMiddleware.middleware(), createIngestRoutes(services.canonicalizationService));
+     } else {
+       // Degraded mode stubs
+       this._app.use('/events', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+@@ -806,7 +816,7 @@
+       this._app.use('/projects', createProjectRoutes(services.projectAuthority));
+     }
+     if (services.executionEngine) {
+-      this._app.use('/orchestration', createOrchestrationRoutes(services.executionEngine));
++      this._app.use('/orchestration', services.exteriorAuthMiddleware.middleware(), createOrchestrationRoutes(services.executionEngine));
+     }
+ 
+     // ─── PING Core v1 Routes ───────────────────────────────────────
+@@ -816,12 +826,12 @@
+       }));
+     }
+     if (services.missionRuntime) {
+-      this._app.use('/missions', createMissionRoutes(services.missionRuntime));
++      this._app.use('/missions', services.exteriorAuthMiddleware.middleware(), createMissionRoutes(services.missionRuntime));
+     }
+     // AI Runtime — always available (no PG dependency)
+-    this._app.use('/ai', createAIRoutes(services.aiRuntime, services.ollamaProvider));
++    this._app.use('/ai', services.exteriorAuthMiddleware.middleware(), createAIRoutes(services.aiRuntime, services.ollamaProvider));
+     // Connectors — always available (no PG dependency)
+-    this._app.use('/connectors', createConnectorRoutes(services.connectorRegistry, services.capabilityRegistry, services.oauthManager));
++    this._app.use('/connectors', services.exteriorAuthMiddleware.middleware(), createConnectorRoutes(services.connectorRegistry, services.capabilityRegistry, services.oauthManager));
+     // Mission Control — always available (handles null services gracefully)
+     this._app.use('/mc', createMissionControlRoutes(services));
+   }
+----- file: gateway/bootstrap/gateway_runtime.js, diff lines above -----
+--- /tmp/gw-rep/orig_tmp.js	2026-09-24 15:59:10.211845603 -0600
++++ /tmp/gw-rep/fixed-tree/gateway/routes/events.js	2026-09-24 15:56:12.596726788 -0600
+@@ -14,10 +14,26 @@
+   router.get('/', asyncHandler('/events', async (req) => {
+     const limit = parseInt(req.query.limit) || 100;
+     const offset = parseInt(req.query.offset) || 0;
++    // Tenant isolation on reads (backport): an optional namespace filter
++    // scopes the query to one tenant's events. Namespace syntax is enforced
++    // (core::<name> or tenant::<id>); anything else is rejected.
++    const namespace = req.query.namespace;
++    if (namespace !== undefined && (typeof namespace !== 'string' || !/^(core|tenant)::[a-zA-Z0-9_-]+$/.test(namespace))) {
++      throw new Error('Invalid namespace filter');
++    }
+     let events = await eventReadAuthority.getAllEvents(limit, offset);
+     if ((!events || events.length === 0) && pool) {
+-      const result = await pool.query('SELECT * FROM ping_events ORDER BY timestamp DESC LIMIT $1 OFFSET $2', [limit, offset]);
++      const params = [limit, offset];
++      let sql = 'SELECT * FROM ping_events';
++      if (namespace) {
++        sql += ' WHERE namespace = $3';
++        params.push(namespace);
++      }
++      sql += ' ORDER BY timestamp DESC LIMIT $1 OFFSET $2';
++      const result = await pool.query(sql, params);
+       events = result.rows;
++    } else if (namespace && events) {
++      events = events.filter((e) => (e.namespace || e.NAMESPACE) === namespace);
+     }
+     return { events, count: events.length, limit, offset };
+   }));
+----- file: gateway/routes/events.js, diff lines above -----
+--- /tmp/gw-rep/orig_tmp.js	2026-09-24 15:59:10.219846164 -0600
++++ /tmp/gw-rep/fixed-tree/ping-runtime/workers/canonical_workers.js	2026-09-24 15:56:12.596726788 -0600
+@@ -50,6 +50,15 @@
+     // Without this, the spine defaults causation_id to null and the chain
+     // is broken at every worker hop.
+     const causation_id = options.causation_id || this._event?.event_id || null;
++    // Idempotency (W-1): default the timestamp-stripped logical identity from
++    // stable causation material so a retried handle() converges on the same
++    // event_id instead of reminting one per wall-clock attempt. The spine
++    // hashes logical_id INSTEAD of the payload, so payload timestamps no
++    // longer participate in identity. Callers that legitimately emit multiple
++    // distinct events of one type from a single trigger MUST pass an explicit
++    // options.logical_id.
++    const logical_id = options.logical_id
++      || (causation_id ? `${eventType}:${causation_id}` : undefined);
+     // Confidence semantics: distinguish explicit null from missing.
+     // Object.hasOwn(options, 'confidence') is the canonical check.
+     // Explicit value → preserve exactly, no provenance tag.
+@@ -74,6 +83,7 @@
+       namespace,
+       correlation_id,
+       causation_id,
++      logical_id,
+       metadata: emitMetadata,
+     });
+     if (result.status !== 'ok') {
+----- file: ping-runtime/workers/canonical_workers.js, diff lines above -----
+--- /tmp/gw-rep/orig_tmp.js	2026-09-24 15:59:10.227846724 -0600
++++ /tmp/gw-rep/fixed-tree/ping-runtime/events/event_bridge.js	2026-09-24 15:56:22.521435621 -0600
+@@ -17,6 +17,32 @@
+  *   - Single source of truth: UnifiedEventRuntime
+  */
+ 
++// Canonical tenant-namespace mapping (adapted from Lane H
++// fix-event-bridge-tenant-namespace.diff: jev-surgical has no
++// canonicalization/namespace_binding module, so NAMESPACE_RE is inlined
++// here, identical to the copies in canonicalization_service.js and
++// evidence_authority.js).
++const NAMESPACE_RE = /^(core|tenant)::[a-zA-Z0-9_-]+$/;
++
++// Canonical tenant-slug shape: the tenant identity string IS `tenant::<slug>`.
++const TENANT_SLUG_RE = /^[a-z0-9-]{1,64}$/;
++const SYSTEM_NAMESPACE = 'core::system';
++
++/**
++ * Map a canonical_events tenant_id to the enforced spine namespace.
++ * Unknown/unmappable tenant -> system default + tenant_unknown tag so the
++ * laundering is OBSERVABLE instead of silent (worker keeps running).
++ */
++function namespaceForTenantId(tenantId) {
++  if (tenantId === null || tenantId === undefined || tenantId === '') {
++    return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++  }
++  const raw = String(tenantId);
++  if (NAMESPACE_RE.test(raw)) return { namespace: raw, tenantUnknown: false };
++  if (TENANT_SLUG_RE.test(raw)) return { namespace: `tenant::${raw}`, tenantUnknown: false };
++  return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++}
++
+ class EventBridge {
+   /**
+    * @param {object} options
+@@ -275,12 +301,19 @@
+         payload._tenant_id = row.tenant_id;
+         payload._actor = row.actor;
+ 
++        // Tenant boundary: the envelope's tenant_id must survive as the
++        // ENFORCED spine namespace, not just as inert metadata. Without an
++        // explicit namespace the spine stamps core::system and the tenant
++        // scope is lost to every downstream consumer.
++        const tenantNs = namespaceForTenantId(row.tenant_id);
++
+         const emitResult = await this._eventRuntime.emit(
+           row.event_type,
+           'canonical_events',  // source identifies the bridge origin
+           payload,
+           {
+             _skipGovernance: true,  // already governed in canonical_events
++            namespace: tenantNs.namespace,
+             causation_id: row.causation_id ? String(row.causation_id) : undefined,
+             correlation_id: row.correlation_id ? String(row.correlation_id) : undefined,
+             metadata: {
+@@ -289,6 +322,7 @@
+               tenant_id: row.tenant_id,
+               actor: row.actor,
+               event_version: row.event_version || '1.0.0',
++              ...(tenantNs.tenantUnknown ? { tenant_unknown: true } : {}),
+             },
+           }
+         );
+----- file: ping-runtime/events/event_bridge.js, diff lines above -----

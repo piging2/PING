@@ -1,0 +1,15 @@
+[2026-09-24T01:51:12.176Z] START: run gauntlet-attack-budget-exhausted; tenant=gauntlet-tenant-budget-exhausted; objective 6b70c41cfc31 (state=ACTIVE)
+[2026-09-24T01:51:12.179Z] LOCK: coordinator lease acquired (pid 99676)
+[2026-09-24T01:51:12.179Z] RECONCILE: 0 durable work order(s) for objective 6b70c41cfc31
+[2026-09-24T01:51:12.183Z] MEMORY: retrieved 1 active, excluded 0 stale, contradictory=false
+[2026-09-24T01:51:12.185Z] PLAN: t1: work_order_id=0d3af376766a...
+[2026-09-24T01:51:12.185Z] BUDGET: t1: durable usage 0/1
+[2026-09-24T01:51:12.187Z] POLICY: t1: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:12.192Z] ISSUE: t1: work order issued (durable=0d3af376766a..., adapter=87b99958d9bf...)
+[2026-09-24T01:51:12.224Z] DISPATCH: t1: spawned synthetic worker pid 99684 (attempt 1, fault=honest)
+[2026-09-24T01:51:12.321Z] VERIFY: t1: WORKER_COMPLETED event_id=83199617c516... deduplicated=false
+[2026-09-24T01:51:12.325Z] MEMORY: candidate cand-e59b4d7354853f82 proposed (justified by 1 event(s), approval required)
+[2026-09-24T01:51:12.325Z] PLAN: t2: work_order_id=03baa3815033...
+[2026-09-24T01:51:12.325Z] BUDGET: t2: durable usage 1/1
+[2026-09-24T01:51:12.326Z] POLICY: t2: REQUIRES_HUMAN_APPROVAL (control_loop:bounds:maxWorkOrders)
+[2026-09-24T01:51:12.328Z] ESCALATE: delegation not auto-executable: REQUIRES_HUMAN_APPROVAL: Run work-order budget exhausted (1/1); bounds are enforced by mechanism, not expandable by ORCA.

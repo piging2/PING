@@ -1,0 +1,144 @@
+########## route_middleware.js ##########
+/**
+ * Route Middleware
+ * 
+ * Standardized middleware for route handlers:
+ * - Request logging
+ * - Error handling
+ * - Response formatting
+ */
+
+const { constitutionalTimeAuthority } = require('../ping-runtime/authorities/constitutional_time_authority.js');
+
+/**
+ * Async route handler wrapper with logging and error handling
+ * 
+ * @param {string} routePath - The route path for logging
+ * @param {Function} handler - The async handler function
+ * @returns {Function} Express middleware function
+ */
+function asyncHandler(routePath, handler) {
+  return async (req, res, next) => {
+    const timestamp = constitutionalTimeAuthority.nowAsISOString();
+    console.log(`[${timestamp}] ROUTE: ${routePath}`, { 
+      method: req.method, 
+      query: req.query,
+      body: req.body 
+    });
+
+    try {
+      const result = await handler(req, res);
+      
+      // If handler didn't send response, send the result
+      if (!res.headersSent) {
+        res.json(result);
+      }
+    } catch (error) {
+      console.error(`[${timestamp}] ROUTE ERROR: ${routePath}`, { 
+        error: error.message,
+        stack: error.stack 
+      });
+
+      if (!res.headersSent) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  };
+}
+
+/**
+ * Request logging middleware
+ */
+function logRequest(req, res, next) {
+  const timestamp = constitutionalTimeAuthority.nowAsISOString();
+  console.log(`[${timestamp}] REQUEST: ${req.method} ${req.path}`, {
+    query: req.query,
+    body: req.body
+  });
+  next();
+}
+
+/**
+ * Error handling middleware
+ */
+function errorHandler(err, req, res, next) {
+  const timestamp = constitutionalTimeAuthority.nowAsISOString();
+  console.error(`[${timestamp}] ERROR: ${req.method} ${req.path}`, {
+    error: err.message,
+    stack: err.stack
+  });
+
+  if (!res.headersSent) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = {
+  asyncHandler,
+  logRequest,
+  errorHandler
+};
+########## ExteriorAuthMiddleware location ##########
+/home/nolan/ping/worktrees/oracle-assembly/oracle-assembly-patches/gateway/bootstrap/gateway_runtime.js
+########## database dir ##########
+canonical_events.sql
+events.sql
+fix_pipeline_blockers.sql
+ping_objects.sql
+########## canonical_events.sql (tenant cols) ##########
+2:-- P001: The foundation for all tenant events
+10:  -- Tenant
+11:  tenant_id VARCHAR(255) NOT NULL,
+42:  UNIQUE (tenant_id, sequence)
+46:CREATE INDEX IF NOT EXISTS idx_canonical_events_tenant ON canonical_events(tenant_id);
+51:CREATE INDEX IF NOT EXISTS idx_canonical_events_unprocessed ON canonical_events(processed, tenant_id, timestamp) WHERE NOT processed;
+53:-- Tenant Registry
+54:CREATE TABLE IF NOT EXISTS tenant_registry (
+55:  tenant_id VARCHAR(255) PRIMARY KEY,
+89:  tenant_id VARCHAR(255) NOT NULL REFERENCES tenant_registry(tenant_id),
+121:  -- Uniqueness: one deployment per (tenant, version)
+122:  UNIQUE (tenant_id, version)
+125:CREATE INDEX IF NOT EXISTS idx_deployment_registry_tenant ON deployment_registry(tenant_id);
+132:  tenant_id VARCHAR(255) NOT NULL REFERENCES tenant_registry(tenant_id),
+177:  UNIQUE (tenant_id, component_type, component_name)
+180:CREATE INDEX IF NOT EXISTS idx_runtime_registry_tenant ON runtime_registry(tenant_id);
+########## events.sql (tenant cols) ##########
+########## tenant in ingest.js ##########
+13: *   namespace?: string,     // core::<name> | tenant::<id> (default core::owner)
+########## tenant in canonical_events.js route ##########
+21:      tenant_id, event_type, source, actor, payload,
+25:    if (!tenant_id || !event_type || !source || !actor || !payload) {
+26:      throw new Error('tenant_id, event_type, source, actor, and payload are required');
+30:      tenantId: tenant_id,
+45:      tenant_id, event_type, correlation_id,
+50:      tenantId: tenant_id,
+63:    const { tenant_id } = req.query;
+64:    const stats = await canonicalEventEnvelope.executeGetStats(tenant_id);
+69:    const { tenant_id, limit } = req.query;
+70:    if (!tenant_id) throw new Error('tenant_id is required');
+72:      tenant_id,
+########## tenant in runtime.js route ##########
+8: * GET /runtime/tenant/:tenantId — List components
+9: * PUT /runtime/tenant/:tenantId/type/:type/name/:name/status — Transition status
+10: * POST /runtime/tenant/:tenantId/type/:type/name/:name/heartbeat — Record heartbeat
+11: * DELETE /runtime/tenant/:tenantId/type/:type/name/:name — Remove component
+12: * GET /runtime/tenant/:tenantId/unhealthy — Detect unhealthy components
+22:      tenant_id, component_type, component_name, version,
+28:    if (!tenant_id || !component_type || !component_name) {
+29:      throw new Error('tenant_id, component_type, and component_name are required');
+33:      tenantId: tenant_id,
+61:  router.get('/tenant/:tenantId', asyncHandler('GET /runtime/tenant/:tenantId', async (req) => {
+62:    const { tenantId } = req.params;
+64:    const components = await runtimeRegistry.executeListComponents(tenantId, {
+71:  router.put('/tenant/:tenantId/type/:type/name/:name/status', asyncHandler('PUT /runtime/tenant/:tenantId/type/:type/name/:name/status', async (req) => {
+72:    const { tenantId, type, name } = req.params;
+74:    const component = await runtimeRegistry.executeTransitionStatus(tenantId, type, name, updates);
+79:  router.post('/tenant/:tenantId/type/:type/name/:name/heartbeat', asyncHandler('POST /runtime/tenant/:tenantId/type/:type/name/:name/heartbeat', async (req) => {
+80:    const { tenantId, type, name } = req.params;
+82:    await runtimeRegistry.executeRecordHeartbeat(tenantId, type, name, metrics);
+86:  router.delete('/tenant/:tenantId/type/:type/name/:name', asyncHandler('DELETE /runtime/tenant/:tenantId/type/:type/name/:name', async (req) => {
+87:    const { tenantId, type, name } = req.params;
+88:    await runtimeRegistry.executeRemoveComponent(tenantId, type, name);
+92:  router.get('/tenant/:tenantId/unhealthy', asyncHandler('GET /runtime/tenant/:tenantId/unhealthy', async (req) => {
+93:    const { tenantId } = req.params;
+96:      tenantId,

@@ -1,0 +1,89 @@
+# S18-13: New — MemoryCandidate JSON schema (typed memory-proposal surface)
+# Source: (new file; nothing exists to compete with)
+# Intended target: src/tenanos/memory/MemoryCandidate.schema.json
+# Seam: SEAM-REPORT.md 10A — loop MEMORY step has no typed artifact (RISKY)
+# Purpose: proposal surface ONLY. Promotion to memory stays with the memory owner
+# (swarm-05 alignment). A worker emits a candidate; software validates; authority decides.
+# Test: validate a well-formed candidate; reject missing tenant/actor, oversized content, unknown kind.
+# Swarm-05 boundary: this schema carries no `status` and no promotion logic by design.
+# Verified 2026-09-24 (jsonschema Draft7): 1 positive accepted, 11 negatives rejected.
+# FILENAME CLAIM: swarm-18 registered P-20260923-089 in STATE.json 2026-09-24 ~01:36Z.
+# 2026-09-24 ~01:38-01:40Z collision: two unregistered writers overwrote this path
+# (swarm-16 verification-engine diff; an unattributed tenant-kit diff). Their content is
+# preserved for coordinator reconciliation; see STATE P-20260923-089 notes.
+# ---
+diff --git a/src/tenanos/memory/MemoryCandidate.schema.json b/src/tenanos/memory/MemoryCandidate.schema.json
+new file mode 100644
+index 0000000..e3b0c44298fc1c149afbf4c8996fb92427ae6
+--- /dev/null
++++ b/src/tenanos/memory/MemoryCandidate.schema.json
+@@ -0,0 +1,69 @@
++{
++  "$schema": "http://json-schema.org/draft-07/schema#",
++  "$id": "https://ping.social/schemas/tenanos/MemoryCandidate.schema.json",
++  "title": "MemoryCandidate",
++  "description": "S18-13: a worker-proposed memory write. Proposal surface only; promotion to durable memory is owned by the memory authority (not this schema).",
++  "version": "1.0.0",
++  "type": "object",
++  "additionalProperties": false,
++  "required": [
++    "candidate_id",
++    "schema_version",
++    "tenant",
++    "actor",
++    "created_at",
++    "kind",
++    "content",
++    "confidence"
++  ],
++  "properties": {
++    "candidate_id": {
++      "type": "string",
++      "pattern": "^cand:[0-9a-f]{16}$",
++      "description": "sha256 hex of (tenant, actor, kind, content) truncated to 16 chars; idempotent re-proposal."
++    },
++    "schema_version": {
++      "type": "string",
++      "const": "1.0.0",
++      "description": "Envelope version. Unknown versions must be rejected, never coerced."
++    },
++    "tenant": {
++      "type": "string",
++      "pattern": "^(core|tenant)::[a-z0-9_.-]+$",
++      "description": "Owning namespace. Required: memory is never tenant-ambiguous."
++    },
++    "actor": {
++      "type": "string",
++      "minLength": 1,
++      "description": "Requesting actor (user/operator/worker identity) that produced the candidate. Required."
++    },
++    "created_at": {
++      "type": "string",
++      "format": "date-time",
++      "description": "ISO-8601 UTC. Identity anchor is candidate_id, never this timestamp."
++    },
++    "kind": {
++      "type": "string",
++      "enum": ["fact", "preference", "correction", "observation", "relationship"],
++      "description": "Closed enum. Unknown kinds are rejected, not defaulted."
++    },
++    "content": {
++      "type": "string",
++      "minLength": 1,
++      "maxLength": 8192,
++      "description": "The proposed memory content. Bounded: 8 KiB."
++    },
++    "evidence_refs": {
++      "type": "array",
++      "maxItems": 32,
++      "items": { "type": "string", "minLength": 1 },
++      "description": "Event IDs / evidence locators backing the candidate. Optional but encouraged."
++    },
++    "confidence": {
++      "type": ["number", "null"],
++      "minimum": 0,
++      "maximum": 1,
++      "description": "Explicit null = unknown. Missing is invalid; unknown must be stated."
++    }
++  }
++}

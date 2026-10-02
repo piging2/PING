@@ -1,0 +1,28 @@
+--- /home/nolan/ping/ping-runtime/runtime/system_authority.js
++++ /home/nolan/ping/ping-runtime/runtime/system_authority.js
+@@ -60,13 +60,24 @@
+   async collectMissions() {
+     try {
++      // P-20260923-085: counting MISSION_CREATED events and reporting every
++      // one as completed (with failed/blocked hardcoded to 0) fabricated
++      // mission truth. Per-status counts are not derivable from creation
++      // events. Canonical source: ping_missions via MissionRuntime.getStats().
++      // This collector has no handle on MissionRuntime, so the honest value
++      // is UNKNOWN, not zero-filled green.
+       const missionEvents = await this.eventReadAuthority.getEventsByType('MISSION_CREATED', 100000, 0);
+-      const total = missionEvents.length;
+       const refEvents = await this.eventReadAuthority.getEventsByType('REFLECTION_CREATED', 100000, 0);
+       const reflections = refEvents.length;
+-      return { status: 'available', queued: 0, executing: 0, completed: total, failed: 0, blocked: 0, total, reflections };
++      return {
++        status: 'unknown',
++        reason: 'per-status mission counts are not derivable from MISSION_CREATED events; canonical source is ping_missions via MissionRuntime.getStats()',
++        missions_created_events: missionEvents.length,
++        reflections,
++        queued: null, executing: null, completed: null, failed: null, blocked: null, total: null,
++      };
+     } catch (e) {
+-      return { status: 'unavailable', queued: 0, executing: 0, completed: 0, failed: 0, blocked: 0, total: 0, reflections: 0 };
++      return { status: 'unavailable', reason: e.message, queued: null, executing: null, completed: null, failed: null, blocked: null, total: null, reflections: 0 };
+     }
+   }

@@ -1,0 +1,129 @@
+{
+  "ledger": [
+    {
+      "unit": "t1",
+      "from": null,
+      "to": "PLANNED",
+      "at": "2026-09-24T01:51:00.921Z",
+      "evidence": "02-plan.json",
+      "sourceRule": null,
+      "detail": {
+        "taskKey": "t1-summarize",
+        "capability": "text.transform",
+        "agentId": "hermes"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "PLANNED",
+      "to": "AUTHORIZED",
+      "at": "2026-09-24T01:51:00.925Z",
+      "evidence": "policy-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "AUTHORIZED",
+      "to": "QUEUED",
+      "at": "2026-09-24T01:51:00.927Z",
+      "evidence": "workorder-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "QUEUED",
+      "to": "RUNNING",
+      "at": "2026-09-24T01:51:00.928Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "RUNNING",
+      "to": "EVIDENCE_PENDING",
+      "at": "2026-09-24T01:51:01.220Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "EVIDENCE_PENDING",
+      "to": "FAILED",
+      "at": "2026-09-24T01:51:01.234Z",
+      "evidence": "verify-t1-a1.json",
+      "sourceRule": null,
+      "detail": {
+        "reason": "valid failed envelope; retry granted"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "FAILED",
+      "to": "PLANNED",
+      "at": "2026-09-24T01:51:01.235Z",
+      "evidence": "policy-t1-retry-a1.json",
+      "sourceRule": null,
+      "detail": {
+        "reason": "re-plan from recorded failure"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "PLANNED",
+      "to": "AUTHORIZED",
+      "at": "2026-09-24T01:51:01.241Z",
+      "evidence": "policy-t1-retry-a1.json",
+      "sourceRule": null,
+      "detail": {
+        "via": "retry policy AUTO_EXECUTE (same authorized task)"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "AUTHORIZED",
+      "to": "QUEUED",
+      "at": "2026-09-24T01:51:01.250Z",
+      "evidence": "workorder-t1.json",
+      "sourceRule": null,
+      "detail": {
+        "note": "same authorized work order; new attempt"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "QUEUED",
+      "to": "RUNNING",
+      "at": "2026-09-24T01:51:01.253Z",
+      "evidence": "dispatch-t1-a2.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "RUNNING",
+      "to": "EVIDENCE_PENDING",
+      "at": "2026-09-24T01:51:01.604Z",
+      "evidence": "dispatch-t1-a2.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "EVIDENCE_PENDING",
+      "to": "FAILED",
+      "at": "2026-09-24T01:51:01.620Z",
+      "evidence": "verify-t1-a2.json",
+      "sourceRule": null,
+      "detail": {
+        "reason": "retry budget exhausted"
+      }
+    }
+  ],
+  "states": {
+    "t1": "FAILED"
+  }
+}

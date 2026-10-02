@@ -1,0 +1,60 @@
+{
+ "diff_audit": {
+  "deletions": 1,
+  "files_changed": 2,
+  "insertions": 99,
+  "note": "E3 re-stage 2026-09-27: E2 HOLD patch plus E3 repairs (H2 per-episode dedup via _holdStillOutstanding, H5 post-snapshot resolution stand-down, H1 retry_at-NULL stand-down, H3 complete() on held rows, liveness escalation + operator CLI/runbook). New files (not in diff_audit): ping-runtime/orchestration/resolve-hold-cli.js, ping-runtime/orchestration/HOLD_OPERATOR_RUNBOOK.md. git status also shows an UNRELATED uncommitted modification to tools/fyd-site-projection/emit-overlay.py plus unrelated untracked files; none are part of the HOLD work.",
+  "numstat": {
+   "ping-runtime/orchestration/mission_runtime.js": [
+    89,
+    1
+   ],
+   "ping-runtime/orchestration/mission_scheduler.js": [
+    10,
+    0
+   ]
+  }
+ },
+ "files": {
+  "mission_runtime.HEAD.js": {
+   "role": "unpatched baseline for FAIL-BEFORE reproduction",
+   "sha256": "bfdc7b66cf21f46ae0d62b8363b23f2561c2d8df0c4c81e3caea7b2d4ab3402a",
+   "source": "git -C /home/nolan/ping show HEAD:ping-runtime/orchestration/mission_runtime.js"
+  },
+  "mission_runtime.PATCHED.js": {
+   "role": "patched bytes under test for PASS-AFTER and RACE-HUNT",
+   "sha256": "481af183aca1e7f4d40aa58a6d2831bc9bd985dde1f05d71ac3fa5e152ca5cb7",
+   "source": "/home/nolan/ping/ping-runtime/orchestration/mission_runtime.js (workdir, uncommitted HOLD patch + E2 race/liveness/started_at repairs + E3 H1/H2/H3/H5/liveness repairs)"
+  },
+  "ping-runtime/authorities/constitutional_time_authority.js": {
+   "role": "clock surface stub; the real file delegates to a deep kernel dependency not needed for this proof",
+   "source": "TEST SCAFFOLDING STUB (see file header)"
+  },
+  "ping-runtime/orchestration/failure_record.js": {
+   "role": "dependency of _reconcileUnknown; live bytes",
+   "sha256": "6dc15bf4f7e9e946d17ac1a79984f604d3034aa3fd563ad5afe62c8493d66967",
+   "source": "/home/nolan/ping/ping-runtime/orchestration/failure_record.js (committed, unchanged by patch)"
+  },
+  "ping-runtime/orchestration/mission_scheduler.js": {
+   "role": "patched scheduler bytes; _reconcileUnknown exercised live in race test C1",
+   "sha256": "205a624bed9e76354140b130e6ed81eaa5b12f8bc4ffd578a39de129f759f4da",
+   "source": "/home/nolan/ping/ping-runtime/orchestration/mission_scheduler.js (workdir, uncommitted HOLD patch + E2 repairs + E3 H1/H2/H5/liveness repairs)"
+  },
+  "ping-runtime/orchestration/resolve-hold-cli.js": {
+   "sha256": "b0441ce15ba1e00ac76fdd93854179cc66c0a7796cc77b34cb14d3326f3b98ee",
+   "source": "/home/nolan/ping/ping-runtime/orchestration/resolve-hold-cli.js (new E3 liveness operator interface)"
+  },
+  "ping-runtime/orchestration/HOLD_OPERATOR_RUNBOOK.md": {
+   "sha256": "e48675fdfd656b53926c372aa3f35d15241c0822da4c7b12a637c454f7d218af",
+   "source": "/home/nolan/ping/ping-runtime/orchestration/HOLD_OPERATOR_RUNBOOK.md (new E3 liveness operator interface)"
+  }
+ },
+ "purpose": "Staged live file bytes for FALSIFIER-E (HOLD reaper patch) rendezvous proof. Bytes were copied from the Pig and hash-verified against the live sources on 2026-09-27.",
+ "source": {
+  "branch": "lane-b/tenant-dispatch-threading",
+  "head_sha": "1822d5fae",
+  "host": "Pig",
+  "patch_state": "UNCOMMITTED workdir modifications",
+  "repo": "/home/nolan/ping"
+ }
+}

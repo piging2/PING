@@ -1,0 +1,149 @@
+===== E1: escalat (code only) =====
+===== E2: approval (code only) =====
+gateway/performance_baseline_witness.js:21: * These are treated as telemetry, not approval criteria.
+gateway/compiler_lineage_witness.js:56:        approval: lineageData.consistency.approval.success
+gateway/self_improvement_loop.js:26: * Approval
+gateway/node_registry.js:314:    const approvalAuthority = this.getDependency('approvalAuthority');
+gateway/node_registry.js:316:    if (approvalAuthority) {
+gateway/node_registry.js:321:      const approval = await approvalAuthority.requestApproval({
+gateway/node_registry.js:327:      return { type: 'approval', data: approval };
+gateway/node_registry.js:329:    return { type: 'approval', data: 'approval_data' };
+gateway/node_registry.js:340:    const approval = results.request_approval;
+gateway/node_registry.js:342:    if (approval.data.approval_status !== 'approved') {
+gateway/constitutional_bootstrap.js:363:        description: 'Policy for integration approval',
+gateway/authority_repository.js:14: * - Approval storage
+gateway/authority_repository.js:33:    // Approval storage
+gateway/authority_repository.js:34:    this._approvals = new Map();
+gateway/authority_repository.js:100:  // Approval storage
+gateway/authority_repository.js:101:  storeApproval(approvalId, approval) {
+gateway/authority_repository.js:102:    this._approvals.set(approvalId, approval);
+gateway/authority_repository.js:105:  getApproval(approvalId) {
+gateway/authority_repository.js:106:    return this._approvals.get(approvalId);
+gateway/authority_repository.js:109:  listApprovals() {
+gateway/authority_repository.js:110:    return Array.from(this._approvals.values());
+gateway/authority_repository.js:228:    this._approvals.clear();
+gateway/bootstrapping_validation.js:40: * - same constitutional approval
+gateway/bootstrapping_validation.js:96:    // Verify same constitutional approval across all tests
+gateway/bootstrapping_validation.js:97:    replayLogger.info('Verifying constitutional approval consistency...');
+gateway/bootstrapping_validation.js:98:    const approvalConsistency = this._verifyApprovalConsistency(v1ToV1, v2ToV2, v1ToV2, v2ToV1);
+gateway/bootstrapping_validation.js:99:    replayLogger.info(`Constitutional approval consistency: ${approvalConsistency.success ? 'PASSED' : 'FAILED'}\n`);
+gateway/bootstrapping_validation.js:108:      approvalConsistency.success;
+gateway/bootstrapping_validation.js:121:        approval: approvalConsistency
+gateway/bootstrapping_validation.js:261:   * Verify constitutional approval consistency across all tests
+gateway/bootstrapping_validation.js:266:   * @returns {Object} Approval consistency result
+gateway/bootstrapping_validation.js:268:  _verifyApprovalConsistency(v1ToV1, v2ToV2, v1ToV2, v2ToV1) {
+gateway/certification_authority.js:89:      // Check policy approval
+gateway/certification_authority.js:96:      // Check schema approval
+gateway/certification_authority.js:286:   * Check policy approval
+gateway/certification_authority.js:304:   * Check schema approval
+gateway/constitutional_freeze.js:13: * After approval, freeze everything, not just the adapter.
+gateway/mission_execution_graph.js:41:  constructor(missionExecutionAuthority, contextRetrievalAuthority, promptAssemblerAuthority, ollamaRuntimeAuthority, patchAuthority, approvalAuthority, checkpointAuthority, productionOllamaRuntime, commitAuthority) {
+gateway/mission_execution_graph.js:47:    this._approvalAuthority = approvalAuthority;
+gateway/mission_execution_graph.js:84:      if (this._approvalAuthority) {
+gateway/mission_execution_graph.js:85:        executor.setDependency('approvalAuthority', this._approvalAuthority);
+gateway/mission_execution_graph.js:168:          id: 'request_approval',
+gateway/mission_execution_graph.js:177:          dependencies: ['request_approval']
+gateway/mission_execution_graph.js:203:        { from: 'run_replay', to: 'request_approval' },
+gateway/mission_execution_graph.js:204:        { from: 'request_approval', to: 'commit' },
+gateway/mission_execution_graph.js:461:    // Call actual Approval Authority
+gateway/mission_execution_graph.js:462:    const approval = await this._approvalAuthority.requestApproval({
+gateway/mission_execution_graph.js:469:      type: 'approval', 
+gateway/mission_execution_graph.js:470:      data: approval 
+gateway/mission_execution_graph.js:478:    const approval = results.request_approval;
+gateway/mission_execution_graph.js:480:    if (approval.data.approval_status !== 'approved') {
+gateway/approval_authority.js:2: * Approval Authority
+gateway/approval_authority.js:4: * Phase 20 — Approval Authority
+gateway/approval_authority.js:15: * ApprovalAuthority
+gateway/approval_authority.js:19: * Approval policies:
+gateway/approval_authority.js:31:class ApprovalAuthority {
+gateway/approval_authority.js:49:      CREATE TABLE IF NOT EXISTS approvals (
+gateway/approval_authority.js:50:        approval_id VARCHAR(64) PRIMARY KEY,
+gateway/approval_authority.js:52:        approval_policy VARCHAR(50) NOT NULL,
+gateway/approval_authority.js:53:        approval_status VARCHAR(50) DEFAULT 'pending',
+gateway/approval_authority.js:54:        approval_conditions JSONB NOT NULL,
+gateway/approval_authority.js:63:      CREATE TABLE IF NOT EXISTS approval_policies (
+gateway/approval_authority.js:73:      CREATE INDEX IF NOT EXISTS idx_approvals_patch ON approvals(patch_id)
+gateway/approval_authority.js:77:      CREATE INDEX IF NOT EXISTS idx_approvals_status ON approvals(approval_status)
+gateway/approval_authority.js:82:   * Request approval
+gateway/approval_authority.js:83:   * @param {Object} request - Approval request
+gateway/approval_authority.js:84:   * @returns {Object} Approval result
+gateway/approval_authority.js:86:  async requestApproval(request) {
+gateway/approval_authority.js:91:    const approvalId = this._generateApprovalId(patchValidation.patch_id);
+gateway/approval_authority.js:93:    // Determine approval policy
+gateway/approval_authority.js:94:    const policy = await this._determineApprovalPolicy(patchValidation);
+gateway/approval_authority.js:96:    // Evaluate approval conditions
+gateway/approval_authority.js:97:    const conditions = await this._evaluateApprovalConditions(patchValidation, testResults, replayResult, policy);
+gateway/approval_authority.js:99:    // Determine approval status
+gateway/approval_authority.js:100:    const approvalStatus = this._determineApprovalStatus(conditions, policy);
+gateway/approval_authority.js:102:    const approval = {
+gateway/approval_authority.js:103:      approval_id: approvalId,
+gateway/approval_authority.js:105:      approval_policy: policy.policy_name,
+gateway/approval_authority.js:106:      approval_status: approvalStatus,
+gateway/approval_authority.js:107:      approval_conditions: conditions,
+===== E3: human loop / manual review / decision inbox =====
+gateway/verify/11_ollama.js:76:  console.log('⚠️  Direct Ollama call check incomplete - requires manual review');
+gateway/verify/06_gateway.js:62:  console.log('⚠️  Full routing analysis requires manual review');
+gateway/verify/06_gateway.js:91:  console.log('⚠️  Direct I/O check incomplete - requires manual review');
+===== E4: MergeGate / ConsensusEngine / veto / grant-deny =====
+gateway/generated/event_generator.js:267:      { event_type: 'consensus_started', authority_owner: 'ConsensusEngine', event_class: 'system' },
+gateway/generated/event_generator.js:268:      { event_type: 'consensus_completed', authority_owner: 'ConsensusEngine', event_class: 'system' },
+gateway/generated/event_generator.js:269:      { event_type: 'consensus_reached', authority_owner: 'ConsensusEngine', event_class: 'system' },
+gateway/generated/event_generator.js:270:      { event_type: 'consensus_failed', authority_owner: 'ConsensusEngine', event_class: 'system' },
+gateway/generated/event_generator.js:273:      { event_type: 'merge_gate_started', authority_owner: 'MergeGate', event_class: 'system' },
+gateway/generated/event_generator.js:274:      { event_type: 'merge_gate_passed', authority_owner: 'MergeGate', event_class: 'system' },
+gateway/generated/event_generator.js:275:      { event_type: 'merge_gate_failed', authority_owner: 'MergeGate', event_class: 'system' },
+gateway/generated/event_generator.js:276:      { event_type: 'merge_decision_created', authority_owner: 'MergeGate', event_class: 'system' },
+ping-runtime/orchestration/index.js:3:const { MergeGate } = require('./merge_gate');
+ping-runtime/orchestration/index.js:55:  getMergeGate() {
+ping-runtime/orchestration/execution/engine.js:10:const { ConsensusEngine } = require('./consensus_engine');
+ping-runtime/orchestration/execution/engine.js:15:const { MergeGate } = require('../merge_gate');
+ping-runtime/orchestration/execution/engine.js:63:    this._mergeGate = new MergeGate();
+ping-runtime/orchestration/execution/engine.js:74:    this._consensus = new ConsensusEngine(this._eventQueue);
+ping-runtime/orchestration/execution/engine.js:89:    this._mergeGate = new MergeGate();
+ping-runtime/orchestration/execution/consensus_engine.js:3:class ConsensusEngine {
+ping-runtime/orchestration/execution/consensus_engine.js:164:module.exports = { ConsensusEngine };
+ping-runtime/orchestration/merge_queue.js:82:  runMergeGate(id) {
+ping-runtime/orchestration/merge_gate.js:77:class MergeGate {
+ping-runtime/orchestration/merge_gate.js:165:  const gate = new MergeGate();
+ping-runtime/orchestration/merge_gate.js:197:module.exports = { MergeGate, GATES };
+===== E5: interrupt / checkpoint / awaiting / pending =====
+gateway/self_improvement_loop.js:32: * Checkpoint
+gateway/node_registry.js:21: * - checkpoint
+gateway/node_registry.js:44:    this.register('checkpoint', new CheckpointNodeExecutor());
+gateway/node_registry.js:393: * Checkpoint Node Executor
+gateway/node_registry.js:395:class CheckpointNodeExecutor extends BaseNodeExecutor {
+gateway/node_registry.js:398:    const checkpointAuthority = this.getDependency('checkpointAuthority');
+gateway/node_registry.js:400:    const checkpointData = {
+gateway/node_registry.js:406:    if (checkpointAuthority) {
+gateway/node_registry.js:407:      const checkpoint = await checkpointAuthority.createFullCheckpoint(
+gateway/node_registry.js:409:        checkpointData
+gateway/node_registry.js:411:      return { type: 'checkpoint', data: checkpoint };
+gateway/node_registry.js:414:    return { type: 'checkpoint', data: checkpointData };
+gateway/routes/mission_control.js:80:        pendingReviews: (counts.REVIEW_RECEIVED || 0) - (counts.REVIEW_RESPONDED || 0),
+gateway/routes/mission_control.js:146:        summary: { openLeads: openLeads.length, pendingEstimates: pendingEstimates.length, unansweredReviews: unansweredReviews.length },
+gateway/constitutional_runtime.js:68:      // Initialize lifecycle checkpoint
+gateway/constitutional_fuzzer.js:18: * - checkpoint positions
+gateway/constitutional_fuzzer.js:199:      case 'checkpoint_positions':
+gateway/constitutional_fuzzer.js:200:        return this._varyCheckpointPositions(variedData, iteration);
+gateway/constitutional_fuzzer.js:319:   * Vary checkpoint positions
+gateway/constitutional_fuzzer.js:324:  _varyCheckpointPositions(executionData, iteration) {
+gateway/constitutional_fuzzer.js:325:    // Vary checkpoint positions
+gateway/constitutional_fuzzer.js:326:    if (executionData.checkpoint_witnesses && Array.isArray(executionData.checkpoint_witnesses)) {
+gateway/constitutional_fuzzer.js:327:      const checkpointCount = executionData.checkpoint_witnesses.length;
+gateway/constitutional_fuzzer.js:328:      const variedPositions = Math.floor((iteration % 10) * checkpointCount / 10);
+gateway/constitutional_fuzzer.js:331:      executionData.runtime_metadata.checkpoint_position = variedPositions;
+gateway/constitutional_fuzzer.js:361:      { type: 'checkpoint_positions' },
+gateway/checkpoint_authority.js:2: * Checkpoint Authority
+gateway/checkpoint_authority.js:6: * Centralizes automatic checkpointing.
+gateway/checkpoint_authority.js:8: * Checkpoints include:
+gateway/checkpoint_authority.js:26:class CheckpointAuthority {
+gateway/checkpoint_authority.js:46:      CREATE TABLE IF NOT EXISTS checkpoints (
+gateway/checkpoint_authority.js:47:        checkpoint_id VARCHAR(64) PRIMARY KEY,
+gateway/checkpoint_authority.js:49:        checkpoint_type VARCHAR(50) NOT NULL,
+gateway/checkpoint_authority.js:50:        checkpoint_data JSONB NOT NULL,
+gateway/checkpoint_authority.js:51:        checkpoint_hash VARCHAR(64) NOT NULL,
+gateway/checkpoint_authority.js:57:      CREATE INDEX IF NOT EXISTS idx_checkpoints_session ON checkpoints(session_id)
+gateway/checkpoint_authority.js:62:   * Create checkpoint
+gateway/checkpoint_authority.js:63:   * @param {Object} checkpointData - Checkpoint data
+gateway/checkpoint_authority.js:64:   * @returns {Object} Checkpoint
+gateway/checkpoint_authority.js:66:  async createCheckpoint(checkpointData) {

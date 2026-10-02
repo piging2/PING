@@ -1,0 +1,26 @@
+# PATCH-13 — Result Honesty (stop discarding dispatchResult; bind output into result identity)
+
+- **AXIOMS CLOSED:** RSLT1, RSLT2, RSLT3 (stated in Lane D 4.3).
+- **FILES:** `ping-runtime/orchestration/mission_scheduler.js` (`_dispatch` outcome path, :336-354); `ping-runtime/orchestration/mission_runtime.js` (`complete()` result handling); `ping-runtime/external-agent/external_agent_adapter.js` (`resultIdentity`).
+- **SYMBOLS:** `dispatchResult`, `MISSION_COMPLETED` payload, `resultIdentity(result, workOrder)`, `verifyResultEnvelope`.
+- **SCHEMA CHANGE:** None.
+- **BEFORE:** Two parallel realities. Reality A (`external_agent_adapter.js`): a complete result-identity scheme with ZERO production callers; `resultIdentity` hashes the authorization context but NOT `output`/`evidence`/`error` (two different outputs mint the same result_id: silent RSLT2 collision). Reality B (live path): the scheduler DISCARDS `dispatchResult` and calls `complete(missionId, {worker: workerName, completed_at})`; MISSION_COMPLETED carries scheduler-asserted metadata, no worker output, no envelope, no verification; `ping_missions.result` is fiction by construction (Lane E confirmed: "real invariant failure").
+- **AFTER:** (1) Scheduler passes `dispatchResult` through `complete()` as `unattested_result`; the MISSION_COMPLETED payload carries `result_attested:false` until Reality A is wired in (honest labeling beats silent metadata). (2) `resultIdentity` includes `sha256(stableStringify({output, evidence, error}))` in the binding (keep the old field for forensics; additive). (3) When Reality A is wired: add worker/execution version to the work-order binding (bound nowhere today). (4) Do NOT merge Reality A into the mission path until PATCH-05 exists: the work order's `attempt` field is caller-supplied today and needs the atomic attempt counter as its source.
+- **ALGORITHM:** Pass-through, not validation: the scheduler is not the verifier; it stops destroying evidence and labels what it carries.
+- **PSEUDODIFF:**
+  - `mission_scheduler.js:349`: `await complete(missionId, {worker: workerName, completed_at, unattested_result: dispatchResult, result_attested: false})`.
+  - `external_agent_adapter.js` `resultIdentity`: add `output_hash: sha256(stableStringify({output, evidence, error}))` to the hashed binding.
+- **FAIL-BEFORE TEST:** Complete a mission with a distinctive worker output; assert `ping_missions.result` contains only `{worker, completed_at}` (documents the fiction).
+- **PASS-AFTER TEST:** Same; assert the worker's output is present under `unattested_result` with `result_attested:false`; assert two different outputs for the same (work_order, attempt) mint different result_ids.
+- **CRASH TEST:** n/a (payload change; completion atomicity is PATCH-02).
+- **CONCURRENCY TEST:** `WorkerRuntime.dispatch` can run multiple workers per event and surfaces only the last result (Lane D 2.3.5): document; if fan-out is ever deliberate, one-attempt->N-results needs the multi-result rule decided (open, flagged).
+- **HISTORY TEST:** Historical `result` blobs keep their shape; new field `result_attested` absent = unattested era.
+- **NAMESPACE TEST:** n/a.
+- **SECURITY TEST:** `unattested_result` must never be presented to any consumer as verified; the flag is the control. Any future consumer of MISSION_COMPLETED.result must check the flag (add a lint/test guard when the first consumer lands; Lane G's graph projection ingests WORKER_COMPLETED/WORKER_FAILED, not MISSION_COMPLETED, so no current consumer is affected).
+- **DEPENDENCIES:** PATCH-05 (attempt counter as the source for work-order `attempt`); PATCH-02 (completion tx carries the payload).
+- **MIGRATION:** None.
+- **ROLLBACK:** Revert to the fabricated stub (not recommended; the fiction returns).
+- **OBSERVABILITY:** Counter for completions with `result_attested:false` (should trend to zero as Reality A wires in).
+- **RESIDUAL FAILURE:** The mission path still has no result verification (that is Reality A's wiring, gated on PATCH-05). The multi-worker dispatch multiplicity is documented but unresolved.
+- **COMPLEXITY:** Small (~10 lines + 1-line hash change).
+- **CONFIDENCE:** High for the pass-through + labeling; medium for the Reality-A wiring (deferred by design).

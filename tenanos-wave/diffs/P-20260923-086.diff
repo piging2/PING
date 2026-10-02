@@ -1,0 +1,23 @@
+--- /home/nolan/ping/gateway/routes/ops.js
++++ /home/nolan/ping/gateway/routes/ops.js
+@@ -86,15 +86,17 @@
+           qdrant: state.qdrant || {},
+           missions: state.missions || {},
+           replay: state.replay || {},
+-          organizational_health: state.organizational_health || {},
+           metrics: state.metrics || {},
+         };
+       }
+       res.json({
+         status: 'ok',
+-        generated_runtime_authoritative: true,
++        // P-20260923-086: no blanket authority claim. organizational_health
++        // was an always-empty section (key never produced by
++        // SystemAuthority.getSystemState); several other sections are
++        // session-scoped or UNKNOWN. Per-section provenance is each
++        // collector's own contract. See MC-AUDIT.md section 5 and 13.
++        provenance: 'per-section; no blanket runtime-authority claim',
+         dashboard: dashboardData,
+         generated_at: constitutionalTimeAuthority.nowAsISOString(),
+       });
+     } catch (err) {

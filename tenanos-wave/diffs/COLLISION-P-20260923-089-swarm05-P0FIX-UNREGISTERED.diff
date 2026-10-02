@@ -1,0 +1,30 @@
+# P-20260923-089: P0 - re-emission must never demote knowledge-node lifecycle state (I1)
+# Source: swarm-05 P0-FIX.diff (verified by swarm-05/p0-regression-test.js: 6/6 PASS on
+# the fixed module; the 3 demotion tests FAIL on the pre-fix module, proving capture).
+# Target repo: /home/nolan/ping (live gateway tree). Module verified byte-identical to
+# the running ping-gateway container via docker cp (MEMORY-TRACE.md).
+# Anchor: ping-runtime/knowledge/knowledge_graph.js addNode() ON CONFLICT clause.
+# Coordinator decision (CONVERGED-PIPELINE.md): direct gateway-tree patch vs port of the
+# fixed module into src/tenanos/** (wave root rule). Filed against the live tree so the
+# human-decision safety fix is reviewable either way; the regression test is
+# placement-agnostic (MODULE_PATH env).
+# Overlap note: P-20260923-088 (swarm-08, tenant-filter spec, non-terminal) claims this
+# file; 088 is spec-only (no diff). The 1-line conflict-clause edit does not interact
+# with the 088 query()-namespace-filter design. Coordinator to serialize.
+# Test: MODULE_PATH=<module> node --test swarm-05/p0-regression-test.js
+# ---
+--- a/ping-runtime/knowledge/knowledge_graph.js
++++ b/ping-runtime/knowledge/knowledge_graph.js
+@@ -93,7 +93,11 @@
+     await this._pool.query(
+       `INSERT INTO knowledge_nodes (node_id, node_type, entity_type, entity_id, label, data, source_event_id, namespace, confidence, status, correlation_id, confidence_provenance)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+-       ON CONFLICT (node_id) DO UPDATE SET data = $6, namespace = $8, status = $10, correlation_id = $11, confidence_provenance = $12, updated_at = NOW()`,
++       -- P0 FIX (swarm-05): re-emission must never demote lifecycle state.
++       -- Status is owned exclusively by the promotion path (KnowledgePromoter
++       -- via updateNodeBySourceEvent). addNode may refresh data on conflict,
++       -- but must not regress an approved/rejected node back to candidate.
++       ON CONFLICT (node_id) DO UPDATE SET data = $6, namespace = $8, correlation_id = $11, confidence_provenance = $12, updated_at = NOW()`,
+       [nodeId, nodeType, options.entityType || null, options.entityId || null,
+        label, JSON.stringify(data), options.sourceEventId || null,
+        options.namespace || 'core::system', options.confidence != null ? options.confidence : null,

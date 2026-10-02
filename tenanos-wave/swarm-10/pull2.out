@@ -1,0 +1,2299 @@
+
+############ FILE: ping-runtime/orchestration/execution/engine.js ############
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+const { CapabilityRegistry } = require('./capability_registry');
+const { EventQueue } = require('./event_queue');
+const { MissionCompiler } = require('./mission_compiler');
+const { Scheduler } = require('./scheduler');
+const { ArtifactRouter } = require('./artifact_router');
+const { ConsensusEngine } = require('./consensus_engine');
+const { WorkerStateMachine } = require('./worker_state_machine');
+const { ArtifactStore } = require('./artifact_store');
+const { OllamaProvider } = require('./ollama_provider');
+const { IntelligenceGraph } = require('../intelligence_graph');
+const { MergeGate } = require('../merge_gate');
+const { DormantClassifier, ReplayCertifier } = require('../dormant_classifier');
+const { ContextAuthority } = require('./context_authority');
+const {
+  ConsensusArtifact,
+  MergeDecisionArtifact,
+  ProposalArtifact,
+  ReplayArtifact,
+  WitnessArtifact
+} = require('./artifact_authorities');
+const {
+  WorkerPortRegistry,
+  OpenCodeWorkerPort,
+  OllamaWorkerPort
+} = require('./worker_port');
+
+class ExecutionEngine {
+  constructor() {
+    this._compiler = null;
+    this._eventQueue = null;
+    this._registry = null;
+    this._scheduler = null;
+    this._artifactRouter = null;
+    this._consensus = null;
+    this._stateMachine = null;
+    this._artifactStore = null;
+    this._ollamaProvider = null;
+    this._graph = null;
+    this._graphData = null;
+    this._mergeGate = null;
+    this._classifier = null;
+    this._certifier = null;
+
+    this._missions = [];
+    this._pendingProposals = [];
+    this._subscriptions = [];
+    this._workerPorts = null;
+
+    this._initialized = false;
+  }
+
+  async initialize(options = {}) {
+    console.log('[ExecutionEngine] Initializing subsystems...');
+
+    this._eventQueue = new EventQueue();
+    this._workerPorts = new WorkerPortRegistry(this._eventQueue);
+    this._registry = new CapabilityRegistry();
+    this._stateMachine = new WorkerStateMachine(this._eventQueue);
+    this._mergeGate = new MergeGate();
+
+    console.log('[ExecutionEngine] Building intelligence graph...');
+    const graphBuilder = new IntelligenceGraph();
+    this._graphData = await graphBuilder.build();
+    this._graph = graphBuilder;
+    console.log(`  Production: ${this._graphData.summary.production}, Dormant: ${this._graphData.summary.dormant}`);
+
+    this._compiler = new MissionCompiler(this._graph, this._eventQueue);
+    this._scheduler = new Scheduler(this._workerPorts, this._eventQueue);
+    this._artifactRouter = new ArtifactRouter(this._graph, this._eventQueue);
+    this._consensus = new ConsensusEngine(this._eventQueue);
+    this._artifactStore = new ArtifactStore(this._eventQueue);
+    this._contextAuth = new ContextAuthority(this._graph, this._artifactStore, this._eventQueue);
+
+    this._consensusAuthority = new ConsensusArtifact(this._artifactStore, this._eventQueue);
+    this._mergeDecisionAuthority = new MergeDecisionArtifact(this._artifactStore, this._eventQueue);
+    this._proposalAuthority = new ProposalArtifact(this._artifactStore, this._eventQueue);
+    this._replayAuthority = new ReplayArtifact(this._artifactStore, this._eventQueue);
+    this._witnessAuthority = new WitnessArtifact(this._artifactStore, this._eventQueue);
+
+    this._classifier = new DormantClassifier(this._graph);
+    this._certifier = new ReplayCertifier(this._graph, this._classifier);
+
+    this._classifier.classifyAll();
+    this._certifier.certifyAll();
+    this._mergeGate = new MergeGate();
+
+    console.log('[ExecutionEngine] Registering workers...');
+
+    const opencodePort = new OpenCodeWorkerPort({
+      eventQueue: this._eventQueue,
+      executor: null
+    });
+    this._workerPorts.register(opencodePort);
+
+    this._ollamaProvider = new OllamaProvider(this._registry, this._stateMachine);
+    this._ollamaProvider.registerOpenCode();
+
+    if (options.discoverOllama !== false) {
+      const ollamaWorkers = await this._ollamaProvider.discoverWorkers();
+      console.log(`  Ollama workers: ${ollamaWorkers.length}`);
+    }
+
+    this._setupSubscriptions();
+    this._initialized = true;
+
+    console.log('[ExecutionEngine] Ready.');
+    return this;
+  }
+
+  _setupSubscriptions() {
+    this._subscriptions.push(
+      this._eventQueue.subscribe('git_diff', (event) => {
+        const diff = event.data.diff || '';
+        const missions = this._compiler.compileMissionFromGitDiff(diff, this._graph);
+        for (const mission of missions) {
+          this._missions.push(mission);
+          this._executeMission(mission);
+        }
+      })
+    );
+
+    this._subscriptions.push(
+      this._eventQueue.subscribe('worker_completed', (event) => {
+        const { workerId, metadata } = event.data;
+        const missionId = metadata?.missionId;
+        if (missionId) {
+          const mission = this._missions.find(m => m.id === missionId);
+          if (mission && !mission._resolved) {
+            mission.metadata.completedWorkers = mission.metadata.completedWorkers || [];
+            mission.metadata.completedWorkers.push(workerId);
+            this._checkMissionComplete(mission);
+          }
+        }
+      })
+    );
+  }
+
+  emitGitDiff(diff) {
+    this._eventQueue.emit('git_diff', { diff });
+  }
+
+  compileMissions() {
+    const missions = this._compiler.compileMissions({ certificates: this._certifier.getSummary() });
+    for (const mission of missions) {
+      if (!this._missions.find(m => m.id === mission.id)) {
+        this._missions.push(mission);
+      }
+    }
+    return missions;
+  }
+
+  _executeMission(mission) {
+    if (mission.status === 'processing' || mission.status === 'completed' || mission._resolved) return;
+    const hasCapabilities = mission.metadata.requiredCapabilities.some(cap => this._workerPorts.findAvailable(cap, 1).length > 0);
+    if (!hasCapabilities) {
+      console.log(`  No workers available for ${mission.type} — deferring`);
+      return;
+    }
+
+    mission.status = 'processing';
+    const assignments = mission.metadata.priority >= 8
+      ? this._scheduler.scheduleForConsensus(mission, 3)
+      : this._scheduler.schedule(mission);
+    if (assignments.length === 0) {
+      mission.status = 'pending';
+    } else {
+      for (const worker of assignments[0].workers) {
+        this._stateMachine.transition(worker.workerId, 'assigned', { missionId: mission.id });
+      }
+    }
+  }
+
+  dispatchToAssignment(missionId, completionHandler) {
+    const mission = this._missions.find(m => m.id === missionId);
+    if (!mission) return null;
+
+    if (mission.status === 'completed' || mission.status === 'processing') return null;
+
+    mission.status = 'processing';
+
+    const assignments = mission.metadata.priority >= 8
+      ? this._scheduler.scheduleForConsensus(mission, 3)
+      : this._scheduler.schedule(mission);
+
+    if (assignments.length === 0) {
+      mission.status = 'pending';
+      return null;
+    }
+
+    const dispatch = assignments[0];
+    mission.metadata.expectedWorkerCount = dispatch.workers.length;
+    const outputs = [];
+
+    for (const worker of dispatch.workers) {
+      const workerId = worker.workerId;
+      this._stateMachine.transition(workerId, 'running', { missionId });
+      const workerPort = this._workerPorts.get(workerId);
+      if (workerPort) workerPort.transition('running', { missionId });
+
+      const context = this._artifactRouter.buildWorkerContext(mission, workerId);
+      const memoryContext = this._stateMachine.getContext(workerId);
+      const prompt = this._artifactRouter.buildPrompt(mission, context, memoryContext);
+
+      const promptArtifact = this._artifactStore.store({
+        type: 'prompt',
+        workerId,
+        missionId: mission.id,
+        content: { context, prompt },
+        confidence: 1,
+        metadata: { promptLength: prompt.length }
+      });
+
+      outputs.push({
+        workerId,
+        model: worker.model,
+        context,
+        prompt,
+        promptArtifactId: promptArtifact
+      });
+
+      if (completionHandler) {
+        completionHandler({
+          workerId,
+          missionId: mission.id,
+          context,
+          prompt,
+          promptArtifactId: promptArtifact
+        });
+      }
+    }
+
+    return {
+      missionId: mission.id,
+      workers: dispatch.workers,
+      outputs
+    };
+  }
+
+  collectWorkerOutput(workerId, missionId, output) {
+    const mission = this._missions.find(m => m.id === missionId);
+    if (!mission || mission._resolved) return null;
+
+    this._stateMachine.transition(workerId, 'waiting', { missionId });
+    const workerPort = this._workerPorts.get(workerId);
+    if (workerPort) workerPort.transition('waiting', { missionId });
+
+    if (!mission.workerOutputs) mission.workerOutputs = [];
+
+    const record = {
+      workerId,
+      ...output
+    };
+
+    mission.workerOutputs.push(record);
+
+    const proposalArtifact = this._proposalAuthority.produce(workerId, missionId, output);
+    const proposalId = proposalArtifact.id || proposalArtifact;
+
+    if (output.confidence !== undefined) {
+      this._registry.recordQuality(workerId, output.confidence);
+      this._registry.recordConfidence(workerId, output.confidence);
+    }
+
+    if (output.findings) {
+      for (const finding of output.findings) {
+        this._stateMachine.recordFinding(workerId, finding);
+      }
+    }
+
+    this._checkMissionComplete(mission);
+
+    return { proposalId, mission };
+  }
+
+  _checkMissionComplete(mission) {
+    const expectedWorkers = mission.metadata.expectedWorkerCount ||
+      (mission.metadata.priority >= 8 ? 3 : 1);
+    const completed = (mission.workerOutputs || []).length;
+
+    if (completed >= expectedWorkers) {
+      this._resolveMission(mission);
+    }
+  }
+
+  _resolveMission(mission) {
+    if (mission._resolved) return null;
+    mission._resolved = true;
+    const outputs = mission.workerOutputs || [];
+    const decision = this._consensus.evaluate(mission, outputs);
+
+    mission.status = decision.accepted ? 'completed' : 'failed';
+    mission.consensus = decision;
+
+    for (const output of outputs) {
+      const wasAccepted = decision.findings?.some(f =>
+        output.findings?.some(of =>
+          of.file === f.file && of.line === f.line
+        )
+      );
+      this._stateMachine.transition(output.workerId, decision.accepted ? 'completed' : 'failed', {
+        missionId: mission.id,
+        accepted: decision.accepted
+      });
+      let workerPort = this._workerPorts.get(output.workerId);
+      if (workerPort) {
+        workerPort.transition(decision.accepted ? 'completed' : 'failed', { missionId: mission.id });
+        workerPort.transition('idle', {});
+        if (output.confidence !== undefined) {
+          this._registry.recordQuality(output.workerId, output.confidence);
+        }
+      }
+      this._stateMachine.recordFix(output.workerId, output, wasAccepted, wasAccepted ? null : 'not_in_consensus');
+      this._registry.recordAcceptance(output.workerId, decision.accepted);
+      if (!decision.accepted) {
+        this._registry.recordFailure(output.workerId, `${mission.type}:consensus_rejected`);
+      }
+    }
+
+    const consensusArtifact = this._consensusAuthority.produce(decision, mission.id);
+    const consensusArtifactId = consensusArtifact.id || consensusArtifact;
+
+    const consensusEvent = this._eventQueue.emitChain(
+      decision.accepted ? 'consensus_reached' : 'consensus_failed',
+      {
+        missionId: mission.id,
+        decisionId: decision.decisionId || decision.id,
+        consensusArtifactId,
+        accepted: decision.accepted,
+        confidence: decision.averageConfidence || decision.confidence,
+        agreementLevel: decision.agreementLevel,
+        strongConsensus: decision.strongConsensus || false
+      }
+    );
+
+    let mergeArtifactId = null;
+    let mergeEvent = null;
+
+    if (decision.accepted) {
+      if (decision.findings && decision.findings.length > 0) {
+        for (const worker of (mission.workerOutputs || [])) {
+          this._stateMachine.recordPattern(
+            worker.workerId,
+            `${mission.type}:${mission.target || 'global'}`,
+            'pattern'
+          );
+        }
+      }
+
+      this._mergeGate.clear();
+      for (const file of (mission.files || [])) {
+        const fullPath = path.resolve(__dirname, '../../../', file);
+        if (fs.existsSync(fullPath)) {
+          this._mergeGate.validateFile(fullPath);
+        }
+      }
+      const gateResult = this._mergeGate.summary();
+
+      const mergeArtifact = this._mergeDecisionAuthority.produce(mission.id, gateResult, consensusArtifactId);
+      mergeArtifactId = mergeArtifact.id || mergeArtifact;
+
+      mergeEvent = this._eventQueue.emitChain('merge_decision_created', {
+        missionId: mission.id,
+        decisionId: decision.decisionId || decision.id,
+        mergeArtifactId,
+        consensusArtifactId,
+        canCommit: gateResult.can_commit,
+        blocking: gateResult.blocking,
+        warnings: gateResult.warnings
+      }, consensusEvent);
+
+      const workerDetails = outputs.map(o => {
+        const worker = this._registry.getWorker(o.workerId);
+        return {
+          workerId: o.workerId,
+          model: worker?.model || 'unknown',
+          confidence: o.confidence || 0,
+          findingsCount: (o.findings || []).length
+        };
+      });
+
+      this._eventQueue.emitChain('mission_accepted', {
+        missionId: mission.id,
+        decisionId: decision.decisionId || decision.id,
+        missionType: mission.type,
+        missionTarget: mission.target,
+        confidence: decision.averageConfidence || decision.confidence,
+        variance: decision.confidenceVariance || 0,
+        agreementLevel: decision.agreementLevel,
+        strongConsensus: decision.strongConsensus || false,
+        workerCount: outputs.length,
+        workerDetails,
+        consensusArtifactId,
+        mergeArtifactId,
+        findingCount: (decision.findings || []).length,
+        sharedFindings: decision.sharedFindings || 0
+      }, mergeEvent || consensusEvent);
+
+    } else {
+      this._eventQueue.emitChain('mission_rejected', {
+        missionId: mission.id,
+        decisionId: decision.decisionId || decision.id,
+        missionType: mission.type,
+        workerCount: outputs.length,
+        confidence: decision.averageConfidence || decision.confidence,
+        variance: decision.confidenceVariance || 0,
+        reason: decision.reason || 'consensus_failed'
+      }, consensusEvent);
+    }
+
+    mission.consensusArtifactId = consensusArtifactId;
+    mission.mergeArtifactId = mergeArtifactId;
+    return decision;
+  }
+
+  generateDashboard() {
+    const graphMeta = this._graphData?.summary || {};
+    const replayCov = this._graphData?.metadata?.replay_coverage || {};
+    const witnessCov = this._graphData?.metadata?.witness_coverage || {};
+    const debt = this._graphData?.metadata?.constitutional_debt || {};
+    const entropy = this._graphData?.metadata?.entropy_distribution || {};
+    const dormantSummary = this._classifier?.getSummary() || {};
+    const certSummary = this._certifier?.getSummary() || {};
+
+    const registryStats = this._registry.getStats();
+    const stateStats = this._stateMachine.getStats();
+    const eventStats = this._eventQueue.getStats();
+    const storeStats = this._artifactStore.getStats();
+    const gateResult = this._mergeGate.summary();
+
+    const mergedMissions = this._missions.filter(m => m.consensus?.accepted).length;
+    const failedMissions = this._missions.filter(m => m.consensus && !m.consensus.accepted).length;
+    const pendingMissions = this._missions.filter(m => !m.consensus).length;
+    const totalMissions = this._missions.length;
+
+    return {
+      engine_version: '2.0.0',
+      initialized: this._initialized,
+
+      repository: {
+        production: graphMeta.production || 0,
+        dormant: graphMeta.dormant || 0,
+        authorities: graphMeta.authorities || 0,
+        edges: graphMeta.edges || 0,
+        totalLines: graphMeta.total_lines || 0,
+        productionLines: graphMeta.production_lines || 0
+      },
+
+      replay_coverage: {
+        full: replayCov.full || 0,
+        event: replayCov.event || 0,
+        witness: replayCov.witness || 0,
+        none: replayCov.none || 0,
+        witness_pct: witnessCov.coverage_pct || 0
+      },
+
+      certificates: {
+        total: certSummary.total_certified || 0,
+        averageScore: certSummary.average_score || 0,
+        high: certSummary.by_score?.high || 0,
+        medium: certSummary.by_score?.medium || 0,
+        low: certSummary.by_score?.low || 0
+      },
+
+      constitutional_debt: {
+        files: debt.total_files || 0,
+        lines: debt.total_lines || 0,
+        high_entropy_dormant: debt.high_entropy || 0,
+        safe_deletions: dormantSummary.high_confidence_deletions || 0,
+        migration_candidates: dormantSummary.migration_candidates || 0,
+        needs_review: dormantSummary.needs_review || 0
+      },
+
+      capability_registry: {
+        totalWorkers: registryStats.totalWorkers || 0,
+        idle: registryStats.idle || 0,
+        running: registryStats.running || 0,
+        totalCapabilities: registryStats.totalCapabilities || 0,
+        averageQuality: registryStats.averageQuality || 0
+      },
+
+      worker_states: stateStats,
+
+      events: {
+        total: eventStats.total || 0,
+        recentPerMinute: eventStats.recentRate || 0,
+        byType: eventStats.byType || {}
+      },
+
+      artifact_store: storeStats,
+
+      missions: {
+        total: totalMissions,
+        pending: pendingMissions,
+        completed: mergedMissions,
+        failed: failedMissions,
+        closureRate: totalMissions > 0
+          ? Math.round(mergedMissions / totalMissions * 100) : 0
+      },
+
+      merge_gate: {
+        blocking: gateResult.blocking || 0,
+        warnings: gateResult.warnings || 0,
+        canCommit: gateResult.can_commit
+      },
+
+      velocity: {
+        missionClosureRate: totalMissions > 0
+          ? Math.round((mergedMissions + failedMissions) / totalMissions * 100) : 0,
+        missionAcceptRate: (mergedMissions + failedMissions) > 0
+          ? Math.round(mergedMissions / (mergedMissions + failedMissions) * 100) : 0,
+        artifactThroughput: storeStats.totalArtifacts || 0,
+        workerEfficiency: stateStats.totalAccepted + stateStats.totalRejected > 0
+          ? Math.round(stateStats.totalAccepted / (stateStats.totalAccepted + stateStats.totalRejected) * 100) : 0
+      }
+    };
+  }
+
+  printDashboard() {
+    const d = this.generateDashboard();
+
+    console.log('\n========================================');
+    console.log('  CONSTITUTIONAL EXECUTION ENGINE');
+    console.log('  Phase 38 — Distributed Execution Fabric');
+    console.log('========================================\n');
+
+    console.log('📊 REPOSITORY');
+    console.log(`  Production: ${d.repository.production}`);
+    console.log(`  Dormant: ${d.repository.dormant}`);
+    console.log(`  Authorities: ${d.repository.authorities}`);
+    console.log(`  Edges: ${d.repository.edges}`);
+
+    console.log('\n🔐 REPLAY & CERTIFICATION');
+    console.log(`  Full: ${d.replay_coverage.full} | Event: ${d.replay_coverage.event} | Witness: ${d.replay_coverage.witness}`);
+    console.log(`  Witness coverage: ${d.replay_coverage.witness_pct}%`);
+    console.log(`  Certificates: ${d.certificates.total} (avg ${d.certificates.averageScore}%)`);
+
+    console.log('\n💳 DEBT');
+    console.log(`  ${d.constitutional_debt.files} files, ${d.constitutional_debt.lines} lines`);
+    console.log(`  Safe deletions: ${d.constitutional_debt.safe_deletions}`);
+
+    console.log('\n👷 WORKER POOL');
+    console.log(`  Registered: ${d.capability_registry.totalWorkers}`);
+    console.log(`  Idle: ${d.capability_registry.idle} | Running: ${d.capability_registry.running}`);
+    console.log(`  Capabilities: ${d.capability_registry.totalCapabilities}`);
+    console.log(`  Average quality: ${d.capability_registry.averageQuality}`);
+
+    console.log('\n📋 MISSIONS');
+    console.log(`  Total: ${d.missions.total}`);
+    console.log(`  Completed: ${d.missions.completed} | Failed: ${d.missions.failed} | Pending: ${d.missions.pending}`);
+    console.log(`  Closure rate: ${d.missions.closureRate}%`);
+
+    console.log('\n📦 ARTIFACT STORE');
+    console.log(`  Total: ${d.artifact_store.totalArtifacts}`);
+    console.log(`  Proposals: ${d.artifact_store.proposals || 0}`);
+    console.log(`  Replay proofs: ${d.artifact_store.replayProofs || 0}`);
+    console.log(`  Avg confidence: ${d.artifact_store.averageConfidence}`);
+
+    console.log('\n⚡ EVENTS');
+    console.log(`  Total: ${d.events.total}`);
+    console.log(`  Rate: ${d.events.recentPerMinute}/min`);
+
+    console.log('\n🔒 MERGE GATE');
+    console.log(`  ${d.merge_gate.canCommit ? 'PASS' : 'BLOCKED'}`);
+    console.log(`  Blocking: ${d.merge_gate.blocking} | Warnings: ${d.merge_gate.warnings}`);
+
+    console.log('\n📈 VELOCITY');
+    console.log(`  Mission closure: ${d.velocity.missionClosureRate}%`);
+    console.log(`  Mission accept: ${d.velocity.missionAcceptRate}%`);
+    console.log(`  Artifact throughput: ${d.velocity.artifactThroughput}`);
+    console.log(`  Worker efficiency: ${d.velocity.workerEfficiency}%`);
+
+    console.log('\n========================================\n');
+  }
+
+  startAutonomousLoop(options = {}) {
+    if (!this._initialized) {
+      console.warn('[Engine] Cannot start loop — not initialized');
+      return [];
+    }
+
+    const maxIterations = options.maxIterations || 5;
+    const verbose = options.verbose !== false;
+    const results = [];
+
+    if (verbose) console.log(`\n[AutonomousLoop] Starting (max ${maxIterations} iterations)`);
+
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+      if (verbose) console.log(`\n[AutonomousLoop] Iteration ${iteration + 1}/${maxIterations}`);
+
+      const missions = this.compileMissions();
+      const pending = missions.filter(m => m.metadata.priority >= (options.minPriority || 5));
+
+      if (pending.length === 0) {
+        if (verbose) console.log('[AutonomousLoop] No pending missions — loop complete');
+        break;
+      }
+
+      this._eventQueue.emit('knowledge_compiled', {
+        iteration: iteration + 1,
+        totalMissions: missions.length,
+        pendingMissions: pending.length
+      });
+
+      for (const mission of pending.slice(0, options.missionsPerIteration || 3)) {
+        const dispatch = this.dispatchToAssignment(mission.id);
+        if (!dispatch || dispatch.workers.length === 0) {
+          if (verbose) console.log(`  [${mission.id}] No eligible workers`);
+          continue;
+        }
+
+        for (const w of dispatch.workers) {
+          const output = {
+            workerId: w.workerId,
+            findings: [{ file: mission.target || 'x', line: 0, bypass_type: 'auto_scan', confidence: 0.85 }],
+            confidence: 0.85
+          };
+          const result = this.collectWorkerOutput(w.workerId, mission.id, output);
+          if (result) {
+            results.push({ missionId: mission.id, workerId: w.workerId, iteration: iteration + 1 });
+          }
+        }
+      }
+
+      if (this._contextAuth && this._eventQueue) {
+        const missionCount = pending.length;
+        const mergedCount = missions.filter(m => m.consensus?.accepted).length;
+        this._eventQueue.emit('worker_progress', {
+          iteration: iteration + 1,
+          missionCount,
+          mergedCount,
+          failedCount: missions.filter(m => m.consensus && !m.consensus.accepted).length
+        });
+      }
+    }
+
+    if (verbose) {
+      const dash = this.generateDashboard();
+      console.log(`\n[AutonomousLoop] Complete: ${results.length} missions resolved`);
+      console.log(`  Events: ${dash.events.total}`);
+      console.log(`  Missions: ${dash.missions.completed} completed / ${dash.missions.failed} failed`);
+    }
+
+    return results;
+  }
+
+  getReport() {
+    const dashboard = this.generateDashboard();
+    const missions = this.compileMissions();
+    const highPriority = missions.filter(m => m.metadata.priority >= 7);
+
+    const workers = this._registry.listWorkers();
+
+    const capabilities = this._registry.listAllCapabilities();
+
+    return {
+      version: '2.0.0',
+      initialized: this._initialized,
+      dashboard,
+      capabilities,
+      workers: workers.map(w => ({
+        id: w.id,
+        model: w.model,
+        capabilities: w.capabilities,
+        state: w.state,
+        load: `${w.currentLoad}/${w.maxLoad}`,
+        quality: w.qualityScore
+      })),
+      high_priority_missions: highPriority.map(m => ({
+        id: m.id,
+        type: m.type,
+        target: m.target || '(repo-wide)',
+        priority: m.metadata.priority,
+        description: m.metadata.description,
+        requiredCapabilities: m.metadata.requiredCapabilities
+      })),
+      merge_gate: this._mergeGate.summary()
+    };
+  }
+}
+
+async function main() {
+  const engine = new ExecutionEngine();
+  await engine.initialize();
+
+  const report = engine.getReport();
+
+  console.log('\n=== PHASE 38 — CONSTITUTIONAL DISTRIBUTED EXECUTION FABRIC ===\n');
+
+  console.log(`Workers: ${report.workers.length} (${report.dashboard.capability_registry.totalCapabilities} capabilities)`);
+  console.log(`Missions: ${report.dashboard.missions.total} total (${report.dashboard.missions.completed} completed)`);
+  console.log(`Repository: ${report.dashboard.repository.production} prod / ${report.dashboard.repository.dormant} dormant`);
+  console.log(`Certificates: ${report.dashboard.certificates.averageScore}% avg`);
+  console.log(`Debt: ${report.dashboard.constitutional_debt.files} files`);
+  console.log(`Merge gate: ${report.dashboard.merge_gate.canCommit ? 'PASS' : 'BLOCKED'}`);
+
+  if (report.high_priority_missions.length > 0) {
+    console.log(`\nHigh-priority missions generated:`);
+    for (const m of report.high_priority_missions) {
+      console.log(`  [P${m.priority}] ${m.type}: ${m.description}`);
+    }
+  }
+
+  const outputPath = path.join(__dirname, '..', 'phase38_report.json');
+  fs.writeFileSync(outputPath, JSON.stringify(report, null, 2));
+  console.log(`\nReport: ${outputPath}`);
+}
+
+if (require.main === module) {
+  main().catch(err => { console.error('Engine failed:', err); process.exit(1); });
+}
+
+module.exports = { ExecutionEngine };
+
+############ FILE: gateway/automatic_mission_generator.js ############
+/**
+ * Automatic Mission Generator
+ *
+ * Phase 36H — Autonomous Engineering Fabric
+ *
+ * Constitutional authority for watcher-driven mission creation.
+ *
+ * Watchers emit events → Mission Generator creates missions → Agents execute missions
+ *
+ * Example:
+ * DependencyWatcher emits DependencyCVEDetected
+ * ↓
+ * Mission Generator creates UpgradeDependency mission
+ * ↓
+ * Devin executes mission
+ * ↓
+ * OpenCode validates
+ * ↓
+ * PR opened
+ *
+ * Constitutional Constraint:
+ * - Mission generation is event-driven
+ * - Mission generation rules are constitutional
+ * - Mission generation is deterministic
+ * - Mission generation lifecycle is event-sourced
+ */
+
+const { CanonicalAuthority, CanonicalBytes } = require('../ping-runtime/authorities/canonical_authority.js');
+const { constitutionalTimeAuthority } = require('../ping-runtime/authorities/constitutional_time_authority.js');
+const { identityAuthority } = require('../ping-runtime/authorities/identity_authority.js');
+const { witnessAuthority } = require('./witness_authority');
+const { constitutionVersionAuthority } = require('./constitution_version_authority');
+
+/**
+ * Mission Generation Rules
+ *
+ * Maps watcher events to mission types and parameters.
+ */
+const MissionGenerationRules = {
+  [WatcherEventTypes.DEPENDENCY_CVE_DETECTED]: {
+    mission_type: MissionTypes.DEPENDENCY_UPGRADE,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.WRITE_REPOSITORY],
+    extract_parameters: (payload) => ({
+      dependency_name: payload.dependency_name,
+      current_version: payload.current_version,
+      cve_id: payload.cve_id,
+      severity: payload.severity,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.DEPENDENCY_UPDATE_AVAILABLE]: {
+    mission_type: MissionTypes.DEPENDENCY_UPGRADE,
+    priority: TriggerPriority.MEDIUM,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.WRITE_REPOSITORY],
+    extract_parameters: (payload) => ({
+      dependency_name: payload.dependency_name,
+      current_version: payload.current_version,
+      available_version: payload.available_version,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.SCHEMA_CHANGE_DETECTED]: {
+    mission_type: MissionTypes.REFACTOR,
+    priority: TriggerPriority.HIGH,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.WRITE_REPOSITORY, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      schema_name: payload.schema_name,
+      change_type: payload.change_type,
+      affected_tables: payload.affected_tables,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.REPLAY_FAILURE_DETECTED]: {
+    mission_type: MissionTypes.BUG_FIX,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.EXECUTE_TESTS, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      replay_id: payload.replay_id,
+      failure_reason: payload.failure_reason,
+      affected_components: payload.affected_components,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.DETERMINISM_VIOLATION_DETECTED]: {
+    mission_type: MissionTypes.BUG_FIX,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.EXECUTE_TESTS, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      violation_type: payload.violation_type,
+      affected_authority: payload.affected_authority,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.CONSENSUS_FAILURE_DETECTED]: {
+    mission_type: MissionTypes.BUG_FIX,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.EXECUTE_TESTS, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      consensus_id: payload.consensus_id,
+      divergence_reason: payload.divergence_reason,
+      affected_replicas: payload.affected_replicas,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.REPLICA_DIVERGENCE_DETECTED]: {
+    mission_type: MissionTypes.BUG_FIX,
+    priority: TriggerPriority.HIGH,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.EXECUTE_TESTS],
+    extract_parameters: (payload) => ({
+      replica_id: payload.replica_id,
+      divergence_point: payload.divergence_point,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.PERFORMANCE_DEGRADATION_DETECTED]: {
+    mission_type: MissionTypes.PERFORMANCE_OPTIMIZATION,
+    priority: TriggerPriority.HIGH,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      metric_name: payload.metric_name,
+      degradation_percentage: payload.degradation_percentage,
+      affected_components: payload.affected_components,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.BOTTLENECK_DETECTED]: {
+    mission_type: MissionTypes.PERFORMANCE_OPTIMIZATION,
+    priority: TriggerPriority.MEDIUM,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.CODE_GENERATION],
+    extract_parameters: (payload) => ({
+      bottleneck_type: payload.bottleneck_type,
+      affected_components: payload.affected_components,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.SECURITY_VULNERABILITY_DETECTED]: {
+    mission_type: MissionTypes.SECURITY_AUDIT,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.SECURITY_AUDIT],
+    extract_parameters: (payload) => ({
+      vulnerability_type: payload.vulnerability_type,
+      severity: payload.severity,
+      affected_files: payload.affected_files,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.SECURITY_BREACH_DETECTED]: {
+    mission_type: MissionTypes.HOTFIX,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY, AgentCapabilities.WRITE_REPOSITORY, AgentCapabilities.DEPLOY_PREVIEW],
+    extract_parameters: (payload) => ({
+      breach_type: payload.breach_type,
+      affected_components: payload.affected_components,
+      repository: payload.repository
+    })
+  },
+  [WatcherEventTypes.COST_ANOMALY_DETECTED]: {
+    mission_type: MissionTypes.INFRASTRUCTURE_PROVISION,
+    priority: TriggerPriority.MEDIUM,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY],
+    extract_parameters: (payload) => ({
+      cost_type: payload.cost_type,
+      anomaly_percentage: payload.anomaly_percentage,
+      affected_resources: payload.affected_resources
+    })
+  },
+  [WatcherEventTypes.BUDGET_OVERRUN_DETECTED]: {
+    mission_type: MissionTypes.INFRASTRUCTURE_PROVISION,
+    priority: TriggerPriority.HIGH,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY],
+    extract_parameters: (payload) => ({
+      budget_type: payload.budget_type,
+      overrun_percentage: payload.overrun_percentage,
+      affected_resources: payload.affected_resources
+    })
+  },
+  [WatcherEventTypes.INFRASTRUCTURE_UNHEALTHY]: {
+    mission_type: MissionTypes.INFRASTRUCTURE_PROVISION,
+    priority: TriggerPriority.CRITICAL,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY],
+    extract_parameters: (payload) => ({
+      infrastructure_type: payload.infrastructure_type,
+      health_status: payload.health_status,
+      affected_resources: payload.affected_resources
+    })
+  },
+  [WatcherEventTypes.CAPACITY_EXCEEDED]: {
+    mission_type: MissionTypes.INFRASTRUCTURE_PROVISION,
+    priority: TriggerPriority.HIGH,
+    required_capabilities: [AgentCapabilities.READ_REPOSITORY],
+    extract_parameters: (payload) => ({
+      resource_type: payload.resource_type,
+      current_usage: payload.current_usage,
+      capacity_limit: payload.capacity_limit
+    })
+  }
+};
+
+/**
+ * Mission Generation Schema
+ *
+ * Constitutional mission generation artifact.
+ */
+class MissionGeneration {
+  constructor(data) {
+    this.generation_id = data.generation_id;
+    this.watcher_event_id = data.watcher_event_id;
+    this.watcher_type = data.watcher_type;
+    this.event_type = data.event_type;
+    this.mission_id = data.mission_id || null;
+    this.mission_type = data.mission_type;
+    this.mission_parameters = data.mission_parameters || {};
+    this.priority = data.priority;
+    this.required_capabilities = data.required_capabilities || [];
+    this.status = data.status || 'pending';
+    this.generated_at = data.generated_at || constitutionalTimeAuthority.nowAsMillis();
+    this.error = data.error || null;
+    
+    // Constitutional metadata
+    this.runtime_id = data.runtime_id;
+    this.authority = 'AutomaticMissionGenerator';
+    this.authority_version = '36.0.0';
+    this.constitutional_version = constitutionVersionAuthority.getCurrentVersions().constitutional_schema;
+    
+    // Constitutional hashes
+    this.generation_hash = this._computeGenerationHash();
+    this.witness = this._createWitness();
+  }
+  
+  /**
+   * Compute generation hash
+   */
+  _computeGenerationHash() {
+    const generationData = {
+      generation_id: this.generation_id,
+      watcher_event_id: this.watcher_event_id,
+      watcher_type: this.watcher_type,
+      event_type: this.event_type,
+      mission_type: this.mission_type,
+      mission_parameters: this.mission_parameters,
+      priority: this.priority,
+      required_capabilities: this.required_capabilities,
+      runtime_id: this.runtime_id,
+      generated_at: this.generated_at
+    };
+    return CanonicalAuthority.hash(generationData);
+  }
+  
+  /**
+   * Create witness
+   */
+  _createWitness() {
+    const witnessData = {
+      execution_id: this.generation_id,
+      input_hash: this.generation_hash,
+      output_hash: this.mission_id ? CanonicalAuthority.hash(this.mission_id) : null,
+      authority: this.authority,
+      node_id: this.generation_id,
+      success: this.status === 'completed',
+      constitutional_version: this.constitutional_version
+    };
+    
+    return witnessAuthority.createWitness(witnessData, {
+      authority: this.authority,
+      authority_version: this.authority_version
+    });
+  }
+  
+  /**
+   * Complete generation
+   */
+  complete(missionId) {
+    this.status = 'completed';
+    this.mission_id = missionId;
+    this.generation_hash = this._computeGenerationHash();
+    this.witness = this._createWitness();
+  }
+  
+  /**
+   * Fail generation
+   */
+  fail(error) {
+    this.status = 'failed';
+    this.error = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+    this.generation_hash = this._computeGenerationHash();
+    this.witness = this._createWitness();
+  }
+  
+  /**
+   * Serialize generation to canonical bytes
+   */
+  toCanonical() {
+    const ordered = {
+      generation_id: this.generation_id,
+      watcher_event_id: this.watcher_event_id,
+      watcher_type: this.watcher_type,
+      event_type: this.event_type,
+      mission_id: this.mission_id,
+      mission_type: this.mission_type,
+      mission_parameters: this.mission_parameters,
+      priority: this.priority,
+      required_capabilities: this.required_capabilities,
+      status: this.status,
+      generated_at: this.generated_at,
+      error: this.error,
+      runtime_id: this.runtime_id,
+      authority: this.authority,
+      authority_version: this.authority_version,
+      constitutional_version: this.constitutional_version,
+      generation_hash: this.generation_hash
+    };
+    return CanonicalBytes.serialize(ordered);
+  }
+  
+  /**
+   * Convert to JSON
+   */
+  toJSON() {
+    return {
+      generation_id: this.generation_id,
+      watcher_event_id: this.watcher_event_id,
+      watcher_type: this.watcher_type,
+      event_type: this.event_type,
+      mission_id: this.mission_id,
+      mission_type: this.mission_type,
+      mission_parameters: this.mission_parameters,
+      priority: this.priority,
+      required_capabilities: this.required_capabilities,
+      status: this.status,
+      generated_at: this.generated_at,
+      error: this.error,
+      runtime_id: this.runtime_id,
+      authority: this.authority,
+      authority_version: this.authority_version,
+      constitutional_version: this.constitutional_version,
+      generation_hash: this.generation_hash,
+      witness: this.witness
+    };
+  }
+}
+
+/**
+ * Automatic Mission Generator
+ *
+ * Constitutional authority for watcher-driven mission creation.
+ */
+class AutomaticMissionGenerator {
+  constructor(eventRepository, missionAuthority, triggerAuthority, runtimeIdentity = null) {
+    this._eventRepository = eventRepository;
+    this._missionAuthority = missionAuthority;
+    this._triggerAuthority = triggerAuthority;
+    this._runtimeIdentity = runtimeIdentity;
+    this._authorityId = this._generateAuthorityId();
+    this._authorityVersion = '36.0.0';
+    this._generations = new Map();
+    this._rules = MissionGenerationRules;
+  }
+  
+  /**
+   * Register mission generation rule
+   * @param {string} eventType - Watcher event type
+   * @param {Object} rule - Generation rule
+   */
+  registerRule(eventType, rule) {
+    this._rules[eventType] = rule;
+  }
+  
+  /**
+   * Process watcher event and generate mission
+   * @param {Object} watcherEvent - Watcher event
+   * @returns {MissionGeneration} Generation result
+   */
+  async processWatcherEvent(watcherEvent) {
+    const rule = this._rules[watcherEvent.event_type];
+    
+    if (!rule) {
+      console.log(`No mission generation rule for event type: ${watcherEvent.event_type}`);
+      return null;
+    }
+    
+    const generationId = this._generateGenerationId(watcherEvent.event_id, watcherEvent.event_type);
+    const runtimeId = this._runtimeIdentity?.getRuntimeID() || 'unknown';
+    
+    // Extract mission parameters from watcher event payload
+    const missionParameters = rule.extract_parameters(watcherEvent.payload);
+    
+    const generationData = {
+      generation_id: generationId,
+      watcher_event_id: watcherEvent.event_id,
+      watcher_type: watcherEvent.watcher_type,
+      event_type: watcherEvent.event_type,
+      mission_type: rule.mission_type,
+      mission_parameters: missionParameters,
+      priority: rule.priority,
+      required_capabilities: rule.required_capabilities,
+      runtime_id: runtimeId,
+      generated_at: constitutionalTimeAuthority.nowAsMillis(),
+      status: 'pending'
+    };
+    
+    const generation = new MissionGeneration(generationData);
+    this._generations.set(generationId, generation);
+    
+    // Emit GenerationStarted event
+    this._emitGenerationStarted(generation);
+    
+    try {
+      // Create mission
+      const mission = this._missionAuthority.createMission(
+        rule.mission_type,
+        this._generateMissionIntent(rule.mission_type, missionParameters),
+        {
+          priority: rule.priority,
+          constraints: missionParameters,
+          dependencies: [],
+          required_capabilities: rule.required_capabilities,
+          execution_policy: 'sequential',
+          timeout: 3600000,
+          retry_policy: { max_retries: 3, backoff: 'exponential' },
+          replay_policy: { enabled: true, verify: true },
+          created_by: 'AutomaticMissionGenerator'
+        }
+      );
+      
+      // Complete generation
+      generation.complete(mission.mission_id);
+      
+      // Emit GenerationCompleted event
+      this._emitGenerationCompleted(generation);
+      
+      return generation;
+    } catch (error) {
+      // Fail generation
+      generation.fail(error);
+      
+      // Emit GenerationFailed event
+      this._emitGenerationFailed(generation);
+      
+      return generation;
+    }
+  }
+  
+  /**
+   * Get generation
+   * @param {string} generationId - Generation ID
+   * @returns {MissionGeneration} Generation
+   */
+  getGeneration(generationId) {
+    return this._generations.get(generationId);
+  }
+  
+  /**
+   * Get all generations
+   * @returns {Array<MissionGeneration>} All generations
+   */
+  getAllGenerations() {
+    return Array.from(this._generations.values());
+  }
+  
+  /**
+   * Get generations by status
+   * @param {string} status - Generation status
+   * @returns {Array<MissionGeneration>} Generations with status
+   */
+  getGenerationsByStatus(status) {
+    return this.getAllGenerations().filter(g => g.status === status);
+  }
+  
+  /**
+   * Get generations by watcher type
+   * @param {string} watcherType - Watcher type
+   * @returns {Array<MissionGeneration>} Generations from watcher type
+   */
+  getGenerationsByWatcherType(watcherType) {
+    return this.getAllGenerations().filter(g => g.watcher_type === watcherType);
+  }
+  
+  /**
+   * Get generations by event type
+   * @param {string} eventType - Event type
+   * @returns {Array<MissionGeneration>} Generations from event type
+   */
+  getGenerationsByEventType(eventType) {
+    return this.getAllGenerations().filter(g => g.event_type === eventType);
+  }
+  
+  /**
+   * Get generation count
+   * @returns {number} Generation count
+   */
+  getGenerationCount() {
+    return this._generations.size;
+  }
+  
+  /**
+   * Verify generation determinism
+   * @param {MissionGeneration} generation1 - First generation
+   * @param {MissionGeneration} generation2 - Second generation
+   * @returns {boolean} Whether generations are equivalent
+   */
+  verifyGenerationEquivalence(generation1, generation2) {
+    return generation1.generation_hash === generation2.generation_hash;
+  }
+  
+  /**
+   * Replay generation from event log
+   * @param {string} generationId - Generation ID
+   * @returns {MissionGeneration} Replayed generation
+   */
+  async replayGeneration(generationId) {
+    // Get generation events from event repository
+    const events = await this._eventRepository.getEvents(generationId);
+    
+    // Reconstruct generation from events
+    let generation = null;
+    for (const event of events) {
+      if (event.event_type === 'GenerationStarted') {
+        generation = new MissionGeneration(event.payload);
+      } else if (event.event_type === 'GenerationCompleted') {
+        generation.complete(event.payload.mission_id);
+      } else if (event.event_type === 'GenerationFailed') {
+        generation.fail(new Error(event.payload.error.message));
+      }
+    }
+    
+    return generation;
+  }
+  
+  /**
+   * Generate mission intent
+   */
+  _generateMissionIntent(missionType, parameters) {
+    const intentTemplates = {
+      [MissionTypes.DEPENDENCY_UPGRADE]: `Upgrade dependency ${parameters.dependency_name} from ${parameters.current_version} to resolve ${parameters.cve_id || 'available update'}`,
+      [MissionTypes.REFACTOR]: `Refactor ${parameters.schema_name} schema to handle ${parameters.change_type}`,
+      [MissionTypes.BUG_FIX]: `Fix ${parameters.failure_reason || parameters.violation_type || parameters.divergence_reason}`,
+      [MissionTypes.PERFORMANCE_OPTIMIZATION]: `Optimize ${parameters.metric_name || parameters.bottleneck_type} performance`,
+      [MissionTypes.SECURITY_AUDIT]: `Audit and fix ${parameters.vulnerability_type || 'security vulnerability'}`,
+      [MissionTypes.HOTFIX]: `Deploy hotfix for ${parameters.breach_type}`,
+      [MissionTypes.INFRASTRUCTURE_PROVISION]: `Provision infrastructure for ${parameters.infrastructure_type || parameters.cost_type || parameters.budget_type}`
+    };
+    
+    return intentTemplates[missionType] || `Execute ${missionType}`;
+  }
+  
+  /**
+   * Generate generation ID
+   */
+  _generateGenerationId(watcherEventId, eventType) {
+    return identityAuthority.generateId('mission_generation', {
+      watcher_event_id: watcherEventId,
+      event_type: eventType,
+      timestamp: constitutionalTimeAuthority.nowAsMillis()
+    });
+  }
+  
+  /**
+   * Generate authority ID
+   */
+  _generateAuthorityId() {
+    const authorityData = {
+      authority_version: this._authorityVersion,
+      constitutional_version: '36.0.0'
+    };
+    const hash = CanonicalAuthority.hash(authorityData);
+    return `automatic_mission_generator_${hash.substring(0, 16)}`;
+  }
+  
+  /**
+   * Emit GenerationStarted event
+   */
+  _emitGenerationStarted(generation) {
+    const event = {
+      event_id: identityAuthority.generateEventId('GenerationStarted', generation.generation_id),
+      event_type: 'GenerationStarted',
+      aggregate_id: generation.generation_id,
+      aggregate_type: 'MissionGeneration',
+      aggregate_version: 1,
+      sequence: 1,
+      timestamp: constitutionalTimeAuthority.nowAsMillis(),
+      authority: 'AutomaticMissionGenerator',
+      authority_version: this._authorityVersion,
+      payload_version: 1,
+      payload: generation.toJSON(),
+      causation_id: generation.watcher_event_id,
+      correlation_id: generation.generation_id
+    };
+    
+    if (this._eventRepository) {
+      this._eventRepository.appendEvent(event);
+    }
+  }
+  
+  /**
+   * Emit GenerationCompleted event
+   */
+  _emitGenerationCompleted(generation) {
+    const event = {
+      event_id: identityAuthority.generateEventId('GenerationCompleted', generation.generation_id),
+      event_type: 'GenerationCompleted',
+      aggregate_id: generation.generation_id,
+      aggregate_type: 'MissionGeneration',
+      aggregate_version: 1,
+      sequence: 2,
+      timestamp: constitutionalTimeAuthority.nowAsMillis(),
+      authority: 'AutomaticMissionGenerator',
+      authority_version: this._authorityVersion,
+      payload_version: 1,
+      payload: {
+        generation_id: generation.generation_id,
+        mission_id: generation.mission_id,
+        completed_at: constitutionalTimeAuthority.nowAsMillis()
+      },
+      causation_id: generation.generation_id,
+      correlation_id: generation.mission_id
+    };
+    
+    if (this._eventRepository) {
+      this._eventRepository.appendEvent(event);
+    }
+  }
+  
+  /**
+   * Emit GenerationFailed event
+   */
+  _emitGenerationFailed(generation) {
+    const event = {
+      event_id: identityAuthority.generateEventId('GenerationFailed', generation.generation_id),
+      event_type: 'GenerationFailed',
+      aggregate_id: generation.generation_id,
+      aggregate_type: 'MissionGeneration',
+      aggregate_version: 1,
+      sequence: 2,
+      timestamp: constitutionalTimeAuthority.nowAsMillis(),
+      authority: 'AutomaticMissionGenerator',
+      authority_version: this._authorityVersion,
+      payload_version: 1,
+      payload: {
+        generation_id: generation.generation_id,
+        error: generation.error,
+        failed_at: constitutionalTimeAuthority.nowAsMillis()
+      },
+      causation_id: generation.generation_id,
+      correlation_id: generation.generation_id
+    };
+    
+    if (this._eventRepository) {
+      this._eventRepository.appendEvent(event);
+    }
+  }
+}
+
+// Singleton instance
+let automaticMissionGenerator = null;
+
+function getAutomaticMissionGenerator(eventRepository, missionAuthority, triggerAuthority, runtimeIdentity = null) {
+  if (!automaticMissionGenerator) {
+    automaticMissionGenerator = new AutomaticMissionGenerator(eventRepository, missionAuthority, triggerAuthority, runtimeIdentity);
+  }
+  return automaticMissionGenerator;
+}
+
+module.exports = {
+  AutomaticMissionGenerator,
+  MissionGeneration,
+  MissionGenerationRules,
+  automaticMissionGenerator,
+  getAutomaticMissionGenerator
+};
+
+############ FILE: gateway/self_improvement_loop.js ############
+/**
+ * Self-Improvement Loop
+ * 
+ * Phase 24 — Self-Improvement Loop
+ * 
+ * Connect everything:
+ * 
+ * Repository Discovery
+ * ↓
+ * Repository Analysis
+ * ↓
+ * Mission Generation
+ * ↓
+ * Mission Prioritization
+ * ↓
+ * Mission Scheduling
+ * ↓
+ * Mission Execution
+ * ↓
+ * Patch Generation
+ * ↓
+ * Validation
+ * ↓
+ * Replay
+ * ↓
+ * Approval
+ * ↓
+ * Commit
+ * ↓
+ * Witness
+ * ↓
+ * Checkpoint
+ * ↓
+ * Repository Discovery
+ * 
+ * The system literally improves from every repository.
+ */
+
+const { CanonicalAuthority } = require('../ping-runtime/authorities/canonical_authority.js');
+const { constitutionalTimeAuthority } = require('../ping-runtime/authorities/constitutional_time_authority.js');
+const { witnessAuthority } = require('./witness_authority');
+
+class SelfImprovementLoop {
+  constructor(repositoryDiscoveryService, repositoryAnalysisService, missionGenerationService, missionExecutionAuthority, memoryAuthority, eventBus, workerPool = null) {
+    this._repositoryDiscovery = repositoryDiscoveryService;
+    this._repositoryAnalysis = repositoryAnalysisService;
+    this._missionGeneration = missionGenerationService;
+    this._missionExecution = missionExecutionAuthority;
+    this._memoryAuthority = memoryAuthority;
+    this._eventBus = eventBus;
+    this._workerPool = workerPool;
+    this._authorityId = this._generateAuthorityId();
+    this._running = false;
+    this._loopInterval = 3600000; // 1 hour
+    this._loopTimer = null;
+  }
+
+  /**
+   * Initialize loop
+   */
+  async initialize() {
+    await this._startLoop();
+    // Execute discovery cycle immediately on startup
+    await this._runCycle();
+    console.log('[SelfImprovementLoop] Initialized');
+  }
+
+  /**
+   * Start loop
+   */
+  _startLoop() {
+    if (this._loopTimer) {
+      clearInterval(this._loopTimer);
+    }
+
+    this._loopTimer = setInterval(async () => {
+      await this._runCycle();
+    }, this._loopInterval);
+
+    this._running = true;
+    console.log('[SelfImprovementLoop] Loop started with interval:', this._loopInterval, 'ms');
+  }
+
+  /**
+   * Run one improvement cycle
+   */
+  async _runCycle() {
+    if (!this._running) {
+      return;
+    }
+
+    console.log('[SelfImprovementLoop] Starting improvement cycle');
+
+    try {
+      // Step 1: Repository Discovery
+      const discovered = await this._repositoryDiscovery.discoverRepositories();
+      console.log(`[SelfImprovementLoop] Discovered ${discovered.length} repositories`);
+
+      // Step 2: Repository Analysis (parallel)
+      const analysisPromises = discovered.map(repo =>
+        this._analyzeRepository(repo).catch(error => {
+          console.error(`[SelfImprovementLoop] Analysis failed for ${repo.repo_id}:`, error.message);
+          return null;
+        })
+      );
+      
+      const analyses = await Promise.all(analysisPromises);
+      const successfulAnalyses = analyses.filter(a => a !== null);
+      console.log(`[SelfImprovementLoop] Analyzed ${successfulAnalyses.length}/${discovered.length} repositories`);
+
+      // Step 3: Mission Generation (parallel)
+      const missionPromises = discovered.map(repo =>
+        this._missionGeneration.generateMissions(repo.repo_id).catch(error => {
+          console.error(`[SelfImprovementLoop] Mission generation failed for ${repo.repo_id}:`, error.message);
+          return [];
+        })
+      );
+      
+      const allMissions = await Promise.all(missionPromises);
+      const flatMissions = allMissions.flat();
+      console.log(`[SelfImprovementLoop] Generated ${flatMissions.length} missions total`);
+
+      // Publish MissionGenerated events for Control Center
+      if (this._eventBus) {
+        for (const mission of flatMissions) {
+          await this._eventBus.publish('MissionGenerated', {
+            mission_id: mission.mission_id,
+            repo_id: mission.repo_id,
+            mission_type: mission.mission_type,
+            mission_description: mission.mission_description
+          });
+        }
+      }
+
+      // Step 4: Mission Prioritization
+      const prioritized = await this._prioritizeMissions();
+      console.log(`[SelfImprovementLoop] Prioritized ${prioritized.length} missions`);
+
+      // Step 5: Mission Scheduling
+      const scheduled = await this._scheduleMissions(prioritized);
+      console.log(`[SelfImprovementLoop] Scheduled ${scheduled.length} missions`);
+
+      // Step 6: Mission Execution
+      for (const mission of scheduled) {
+        try {
+          const execution = await this._missionExecution.executeMission(mission.mission_id);
+          console.log(`[SelfImprovementLoop] Executed mission ${mission.mission_id}`);
+
+          // Store successful execution as pattern
+          if (execution.execution_status === 'completed') {
+            await this._memoryAuthority.storePattern({
+              pattern_name: `mission_${mission.mission_type}`,
+              pattern_type: mission.mission_type,
+              pattern_description: mission.mission_description,
+              pattern_code: JSON.stringify(execution),
+              pattern_frequency: 1,
+              repository_id: mission.repo_id
+            });
+          }
+        } catch (error) {
+          console.error(`[SelfImprovementLoop] Failed to execute mission ${mission.mission_id}:`, error.message);
+
+          // Store failure in memory
+          await this._memoryAuthority.storeFailure({
+            failure_description: error.message,
+            failure_type: 'execution_failure',
+            failure_context: { mission_id: mission.mission_id },
+            repository_id: mission.repo_id
+          });
+        }
+      }
+
+      // Step 7: Learn from cycle
+      for (const repo of discovered) {
+        await this._learnFromCycle(repo.repo_id);
+      }
+
+      console.log('[SelfImprovementLoop] Improvement cycle completed');
+
+    } catch (error) {
+      console.error('[SelfImprovementLoop] Improvement cycle failed:', error.message);
+    }
+  }
+
+  /**
+   * Prioritize missions
+   * @returns {Array} Prioritized missions
+   */
+  async _prioritizeMissions() {
+    // Get all pending missions
+    const result = await this._missionGeneration._postgres.query(`
+      SELECT mission_id, repo_id, mission_type, mission_description, priority, feasibility_score
+      FROM missions
+      WHERE mission_status = 'pending'
+      ORDER BY priority DESC, feasibility_score DESC
+      LIMIT 10
+    `, []);
+
+    return result.rows;
+  }
+
+  /**
+   * Schedule missions
+   * @param {Array} missions - Missions to schedule
+   * @returns {Array} Scheduled missions
+   */
+  async _scheduleMissions(missions) {
+    const scheduled = [];
+
+    for (const mission of missions) {
+      await this._missionGeneration._postgres.query(`
+        UPDATE missions
+        SET mission_status = 'scheduled', scheduled_at = NOW()
+        WHERE mission_id = $1
+      `, [mission.mission_id]);
+
+      scheduled.push({
+        ...mission,
+        mission_status: 'scheduled',
+        scheduled_at: constitutionalTimeAuthority.now()
+      });
+    }
+
+    return scheduled;
+  }
+
+  /**
+   * Learn from cycle
+   * @param {string} repoId - Repository ID
+   */
+  async _learnFromCycle(repoId) {
+    // Extract patterns from successful executions
+    const patterns = await this._memoryAuthority._postgres.query(`
+      SELECT * FROM memory_patterns WHERE repository_id = $1
+    `, [repoId]);
+
+    // Update pattern frequencies
+    for (const pattern of patterns.rows) {
+      await this._memoryAuthority._postgres.query(`
+        UPDATE memory_patterns
+        SET pattern_frequency = pattern_frequency + 1
+        WHERE pattern_id = $1
+      `, [pattern.pattern_id]);
+    }
+
+    // Extract facts from failures
+    const failures = await this._memoryAuthority._postgres.query(`
+      SELECT * FROM memory_failures WHERE repository_id = $1
+    `, [repoId]);
+
+    for (const failure of failures.rows) {
+      await this._memoryAuthority._postgres.query(`
+        INSERT INTO memory_facts (fact_id, fact_text, fact_category, confidence, source_id)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (fact_id) DO UPDATE SET
+          confidence = memory_facts.confidence + 0.1
+      `, [
+        this._memoryAuthority._generateFactId(failure.failure_description),
+        failure.failure_description,
+        'failure_pattern',
+        0.5,
+        repoId
+      ]);
+    }
+  }
+
+  /**
+   * Stop loop
+   */
+  async stop() {
+    this._running = false;
+    if (this._loopTimer) {
+      clearInterval(this._loopTimer);
+      this._loopTimer = null;
+    }
+    console.log('[SelfImprovementLoop] Stopped');
+  }
+
+  /**
+   * Get loop status
+   * @returns {Object} Status
+   */
+  getStatus() {
+    return {
+      running: this._running,
+      loop_interval: this._loopInterval,
+      authority_id: this._authorityId
+    };
+  }
+
+  /**
+   * Generate authority ID
+   * @returns {string} Authority ID
+   */
+  _generateAuthorityId() {
+    const authorityData = {
+      authority_version: '24.0.0',
+      constitutional_version: '24.0.0'
+    };
+    const hash = CanonicalAuthority.hash(authorityData);
+    return `self_improvement_${hash.substring(0, 16)}`;
+  }
+}
+
+module.exports = { SelfImprovementLoop };
+
+############ FILE: gateway/routes/orchestration.js ############
+/**
+ * Orchestration Routes — Orca HTTP Interface
+ *
+ * HTTP interface for the Constitutional Execution Engine (Orca).
+ * Desktop agents submit missions here. Workers register and report output.
+ *
+ * POST   /orchestration/missions              — Submit a mission
+ * GET    /orchestration/missions               — List all missions
+ * GET    /orchestration/missions/:id           — Get mission status
+ * POST   /orchestration/missions/:id/dispatch  — Dispatch mission to workers
+ * POST   /orchestration/missions/:id/output    — Submit worker output
+ * GET    /orchestration/workers                — List registered workers
+ * GET    /orchestration/engine                 — Engine dashboard
+ * POST   /orchestration/engine/compile         — Trigger mission compilation
+ * POST   /orchestration/engine/loop            — Trigger autonomous loop
+ */
+
+const express = require('express');
+const router = express.Router();
+const { asyncHandler } = require('../route_middleware');
+const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+function createOrchestrationRoutes(engine) {
+  // ── Missions ──────────────────────────────────────────────
+
+  /**
+   * POST /orchestration/missions
+   * Submit a new mission. Agents call this to delegate work.
+   *
+   * Body: {
+   *   type: string,           // mission type (e.g., "ENTROPY_REDUCTION", "DEAD_CODE_AUDIT")
+   *   target?: string,        // file or module target
+   *   priority?: number,      // 1-10 (higher = more urgent)
+   *   description?: string,   // human-readable description
+   *   requiredCapabilities?: string[],  // capabilities needed
+   *   metadata?: object       // extra metadata
+   * }
+   */
+  router.post('/missions', asyncHandler('POST /orchestration/missions', async (req, res) => {
+    const {
+      type = 'GENERAL',
+      target,
+      priority = 5,
+      description,
+      requiredCapabilities = [],
+      metadata = {},
+      files,
+    } = req.body;
+
+    if (!type) return res.status(400).json({ error: 'type is required' });
+
+    const mission = {
+      id: `mission_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      target,
+      status: 'pending',
+      files: files || (target ? [target] : []),
+      metadata: {
+        priority,
+        description: description || `${type} mission`,
+        requiredCapabilities: requiredCapabilities.length > 0
+          ? requiredCapabilities
+          : ['orchestration.review'],
+        ...metadata,
+      },
+      createdAt: constitutionalTimeAuthority.nowAsISOString(),
+    };
+
+    engine._missions.push(mission);
+
+    res.status(201).json({
+      missionId: mission.id,
+      type: mission.type,
+      status: mission.status,
+      priority: mission.metadata.priority,
+    });
+  }));
+
+  /**
+   * GET /orchestration/missions
+   * List all missions with optional status filter.
+   */
+  router.get('/missions', asyncHandler('GET /orchestration/missions', async (req, res) => {
+    const { status, limit = 50 } = req.query;
+    let missions = engine._missions || [];
+
+    if (status) {
+      missions = missions.filter(m => m.status === status);
+    }
+
+    const result = missions.slice(-parseInt(limit)).map(m => ({
+      id: m.id,
+      type: m.type,
+      target: m.target,
+      status: m.status,
+      priority: m.metadata?.priority,
+      description: m.metadata?.description,
+      createdAt: m.createdAt,
+      consensus: m.consensus ? {
+        accepted: m.consensus.accepted,
+        confidence: m.consensus.averageConfidence || m.consensus.confidence,
+      } : null,
+    }));
+
+    res.json(result);
+  }));
+
+  /**
+   * GET /orchestration/missions/:id
+   * Get full mission status including worker outputs.
+   */
+  router.get('/missions/:id', asyncHandler('GET /orchestration/missions/:id', async (req, res) => {
+    const mission = engine._missions.find(m => m.id === req.params.id);
+    if (!mission) return res.status(404).json({ error: 'Mission not found' });
+
+    res.json({
+      id: mission.id,
+      type: mission.type,
+      target: mission.target,
+      status: mission.status,
+      priority: mission.metadata?.priority,
+      description: mission.metadata?.description,
+      files: mission.files,
+      createdAt: mission.createdAt,
+      workerOutputs: (mission.workerOutputs || []).map(o => ({
+        workerId: o.workerId,
+        confidence: o.confidence,
+        findingsCount: (o.findings || []).length,
+      })),
+      consensus: mission.consensus || null,
+      consensusArtifactId: mission.consensusArtifactId,
+      mergeArtifactId: mission.mergeArtifactId,
+    });
+  }));
+
+  /**
+   * POST /orchestration/missions/:id/dispatch
+   * Dispatch a pending mission to available workers.
+   */
+  router.post('/missions/:id/dispatch', asyncHandler('POST /orchestration/missions/:id/dispatch', async (req, res) => {
+    const mission = engine._missions.find(m => m.id === req.params.id);
+    if (!mission) return res.status(404).json({ error: 'Mission not found' });
+
+    const dispatch = engine.dispatchToAssignment(mission.id);
+    if (!dispatch) {
+      return res.json({ missionId: mission.id, status: mission.status, workers: [] });
+    }
+
+    res.json({
+      missionId: dispatch.missionId,
+      workers: dispatch.workers.map(w => ({
+        workerId: w.workerId,
+        model: w.model,
+        capability: w.capability,
+      })),
+      outputs: dispatch.outputs.map(o => ({
+        workerId: o.workerId,
+        promptLength: o.prompt?.length || 0,
+        promptArtifactId: o.promptArtifactId,
+      })),
+    });
+  }));
+
+  /**
+   * POST /orchestration/missions/:id/output
+   * Submit worker output for a mission. Workers call this when done.
+   *
+   * Body: {
+   *   workerId: string,
+   *   findings?: object[],
+   *   confidence?: number,
+   *   summary?: string
+   * }
+   */
+  router.post('/missions/:id/output', asyncHandler('POST /orchestration/missions/:id/output', async (req, res) => {
+    const { workerId, findings, confidence, summary } = req.body;
+    if (!workerId) return res.status(400).json({ error: 'workerId is required' });
+
+    const result = engine.collectWorkerOutput(workerId, req.params.id, {
+      findings: findings || [],
+      confidence: confidence || 0.5,
+      summary: summary || '',
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: 'Mission not found or already resolved' });
+    }
+
+    res.json({
+      proposalId: result.proposalId,
+      missionStatus: result.mission.status,
+      consensus: result.mission.consensus ? {
+        accepted: result.mission.consensus.accepted,
+      } : null,
+    });
+  }));
+
+  // ── Workers ──────────────────────────────────────────────
+
+  /**
+   * GET /orchestration/workers
+   * List all registered workers and their status.
+   */
+  router.get('/workers', asyncHandler('GET /orchestration/workers', async (req, res) => {
+    const registry = engine._registry;
+    const workers = registry.listWorkers();
+    const stats = registry.getStats();
+
+    res.json({
+      total: stats.totalWorkers,
+      idle: stats.idle,
+      running: stats.running,
+      workers: workers.map(w => ({
+        id: w.id,
+        model: w.model,
+        capabilities: w.capabilities,
+        state: w.state,
+        load: `${w.currentLoad || 0}/${w.maxLoad || 3}`,
+        specialization: w.specialization,
+        qualityScore: w.qualityScore,
+        replayCompatibility: w.replayCompatibility,
+      })),
+    });
+  }));
+
+  // ── Engine ──────────────────────────────────────────────
+
+  /**
+   * GET /orchestration/engine
+   * Full engine dashboard.
+   */
+  router.get('/engine', asyncHandler('GET /orchestration/engine', async (req, res) => {
+    res.json(engine.generateDashboard());
+  }));
+
+  /**
+   * GET /orchestration/engine/report
+   * Full engine report including capabilities and high-priority missions.
+   */
+  router.get('/engine/report', asyncHandler('GET /orchestration/engine/report', async (req, res) => {
+    res.json(engine.getReport());
+  }));
+
+  /**
+   * POST /orchestration/engine/compile
+   * Trigger mission compilation from the intelligence graph.
+   */
+  router.post('/engine/compile', asyncHandler('POST /orchestration/engine/compile', async (req, res) => {
+    const missions = engine.compileMissions();
+    res.json({
+      compiled: missions.length,
+      missions: missions.map(m => ({
+        id: m.id,
+        type: m.type,
+        target: m.target,
+        priority: m.metadata?.priority,
+        description: m.metadata?.description,
+      })),
+    });
+  }));
+
+  /**
+   * POST /orchestration/engine/loop
+   * Trigger autonomous loop (limited iterations).
+   *
+   * Body: {
+   *   maxIterations?: number (default 3),
+   *   minPriority?: number (default 5),
+   *   missionsPerIteration?: number (default 3)
+   * }
+   */
+  router.post('/engine/loop', asyncHandler('POST /orchestration/engine/loop', async (req, res) => {
+    const { maxIterations = 3, minPriority = 5, missionsPerIteration = 3 } = req.body;
+    const results = engine.startAutonomousLoop({
+      maxIterations,
+      minPriority,
+      missionsPerIteration,
+      verbose: false,
+    });
+
+    res.json({
+      resolved: results.length,
+      results: results.map(r => ({
+        missionId: r.missionId,
+        workerId: r.workerId,
+        iteration: r.iteration,
+      })),
+      dashboard: engine.generateDashboard(),
+    });
+  }));
+
+  /**
+   * POST /orchestration/engine/git-diff
+   * Emit a git diff event to trigger mission compilation.
+   *
+   * Body: { diff: string }
+   */
+  router.post('/engine/git-diff', asyncHandler('POST /orchestration/engine/git-diff', async (req, res) => {
+    const { diff } = req.body;
+    if (!diff) return res.status(400).json({ error: 'diff is required' });
+
+    engine.emitGitDiff(diff);
+    res.json({ emitted: true, missionCount: engine._missions.length });
+  }));
+
+  return router;
+}
+
+module.exports = createOrchestrationRoutes;
+
+############ FILE: gateway/routes/governance.js ############
+// P7: Event Governance API
+// Machine-readable event ownership policy, namespace validation, violation tracking.
+
+const express = require('express');
+
+function createGovernanceRoutes(governance) {
+  const router = express.Router();
+
+  router.get('/policy', (req, res) => {
+    res.json({
+      ownership_policy: governance.getOwnershipPolicy(),
+      namespace_policy: governance.getNamespacePolicy(),
+      hash: governance.getHash(),
+      total_events: governance.getOwnershipPolicy().length,
+      total_namespaces: governance.getNamespacePolicy().length,
+    });
+  });
+
+  router.get('/policy/:eventType', (req, res) => {
+    const policy = governance.getPolicyForEvent(req.params.eventType);
+    if (!policy) {
+      return res.status(404).json({ error: `No policy for event type: ${req.params.eventType}` });
+    }
+    res.json(policy);
+  });
+
+  router.get('/namespaces', (req, res) => {
+    res.json({
+      namespaces: governance.getNamespacePolicy(),
+      namespace_owners: require('../../ping-runtime/events/event_governance').NAMESPACE_OWNERS,
+    });
+  });
+
+  router.get('/namespaces/:namespace', (req, res) => {
+    const events = governance.getEventsForNamespace(req.params.namespace);
+    res.json({
+      namespace: req.params.namespace,
+      events,
+      count: events.length,
+    });
+  });
+
+  router.get('/violations', (req, res) => {
+    const limit = parseInt(req.query.limit) || 50;
+    res.json({
+      violations: governance.getViolations(limit),
+      stats: governance.getStats(),
+    });
+  });
+
+  router.get('/stats', (req, res) => {
+    res.json(governance.getStats());
+  });
+
+  router.get('/validate/:eventType', (req, res) => {
+    const result = governance.validateEvent({
+      event_type: req.params.eventType,
+      authority_owner: req.query.owner || undefined,
+    });
+    res.json(result);
+  });
+
+  return router;
+}
+
+module.exports = createGovernanceRoutes;
+
+############ FILE: runtime/kernel/capabilities/capability-authority.ts ############
+import { ICapabilityAuthority, Capability, CapabilityRequirements, CapabilityFilters } from './capability-authority-interface';
+import { CapabilityRegistry } from './capability-registry';
+import { CapabilityResolver, CapabilityRequest } from './capability-resolver';
+import { CapabilityID, Priority, LatencyClass } from './capability';
+
+export class CapabilityAuthority implements ICapabilityAuthority {
+  private registry: CapabilityRegistry;
+  private resolver: CapabilityResolver;
+
+  constructor() {
+    this.registry = new CapabilityRegistry();
+    this.resolver = new CapabilityResolver(this.registry);
+  }
+
+  register(capability: Capability): void {
+    this.registry.registerCapability(capability as import('./capability').Capability);
+  }
+
+  unregister(capabilityId: string): void {
+    this.registry['capabilities'].delete(capabilityId as CapabilityID);
+  }
+
+  get(capabilityId: string): Capability | null {
+    const cap = this.registry.getCapability(capabilityId as CapabilityID);
+    return cap ? this.toInterfaceCapability(cap) : null;
+  }
+
+  resolve(requirements: CapabilityRequirements): Capability[] {
+    const request: CapabilityRequest = {
+      inputTypes: requirements.inputTypes,
+      outputTypes: requirements.outputTypes,
+      requiredPolicies: requirements.policies,
+      maxLatency: requirements.maxLatency ? LatencyClass.Batch : undefined,
+      maxCost: requirements.maxCost,
+      deterministic: requirements.deterministic,
+      replaySafe: requirements.replaySafe,
+    };
+    return this.resolver.resolve(request).map(c => this.toInterfaceCapability(c));
+  }
+
+  list(filters: CapabilityFilters): Capability[] {
+    let results = this.registry.listCapabilities();
+
+    if (filters.inputTypes) {
+      results = results.filter(cap =>
+        filters.inputTypes!.every(t => cap.inputs.some(i => i.type === t))
+      );
+    }
+    if (filters.outputTypes) {
+      results = results.filter(cap =>
+        filters.outputTypes!.every(t => cap.outputs.some(o => o.type === t))
+      );
+    }
+    if (filters.deterministic !== undefined) {
+      results = results.filter(cap => cap.deterministic === filters.deterministic);
+    }
+    if (filters.replaySafe !== undefined) {
+      results = results.filter(cap => cap.replaySafe === filters.replaySafe);
+    }
+
+    return results.map(c => this.toInterfaceCapability(c));
+  }
+
+  private toInterfaceCapability(cap: import('./capability').Capability): Capability {
+    return {
+      capabilityId: cap.identity,
+      name: cap.identity,
+      description: `Capability ${cap.identity} v${cap.version}`,
+      inputs: cap.inputs.map(i => ({ name: i.name, type: i.type, required: i.required })),
+      outputs: cap.outputs.map(o => ({ name: o.name, type: o.type })),
+      requirements: {
+        inputTypes: cap.inputs.map(i => i.type),
+        outputTypes: cap.outputs.map(o => o.type),
+        policies: cap.policies as string[],
+        maxLatency: cap.latencyClass === LatencyClass.Realtime ? 100 : undefined,
+        maxCost: cap.cost.amount,
+        deterministic: cap.deterministic,
+        replaySafe: cap.replaySafe,
+        executorClass: cap.executorClass,
+      },
+      execution: {
+        concurrency: cap.concurrency as any,
+        priority: cap.priority as any,
+        estimatedLatency: { min: 0, max: cap.timeout, unit: 'milliseconds' },
+        estimatedCost: { currency: cap.cost.currency, amount: cap.cost.amount, unit: cap.cost.unit },
+        resourceRequirements: cap.requiredResources,
+      },
+      governance: {
+        authorities: cap.requiredAuthorities,
+        policies: cap.policies as string[],
+        constraints: [],
+      },
+    };
+  }
+}
+
+############ mission_control.js head (681 lines, first 120) ############
+/**
+ * Mission Control Routes — PING Core v1
+ *
+ * Every widget answers a real business question.
+ * Every widget is backed by canonical events from ping_events.
+ * If a widget has no data, it returns empty with the precise upstream reason.
+ * Never fabricates.
+ */
+
+function createMissionControlRoutes(services) {
+  const express = require('express');
+  const router = express.Router();
+  const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+  const { unifiedEventRuntime, knowledgeGraph, missionRuntime, aiRuntime,
+    googleConnector, connectorRegistry, workerRuntime, missionScheduler, eventBridge,
+    eventToMissionBridge, replayProvider } = services;
+
+  const hasPG = !!(unifiedEventRuntime && missionRuntime);
+
+  const requirePG = (req, res, next) => {
+    if (!hasPG) return res.status(503).json({ error: 'Postgres unavailable', degraded: true });
+    next();
+  };
+
+  // ─── Helper: companion COUNT(*) for a WHERE clause mirroring
+  //     unifiedEventRuntime.query() (WHERE 1=1 + optional filters).
+  //     Gives the TRUE matching-cohort cardinality (not LIMIT-capped),
+  //     so totalEvents / truncated are mathematically truthful.
+  async function countEvents(whereConds, params) {
+    if (!unifiedEventRuntime._pool) return 0;
+    const result = await unifiedEventRuntime._pool.query(
+      `SELECT COUNT(*)::int AS count FROM ping_events WHERE ${whereConds.join(' AND ')}`,
+      params,
+    );
+    return Number(result.rows[0].count);
+  }
+
+  // ─── Helper: query events by type ──────────────────────────────
+  async function queryEventsByType(eventType, limit = 100) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ eventType, limit }),
+      countEvents(['1=1', 'event_type = $1'], [eventType]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ─── Helper: get all events in time window ─────────────────────
+  async function queryEventsSince(since, limit = 500) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ since, limit }),
+      countEvents(['1=1', 'timestamp >= $1'], [since]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DASHBOARD — Projection-backed operating system overview
+  // ═══════════════════════════════════════════════════════════════
+  router.get('/dashboard', requirePG, async (req, res) => {
+    try {
+      const [missionStats, ev] = await Promise.all([
+        missionRuntime.getStats(),
+        queryEventsSince(new Date(constitutionalTimeAuthority.nowAsMillis() - 86400000).toISOString(), 500),
+      ]);
+      const { totalEvents } = ev;
+      const allEvents = ev.events;
+
+      // Classify events by business category
+      const counts = {};
+      for (const e of allEvents) {
+        counts[e.event_type] = (counts[e.event_type] || 0) + 1;
+      }
+
+      // Business metrics — derived from events, not hardcoded
+      const business = {
+        needsFollowup: (counts.LEAD_CREATED || 0) + (counts.ESTIMATE_SENT || 0),
+        pendingReviews: (counts.REVIEW_RECEIVED || 0) - (counts.REVIEW_RESPONDED || 0),
+        activeProjects: (counts.PROJECT_CREATED || 0) - (counts.PROJECT_COMPLETED || 0),
+        unpaidInvoices: (counts.INVOICE_SENT || 0) - (counts.INVOICE_PAID || 0),
+        aiRecommendations: counts.RECOMMENDATION_CREATED || 0,
+        workerActivity: (counts.WORKER_COMPLETED || 0) + (counts.WORKER_FAILED || 0),
+      };
+
+      // Ensure no negative values
+      for (const k of Object.keys(business)) {
+        if (business[k] < 0) business[k] = 0;
+      }
+
+      res.json({
+        status: 'ok',
+        dashboard: {
+          business,
+          missions: missionStats,
+          eventSummary: { total: totalEvents, count: ev.count, truncated: ev.truncated, byType: counts, window_size_ms: 86400000, cap: 500 },
+          uptime: process.uptime(),
+          timestamp: constitutionalTimeAuthority.nowAsISOString(),
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // BUSINESS QUESTION ENDPOINTS
+  // ═══════════════════════════════════════════════════════════════
+
+  // Who needs follow-up? (leads, estimates, unanswered reviews)
+  router.get('/business/who-needs-followup', requirePG, async (req, res) => {
+    try {
+      const since = new Date(constitutionalTimeAuthority.nowAsMillis() - 7 * 86400000).toISOString(); // 7 days
+      const { events: all, truncated, count, totalEvents } = await queryEventsSince(since, 500);
+
+      const leads = all.filter(e => e.event_type === 'LEAD_CREATED');
+      const estimateSent = all.filter(e => e.event_type === 'ESTIMATE_SENT');
+      const reviews = all.filter(e => e.event_type === 'REVIEW_RECEIVED');
+      const reviewResponses = all.filter(e => e.event_type === 'REVIEW_RESPONDED');

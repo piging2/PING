@@ -1,0 +1,87 @@
+########## bullmq_adapter tenant ##########
+########## dead_letter_authority tenant ##########
+########## mission_scheduler retry tenant ##########
+89:   * @param {object} options.retryPolicy — P0-4: { max_attempts, backoff_delay_ms } default retry config
+98:    this._retryPolicy = options.retryPolicy || { max_attempts: 3, backoff_delay_ms: 5000 };
+227:        // project (needs event_id), preserve namespace (privacy boundary) and
+233:        // Namespace is set by the bridge from the spine event (always resolved);
+235:        namespace: payload.namespace,
+283:   * P0-4/P0-5: Fail with retry → exhaustion → DLQ.
+285:   * Calls failWithRetry on the mission. If the retry policy is exhausted
+291:      const retries = await this._missionRuntime.failWithRetry(
+294:        this._retryPolicy,
+298:      if (retries >= this._retryPolicy.max_attempts && this._deadLetterAuthority) {
+313:              retry_count: retries,
+########## embedding_service namespace ##########
+138:                namespace: event.namespace,
+146:                namespace: event.namespace,
+194:   * @param {object} canonicalObject — { id, kind, canonical_hash, namespace?, identity?, payload }
+195:   * @param {object} [options] — { text, namespace, sourceEventId, eventType, model }
+203:    const namespace =
+204:      options.namespace ||
+205:      (canonicalObject.identity && canonicalObject.identity.namespace) ||
+206:      canonicalObject.namespace ||
+219:        namespace,
+########## canonical_object_authority tenant ##########
+########## grants.ts (next repo) ##########
+########## tenant-context.ts head ##########
+/**
+ * Tenant context contract for the FYD composition runtime.
+ *
+ * REPO LANDING PATH: src/fyd/tenant/tenant-context.ts
+ * (This file lives at tests/tenant-context.ts in the Lane T work area;
+ * copy the whole tests/ tree into src/fyd/tenant/ when landing.)
+ *
+ * Nolan's directive: the tenant boundary is a HARD requirement. The FYD
+ * composition runtime stores are file-backed (see TENANT-BOUNDARY.md), so
+ * there is no database to push enforcement into. This module is the
+ * file-system analog of the required patterns:
+ *
+ *   - tenant_id on tenant-owned rows        -> tenantId in every store key
+ *                                              and in tenant-scoped paths
+ *   - RLS with force where applicable       -> the contract REFUSES before
+ *                                              any I/O; there is no bypass
+ *                                              path that skips requireTenant
+ *   - transaction-local tenant context      -> withTenantContext binds the
+ *                                              context to one execution
+ *                                              scope; absence fails closed
+ *   - privileged-column protection          -> key material and private
+ *                                              stores resolve paths only
+ *                                              through safeIdentityDir /
+ *                                              tenantScopedDir, never raw
+ *                                              string interpolation
+ *   - service-role separation               -> worker paths carry an
+ *                                              explicit context or they do
+ *                                              not run at all
+ *
+ * Rejection semantics (hard rule): a cross-tenant reference is REFUSED
+ * with a typed TenantContextError (REJECTED). It is NEVER answered with
+ * an empty result, null, or a silent fallback: an empty answer must not
+ * become a hiding place for a boundary violation (SOUL.md #11).
+ */
+
+export interface TenantContext {
+  /**
+   * The tenant this execution acts for. In the FYD composition runtime
+   * today the tenant id IS the site id (one site per business).
+   */
+  tenantId: string;
+  /**
+   * The authenticated actor the context was issued to, when known.
+   * Audit only: authentication alone never grants mutation.
+   */
+  actorId?: string;
+}
+
+/** Tenant ids are DNS-safe slugs, matching the siteId convention. */
+export const TENANT_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
+
+export type TenantRejectionCode =
+  | "TENANT_CONTEXT_MISSING"
+  | "CROSS_TENANT_REFERENCE";
+
+/**
+ * Typed refusal for every tenant-boundary violation. Thrown, never
+ * returned as a value, so callers cannot accidentally treat a refusal
+ * as a usable result. The message names the boundary, never the
+ * other tenant's data.

@@ -1,0 +1,61 @@
+# S18-02: create() — mission_type allowlist, payload size bound, canonical idempotency key
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_runtime.js (lines 60-93)
+# Intended target: src/tenanos/orchestration/mission_runtime.js
+# Seam: SEAM-REPORT.md 1A/1B/1D — entry validation, key-order idempotency, unbounded payload (BROKEN/RISKY)
+# Test: (a) create with disallowed type + allowedMissionTypes throws; (b) same payload different key order -> same mission_id;
+#       (c) >256KiB payload throws.
+# ---
+--- a/tenanos/orchestration/mission_runtime.js
++++ b/tenanos/orchestration/mission_runtime.js
+@@ -14,6 +14,17 @@
+  * Mission Control navigates these via events/queues, not CRUD.
+  */
+
++// S18-02: canonical JSON for idempotency keys. JSON.stringify is
++// key-order-sensitive; the same logical payload with different key order
++// must not mint a second mission_id.
++function stableStringify(value) {
++  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
++  if (value && typeof value === 'object') {
++    return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`;
++  }
++  return JSON.stringify(value);
++}
++
++// S18-02: bound the durable payload. Unbounded JSONB bloats the row, the
++// MISSION_CREATED event, and every getPending/getTrace read.
++const MAX_MISSION_PAYLOAD_BYTES = 262144; // 256 KiB
++
+ class MissionRuntime {
+   /**
+    * @param {object} options
+@@ -67,17 +78,32 @@
+   async create(missionType, payload = {}, options = {}) {
+     const crypto = require('crypto');
+     const { constitutionalTimeAuthority } = require('../authorities/constitutional_time_authority.js');
++    // S18-02: fail closed on unknown mission_type at the entry boundary.
++    // options.allowedMissionTypes is the scheduler's MISSION_WORKER_MAP key
++    // set; when provided, a typo'd type is rejected here instead of
++    // livelocking in the dispatch path (S18-01 is the backstop).
++    if (Array.isArray(options.allowedMissionTypes) && !options.allowedMissionTypes.includes(missionType)) {
++      throw new Error(`create: unknown mission_type '${missionType}' (not in allowedMissionTypes)`);
++    }
++    const payloadJson = stableStringify(payload);
++    if (Buffer.byteLength(payloadJson, 'utf8') > MAX_MISSION_PAYLOAD_BYTES) {
++      throw new Error(`create: mission payload exceeds ${MAX_MISSION_PAYLOAD_BYTES} bytes (mission_type=${missionType})`);
++    }
+     const idempotencyKey = payload.event_id
+       ? `${missionType}:${payload.event_id}`
+-      : `${missionType}:${JSON.stringify(payload)}`;
++      : `${missionType}:${payloadJson}`;
+     const missionId = crypto.createHash('sha256')
+       .update(idempotencyKey)
+       .digest('hex').slice(0, 16);
+
+     const result = await this._pool.query(
+       `INSERT INTO ping_missions (mission_id, mission_type, payload, priority, created_by)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (mission_id) DO NOTHING`,
+-      [missionId, missionType, JSON.stringify(payload), options.priority || 0, options.createdBy || null]
++      [missionId, missionType, payloadJson, options.priority || 0, options.createdBy || null]
+     );

@@ -1,0 +1,24 @@
+# PATCH-06 — Effect Gate (registration gate + projection retry-safety; ledger specified, not built)
+
+- **AXIOMS CLOSED:** F1, F2 (gate + observability; full closure deferred until the first consequential worker).
+- **FILES:** `ping-runtime/workers/canonical_workers.js` (`registerCanonicalWorkers` docstring/contract; `ProjectionWorker.handle`); a new `docs/effect-ledger-spec.md` (spec only).
+- **SYMBOLS:** `registerCanonicalWorkers`, `ProjectionWorker`, future `ping_effects` (specified, not created).
+- **SCHEMA CHANGE:** None today. Specified for later: `ping_effects(effect_id TEXT PRIMARY KEY, attempt_id TEXT, effect_seq INTEGER, effect_type TEXT, target TEXT, status TEXT, provider_idempotency_key TEXT, confirmed_at TIMESTAMPTZ, UNIQUE(attempt_id, effect_seq))`.
+- **BEFORE:** No registration gate; no effect identity anywhere; ProjectionWorker's PROJECTION_CREATED has no logical_id so re-execution duplicates it; email/SMS are stubs so the gap is structural, not behavioral.
+- **AFTER:** (1) Standing GATE RULE recorded in the `registerCanonicalWorkers` contract: no worker performing a REVERSIBLE/IRREVERSIBLE external effect may be registered until it goes authorize -> ledger -> dispatch -> confirm, its classification row is added to the effect table, and timeout handling is specified. (2) ProjectionWorker passes `logical_id` on PROJECTION_CREATED (natural key: the projected event's id) -> re-execution dedups like witness does (one-line class upgrade: duplicates -> retry-safe). (3) Effect ledger SPEC recorded (not built): states AUTHORIZED -> DISPATCHED -> CONFIRMED | FAILED | UNKNOWN_OUTCOME (+ optional COMPENSATED); ledger row written BEFORE the provider call, keyed by `effect_id = sha256('effect:'+attempt_id+':'+effect_seq)`; provider called with its native idempotency key set to effect_id where supported; timeout NEVER resolves to FAILED (row stays UNKNOWN_OUTCOME until a queryable provider confirms/denies; reconciliation marks `reconciled:true`, never rewrites to FAILED); duplicate detection by querying the provider by idempotency key before re-dispatch.
+- **ALGORITHM:** Gate = code review checklist + contract comment (process, not mechanism). Retry-safety = deterministic logical_id on the projection emit.
+- **PSEUDODIFF:** `ProjectionWorker.handle`: `await this._emit('PROJECTION_CREATED', payload, {logical_id: {kind:'projection', source_event_id: event.event_id}, ...})`.
+- **FAIL-BEFORE TEST:** Re-execute a projection mission (simulated lease reclaim); assert two PROJECTION_CREATED rows (documents duplication).
+- **PASS-AFTER TEST:** Same; assert one row, second emit returns `deduplicated:true`.
+- **CRASH TEST:** KILL between Qdrant upsert and emit (emit-first ordering per Lane E) -> re-execution dedups the event; Qdrant upsert is idempotent by point id.
+- **CONCURRENCY TEST:** n/a (single-writer worker).
+- **HISTORY TEST:** Historical PROJECTION_CREATED rows without logical_id unchanged; dedup applies to new rows only.
+- **NAMESPACE TEST:** logical_id inherits the event's namespace via the event identity preimage.
+- **SECURITY TEST:** The gate's classification table must be updated before any new external writer registers; CI check: any worker whose handle() calls a network client must declare its effect class.
+- **DEPENDENCIES:** PATCH-05 (attempt_id is the ledger's future join key); PATCH-03 (ON CONFLICT dedup semantics).
+- **MIGRATION:** None.
+- **ROLLBACK:** Revert the one-line logical_id; remove the contract comment.
+- **OBSERVABILITY:** PATCH-07's PROJECTION_FAILED makes the swallowed Qdrant failure visible (F2 closure for this worker).
+- **RESIDUAL FAILURE:** The ledger is still unbuilt; the gate is a process control, not a mechanism. The first effectful worker MUST build the ledger per the recorded spec; until then, re-execution safety for canonical workers rests on logical_id dedup + idempotent upserts.
+- **COMPLEXITY:** Trivial today (1 line + contract text + spec doc).
+- **CONFIDENCE:** High for the gate + projection line; the ledger spec is deliberately unbuilt (no user: infrastructure needs a proven need).

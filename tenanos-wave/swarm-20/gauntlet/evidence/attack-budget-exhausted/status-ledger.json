@@ -1,0 +1,92 @@
+{
+  "ledger": [
+    {
+      "unit": "t1",
+      "from": null,
+      "to": "PLANNED",
+      "at": "2026-09-24T01:51:12.185Z",
+      "evidence": "02-plan.json",
+      "sourceRule": null,
+      "detail": {
+        "taskKey": "t1-summarize",
+        "capability": "text.transform",
+        "agentId": "hermes"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "PLANNED",
+      "to": "AUTHORIZED",
+      "at": "2026-09-24T01:51:12.187Z",
+      "evidence": "policy-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "AUTHORIZED",
+      "to": "QUEUED",
+      "at": "2026-09-24T01:51:12.190Z",
+      "evidence": "workorder-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "QUEUED",
+      "to": "RUNNING",
+      "at": "2026-09-24T01:51:12.195Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "RUNNING",
+      "to": "EVIDENCE_PENDING",
+      "at": "2026-09-24T01:51:12.319Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "EVIDENCE_PENDING",
+      "to": "VERIFIED",
+      "at": "2026-09-24T01:51:12.321Z",
+      "evidence": "result-t1.json",
+      "sourceRule": null,
+      "detail": {
+        "event_id": "83199617c51637ba25dbea66567e8f04cddde7e3bd2799f6fe175dbcf182873c"
+      }
+    },
+    {
+      "unit": "t2",
+      "from": null,
+      "to": "PLANNED",
+      "at": "2026-09-24T01:51:12.325Z",
+      "evidence": "02-plan.json",
+      "sourceRule": null,
+      "detail": {
+        "taskKey": "t2-verify",
+        "capability": "text.transform",
+        "agentId": "hermes"
+      }
+    },
+    {
+      "unit": "t2",
+      "from": "PLANNED",
+      "to": "BLOCKED",
+      "at": "2026-09-24T01:51:12.326Z",
+      "evidence": "policy-t2.json",
+      "sourceRule": null,
+      "detail": {
+        "decisionClass": "REQUIRES_HUMAN_APPROVAL"
+      }
+    }
+  ],
+  "states": {
+    "t1": "VERIFIED",
+    "t2": "BLOCKED"
+  }
+}

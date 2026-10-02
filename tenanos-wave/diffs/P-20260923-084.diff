@@ -1,0 +1,19 @@
+--- /home/nolan/ping/ping-runtime/orchestration/execution/engine.js
++++ /home/nolan/ping/ping-runtime/orchestration/execution/engine.js
+@@ -580,9 +580,13 @@
+         for (const w of dispatch.workers) {
++          // PROVENANCE (P-20260923-084): the autonomous loop is a simulation
++          // harness — no worker executed. Findings are synthetic placeholders,
++          // never evidence. Confidence is UNKNOWN, not 0.85. Feeding a
++          // hardcoded 0.85 into collectWorkerOutput fabricated consensus and
++          // every downstream closure percentage.
+           const output = {
+             workerId: w.workerId,
+-            findings: [{ file: mission.target || 'x', line: 0, bypass_type: 'auto_scan', confidence: 0.85 }],
+-            confidence: 0.85
++            synthetic: true,
++            findings: [{ file: mission.target || 'x', line: 0, bypass_type: 'synthetic_placeholder', confidence: null }],
++            confidence: null
+           };
+           const result = this.collectWorkerOutput(w.workerId, mission.id, output);
+           if (result) {

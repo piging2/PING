@@ -1,0 +1,35 @@
+# P-20260923-097: wire KG status string into the approved/rejected booleans rank() reads
+# Source: swarm-05 MEMORY-TRACE.md M2 "wiring gap (secondary finding)" + CONVERGED-PIPELINE.md
+# gap table (RETRIEVAL row).
+# Target repo: /home/nolan/ping (live gateway tree).
+# Anchor: ping-runtime/search/hybrid_search.js, knowledge-graph context leg, results.push({...}).
+# The KG leg pushes `status: node.status` (string) but never sets the `approved`/`rejected`
+# booleans that EvidenceAuthority.rank() reads (approved x1.2 boost, rejected x0.2 penalty).
+# Today both are dead code for KG results and ranking falls back to confidence alone
+# (1.0 vs 0.5 still orders approved above candidate, which is why the existing F1 test
+# passes despite the dead path). The 5-line addition makes rank() honor its contract.
+# The semantic leg needs no change: it already sets `verified` from the evidence trace
+# (verify()) and rank() handles its fields.
+# Known adjacent seam (not in scope, flagged): the KG leg hardcodes `verified: true`
+# ("stored node - already passed the graph write path") instead of tracing source_event_id
+# back to ping_events the way the semantic leg does. Rank math is unaffected; the
+# assembler (P-20260923-098) treats verified as a strict boolean either way.
+# Test: unit-test the KG-leg push shape with a stubbed knowledgeGraph (assert
+# approved/rejected booleans track node.status), then rank() orders an approved node
+# above a candidate at equal confidence.
+# ---
+--- a/ping-runtime/search/hybrid_search.js
++++ b/ping-runtime/search/hybrid_search.js
+@@ -98,6 +98,11 @@
+             verified: true, // stored node — already passed the graph write path
+             source: 'knowledge',
+             status: node.status,
++            // swarm-05 (I1/I3): wire the status string into the booleans
++            // EvidenceAuthority.rank() reads (approved x1.2, rejected x0.2).
++            // Without these the approval boost and rejection penalty are dead
++            // code for KG results and ranking falls back to confidence alone.
++            approved: node.status === 'approved',
++            rejected: node.status === 'rejected',
+             node_type: node.node_type,
+             label: node.label,
+             entity_id: node.entity_id,

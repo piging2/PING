@@ -1,0 +1,26 @@
+# PATCH-03 — Event Collision Detection (canonical-hash witness, compact IDs preserved)
+
+- **AXIOMS CLOSED:** E2 (primary). Supports M2, H1.
+- **FILES:** `ping-runtime/events/unified_event_runtime.js` (`emit()` persist path); `runtime/kernel/authorities/identity_authority.js` (return full digest alongside truncated ID); new migration SQL.
+- **SYMBOLS:** `IdentityAuthority.generateId('event', ...)`, `emit()` steps 6 (persist).
+- **SCHEMA CHANGE:** `ALTER TABLE ping_events ADD COLUMN canonical_hash VARCHAR(64); CREATE INDEX idx_ping_events_canonical_hash ON ping_events(canonical_hash);` Legacy rows: NULL, never backfilled.
+- **BEFORE:** `INSERT ... ON CONFLICT (event_id) DO NOTHING`; conflict -> silent dedup, ok receipt, handlers re-fire on the dropped content; full digest persisted nowhere; journal/handler split-brain possible.
+- **AFTER:** `canonical_hash` = full 64-hex SHA-256 of the exact identity-preimage bytes (the untruncated digest whose first 16 hex chars form the event_id; NOT `canonicalEventHash()` from convergence_identity.js, which includes metadata that identity excludes). Emit path: `client=pool.connect(); BEGIN; INSERT ... (incl. canonical_hash) ... ON CONFLICT DO NOTHING RETURNING sequence;` on rowCount=0, in the SAME tx: `SELECT event_id, event_type, source, namespace, payload, canonical_hash FROM ping_events WHERE event_id=$1`. Then: (a) stored.canonical_hash IS NULL -> legacy dedup: `deduplicated:true, witness_unavailable:true`, COMMIT, dispatch per current at-least-once law, explicit about the unprovable equivalence; (b) candidate digest == stored -> genuine duplicate -> `deduplicated:true`, COMMIT (dispatch-on-dedup is an operator-declared law, recorded explicitly); (c) otherwise -> FAIL CLOSED: `code:'EVENT_IDENTITY_CONFLICT'`, no dispatch, no overwrite, COMMIT (nothing was written).
+- **ALGORITHM:** Preimage-equivalence via the witness column; same-tx conflict read removes the D-2-branch TOCTOU; NULL-witness legacy path preserves current behavior exactly where equivalence is unprovable, and says so in the return value.
+- **PSEUDODIFF:**
+  - `identity_authority.js`: `generateId` returns `{id, digest}` (or a `generateIdWithDigest` variant); UER stores `digest` as `canonical_hash`.
+  - `unified_event_runtime.js` persist block: explicit `BEGIN`/`COMMIT`/`ROLLBACK`, conflict branch as above. On SQL throw: ROLLBACK, `stats.failed++`.
+- **FAIL-BEFORE TEST:** Insert event A, then event B with same event_id but different payload (crafted via mocked identity); assert B is silently dropped with ok (documents the defect).
+- **PASS-AFTER TEST:** Same pair; assert B returns `EVENT_IDENTITY_CONFLICT`, zero handler dispatches for B, row A untouched; identical retry of A returns `deduplicated:true`.
+- **CRASH TEST:** KILL_02 during the INSERT; restart -> no row (implicit-tx atomicity); retry is safe (deterministic ID).
+- **CONCURRENCY TEST:** 10 concurrent identical emits -> one row, 9 dedups; 10 concurrent distinct events -> 10 rows.
+- **HISTORY TEST:** All historical IDs byte-identical (`event_<16hex>`); legacy rows keep `canonical_hash=NULL`; 12-leaf P0 invariant untouched.
+- **NAMESPACE TEST:** Namespace is in the preimage; a same-payload different-namespace event has a different digest -> not a false duplicate.
+- **SECURITY TEST:** Adversarial chosen-pair (2^32 grinding) now fails closed instead of manufacturing journal/handler split-brain; second-preimage (2^64) was already infeasible.
+- **DEPENDENCIES:** PATCH-02 (same-client conflict read composes with tx-scoped emit).
+- **MIGRATION:** Additive column + index; no backfill (recomputation is not provably identical: the stored row does not record logical_id-vs-payload preimage choice).
+- **ROLLBACK:** Drop column; revert to implicit-tx INSERT. Historical rows unaffected.
+- **OBSERVABILITY:** `stats.deduplicated`, `stats.collisions_rejected`, `stats.witness_unavailable`; alert on any `EVENT_IDENTITY_CONFLICT`.
+- **RESIDUAL FAILURE:** Legacy NULL-witness rows keep fail-open dedup (explicit, not silent); chosen-pair collisions against legacy IDs remain undetectable until those rows age out.
+- **COMPLEXITY:** Small (~30 lines + migration).
+- **CONFIDENCE:** High. Resolves the D-2-branch vs reverted-main disagreement (payload-only vs metadata-inclusive) in favor of the identity law: the witness is preimage-equivalent, so legitimate retries with new causation_id stay idempotent. Do NOT copy the Devin branch's `JSON.stringify` comparison (key-order false positives) or its non-atomic SELECT.

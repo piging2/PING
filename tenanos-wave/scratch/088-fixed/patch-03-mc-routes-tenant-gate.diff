@@ -1,0 +1,351 @@
+diff --git a/gateway/routes/mission_control.js b/gateway/routes/mission_control.js
+index bc33fd816..91b9d29fb 100644
+--- a/gateway/routes/mission_control.js
++++ b/gateway/routes/mission_control.js
+@@ -23,6 +23,31 @@ function createMissionControlRoutes(services) {
+     next();
+   };
+ 
++  // P-20260923-088: tenant isolation gate for Mission Control.
++  // Default-deny: every cross-tenant-unsafe /mc/* read requires a resolved
++  // tenant (?tenant=<slug> or ?namespace=tenant::<slug>). No tenant ⇒ 400,
++  // never a cross-tenant read. Malformed tenant ⇒ 400. The resolved
++  // { tenantId, namespace } is carried on req.tenantContext.
++  // Canonical mapping defined by P-20260923-092; JS adapter re-implements
++  // the same contract (same regexes/codes) since the TS kit is not
++  // importable by this JS runtime.
++  const {
++    resolveTenantFromRequest,
++    TenantBoundaryError,
++  } = require('../lib/tenant-context.js');
++
++  const requireTenant = (req, res, next) => {
++    try {
++      req.tenantContext = resolveTenantFromRequest(req);
++      next();
++    } catch (err) {
++      if (err instanceof TenantBoundaryError) {
++        return res.status(400).json({ status: 'error', code: err.code, message: err.message });
++      }
++      return res.status(400).json({ status: 'error', code: 'INVALID_TENANT', message: err.message });
++    }
++  };
++
+   // ─── Helper: companion COUNT(*) for a WHERE clause mirroring
+   //     unifiedEventRuntime.query() (WHERE 1=1 + optional filters).
+   //     Gives the TRUE matching-cohort cardinality (not LIMIT-capped),
+@@ -37,20 +62,28 @@ function createMissionControlRoutes(services) {
+   }
+ 
+   // ─── Helper: query events by type ──────────────────────────────
+-  async function queryEventsByType(eventType, limit = 100) {
++  // P-20260923-088: takes the tenant namespace so the count and the rows
++  // describe the SAME tenant cohort.
++  async function queryEventsByType(eventType, limit = 100, namespace = null) {
+     const [result, totalEvents] = await Promise.all([
+-      unifiedEventRuntime.query({ eventType, limit }),
+-      countEvents(['1=1', 'event_type = $1'], [eventType]),
++      unifiedEventRuntime.query({ eventType, limit, namespace }),
++      countEvents(
++        namespace ? ['1=1', 'event_type = $1', 'namespace = $2'] : ['1=1', 'event_type = $1'],
++        namespace ? [eventType, namespace] : [eventType]
++      ),
+     ]);
+     const events = result.events || [];
+     return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+   }
+ 
+   // ─── Helper: get all events in time window ─────────────────────
+-  async function queryEventsSince(since, limit = 500) {
++  async function queryEventsSince(since, limit = 500, namespace = null) {
+     const [result, totalEvents] = await Promise.all([
+-      unifiedEventRuntime.query({ since, limit }),
+-      countEvents(['1=1', 'timestamp >= $1'], [since]),
++      unifiedEventRuntime.query({ since, limit, namespace }),
++      countEvents(
++        namespace ? ['1=1', 'timestamp >= $1', 'namespace = $2'] : ['1=1', 'timestamp >= $1'],
++        namespace ? [since, namespace] : [since]
++      ),
+     ]);
+     const events = result.events || [];
+     return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+@@ -59,11 +92,14 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // DASHBOARD — Projection-backed operating system overview
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/dashboard', requirePG, async (req, res) => {
++  // P-20260923-088: tenant-gated. Default-deny: no ?tenant ⇒ 400.
++  router.get('/dashboard', requirePG, requireTenant, async (req, res) => {
+     try {
++      const ns = req.tenantContext.namespace;
++      const tenantId = req.tenantContext.tenantId;
+       const [missionStats, ev] = await Promise.all([
+-        missionRuntime.getStats(),
+-        queryEventsSince(new Date(constitutionalTimeAuthority.nowAsMillis() - 86400000).toISOString(), 500),
++        missionRuntime.getStats(tenantId),
++        queryEventsSince(new Date(constitutionalTimeAuthority.nowAsMillis() - 86400000).toISOString(), 500, ns),
+       ]);
+       const { totalEvents } = ev;
+       const allEvents = ev.events;
+@@ -96,6 +132,8 @@ function createMissionControlRoutes(services) {
+       res.json({
+         status: 'ok',
+         dashboard: {
++          tenant: tenantId,
++          tenant_namespace: ns,
+           business,
+           // Fields listed here were negative before clamping; their zero is
+           // a display floor over a capped window, not a measured zero.
+@@ -116,7 +154,12 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+ 
+   // Who needs follow-up? (leads, estimates, unanswered reviews)
+-  router.get('/business/who-needs-followup', requirePG, async (req, res) => {
++  // P-20260923-088: tenant-gated (requireTenant). Follow-up on this surface:
++  // pass req.tenantContext.namespace into this route's queryEventsSince /
++  // queryEventsByType bodies (the helpers already accept a namespace
++  // argument) and gate the remaining /business/* routes. Until then these
++  // reads are gated but not namespace-scoped.
++  router.get('/business/who-needs-followup', requirePG, requireTenant, async (req, res) => {
+     try {
+       const since = new Date(constitutionalTimeAuthority.nowAsMillis() - 7 * 86400000).toISOString(); // 7 days
+       const { events: all, truncated, count, totalEvents } = await queryEventsSince(since, 500);
+@@ -340,10 +383,11 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // INBOX — Unprocessed events
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/inbox', requirePG, async (req, res) => {
++  router.get('/inbox', requirePG, requireTenant, async (req, res) => {
+     try {
+       const limit = parseInt(req.query.limit) || 25;
+-      const result = await unifiedEventRuntime.query({ unprocessed: true, limit });
++      const ns = req.tenantContext.namespace;
++      const result = await unifiedEventRuntime.query({ unprocessed: true, limit, namespace: ns });
+       res.json({ status: 'ok', inbox: result.events, count: result.count });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+@@ -353,11 +397,12 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // QUEUES — Events grouped by type
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/queues', requirePG, async (req, res) => {
++  router.get('/queues', requirePG, requireTenant, async (req, res) => {
+     try {
+       const since = req.query.since || new Date(constitutionalTimeAuthority.nowAsMillis() - 3600000).toISOString();
+       const limit = parseInt(req.query.limit) || 50;
+-      const result = await unifiedEventRuntime.query({ since, limit });
++      const ns = req.tenantContext.namespace;
++      const result = await unifiedEventRuntime.query({ since, limit, namespace: ns });
+ 
+       const queues = {};
+       for (const event of result.events) {
+@@ -372,10 +417,11 @@ function createMissionControlRoutes(services) {
+     }
+   });
+ 
+-  router.get('/queues/:eventType', requirePG, async (req, res) => {
++  router.get('/queues/:eventType', requirePG, requireTenant, async (req, res) => {
+     try {
+       const limit = parseInt(req.query.limit) || 50;
+-      const result = await unifiedEventRuntime.query({ eventType: req.params.eventType, limit });
++      const ns = req.tenantContext.namespace;
++      const result = await unifiedEventRuntime.query({ eventType: req.params.eventType, limit, namespace: ns });
+       res.json({ status: 'ok', queue: result.events, count: result.count });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+@@ -385,28 +431,28 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // MISSIONS
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/missions/active', requirePG, async (req, res) => {
++  router.get('/missions/active', requirePG, requireTenant, async (req, res) => {
+     try {
+-      const missions = await missionRuntime.getActive();
++      const missions = await missionRuntime.getActive(req.tenantContext.tenantId);
+       res.json({ status: 'ok', missions, count: missions.length });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+     }
+   });
+ 
+-  router.get('/missions/pending', requirePG, async (req, res) => {
++  router.get('/missions/pending', requirePG, requireTenant, async (req, res) => {
+     try {
+       const limit = parseInt(req.query.limit) || 10;
+-      const missions = await missionRuntime.getPending(limit);
++      const missions = await missionRuntime.getPending(limit, req.tenantContext.tenantId);
+       res.json({ status: 'ok', missions, count: missions.length });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+     }
+   });
+ 
+-  router.get('/missions/stats', requirePG, async (req, res) => {
++  router.get('/missions/stats', requirePG, requireTenant, async (req, res) => {
+     try {
+-      const stats = await missionRuntime.getStats();
++      const stats = await missionRuntime.getStats(req.tenantContext.tenantId);
+       res.json({ status: 'ok', stats });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+@@ -416,9 +462,14 @@ function createMissionControlRoutes(services) {
+   // Mission trace — full causal chain for a mission.
+   // Returns the mission, its correlation_id, and all events sharing that
+   // correlation_id (the full worker chain from business event to lineage).
+-  router.get('/missions/:id/trace', requirePG, async (req, res) => {
++  // P-20260923-088: tenant-gated; mission whose tenant cannot be proven to
++  // match the request is 403 (getTrace returns { forbidden }).
++  router.get('/missions/:id/trace', requirePG, requireTenant, async (req, res) => {
+     try {
+-      const trace = await missionRuntime.getTrace(req.params.id);
++      const trace = await missionRuntime.getTrace(req.params.id, req.tenantContext.tenantId);
++      if (trace && trace.forbidden) {
++        return res.status(403).json({ status: 'error', code: 'CROSS_TENANT_REFERENCE', reason: trace.reason });
++      }
+       if (!trace) {
+         return res.status(404).json({ status: 'not_found', message: `Mission ${req.params.id} not found` });
+       }
+@@ -431,12 +482,15 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // KNOWLEDGE
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/knowledge', requirePG, async (req, res) => {
++  // P-20260923-088: pass the tenant namespace to queryNodes (backend
++  // already supports the namespace filter).
++  router.get('/knowledge', requirePG, requireTenant, async (req, res) => {
+     try {
+       const nodes = await knowledgeGraph.queryNodes({
+         nodeType: req.query.type,
+         search: req.query.q,
+         limit: parseInt(req.query.limit) || 50,
++        namespace: req.tenantContext.namespace,
+       });
+       res.json({ status: 'ok', nodes, count: nodes.length });
+     } catch (err) {
+@@ -478,11 +532,12 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // ACTIVITY FEED
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/activity', requirePG, async (req, res) => {
++  router.get('/activity', requirePG, requireTenant, async (req, res) => {
+     try {
+       const limit = parseInt(req.query.limit) || 25;
+       const since = req.query.since || new Date(constitutionalTimeAuthority.nowAsMillis() - 86400000).toISOString();
+-      const result = await unifiedEventRuntime.query({ since, limit });
++      const ns = req.tenantContext.namespace;
++      const result = await unifiedEventRuntime.query({ since, limit, namespace: ns });
+       res.json({ status: 'ok', activity: result.events, count: result.count });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+@@ -524,9 +579,10 @@ function createMissionControlRoutes(services) {
+   // Replay provider state is read from the LIVE KernelReplayExecutionProvider
+   // singleton (services.replayProvider) when present, else hidden.
+   // ═══════════════════════════════════════════════════════════════
+-  router.get('/replay/stats', requirePG, async (req, res) => {
++  router.get('/replay/stats', requirePG, requireTenant, async (req, res) => {
+     try {
+-      const result = await unifiedEventRuntime.query({ eventType: 'REPLAY_COMPLETED', limit: 1000 });
++      const ns = req.tenantContext.namespace;
++      const result = await unifiedEventRuntime.query({ eventType: 'REPLAY_COMPLETED', limit: 1000, namespace: ns });
+       const replays = result.events || [];
+       const verified = replays.filter((e) => e.payload && e.payload.replay && e.payload.replay.verified === true);
+       const unverified = replays.filter((e) => e.payload && e.payload.replay && e.payload.replay.verified !== true);
+@@ -536,7 +592,7 @@ function createMissionControlRoutes(services) {
+         const reason = (r && r.reason) || 'unknown';
+         reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+       });
+-      const witnessRes = await unifiedEventRuntime.query({ eventType: 'WITNESS_REJECTED', limit: 1000 });
++      const witnessRes = await unifiedEventRuntime.query({ eventType: 'WITNESS_REJECTED', limit: 1000, namespace: ns });
+ 
+       // LIVE provider state - read from the shared singleton when present.
+       // Absent fields are omitted (never fabricated); the provider is hidden
+@@ -572,11 +628,12 @@ function createMissionControlRoutes(services) {
+   // replay). WitnessAuthority is a pure createWitness hashing function with NO
+   // runtime counters, so the honest status surface is the emitted attestation
+   // stream - never fabricated, never invented.
+-  router.get('/witness/stats', requirePG, async (req, res) => {
++  router.get('/witness/stats', requirePG, requireTenant, async (req, res) => {
+     try {
++      const ns = req.tenantContext.namespace;
+       const [createdRes, rejectedRes] = await Promise.all([
+-        unifiedEventRuntime.query({ eventType: 'WITNESS_CREATED', limit: 1000 }),
+-        unifiedEventRuntime.query({ eventType: 'WITNESS_REJECTED', limit: 1000 }),
++        unifiedEventRuntime.query({ eventType: 'WITNESS_CREATED', limit: 1000, namespace: ns }),
++        unifiedEventRuntime.query({ eventType: 'WITNESS_REJECTED', limit: 1000, namespace: ns }),
+       ]);
+       const created = (createdRes.events || []).length;
+       const rejected = (rejectedRes.events || []).length;
+@@ -595,11 +652,23 @@ function createMissionControlRoutes(services) {
+   });
+ 
+   // Full replay + witness tail for a business correlation chain.
+-  router.get('/replay/trace/:correlationId', requirePG, async (req, res) => {
++  // P-20260923-088: tenant-gated. A correlation chain is shared across the
++  // causal lineage; if ANY event in the returned group carries a different
++  // namespace than the request tenant, refuse (403) rather than render a
++  // partial or cross-tenant chain.
++  router.get('/replay/trace/:correlationId', requirePG, requireTenant, async (req, res) => {
+     try {
+       const limit = parseInt(req.query.limit) || 200;
++      const ns = req.tenantContext.namespace;
+       const group = await unifiedEventRuntime.getCorrelationGroup(req.params.correlationId, limit);
+       const events = group.events || [];
++      if (events.length > 0 && events.some((e) => e.namespace !== ns)) {
++        return res.status(403).json({
++          status: 'error',
++          code: 'CROSS_TENANT_REFERENCE',
++          message: 'correlation chain spans namespaces; refusing cross-tenant trace',
++        });
++      }
+       const replays = events.filter((e) => e.event_type === 'REPLAY_COMPLETED');
+       const witnesses = events.filter((e) => e.event_type === 'WITNESS_CREATED' || e.event_type === 'WITNESS_REJECTED');
+       if (replays.length === 0) {
+@@ -636,6 +705,10 @@ function createMissionControlRoutes(services) {
+   // ═══════════════════════════════════════════════════════════════
+   // DEAD LETTER OBSERVABILITY
+   // ═══════════════════════════════════════════════════════════════
++  // P-20260923-088 (deferred): repository_dead_letters has no tenant/job-owner
++  // column, so per-tenant DLQ views have no backend yet. These routes stay
++  // operator-global and are LABELED as such, never presented as
++  // tenant-scoped. Adding the column + backfill is a follow-up migration.
+   router.get('/dead-letters', async (req, res) => {
+     const dlq = services.deadLetterAuthority;
+     if (!dlq) return res.json({ status: 'degraded', message: 'DeadLetterAuthority not initialized' });
+@@ -651,7 +724,7 @@ function createMissionControlRoutes(services) {
+         const stats = await dlq.getStats();
+         letters = { stats, message: 'Use ?jobType=<type> to list specific dead letters' };
+       }
+-      res.json({ status: 'ok', deadLetters: letters, limit, offset });
++      res.json({ status: 'ok', deadLetters: letters, limit, offset, scope: 'operator-global', tenant_isolation: 'unverified' });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+     }
+@@ -662,7 +735,7 @@ function createMissionControlRoutes(services) {
+     if (!dlq) return res.json({ status: 'degraded', message: 'DeadLetterAuthority not initialized' });
+     try {
+       const stats = await dlq.getStats();
+-      res.json({ status: 'ok', stats });
++      res.json({ status: 'ok', stats, scope: 'operator-global', tenant_isolation: 'unverified' });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+     }
+@@ -676,12 +749,18 @@ function createMissionControlRoutes(services) {
+       if (!letters || letters.length === 0) {
+         return res.status(404).json({ status: 'not_found', message: `No dead letters for mission ${req.params.id}` });
+       }
+-      res.json({ status: 'ok', deadLetters: letters });
++      res.json({ status: 'ok', deadLetters: letters, scope: 'operator-global', tenant_isolation: 'unverified' });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+     }
+   });
+ 
++  // NOTE (P-20260923-088, intentionally NOT tenant-gated):
++  // /system, /bridge, /event-mission-bridge, /scheduler, /workers describe
++  // the gateway PROCESS (session-scoped workers/scheduler/bridges), not a
++  // tenant. Gating them by tenant would mislabel process truth as tenant
++  // truth. They already carry `scope: 'session'` in their payloads.
++
+   return router;
+ }
+ 

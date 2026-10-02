@@ -1,0 +1,829 @@
+diff --git a/b/src/tenanos/decision-budget/__tests__/decision-budget.test.ts b/b/src/tenanos/decision-budget/__tests__/decision-budget.test.ts
+new file mode 100644
+index 0000000..acf37ee
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/__tests__/decision-budget.test.ts
+@@ -0,0 +1,180 @@
++/**
++ * Fail-before tests for the decision-budget module — Swarm 10.
++ *
++ * These tests encode the taxonomy contract (DECISION-BUDGET.md). They FAIL
++ * before the module exists and PASS after. Run with the wave's scoped
++ * ts-jest config (src/tenanos/jest.config.cjs).
++ */
++
++import { classify, EscalationClass, isAutoClass, EscalationAttempt } from '../taxonomy';
++import { HOOK_SITES, hookSite } from '../hook-points';
++import { checkEnvelope, defaultTtl, escalationId, EscalationEnvelope } from '../escalation-envelope';
++import { computeBudget, checkTargets, AttemptRecord } from '../metrics';
++
++const tinyHash = (s: string) => {
++  let h = 0;
++  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
++  return h.toString(16).padStart(8, '0');
++};
++
++const baseAttempt = (signals: EscalationAttempt['signals']): EscalationAttempt => ({
++  siteId: 'E-07',
++  contextIds: { missionId: 'm1', approvalId: 'a1' },
++  causeCode: 'tests_failed',
++  summary: 'commit blocked: tests failed',
++  priorAttempts: [],
++  signals,
++  repeatKey: tinyHash('E-07|tests_failed'),
++});
++
++describe('taxonomy: auto classes take precedence', () => {
++  test('source remedy wins over credential need', () => {
++    const c = classify(baseAttempt({ causeNamesRemedy: true, needsProvisionedSecret: true }));
++    expect(c.class).toBe(EscalationClass.DERIVABLE_FROM_SOURCE);
++    expect(c.autoResolve).toBe(true);
++  });
++
++  test('history replay used when recorded resolution exists', () => {
++    const c = classify(baseAttempt({ historyHasRecordedResolution: true, consecutiveFailures: 1 }));
++    expect(c.class).toBe(EscalationClass.DERIVABLE_FROM_HISTORY);
++  });
++
++  test('>=3 consecutive failures convert to safe experiment, not human', () => {
++    const c = classify(baseAttempt({ historyHasRecordedResolution: true, consecutiveFailures: 3, safeExperimentAvailable: true }));
++    expect(c.class).toBe(EscalationClass.SAFE_EXPERIMENT_AVAILABLE);
++    expect(isAutoClass(c.class)).toBe(true);
++  });
++
++  test('live-state answer stays auto', () => {
++    const c = classify(baseAttempt({ answerInLiveState: true }));
++    expect(c.class).toBe(EscalationClass.DERIVABLE_FROM_RUNTIME);
++  });
++});
++
++describe('taxonomy: human classes', () => {
++  test('missing secret -> CREDENTIAL_REQUIRED', () => {
++    const c = classify(baseAttempt({ needsProvisionedSecret: true }));
++    expect(c.class).toBe(EscalationClass.CREDENTIAL_REQUIRED);
++    expect(c.autoResolve).toBe(false);
++  });
++
++  test('irreversible effect -> DESTRUCTIVE even when human judgment also set', () => {
++    const c = classify(baseAttempt({ irreversible: true, requiresHumanJudgment: true }));
++    expect(c.class).toBe(EscalationClass.DESTRUCTIVE);
++  });
++
++  test('want-not-fact -> PRODUCT_INTENT', () => {
++    const c = classify(baseAttempt({ isWantNotFact: true }));
++    expect(c.class).toBe(EscalationClass.PRODUCT_INTENT);
++  });
++
++  test('policy contradiction -> POLICY_CONFLICT', () => {
++    const c = classify(baseAttempt({ policyContradiction: 'manual policy unwired' }));
++    expect(c.class).toBe(EscalationClass.POLICY_CONFLICT);
++  });
++
++  test('nothing matches -> OTHER with burden of proof', () => {
++    const c = classify(baseAttempt({}));
++    expect(c.class).toBe(EscalationClass.OTHER);
++    expect(c.rationale).toMatch(/burden of proof/);
++  });
++});
++
++describe('hook-points: inventory coverage', () => {
++  const EXPECTED_IDS = ['E-01','E-02','E-03','E-04','E-05','E-06','E-07','E-08','E-09','E-10','E-11','E-12','E-13','E-14','E-15','E-16','E-17','E-18','E-20','E-21','E-22','E-23','E-24','E-25','E-26','E-27','E-28'];
++  test('every inventory escalation site is registered', () => {
++    for (const id of EXPECTED_IDS) expect(hookSite(id)).toBeDefined();
++  });
++  test('every site has a capture spec and a current location', () => {
++    for (const h of HOOK_SITES) {
++      expect(h.capture.length).toBeGreaterThan(0);
++      expect(h.currentLocation.length).toBeGreaterThan(0);
++    }
++  });
++  test('E-13 (merge over failed gate) is DESTRUCTIVE', () => {
++    expect(hookSite('E-13')!.expectedClass).toBe(EscalationClass.DESTRUCTIVE);
++  });
++});
++
++describe('escalation-envelope', () => {
++  const full: EscalationEnvelope = {
++    escalationId: 'esc_abc',
++    class: EscalationClass.AUTHORIZATION_REQUIRED,
++    classRationale: 'policy requires a named human decision',
++    contextIds: { missionId: 'm1' },
++    attempted: [{ action: 'polled approvals table', outcome: '1 row pending 30h', at: 't' }],
++    question: 'Approve patch P for merge?',
++    options: [{ label: 'approve', tradeoff: 'unblocks queue', recommended: true }, { label: 'reject', tradeoff: 'mission stays failed' }],
++    defaultIfSilent: 'stays pending; no merge',
++    ttlMs: 24 * 3600 * 1000,
++    evidenceRefs: ['approval_a1'],
++    reversibility: 'revert commit',
++    repeatKey: 'rk1',
++  };
++
++  test('complete envelope passes', () => {
++    expect(checkEnvelope(full)).toEqual({ ok: true });
++  });
++
++  test('missing question bounces', () => {
++    const { question, ...rest } = full;
++    const r = checkEnvelope(rest);
++    expect(r.ok).toBe(false);
++    if (!r.ok) expect(r.missing).toContain('question');
++  });
++
++  test('two questions bounce', () => {
++    const r = checkEnvelope({ ...full, question: 'Approve? Or reject?' });
++    expect(r.ok).toBe(false);
++  });
++
++  test('destructive TTL capped at 1h', () => {
++    const r = checkEnvelope({ ...full, class: EscalationClass.DESTRUCTIVE, ttlMs: 24 * 3600 * 1000 });
++    expect(r.ok).toBe(false);
++    expect(defaultTtl(EscalationClass.DESTRUCTIVE)).toBe(3600 * 1000);
++  });
++
++  test('escalationId is deterministic', () => {
++    expect(escalationId('rk', 1, tinyHash)).toBe(escalationId('rk', 1, tinyHash));
++    expect(escalationId('rk', 1, tinyHash)).not.toBe(escalationId('rk', 2, tinyHash));
++  });
++});
++
++describe('metrics', () => {
++  const rec = (partial: Partial<AttemptRecord>): AttemptRecord => ({
++    siteId: 'E-07', class: EscalationClass.DERIVABLE_FROM_SOURCE, reachedHuman: false,
++    repeatKey: tinyHash(Math.random().toString()), decided: true, at: 't', ...partial,
++  });
++
++  test('autoResolveRate and humanEscalationRate partition attempts', () => {
++    const records = [
++      rec({}), rec({}),
++      rec({ class: EscalationClass.AUTHORIZATION_REQUIRED, reachedHuman: true }),
++      rec({ class: EscalationClass.CREDENTIAL_REQUIRED, reachedHuman: true }),
++    ];
++    const r = computeBudget(records, 2);
++    expect(r.attempts).toBe(4);
++    expect(r.autoResolveRate).toBe(0.5);
++    expect(r.humanEscalationRate).toBe(0.5);
++    expect(r.escalationsPerMission).toBe(2);
++  });
++
++  test('repeat detection counts second occurrence', () => {
++    const rk = tinyHash('same');
++    const records = [rec({ repeatKey: rk }), rec({ repeatKey: rk }), rec({})];
++    const r = computeBudget(records, 3);
++    expect(r.repeatEscalationRate).toBeCloseTo(1 / 3);
++  });
++
++  test('targets flag a blown budget', () => {
++    const records = [rec({ class: EscalationClass.OTHER, reachedHuman: true, repeatKey: 'a' })];
++    const checks = checkTargets(computeBudget(records, 1));
++    const auto = checks.find((c) => c.target === 'autoResolveRate')!;
++    expect(auto.met).toBe(false);
++  });
++
++  test('escalation debt counts undecided past-TTL', () => {
++    const records = [rec({ decided: false, ageMs: 100000, ttlMs: 1000 })];
++    expect(computeBudget(records, 1).escalationDebt).toBe(1);
++  });
++});
+diff --git a/b/src/tenanos/decision-budget/auto-resolvers.ts b/b/src/tenanos/decision-budget/auto-resolvers.ts
+new file mode 100644
+index 0000000..4b5254e
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/auto-resolvers.ts
+@@ -0,0 +1,185 @@
++/**
++ * Auto-resolvers — Swarm 10 (Human Decision Budget).
++ *
++ * How agents resolve the four auto classes THEMSELVES (DECISION-BUDGET.md R1-R5).
++ * These are contracts + bounded procedures, not implementations: the converged
++ * loop supplies the source readers; the resolvers enforce the bounds.
++ *
++ * An agent that cannot name the source it consulted has not auto-resolved.
++ */
++
++import { EscalationAttempt, EscalationClass } from './taxonomy';
++
++export interface ResolutionResult {
++  resolved: boolean;
++  /** What was done, in audit-ready language. Appended to the evidence chain (R3). */
++  actionTaken: string;
++  /** The source consulted, named (R1). */
++  sourceConsulted: string;
++  /** Follow-up class when not resolved (e.g. experiment failed -> human with evidence). */
++  reclassifyTo?: EscalationClass;
++  /** Evidence produced (experiment output, re-verification result, state snapshot ref). */
++  evidence?: string;
++}
++
++/** Bounds from DECISION-BUDGET.md R2. */
++export const RESOLUTION_BOUNDS = {
++  /** 2.1: one fix + one re-verification per distinct blocked_by. */
++  maxFixAttemptsPerCause: 1,
++  /** 2.2: replay at most one recorded resolution. */
++  maxHistoryReplays: 1,
++  /** 2.3: re-check at most N times with backoff, then convert to experiment. */
++  maxRuntimeRechecks: 3,
++  /** 2.4: one experiment per hypothesis. */
++  maxExperimentsPerHypothesis: 1,
++  /** History replay stops after this many consecutive failures. */
++  consecutiveFailureCap: 3,
++  /** Default sandbox experiment budget. */
++  experimentTimeoutMs: 5 * 60 * 1000,
++} as const;
++
++/**
++ * 2.1 DERIVABLE_FROM_SOURCE — apply the remedy the artifact names, re-verify
++ * through the same gate. Concrete remedy map from the inventory:
++ *  - 'tests_failed'            -> re-run the failing tests (E-01/E-07)
++ *  - 'patch_validation_failed' -> read validator output, amend patch (E-01/E-07)
++ *  - 'replay_mismatch'         -> re-run replay; if flaky, one re-run only (E-01/E-07)
++ *  - 'witness_verification_failed' -> re-create witness (E-01)
++ *  - merge-gate hint           -> apply the hinted fix (E-10)
++ *  - 'no worker matched'       -> registry lookup; register worker or drop type (E-21)
++ *  - TRANSITION_BLOCKED        -> follow an allowed transition (E-28)
++ */
++export interface SourceResolver {
++  /** The blocked_by / gate id / cause code being resolved. */
++  causeCode: string;
++  /** Apply the deterministic remedy. Must be side-effect-bounded. */
++  applyFix(attempt: EscalationAttempt): Promise<{ fixed: boolean; detail: string }>;
++  /** Re-verify through the SAME gate that blocked. */
++  reverify(attempt: EscalationAttempt): Promise<{ passed: boolean; detail: string }>;
++}
++
++export async function resolveFromSource(
++  attempt: EscalationAttempt,
++  resolver: SourceResolver,
++): Promise<ResolutionResult> {
++  const fix = await resolver.applyFix(attempt);
++  if (!fix.fixed) {
++    return {
++      resolved: false,
++      actionTaken: `source remedy for ${resolver.causeCode} could not be applied: ${fix.detail}`,
++      sourceConsulted: `blocking artifact (${attempt.siteId})`,
++      reclassifyTo: EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++      evidence: fix.detail,
++    };
++  }
++  const check = await resolver.reverify(attempt);
++  return {
++    resolved: check.passed,
++    actionTaken: `applied source remedy for ${resolver.causeCode}; re-verification ${check.passed ? 'passed' : 'failed'}: ${check.detail}`,
++    sourceConsulted: `blocking artifact (${attempt.siteId})`,
++    reclassifyTo: check.passed ? undefined : EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++    evidence: check.detail,
++  };
++}
++
++/**
++ * 2.2 DERIVABLE_FROM_HISTORY — replay at most ONE recorded resolution for the
++ * same repeatKey. History source: mission / approval / DLQ tables.
++ */
++export interface HistoryRecord {
++  repeatKey: string;
++  terminalResolution: string;
++  succeeded: boolean;
++}
++
++export async function resolveFromHistory(
++  attempt: EscalationAttempt,
++  lookup: (repeatKey: string) => Promise<HistoryRecord | null>,
++  applyRecorded: (record: HistoryRecord, attempt: EscalationAttempt) => Promise<{ ok: boolean; detail: string }>,
++): Promise<ResolutionResult> {
++  const record = await lookup(attempt.repeatKey);
++  if (!record) {
++    return {
++      resolved: false,
++      actionTaken: 'no recorded terminal resolution for repeatKey; class not satisfied (R4)',
++      sourceConsulted: 'mission/approval/DLQ history',
++      reclassifyTo: EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++    };
++  }
++  const applied = await applyRecorded(record, attempt);
++  return {
++    resolved: applied.ok,
++    actionTaken: `replayed recorded resolution for ${attempt.repeatKey.slice(0, 12)}: ${record.terminalResolution}; outcome: ${applied.detail}`,
++    sourceConsulted: 'mission/approval/DLQ history',
++    reclassifyTo: applied.ok ? undefined : EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++    evidence: applied.detail,
++  };
++}
++
++/**
++ * 2.3 DERIVABLE_FROM_RUNTIME — read fresh live state, act, re-check (≤3).
++ * State must be read inside the attempt's execution window; cached state older
++ * than the attempt is not a source (R1/R4).
++ */
++export interface RuntimeSnapshot {
++  readAt: string;
++  [key: string]: unknown;
++}
++
++export async function resolveFromRuntime(
++  attempt: EscalationAttempt,
++  readState: () => Promise<RuntimeSnapshot>,
++  decide: (snapshot: RuntimeSnapshot, attempt: EscalationAttempt) => Promise<{ action: string; done: boolean; detail: string }>,
++): Promise<ResolutionResult> {
++  for (let i = 0; i < RESOLUTION_BOUNDS.maxRuntimeRechecks; i++) {
++    const snapshot = await readState();
++    const d = await decide(snapshot, attempt);
++    if (d.done) {
++      return {
++        resolved: true,
++        actionTaken: `runtime decision after ${i + 1} check(s): ${d.action}; ${d.detail}`,
++        sourceConsulted: `live state read at ${snapshot.readAt}`,
++        evidence: d.detail,
++      };
++    }
++  }
++  return {
++    resolved: false,
++    actionTaken: `runtime state did not yield a decision after ${RESOLUTION_BOUNDS.maxRuntimeRechecks} checks; converting to experiment (R2)`,
++    sourceConsulted: 'live scheduler/registry/queue/table state',
++    reclassifyTo: EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++  };
++}
++
++/**
++ * 2.4 SAFE_EXPERIMENT_AVAILABLE — one bounded experiment per hypothesis.
++ * The experiment MUST be: side-effect-free or fully sandboxed, time-bounded
++ * (default 5 min), evidence-recorded, reversible by construction.
++ */
++export interface SafeExperiment {
++  hypothesis: string;
++  /** Runs the dry-run; must not mutate production state. */
++  run: () => Promise<{ success: boolean; evidence: string }>;
++  timeoutMs?: number;
++}
++
++export async function trySafeExperiment(
++  attempt: EscalationAttempt,
++  experiment: SafeExperiment,
++): Promise<ResolutionResult> {
++  const timeoutMs = experiment.timeoutMs ?? RESOLUTION_BOUNDS.experimentTimeoutMs;
++  const result = await Promise.race([
++    experiment.run(),
++    new Promise<{ success: false; evidence: string }>((resolve) =>
++      setTimeout(() => resolve({ success: false, evidence: `experiment timed out after ${timeoutMs}ms` }), timeoutMs),
++    ),
++  ]);
++  return {
++    resolved: result.success,
++    actionTaken: `safe experiment for hypothesis ${JSON.stringify(experiment.hypothesis)}: ${result.success ? 'succeeded' : 'failed'}`,
++    sourceConsulted: 'sandbox experiment harness',
++    // On failure the evidence goes WITH the escalation: the human decides once (2.4).
++    reclassifyTo: result.success ? undefined : EscalationClass.OTHER,
++    evidence: result.evidence,
++  };
++}
+diff --git a/b/src/tenanos/decision-budget/escalation-envelope.ts b/b/src/tenanos/decision-budget/escalation-envelope.ts
+new file mode 100644
+index 0000000..bc3f114
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/escalation-envelope.ts
+@@ -0,0 +1,75 @@
++/**
++ * Escalation envelope — Swarm 10 (Human Decision Budget).
++ *
++ * Minimum information a human-eligible escalation MUST carry (DECISION-BUDGET.md
++ * section 4). Anything missing bounces back to the agent; a bounce counts
++ * against the agent's budget, not the human's.
++ */
++
++import { EscalationClass, AUTO_CLASSES } from './taxonomy';
++
++export const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
++export const DESTRUCTIVE_TTL_MS = 60 * 60 * 1000;
++
++/** One of the human-eligible classes. */
++export type HumanClass = Exclude<EscalationClass, EscalationClass.DERIVABLE_FROM_SOURCE | EscalationClass.DERIVABLE_FROM_HISTORY | EscalationClass.DERIVABLE_FROM_RUNTIME | EscalationClass.SAFE_EXPERIMENT_AVAILABLE>;
++
++export function isHumanClass(c: EscalationClass): boolean {
++  return !AUTO_CLASSES.has(c);
++}
++
++export interface EscalationEnvelope {
++  escalationId: string;
++  class: HumanClass;
++  /** The membership test quoted (taxonomy rationale). */
++  classRationale: string;
++  contextIds: Record<string, string>;
++  /** What the agent tried, in order, with outcomes. */
++  attempted: Array<{ action: string; outcome: string; at: string }>;
++  /** EXACTLY ONE question. */
++  question: string;
++  options: Array<{ label: string; tradeoff: string; recommended?: boolean }>;
++  defaultIfSilent: string;
++  ttlMs: number;
++  /** Pointers (event/DLQ/approval ids), not dumps. */
++  evidenceRefs: string[];
++  reversibility: string;
++  repeatKey: string;
++  /** What changed since the prior decision on this repeatKey, if a repeat. */
++  repeatNote?: string;
++}
++
++export type EnvelopeCheck = { ok: true } | { ok: false; missing: string[] };
++
++const REQUIRED: Array<keyof EscalationEnvelope> = [
++  'escalationId', 'class', 'classRationale', 'contextIds', 'attempted',
++  'question', 'options', 'defaultIfSilent', 'ttlMs', 'evidenceRefs',
++  'reversibility', 'repeatKey',
++];
++
++/** Validate the minimum payload. Bounce (ok:false) on anything missing. */
++export function checkEnvelope(e: Partial<EscalationEnvelope>): EnvelopeCheck {
++  const missing: string[] = [];
++  for (const k of REQUIRED) {
++    const v = e[k];
++    if (v === undefined || v === null || v === '') missing.push(k);
++  }
++  if (e.question !== undefined && e.question.includes('?') && e.question.split('?').length > 2) {
++    missing.push('question (more than one question)');
++  }
++  if (e.options !== undefined && e.options.length === 0) missing.push('options (empty)');
++  if (e.class === EscalationClass.DESTRUCTIVE && (e.ttlMs ?? 0) > DESTRUCTIVE_TTL_MS) {
++    missing.push('ttlMs (destructive default must be <= 1h)');
++  }
++  return missing.length === 0 ? { ok: true } : { ok: false, missing };
++}
++
++/** Deterministic escalation id: esc_<hash(repeatKey + attemptSeq)>. */
++export function escalationId(repeatKey: string, attemptSeq: number, hash: (s: string) => string): string {
++  return `esc_${hash(`${repeatKey}:${attemptSeq}`).slice(0, 16)}`;
++}
++
++/** Silence must be safe: default TTL per class. */
++export function defaultTtl(c: EscalationClass): number {
++  return c === EscalationClass.DESTRUCTIVE ? DESTRUCTIVE_TTL_MS : DEFAULT_TTL_MS;
++}
+diff --git a/b/src/tenanos/decision-budget/hook-points.ts b/b/src/tenanos/decision-budget/hook-points.ts
+new file mode 100644
+index 0000000..3e881ca
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/hook-points.ts
+@@ -0,0 +1,63 @@
++/**
++ * Hook points — Swarm 10 (Human Decision Budget).
++ *
++ * Maps every existing escalation site from ESCALATION-INVENTORY.md to its
++ * expected class and the hook contract. When the converged loop harvests a
++ * piece, it places a `classify()` call (taxonomy.ts) at the hook site: the
++ * hook classifies and records; all action stays in the existing loop.
++ *
++ * Paths below are the substrate source checkout (/home/nolan/ping @ cc6856c3b);
++ * the converged call sites will live under src/tenanos/**. The siteId is the
++ * stable key — it survives the move.
++ */
++
++import { EscalationClass } from './taxonomy';
++
++export interface HookSite {
++  /** Stable id, e.g. 'E-07'. */
++  siteId: string;
++  /** Where it exists today: '<path>:<line>'. */
++  currentLocation: string;
++  /** One-line description of the pause/defer/drop/fail/ask. */
++  behavior: string;
++  /** Expected class under the taxonomy (first-pass; classify() decides live). */
++  expectedClass: EscalationClass;
++  /** What the hook must capture into the EscalationAttempt. */
++  capture: string;
++}
++
++/** The complete inventory, machine-readable. */
++export const HOOK_SITES: ReadonlyArray<HookSite> = [
++  { siteId: 'E-01', currentLocation: 'gateway/approval_authority.js:86', behavior: 'requestApproval evaluates patch/replay/test/witness; policy hardcoded automatic', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'approval_conditions incl. blocked_by; policy_name' },
++  { siteId: 'E-02', currentLocation: 'gateway/approval_authority.js:201', behavior: "status 'pending_manual' exists but is unreachable", expectedClass: EscalationClass.POLICY_CONFLICT, capture: 'policy_type that produced the status; contradiction text' },
++  { siteId: 'E-03', currentLocation: 'gateway/approval_authority.js:205', behavior: "status 'pending_constitutional' exists but is unreachable", expectedClass: EscalationClass.POLICY_CONFLICT, capture: 'policy_type that produced the status; contradiction text' },
++  { siteId: 'E-04', currentLocation: 'gateway/approval_authority.js:217', behavior: 'approveManually(): human resolution sink, zero callers', expectedClass: EscalationClass.AUTHORIZATION_REQUIRED, capture: 'approval_id; pending duration; question for the human' },
++  { siteId: 'E-05', currentLocation: 'gateway/approval_authority.js:273', behavior: 'getPendingApprovals(): zero callers; approvals table is write-only', expectedClass: EscalationClass.DERIVABLE_FROM_RUNTIME, capture: 'pending rows with age; poll cadence' },
++  { siteId: 'E-06', currentLocation: 'gateway/mission_execution_graph.js:456', behavior: '_executeApprove runs requestApproval between replay and commit', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'patch_validation, test_results, replay_result refs' },
++  { siteId: 'E-07', currentLocation: 'gateway/mission_execution_graph.js:480', behavior: "commit gate: status!=='approved' -> {committed:false}; no retry/event/escalation", expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'approval_conditions.blocked_by; prior fix attempts' },
++  { siteId: 'E-08', currentLocation: 'gateway/node_registry.js:312', behavior: 'ApproveNodeExecutor; missing dep returns string approval_data -> fail-closed downstream', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'which dependency was missing' },
++  { siteId: 'E-09', currentLocation: 'gateway/node_registry.js:342', behavior: 'commit gate, identical fail-closed', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'approval_conditions.blocked_by' },
++  { siteId: 'E-10', currentLocation: 'ping-runtime/orchestration/merge_gate.js:77', behavior: '7 static gates, blocking/warning; deterministic', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'failed gates with hint fields' },
++  { siteId: 'E-11', currentLocation: 'ping-runtime/orchestration/merge_queue.js:96', behavior: 'runMergeGate: gate failure -> constitutional_review holding pen, no owner', expectedClass: EscalationClass.DERIVABLE_FROM_RUNTIME, capture: 'gate_results; queue age' },
++  { siteId: 'E-12', currentLocation: 'ping-runtime/orchestration/merge_queue.js:135', behavior: 'completeReview(): reviewer is a free-form string', expectedClass: EscalationClass.AUTHORIZATION_REQUIRED, capture: 'reviewer identity binding; decision; notes' },
++  { siteId: 'E-13', currentLocation: 'ping-runtime/orchestration/merge_queue.js:167', behavior: 'merge() from constitutional_review overrides a failed gate', expectedClass: EscalationClass.DESTRUCTIVE, capture: 'gate_results at merge time; caller identity' },
++  { siteId: 'E-14', currentLocation: 'ping-runtime/orchestration/execution/engine.js:160', behavior: "'No workers available - deferring'; mission silently dropped, never rescheduled", expectedClass: EscalationClass.DERIVABLE_FROM_RUNTIME, capture: 'requiredCapabilities; worker-registered subscription state' },
++  { siteId: 'E-15', currentLocation: 'ping-runtime/orchestration/execution/engine.js:289', behavior: '_resolveMission: consensus rejected -> status failed', expectedClass: EscalationClass.DERIVABLE_FROM_HISTORY, capture: 'decision.reason; repeatKey (mission_type+target)' },
++  { siteId: 'E-16', currentLocation: 'ping-runtime/orchestration/execution/engine.js:327,365,385,403', behavior: 'consensus/merge/mission events emitted with zero subscribers', expectedClass: EscalationClass.DERIVABLE_FROM_RUNTIME, capture: 'event ids; subscriber count (must be >0 post-convergence)' },
++  { siteId: 'E-17', currentLocation: 'ping-runtime/orchestration/execution/engine.js:startAutonomousLoop', behavior: 'minPriority filter silently skips low-priority missions', expectedClass: EscalationClass.PRODUCT_INTENT, capture: 'skipped mission ids + priorities; threshold source' },
++  { siteId: 'E-18', currentLocation: 'ping-runtime/orchestration/mission_runtime.js:202', behavior: 'failWithRetry: retry_pending + backoff; exhaustion -> failed', expectedClass: EscalationClass.DERIVABLE_FROM_HISTORY, capture: 'retries; failure_reason; prior resolutions for repeatKey' },
++  { siteId: 'E-20', currentLocation: 'ping-runtime/orchestration/mission_scheduler.js:289', behavior: '_failMission: exhaustion -> recordDeadLetter when DLQ wired', expectedClass: EscalationClass.DERIVABLE_FROM_HISTORY, capture: 'retry_count; dead_letter_id' },
++  { siteId: 'E-21', currentLocation: 'ping-runtime/orchestration/mission_scheduler.js:266', behavior: "'no worker matched event_type' -> mission failed", expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'event_type; capability registry lookup result' },
++  { siteId: 'E-22', currentLocation: 'gateway/dead_letter_authority.js:112', behavior: 'recordDeadLetter: DLQ write with replayable flag', expectedClass: EscalationClass.DERIVABLE_FROM_HISTORY, capture: 'job_type; failure_reason; replayable' },
++  { siteId: 'E-23', currentLocation: 'gateway/dead_letter_authority.js:262', behavior: 'replayDeadLetter requires replayFn; no production caller', expectedClass: EscalationClass.SAFE_EXPERIMENT_AVAILABLE, capture: 'sandbox replay evidence; replayFn provenance' },
++  { siteId: 'E-24', currentLocation: 'gateway/routes/mission_control.js:625,653,663', behavior: 'GET /dead-letters read-only; no replay/requeue endpoint', expectedClass: EscalationClass.AUTHORIZATION_REQUIRED, capture: 'human action requested; dead_letter_id' },
++  { siteId: 'E-25', currentLocation: 'ping-runtime/knowledge/knowledge_promoter.js:36', behavior: 'SNIPPET_APPROVED/AI_RESPONSE_ACCEPTED -> knowledge (1.0)', expectedClass: EscalationClass.PRODUCT_INTENT, capture: 'sourceEventId; approver signal provenance' },
++  { siteId: 'E-26', currentLocation: '(gap) no production emitter', behavior: 'zero production emitters of approval events; capture unwired', expectedClass: EscalationClass.AUTHORIZATION_REQUIRED, capture: 'candidate node id; requested approver' },
++  { siteId: 'E-27', currentLocation: 'src/lib/environment.ts:63', behavior: "'Environment must be explicitly configured. Cannot proceed with unsafe default.'", expectedClass: EscalationClass.CREDENTIAL_REQUIRED, capture: 'missing variable/scope name (never the value)' },
++  { siteId: 'E-28', currentLocation: 'src/lib/materialization-state-machine.ts:103', behavior: 'TRANSITION_BLOCKED logged only', expectedClass: EscalationClass.DERIVABLE_FROM_SOURCE, capture: 'from/to states; allowed transitions' },
++];
++
++/** Lookup by site id. */
++export function hookSite(siteId: string): HookSite | undefined {
++  return HOOK_SITES.find((h) => h.siteId === siteId);
++}
+diff --git a/b/src/tenanos/decision-budget/metrics.ts b/b/src/tenanos/decision-budget/metrics.ts
+new file mode 100644
+index 0000000..6c92eeb
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/metrics.ts
+@@ -0,0 +1,105 @@
++/**
++ * Decision-budget metrics — Swarm 10 (Human Decision Budget).
++ *
++ * Normative definitions from DECISION-BUDGET.md section 5. Pure functions over
++ * recorded attempts (R3) — no separate telemetry system.
++ */
++
++import { EscalationClass, isAutoClass } from './taxonomy';
++
++export interface AttemptRecord {
++  siteId: string;
++  class: EscalationClass;
++  reachedHuman: boolean;
++  bounced?: boolean;
++  repeatKey: string;
++  /** ms from classification to terminal decision. */
++  timeToDecisionMs?: number;
++  /** ms since classification, for debt computation. */
++  ageMs?: number;
++  ttlMs?: number;
++  decided: boolean;
++  at: string;
++}
++
++export interface BudgetReport {
++  attempts: number;
++  escalationsPerMission: number;
++  autoResolveRate: number;
++  humanEscalationRate: number;
++  repeatEscalationRate: number;
++  classDistribution: Record<string, number>;
++  medianTimeToDecisionAutoMs: number | null;
++  medianTimeToDecisionHumanMs: number | null;
++  escalationDebt: number;
++  bounceRate: number;
++}
++
++function median(xs: number[]): number | null {
++  if (xs.length === 0) return null;
++  const s = [...xs].sort((a, b) => a - b);
++  const m = Math.floor(s.length / 2);
++  return s.length % 2 === 0 ? (s[m - 1] + s[m]) / 2 : s[m];
++}
++
++/**
++ * Repeat key: sha256(siteId|class|mission_type|target|blocked_by|failure_reason).
++ * The caller supplies the hash; this builds the preimage.
++ */
++export function repeatKeyPreimage(parts: {
++  siteId: string; class: EscalationClass; missionType?: string; target?: string; blockedBy?: string; failureReason?: string;
++}): string {
++  return [parts.siteId, parts.class, parts.missionType ?? '', parts.target ?? '', parts.blockedBy ?? '', parts.failureReason ?? ''].join('|');
++}
++
++export function computeBudget(records: AttemptRecord[], missionsTerminal: number): BudgetReport {
++  const attempts = records.length;
++  const auto = records.filter((r) => isAutoClass(r.class)).length;
++  const human = records.filter((r) => r.reachedHuman).length;
++  const seen = new Set<string>();
++  let repeats = 0;
++  for (const r of records) {
++    if (seen.has(r.repeatKey)) repeats++;
++    seen.add(r.repeatKey);
++  }
++  const classDistribution: Record<string, number> = {};
++  for (const r of records) classDistribution[r.class] = (classDistribution[r.class] ?? 0) + 1;
++  const autoTimes = records.filter((r) => isAutoClass(r.class) && r.timeToDecisionMs !== undefined).map((r) => r.timeToDecisionMs as number);
++  const humanTimes = records.filter((r) => r.reachedHuman && r.timeToDecisionMs !== undefined).map((r) => r.timeToDecisionMs as number);
++  const debt = records.filter((r) => !r.decided && (r.ageMs ?? 0) > (r.ttlMs ?? Number.MAX_SAFE_INTEGER)).length;
++  const bounces = records.filter((r) => r.bounced).length;
++
++  return {
++    attempts,
++    escalationsPerMission: missionsTerminal > 0 ? attempts / missionsTerminal : 0,
++    autoResolveRate: attempts > 0 ? auto / attempts : 0,
++    humanEscalationRate: attempts > 0 ? human / attempts : 0,
++    repeatEscalationRate: attempts > 0 ? repeats / attempts : 0,
++    classDistribution,
++    medianTimeToDecisionAutoMs: median(autoTimes),
++    medianTimeToDecisionHumanMs: median(humanTimes),
++    escalationDebt: debt,
++    bounceRate: attempts > 0 ? bounces / attempts : 0,
++  };
++}
++
++/** Budget targets (DECISION-BUDGET.md section 5). */
++export const BUDGET_TARGETS = {
++  autoResolveRateMin: 0.95,
++  repeatEscalationRateMax: 0.05,
++  escalationsPerMissionMax: 2.0,
++  escalationDebtMax: 0,
++  bounceRateMax: 0,
++} as const;
++
++export interface TargetCheck { target: string; met: boolean; actual: number; expected: string }
++
++export function checkTargets(report: BudgetReport): TargetCheck[] {
++  return [
++    { target: 'autoResolveRate', met: report.autoResolveRate >= BUDGET_TARGETS.autoResolveRateMin, actual: report.autoResolveRate, expected: `>= ${BUDGET_TARGETS.autoResolveRateMin}` },
++    { target: 'repeatEscalationRate', met: report.repeatEscalationRate <= BUDGET_TARGETS.repeatEscalationRateMax, actual: report.repeatEscalationRate, expected: `<= ${BUDGET_TARGETS.repeatEscalationRateMax}` },
++    { target: 'escalationsPerMission', met: report.escalationsPerMission <= BUDGET_TARGETS.escalationsPerMissionMax, actual: report.escalationsPerMission, expected: `<= ${BUDGET_TARGETS.escalationsPerMissionMax}` },
++    { target: 'escalationDebt', met: report.escalationDebt <= BUDGET_TARGETS.escalationDebtMax, actual: report.escalationDebt, expected: `<= ${BUDGET_TARGETS.escalationDebtMax}` },
++    { target: 'bounceRate', met: report.bounceRate <= BUDGET_TARGETS.bounceRateMax, actual: report.bounceRate, expected: `<= ${BUDGET_TARGETS.bounceRateMax}` },
++  ];
++}
+diff --git a/b/src/tenanos/decision-budget/taxonomy.ts b/b/src/tenanos/decision-budget/taxonomy.ts
+new file mode 100644
+index 0000000..25e6bdb
+--- /dev/null
++++ b/b/src/tenanos/decision-budget/taxonomy.ts
+@@ -0,0 +1,185 @@
++/**
++ * Decision-budget taxonomy — Swarm 10 (Human Decision Budget).
++ *
++ * Pure classification module. No I/O, no stores, no event bus, no authority.
++ * It answers one question: for an attempted escalation, WHO decides next —
++ * the agent (classes AUTO_*) or a human (classes HUMAN_*) — and why.
++ *
++ * Membership tests are evaluated in enum order; the FIRST passing test wins.
++ * Auto classes take precedence by construction: that precedence IS the budget.
++ */
++
++export enum EscalationClass {
++  // Auto-resolve: MUST NOT reach a human.
++  DERIVABLE_FROM_SOURCE = 'DERIVABLE_FROM_SOURCE',
++  DERIVABLE_FROM_HISTORY = 'DERIVABLE_FROM_HISTORY',
++  DERIVABLE_FROM_RUNTIME = 'DERIVABLE_FROM_RUNTIME',
++  SAFE_EXPERIMENT_AVAILABLE = 'SAFE_EXPERIMENT_AVAILABLE',
++  // Human-eligible: exactly-once, minimum payload (see escalation-envelope.ts).
++  CREDENTIAL_REQUIRED = 'CREDENTIAL_REQUIRED',
++  AUTHORIZATION_REQUIRED = 'AUTHORIZATION_REQUIRED',
++  DESTRUCTIVE = 'DESTRUCTIVE',
++  PRODUCT_INTENT = 'PRODUCT_INTENT',
++  POLICY_CONFLICT = 'POLICY_CONFLICT',
++  OTHER = 'OTHER',
++}
++
++export const AUTO_CLASSES: ReadonlySet<EscalationClass> = new Set([
++  EscalationClass.DERIVABLE_FROM_SOURCE,
++  EscalationClass.DERIVABLE_FROM_HISTORY,
++  EscalationClass.DERIVABLE_FROM_RUNTIME,
++  EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++]);
++
++export function isAutoClass(c: EscalationClass): boolean {
++  return AUTO_CLASSES.has(c);
++}
++
++/**
++ * The evidence an escalation attempt carries. Built by the caller (the converged
++ * loop) from existing sources — approval_conditions, gate output, DLQ rows,
++ * scheduler state — at the exact hook site. Nothing here is fetched.
++ */
++export interface EscalationAttempt {
++  /** Stable hook-site id, e.g. 'E-07'. See hook-points.ts. */
++  siteId: string;
++  /** mission / run / execution / approval / dead-letter ids, as applicable. */
++  contextIds: Record<string, string>;
++  /** Machine-readable cause, e.g. approval_conditions.blocked_by. */
++  causeCode?: string;
++  /** Human-readable what-happened, one line. */
++  summary: string;
++  /**
++   * What the agent already tried, in order. Required (may be empty only for
++   * CREDENTIAL_REQUIRED / PRODUCT_INTENT where asking first is correct).
++   */
++  priorAttempts: Array<{
++    action: string;
++    sourceConsulted?: string;
++    outcome: string;
++    at: string;
++  }>;
++  /** Signals the caller observed; predicates read these, never I/O. */
++  signals: {
++    /** The blocking artifact names a deterministic remedy (gate hint, validator output). */
++    causeNamesRemedy?: boolean;
++    /** ≥1 prior attempt with the same repeatKey reached a terminal recorded resolution. */
++    historyHasRecordedResolution?: boolean;
++    /** Consecutive failures for this repeatKey with no successful resolution. */
++    consecutiveFailures?: number;
++    /** Answer is observable from live scheduler/registry/queue/table state. */
++    answerInLiveState?: boolean;
++    /** A bounded, sandboxed, evidence-recorded experiment exists. */
++    safeExperimentAvailable?: boolean;
++    /** Progress impossible without a human-provisioned secret/config. */
++    needsProvisionedSecret?: boolean;
++    /** Policy or design requires a named human yes/no. */
++    requiresHumanJudgment?: boolean;
++    /** Effect is irreversible. */
++    irreversible?: boolean;
++    /** No source/history/runtime/experiment could answer; it is a want, not a fact. */
++    isWantNotFact?: boolean;
++    /** Standing rules contradict, or the rule is unwired. */
++    policyContradiction?: string;
++  };
++  /** sha256(siteId|class|mission_type|target|blocked_by|failure_reason) — caller computes. */
++  repeatKey: string;
++  /** True when a prior attempt with this repeatKey reached a human in the last 24h. */
++  isRepeat?: boolean;
++}
++
++export interface Classification {
++  class: EscalationClass;
++  /** The membership test that passed, quoted. */
++  rationale: string;
++  autoResolve: boolean;
++  /** For repeats: what changed since the prior decision, if anything. */
++  repeatNote?: string;
++}
++
++const q = (s: string) => `"${s}"`;
++
++/**
++ * Classify an escalation attempt. Pure: reads only the attempt.
++ * Order below is normative (DECISION-BUDGET.md section 2).
++ */
++export function classify(attempt: EscalationAttempt): Classification {
++  const s = attempt.signals;
++
++  if (s.causeNamesRemedy) {
++    return {
++      class: EscalationClass.DERIVABLE_FROM_SOURCE,
++      rationale: `cause ${q(attempt.causeCode ?? 'unknown')} names its own remedy; fix deterministically and re-verify (R1).`,
++      autoResolve: true,
++    };
++  }
++  if (s.historyHasRecordedResolution && (s.consecutiveFailures ?? 0) < 3) {
++    return {
++      class: EscalationClass.DERIVABLE_FROM_HISTORY,
++      rationale: `repeatKey ${q(attempt.repeatKey.slice(0, 12))} has a recorded terminal resolution; replay it (R2).`,
++      autoResolve: true,
++    };
++  }
++  if ((s.consecutiveFailures ?? 0) >= 3 && s.safeExperimentAvailable) {
++    return {
++      class: EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++      rationale: `history shows >=3 consecutive failures; stop replaying, run one bounded experiment (R2/R4).`,
++      autoResolve: true,
++    };
++  }
++  if (s.answerInLiveState) {
++    return {
++      class: EscalationClass.DERIVABLE_FROM_RUNTIME,
++      rationale: `answer observable from live state; read fresh, act, re-check (R1/R2).`,
++      autoResolve: true,
++    };
++  }
++  if (s.safeExperimentAvailable) {
++    return {
++      class: EscalationClass.SAFE_EXPERIMENT_AVAILABLE,
++      rationale: `bounded dry-run available: side-effect-free or sandboxed, time-bounded, evidence-recorded (2.4).`,
++      autoResolve: true,
++    };
++  }
++  if (s.needsProvisionedSecret) {
++    return {
++      class: EscalationClass.CREDENTIAL_REQUIRED,
++      rationale: `progress impossible without a human-provisioned value no agent may mint.`,
++      autoResolve: false,
++    };
++  }
++  if (s.irreversible) {
++    return {
++      class: EscalationClass.DESTRUCTIVE,
++      rationale: `effect is irreversible; approval gate makes "yes" cheap, not theatrical.`,
++      autoResolve: false,
++    };
++  }
++  if (s.requiresHumanJudgment) {
++    return {
++      class: EscalationClass.AUTHORIZATION_REQUIRED,
++      rationale: `policy or design requires a named human decision; the question is a real judgment.`,
++      autoResolve: false,
++    };
++  }
++  if (s.isWantNotFact) {
++    return {
++      class: EscalationClass.PRODUCT_INTENT,
++      rationale: `no source/history/runtime/experiment answers it; route to the one canonical surface.`,
++      autoResolve: false,
++    };
++  }
++  if (s.policyContradiction) {
++    return {
++      class: EscalationClass.POLICY_CONFLICT,
++      rationale: `policy conflict or unwired rule: ${q(s.policyContradiction)}; fail closed, escalate the conflict once.`,
++      autoResolve: false,
++    };
++  }
++  return {
++    class: EscalationClass.OTHER,
++    rationale: `no class test passed; burden of proof is on escalation — state why 2.1-2.4 do not apply.`,
++    autoResolve: false,
++    repeatNote: attempt.isRepeat ? 'repeat without recorded decision change' : undefined,
++  };
++}

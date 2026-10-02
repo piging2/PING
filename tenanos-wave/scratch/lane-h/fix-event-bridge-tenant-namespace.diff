@@ -1,0 +1,62 @@
+--- a/ping-runtime/events/event_bridge.js	2026-09-24 17:52:23.000000000 +0000
++++ b/ping-runtime/events/event_bridge.js	2026-09-24 21:45:05.974437417 +0000
+@@ -17,6 +17,30 @@
+  *   - Single source of truth: UnifiedEventRuntime
+  */
+ 
++const { NAMESPACE_RE } = require('../canonicalization/namespace_binding');
++
++// Canonical tenant-slug shape (src/tenanos/tenant/tenant-context.ts,
++// P-20260923-092): the tenant identity string IS `tenant::<slug>`.
++// This bridge consumes that mapping; it does not redefine it.
++const TENANT_SLUG_RE = /^[a-z0-9-]{1,64}$/;
++const SYSTEM_NAMESPACE = 'core::system';
++
++/**
++ * Map a canonical_events tenant_id to the enforced spine namespace.
++ * Policy owner: src/tenanos/tenant/bridge-tenant.ts (namespaceForTenantId).
++ * Unknown/unmappable tenant -> system default + tenant_unknown tag so the
++ * laundering is OBSERVABLE instead of silent (worker keeps running).
++ */
++function namespaceForTenantId(tenantId) {
++  if (tenantId === null || tenantId === undefined || tenantId === '') {
++    return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++  }
++  const raw = String(tenantId);
++  if (NAMESPACE_RE.test(raw)) return { namespace: raw, tenantUnknown: false };
++  if (TENANT_SLUG_RE.test(raw)) return { namespace: `tenant::${raw}`, tenantUnknown: false };
++  return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++}
++
+ class EventBridge {
+   /**
+    * @param {object} options
+@@ -275,12 +299,20 @@
+         payload._tenant_id = row.tenant_id;
+         payload._actor = row.actor;
+ 
++        // Tenant boundary: the envelope's tenant_id must survive as the
++        // ENFORCED spine namespace, not just as inert metadata. Without an
++        // explicit namespace the spine stamps core::system and the tenant
++        // scope is lost to every downstream consumer (mission projection,
++        // scheduler, workers, embeddings).
++        const tenantNs = namespaceForTenantId(row.tenant_id);
++
+         const emitResult = await this._eventRuntime.emit(
+           row.event_type,
+           'canonical_events',  // source identifies the bridge origin
+           payload,
+           {
+             _skipGovernance: true,  // already governed in canonical_events
++            namespace: tenantNs.namespace,
+             causation_id: row.causation_id ? String(row.causation_id) : undefined,
+             correlation_id: row.correlation_id ? String(row.correlation_id) : undefined,
+             metadata: {
+@@ -289,6 +321,7 @@
+               tenant_id: row.tenant_id,
+               actor: row.actor,
+               event_version: row.event_version || '1.0.0',
++              ...(tenantNs.tenantUnknown ? { tenant_unknown: true } : {}),
+             },
+           }
+         );

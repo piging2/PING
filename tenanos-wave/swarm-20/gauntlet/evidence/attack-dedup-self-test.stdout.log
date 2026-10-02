@@ -1,0 +1,22 @@
+[2026-09-24T01:51:10.987Z] START: run gauntlet-attack-dedup-self-test; tenant=gauntlet-tenant-dedup-self-test; objective 07bc91febf42 (state=ACTIVE)
+[2026-09-24T01:51:10.988Z] LOCK: coordinator lease acquired (pid 99626)
+[2026-09-24T01:51:10.989Z] RECONCILE: 0 durable work order(s) for objective 07bc91febf42
+[2026-09-24T01:51:10.989Z] MEMORY: retrieved 1 active, excluded 0 stale, contradictory=false
+[2026-09-24T01:51:10.991Z] PLAN: t1: work_order_id=2bb1b2b25402...
+[2026-09-24T01:51:10.991Z] BUDGET: t1: durable usage 0/2
+[2026-09-24T01:51:10.992Z] POLICY: t1: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:11.020Z] ISSUE: t1: work order issued (durable=2bb1b2b25402..., adapter=1c8da32aef2a...)
+[2026-09-24T01:51:11.077Z] DISPATCH: t1: spawned synthetic worker pid 99638 (attempt 1, fault=honest)
+[2026-09-24T01:51:11.515Z] VERIFY: t1: WORKER_COMPLETED event_id=5dad7c278e6c... deduplicated=false
+[2026-09-24T01:51:11.515Z] DEDUP: t1: re-record deduplicated=true (expected true)
+[2026-09-24T01:51:11.518Z] MEMORY: candidate cand-b50d6e677aaaaa7f proposed (justified by 1 event(s), approval required)
+[2026-09-24T01:51:11.521Z] PLAN: t2: work_order_id=5dbb52fdd5a1...
+[2026-09-24T01:51:11.521Z] BUDGET: t2: durable usage 1/2
+[2026-09-24T01:51:11.522Z] POLICY: t2: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:11.525Z] ISSUE: t2: work order issued (durable=5dbb52fdd5a1..., adapter=3a465611aa05...)
+[2026-09-24T01:51:11.559Z] DISPATCH: t2: spawned synthetic worker pid 99662 (attempt 1, fault=honest)
+[2026-09-24T01:51:11.790Z] VERIFY: t2: WORKER_COMPLETED event_id=18c6cf0cbc15... deduplicated=false
+[2026-09-24T01:51:11.790Z] DEDUP: t2: re-record deduplicated=true (expected true)
+[2026-09-24T01:51:11.792Z] MEMORY: candidate cand-21b3089d381be800 proposed (justified by 2 event(s), approval required)
+[2026-09-24T01:51:11.793Z] MISSION-CONTROL: snapshot: workerActivity=2, candidates=2
+[2026-09-24T01:51:11.794Z] CLOSE: run closed; events 5dad7c278e6c, 18c6cf0cbc15; objective COMPLETED

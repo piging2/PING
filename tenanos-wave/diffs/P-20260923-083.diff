@@ -1,0 +1,73 @@
+--- /home/nolan/ping/gateway/routes/orchestration.js
++++ /home/nolan/ping/gateway/routes/orchestration.js
+@@ -81,36 +81,25 @@
+   /**
+    * GET /orchestration/missions
+    * List all missions with optional status filter.
+    */
+   router.get('/missions', asyncHandler('GET /orchestration/missions', async (req, res) => {
+-    const { status, limit = 50 } = req.query;
+-    let missions = engine._missions || [];
+-
+-    if (status) {
+-      missions = missions.filter(m => m.status === status);
+-    }
+-
+-    const result = missions.slice(-parseInt(limit)).map(m => ({
+-      id: m.id,
+-      type: m.type,
+-      target: m.target,
+-      status: m.status,
+-      priority: m.metadata?.priority,
+-      description: m.metadata?.description,
+-      createdAt: m.createdAt,
+-      consensus: m.consensus ? {
+-        accepted: m.consensus.accepted,
+-        confidence: m.consensus.averageConfidence || m.consensus.confidence,
+-      } : null,
+-    }));
+-
+-    res.json(result);
++    // DEPRECATED (P-20260923-083): engine._missions is an in-memory session
++    // array, not the mission authority. Two mission sources = no single
++    // truth. Canonical: ping_missions via MissionRuntime.
++    return res.status(410).json({
++      status: 'gone',
++      reason: 'Competing mission authority removed. Use GET /missions or GET /mc/missions/* (canonical: ping_missions via MissionRuntime).',
++      canonical: ['/missions/pending', '/missions/active', '/missions/stats', '/mc/missions/active', '/mc/missions/pending', '/mc/missions/stats', '/mc/missions/:id/trace'],
++    });
+   }));
+
+   /**
+    * GET /orchestration/missions/:id
+    * Get full mission status including worker outputs.
+    */
+   router.get('/missions/:id', asyncHandler('GET /orchestration/missions/:id', async (req, res) => {
+-    const mission = engine._missions.find(m => m.id === req.params.id);
+-    if (!mission) return res.status(404).json({ error: 'Mission not found' });
+-
+-    res.json({
+-      id: mission.id,
+-      type: mission.type,
+-      target: mission.target,
+-      status: mission.status,
+-      priority: mission.metadata?.priority,
+-      description: mission.metadata?.description,
+-      files: mission.files,
+-      createdAt: mission.createdAt,
+-      workerOutputs: (mission.workerOutputs || []).map(o => ({
+-        workerId: o.workerId,
+-        confidence: o.confidence,
+-        findingsCount: (o.findings || []).length,
+-      })),
+-      consensus: mission.consensus || null,
+-      consensusArtifactId: mission.consensusArtifactId,
+-      mergeArtifactId: mission.mergeArtifactId,
+-    });
++    // DEPRECATED (P-20260923-083): see GET /orchestration/missions above.
++    return res.status(410).json({
++      status: 'gone',
++      reason: 'Competing mission authority removed. Use GET /mc/missions/:id/trace (canonical: ping_missions + correlation-id event chain).',
++      canonical: ['/mc/missions/:id/trace'],
++    });
+   }));

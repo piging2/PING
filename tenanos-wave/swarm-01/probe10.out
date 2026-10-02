@@ -1,0 +1,124 @@
+########## bearer/token auth in gateway+runtime ##########
+/home/nolan/ping/gateway/bootstrap/gateway_runtime.js:300:      'posthog': { capabilities: ['analytics'], auth: 'api_key', perms: ['events', 'metrics'] },
+/home/nolan/ping/gateway/bootstrap/gateway_runtime.js:302:      'sms': { capabilities: ['communication'], auth: 'api_key', perms: ['send'] },
+--- broader ---
+/home/nolan/ping/gateway/github_snapshot.js
+/home/nolan/ping/gateway/best_in_class_integration.js
+/home/nolan/ping/ping-runtime/connectors/oauth_provider.js
+/home/nolan/ping/ping-runtime/ai/huggingface_adapter.js
+########## authorizeNamespace in canonicalization_service ##########
+76:  authorizeNamespace(source, requested) {
+77-    try {
+78-      const namespace = this.resolveNamespace(source, requested);
+79-      return { authorized: true, namespace };
+80-    } catch (err) {
+81-      return { authorized: false, reason: err.message };
+82-    }
+83-  }
+84-
+85-  /**
+86-   * Derive a deterministic logical identity, stripping volatile timestamp
+87-   * fields from the payload so retries never produce duplicate IDs.
+88-   */
+89-  _logicalIdentity(payload, logicalId) {
+90-    if (logicalId) return logicalId;
+91-    const stable = { ...payload };
+92-    for (const field of VOLATILE_FIELDS) delete stable[field];
+93-    return JSON.stringify(stable);
+94-  }
+95-
+96-  /**
+97-   * The canonical boundary. Every producer calls this.
+98-   * @param {object} input
+99-   * @param {string} input.source — producing source/authority ID
+100-   * @param {string} input.eventType — event type (validated by EventValidator)
+101-   * @param {object} input.payload — event data
+102-   * @param {string} [input.namespace] — explicit namespace override
+103-   * @param {string} [input.logicalId] — explicit logical identity (defaults to timestamp-stripped payload)
+104-   * @param {number} [input.confidence] — default 0.5 (observations are not knowledge)
+105-   * @param {array} [input.evidence] — evidence event IDs / references
+106-   * @param {string} [input.lifecycleStage] — 'observation' | 'candidate' | 'knowledge' (default 'observation')
+107-   * @param {object} [input.options] — passthrough to eventRuntime.emit (causation_id, correlation_id, metadata)
+108-   */
+109-  async canonicalizeAndEmit({
+110-    source,
+111-    eventType,
+112-    payload,
+113-    namespace,
+114-    logicalId,
+115-    confidence,
+116-    evidence,
+########## mission_runtime tenant ##########
+ArchitectureManifest.json
+AuthorityResolver.json
+CEO_PHASE1A_REPOSITORY_CENSUS.md
+CEO_PHASE1B_CONSTITUTIONAL_ENTROPY_CLASSIFICATION.md
+COMPOSE_DEPENDENCY_GRAPH.md
+CapabilityRegistry.json
+ConstitutionalQueryAPI.js
+ContextPackets.json
+EVENT_INTEGRATION_REPORT.md
+ExecutionRouter.json
+INFRASTRUCTURE_INVENTORY.md
+LawRouter.json
+PHASE40A_CONSTITUTIONAL_MATURITY_AUDIT_SUMMARY.md
+PIPELINE_INTEGRATION_REPORT.md
+REPOSITORY_RUNTIME_INTEGRATION.md
+RUNTIME_SERVICE_MATRIX.md
+RepositoryConstitutionManifest.json
+RepositoryHygieneReport.json
+RepositoryKnowledgeIndex_DependencyGraph.json
+RepositoryKnowledgeIndex_ExecutionGraphs.json
+RepositoryKnowledgeIndex_Filesystem.json
+RoutingCache.json
+RoutingIndex.json
+UUIDRegistry.json
+artifact_store
+audit_reports
+dashboard.js
+dispatcher.js
+dormant_classifications
+dormant_classifier.js
+event_queue
+event_to_mission_bridge.js
+execution
+generate_architecture_manifest.js
+generate_authority_resolver.js
+generate_capability_registry.js
+generate_constitution_manifest.js
+generate_context_packets.js
+generate_cross_reference_matrix.js
+generate_dependency_graph.js
+generate_execution_graphs.js
+generate_execution_router.js
+generate_filesystem_index.ps1
+generate_hygiene_report.js
+generate_law_router.js
+generate_routing_cache.js
+generate_routing_index.js
+generate_symbol_router.js
+generate_uuid_registry.js
+index.js
+intelligence_graph.js
+knowledge_compiler.js
+knowledge_report.json
+merge_gate.js
+merge_queue.js
+mission_runtime.js
+mission_scheduler.js
+proposal_pipeline.js
+redteam_artifact_graph.md
+redteam_autonomous_loop.md
+redteam_consensus.md
+redteam_constitutional_sovereignty.md
+redteam_context_authority.md
+redteam_event_fabric.md
+redteam_knowledge_compiler.md
+redteam_replay.md
+redteam_scheduler.md
+redteam_witness.md
+redteam_worker_port.md
+worker_memory
+worker_memory.js
+worker_registry.js
+########## mission routes tenant ##########

@@ -1,0 +1,146 @@
+===== P1: who emits SNIPPET_APPROVED / AI_RESPONSE_ACCEPTED =====
+/home/nolan/ping/gateway/generated/event_generator.js:325:      { event_type: 'SNIPPET_APPROVED', authority_owner: 'KnowledgePromoter', event_class: 'observation' },
+/home/nolan/ping/gateway/generated/event_generator.js:327:      { event_type: 'AI_RESPONSE_ACCEPTED', authority_owner: 'KnowledgePromoter', event_class: 'observation' },
+/home/nolan/ping/ping-runtime/workers/canonical_workers.js:676:  // side-effect-only worker — SNIPPET_APPROVED / AI_RESPONSE_ACCEPTED promote a
+/home/nolan/ping/ping-runtime/workers/canonical_workers.js:682:      eventTypes: ['SNIPPET_APPROVED', 'SNIPPET_REJECTED', 'AI_RESPONSE_ACCEPTED', 'AI_RESPONSE_REJECTED'],
+/home/nolan/ping/ping-runtime/workers/canonical_workers.js:686:    console.log(`[CanonicalWorkers] Registered 'knowledge-promotion' worker for [SNIPPET_APPROVED, SNIPPET_REJECTED, AI_RESPONSE_ACCEPTED, AI_RESPONSE_REJECTED]`);
+/home/nolan/ping/ping-runtime/knowledge/knowledge_graph.js:21: *     SNIPPET_APPROVED/AI_RESPONSE_ACCEPTED → 1.0, rejected → 0.2) via
+/home/nolan/ping/ping-runtime/knowledge/knowledge_graph.js:108:   * Promotion path (Phase F): SNIPPET_APPROVED / AI_RESPONSE_ACCEPTED move a
+/home/nolan/ping/ping-runtime/knowledge/knowledge_promoter.js:10: *   SNIPPET_APPROVED      → approved (confidence 1.0)
+/home/nolan/ping/ping-runtime/knowledge/knowledge_promoter.js:12: *   AI_RESPONSE_ACCEPTED  → approved (confidence 1.0)
+/home/nolan/ping/ping-runtime/knowledge/knowledge_promoter.js:22:const APPROVE_EVENTS = new Set(['SNIPPET_APPROVED', 'AI_RESPONSE_ACCEPTED']);
+===== P2: knowledge_promoter handle() head =====
+/**
+ * Knowledge Promoter — PING Core v1 (Phase F of Canonical Boundary)
+ *
+ * Turns explicit human approval into knowledge. Raw capture is observation
+ * evidence (confidence < 1, status candidate); only a human signal promotes
+ * it to knowledge (confidence 1.0, status approved). Rejection feeds negative
+ * weight into ranking (EvidenceAuthority.rank down-ranks rejected nodes).
+ *
+ * Handles:
+ *   SNIPPET_APPROVED      → approved (confidence 1.0)
+ *   SNIPPET_REJECTED      → rejected (confidence 0.2)
+ *   AI_RESPONSE_ACCEPTED  → approved (confidence 1.0)
+ *   AI_RESPONSE_REJECTED  → rejected (confidence 0.2)
+ *
+ * Side-effect only — promotion updates the knowledge graph node lifecycle
+ * fields (ADD-only: data is never rewritten). Returns a result object so the
+ * WorkerRuntime can record completion.
+ */
+
+const { BaseWorker } = require('../workers/canonical_workers');
+
+const APPROVE_EVENTS = new Set(['SNIPPET_APPROVED', 'AI_RESPONSE_ACCEPTED']);
+const REJECT_EVENTS = new Set(['SNIPPET_REJECTED', 'AI_RESPONSE_REJECTED']);
+
+class KnowledgePromoter extends BaseWorker {
+  constructor(options = {}) {
+    super(options);
+    this._name = 'knowledge-promotion';
+    this._knowledgeGraph = options.knowledgeGraph || null;
+    if (!this._knowledgeGraph) {
+      throw new Error('KnowledgePromoter requires knowledgeGraph');
+    }
+    this._stats = { handled: 0, approved: 0, rejected: 0, notFound: 0 };
+  }
+
+  async handle(event) {
+    const eventType = event.eventType || event.event_type;
+    const payload = event.payload || {};
+    const sourceEventId = payload.sourceEventId;
+    if (!sourceEventId) {
+      return { promoted: false, reason: 'no sourceEventId in payload', status: null };
+    }
+
+    const approve = APPROVE_EVENTS.has(eventType);
+    const reject = REJECT_EVENTS.has(eventType);
+    if (!approve && !reject) {
+      return { promoted: false, reason: `unhandled event type ${eventType}`, status: null };
+    }
+
+    const status = approve ? 'approved' : 'rejected';
+    const confidence = approve ? 1.0 : 0.2;
+
+    const updated = await this._knowledgeGraph.updateNodeBySourceEvent(sourceEventId, {
+      status,
+      confidence,
+      namespace: payload.namespace,
+    });
+
+    this._stats.handled++;
+    if (approve) this._stats.approved++;
+    else this._stats.rejected++;
+    if (!updated) this._stats.notFound++;
+
+    return { promoted: updated, status, sourceEventId };
+  }
+
+  getStats() {
+    return { ...this._stats };
+  }
+}
+
+module.exports = { KnowledgePromoter, APPROVE_EVENTS, REJECT_EVENTS };
+===== P3: mission_runtime stuck/failed/escalate =====
+5: * executed by workers, tracked here. Replaces 12 dead mission implementations.
+7: * Mission lifecycle: created → assigned → running → completed/failed → archived
+44:        retry_at TIMESTAMPTZ,
+52:      CREATE INDEX IF NOT EXISTS idx_pm_retry_at ON ping_missions(retry_at);
+54:      ALTER TABLE ping_missions ADD COLUMN IF NOT EXISTS retry_at TIMESTAMPTZ;
+127:   * that is already completed, failed, or retry_pending is never restarted.
+144:   * that is failed, retry_pending, or already completed is never overwritten.
+172:  async fail(missionId, error) {
+174:      `UPDATE ping_missions SET status = 'failed', error = $1, completed_at = NOW()
+175:       WHERE mission_id = $2 AND status IN ('running', 'assigned', 'retry_pending')`,
+185:   * Fail with retry — P0-4.
+187:   * Increments `retries`, sets `retry_pending` status and `retry_at` to enforce
+189:   * `failed` instead (exhaustion).
+191:   * `getPending()` only returns `created` missions, so retry_pending missions
+192:   * are invisible until `retry_at` is reached and `reclaimRetryPending()`
+194:   * if retry_at has passed).
+200:   * @param {number} options.backoff_delay_ms — base delay before retry (default 5000)
+202:  async failWithRetry(missionId, error, options = {}) {
+216:      // Exhausted — mark failed permanently
+218:        `UPDATE ping_missions SET status = 'failed', error = $1, retries = $2, completed_at = NOW()
+219:         WHERE mission_id = $3 AND status IN ('running', 'assigned', 'retry_pending')`,
+224:      // Schedule retry
+225:      const retryAt = new Date(Date.now() + backoffMs);
+227:        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3
+229:        [error, nextRetry, retryAt.toISOString(), missionId]
+245:   * still in 'running' or 'assigned' status — completed/failed missions are
+272:   * scheduler (orphans from crashed schedulers or stuck workers beyond the
+280:       SET status = 'created', assigned_to = NULL, lease_until = NULL, claimed_at = NULL, retry_at = NOW()
+303:   * Returns missions in `created` status AND `retry_pending` missions whose
+304:   * `retry_at` has elapsed — both are claimable.
+===== P4: mission_scheduler stuck/failed =====
+39:// the mission is skipped/failed (phantom-complete prevention), not misrouted.
+88:   * @param {object} options.deadLetterAuthority — P0-5: receives recordDeadLetter(job, error) on exhaustion
+89:   * @param {object} options.retryPolicy — P0-4: { max_attempts, backoff_delay_ms } default retry config
+97:    this._deadLetterAuthority = options.deadLetterAuthority || null;
+98:    this._retryPolicy = options.retryPolicy || { max_attempts: 3, backoff_delay_ms: 5000 };
+108:      failed: 0,
+158:          // Non-fatal — if renewal fails, the reaper may reclaim on next cycle
+159:          console.error(`[MissionScheduler] Lease renewal failed for ${missionId}: ${renewErr.message}`);
+171:        console.error('[MissionScheduler] Lease reaping failed (non-fatal):', reapErr.message);
+249:      // Dispatch to worker — P0-2: throws on worker failure
+255:      //   (a) dispatchResult.status === 'failed' → fail the mission (worker reported failure)
+257:      //   (c) dispatchResult.status === 'ok' (or truthy without status:'failed') → complete
+258:      if (dispatchResult && dispatchResult.status === 'failed') {
+259:        await this._failMission(mission, dispatchResult.error || 'worker returned failed status');
+266:        await this._failMission(mission, `no worker matched event_type=${event.event_type}`);
+275:      console.error(`[MissionScheduler] Mission ${mission.mission_id} failed: ${err.message}`);
+276:      await this._failMission(mission, err.message);
+283:   * P0-4/P0-5: Fail with retry → exhaustion → DLQ.
+285:   * Calls failWithRetry on the mission. If the retry policy is exhausted
+286:   * (retries >= max_attempts), the mission is `failed` and, when a
+287:   * deadLetterAuthority is wired, recorded as a dead letter (P0-5).
+289:  async _failMission(mission, error) {
+291:      const retries = await this._missionRuntime.failWithRetry(
+294:        this._retryPolicy,
+298:      if (retries >= this._retryPolicy.max_attempts && this._deadLetterAuthority) {
+303:          await this._deadLetterAuthority.recordDeadLetter(
+313:              retry_count: retries,
+319:          console.error(`[MissionScheduler] DLQ record failed: ${dlqErr.message}`);
+322:    } catch (failErr) {
+323:      console.error(`[MissionScheduler] Failed to mark mission as failed: ${failErr.message}`);

@@ -1,0 +1,120 @@
+/**
+ * Mission Control Routes — PING Core v1
+ *
+ * Every widget answers a real business question.
+ * Every widget is backed by canonical events from ping_events.
+ * If a widget has no data, it returns empty with the precise upstream reason.
+ * Never fabricates.
+ */
+
+function createMissionControlRoutes(services) {
+  const express = require('express');
+  const router = express.Router();
+  const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+  const { unifiedEventRuntime, knowledgeGraph, missionRuntime, aiRuntime,
+    googleConnector, connectorRegistry, workerRuntime, missionScheduler, eventBridge,
+    eventToMissionBridge, replayProvider } = services;
+
+  const hasPG = !!(unifiedEventRuntime && missionRuntime);
+
+  const requirePG = (req, res, next) => {
+    if (!hasPG) return res.status(503).json({ error: 'Postgres unavailable', degraded: true });
+    next();
+  };
+
+  // ─── Helper: companion COUNT(*) for a WHERE clause mirroring
+  //     unifiedEventRuntime.query() (WHERE 1=1 + optional filters).
+  //     Gives the TRUE matching-cohort cardinality (not LIMIT-capped),
+  //     so totalEvents / truncated are mathematically truthful.
+  async function countEvents(whereConds, params) {
+    if (!unifiedEventRuntime._pool) return 0;
+    const result = await unifiedEventRuntime._pool.query(
+      `SELECT COUNT(*)::int AS count FROM ping_events WHERE ${whereConds.join(' AND ')}`,
+      params,
+    );
+    return Number(result.rows[0].count);
+  }
+
+  // ─── Helper: query events by type ──────────────────────────────
+  async function queryEventsByType(eventType, limit = 100) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ eventType, limit }),
+      countEvents(['1=1', 'event_type = $1'], [eventType]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ─── Helper: get all events in time window ─────────────────────
+  async function queryEventsSince(since, limit = 500) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ since, limit }),
+      countEvents(['1=1', 'timestamp >= $1'], [since]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DASHBOARD — Projection-backed operating system overview
+  // ═══════════════════════════════════════════════════════════════
+  router.get('/dashboard', requirePG, async (req, res) => {
+    try {
+      const [missionStats, ev] = await Promise.all([
+        missionRuntime.getStats(),
+        queryEventsSince(new Date(constitutionalTimeAuthority.nowAsMillis() - 86400000).toISOString(), 500),
+      ]);
+      const { totalEvents } = ev;
+      const allEvents = ev.events;
+
+      // Classify events by business category
+      const counts = {};
+      for (const e of allEvents) {
+        counts[e.event_type] = (counts[e.event_type] || 0) + 1;
+      }
+
+      // Business metrics — derived from events, not hardcoded
+      const business = {
+        needsFollowup: (counts.LEAD_CREATED || 0) + (counts.ESTIMATE_SENT || 0),
+        pendingReviews: (counts.REVIEW_RECEIVED || 0) - (counts.REVIEW_RESPONDED || 0),
+        activeProjects: (counts.PROJECT_CREATED || 0) - (counts.PROJECT_COMPLETED || 0),
+        unpaidInvoices: (counts.INVOICE_SENT || 0) - (counts.INVOICE_PAID || 0),
+        aiRecommendations: counts.RECOMMENDATION_CREATED || 0,
+        workerActivity: (counts.WORKER_COMPLETED || 0) + (counts.WORKER_FAILED || 0),
+      };
+
+      // Ensure no negative values
+      for (const k of Object.keys(business)) {
+        if (business[k] < 0) business[k] = 0;
+      }
+
+      res.json({
+        status: 'ok',
+        dashboard: {
+          business,
+          missions: missionStats,
+          eventSummary: { total: totalEvents, count: ev.count, truncated: ev.truncated, byType: counts, window_size_ms: 86400000, cap: 500 },
+          uptime: process.uptime(),
+          timestamp: constitutionalTimeAuthority.nowAsISOString(),
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // BUSINESS QUESTION ENDPOINTS
+  // ═══════════════════════════════════════════════════════════════
+
+  // Who needs follow-up? (leads, estimates, unanswered reviews)
+  router.get('/business/who-needs-followup', requirePG, async (req, res) => {
+    try {
+      const since = new Date(constitutionalTimeAuthority.nowAsMillis() - 7 * 86400000).toISOString(); // 7 days
+      const { events: all, truncated, count, totalEvents } = await queryEventsSince(since, 500);
+
+      const leads = all.filter(e => e.event_type === 'LEAD_CREATED');
+      const estimateSent = all.filter(e => e.event_type === 'ESTIMATE_SENT');
+      const reviews = all.filter(e => e.event_type === 'REVIEW_RECEIVED');
+      const reviewResponses = all.filter(e => e.event_type === 'REVIEW_RESPONDED');

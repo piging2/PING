@@ -1,0 +1,15 @@
+--- a/ping-runtime/knowledge/knowledge_graph.js
++++ b/ping-runtime/knowledge/knowledge_graph.js
+@@ -93,7 +93,11 @@
+     await this._pool.query(
+       `INSERT INTO knowledge_nodes (node_id, node_type, entity_type, entity_id, label, data, source_event_id, namespace, confidence, status, correlation_id, confidence_provenance)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+-       ON CONFLICT (node_id) DO UPDATE SET data = $6, namespace = $8, status = $10, correlation_id = $11, confidence_provenance = $12, updated_at = NOW()`,
++       -- P0 FIX (swarm-05): re-emission must never demote lifecycle state.
++       -- Status is owned exclusively by the promotion path (KnowledgePromoter
++       -- via updateNodeBySourceEvent). addNode may refresh data on conflict,
++       -- but must not regress an approved/rejected node back to candidate.
++       ON CONFLICT (node_id) DO UPDATE SET data = $6, namespace = $8, correlation_id = $11, confidence_provenance = $12, updated_at = NOW()`,
+       [nodeId, nodeType, options.entityType || null, options.entityId || null,
+        label, JSON.stringify(data), options.sourceEventId || null,
+        options.namespace || 'core::system', options.confidence != null ? options.confidence : null,

@@ -1,0 +1,105 @@
+########## resolveNamespace ##########
+57:  resolveNamespace(source, requested) {
+58-    const namespace = requested || this._namespaces[source] || this._defaultNamespace;
+59-    if (!NAMESPACE_RE.test(namespace)) {
+60-      throw new Error(`Invalid namespace: '${namespace}' (must be core::<name> or tenant::<id>)`);
+61-    }
+62-    return namespace;
+63-  }
+64-
+65-  /**
+66-   * Authorize a producer's namespace claim at the boundary (audit §7 #1).
+67-   * Producers' allowed namespaces = the per-source map + explicit override,
+68:   * resolved by the same rule as resolveNamespace. This is the guard decision
+69-   * (authorized: true/false) the boundary route uses before canonicalizing;
+70:   * it wraps resolveNamespace so resolution + validation have exactly one owner.
+71-   *
+72-   * @param {string} source — producing source/authority ID
+73-   * @param {string} [requested] — explicit namespace override (optional)
+74-   * @returns {{authorized: true, namespace: string} | {authorized: false, reason: string}}
+75-   */
+76-  authorizeNamespace(source, requested) {
+77-    try {
+78:      const namespace = this.resolveNamespace(source, requested);
+79-      return { authorized: true, namespace };
+80-    } catch (err) {
+81-      return { authorized: false, reason: err.message };
+82-    }
+83-  }
+84-
+85-  /**
+86-   * Derive a deterministic logical identity, stripping volatile timestamp
+87-   * fields from the payload so retries never produce duplicate IDs.
+88-   */
+89-  _logicalIdentity(payload, logicalId) {
+90-    if (logicalId) return logicalId;
+91-    const stable = { ...payload };
+92-    for (const field of VOLATILE_FIELDS) delete stable[field];
+93-    return JSON.stringify(stable);
+94-  }
+95-
+96-  /**
+97-   * The canonical boundary. Every producer calls this.
+98-   * @param {object} input
+99-   * @param {string} input.source — producing source/authority ID
+100-   * @param {string} input.eventType — event type (validated by EventValidator)
+101-   * @param {object} input.payload — event data
+102-   * @param {string} [input.namespace] — explicit namespace override
+103-   * @param {string} [input.logicalId] — explicit logical identity (defaults to timestamp-stripped payload)
+104-   * @param {number} [input.confidence] — default 0.5 (observations are not knowledge)
+105-   * @param {array} [input.evidence] — evidence event IDs / references
+106-   * @param {string} [input.lifecycleStage] — 'observation' | 'candidate' | 'knowledge' (default 'observation')
+107-   * @param {object} [input.options] — passthrough to eventRuntime.emit (causation_id, correlation_id, metadata)
+108-   */
+109-  async canonicalizeAndEmit({
+110-    source,
+111-    eventType,
+112-    payload,
+113-    namespace,
+114-    logicalId,
+115-    confidence,
+116-    evidence,
+117-    lifecycleStage,
+118-    options = {},
+119-  }) {
+120-    if (!this._eventRuntime) throw new Error('CanonicalizationService: no eventRuntime configured');
+121-    if (!source || typeof source !== 'string') throw new Error('CanonicalizationService: source (string) required');
+122-    if (!eventType || typeof eventType !== 'string') throw new Error('CanonicalizationService: eventType (string) required');
+123-    if (typeof payload !== 'object' || payload === null) throw new Error('CanonicalizationService: payload (object) required');
+--
+125:    const ns = this.resolveNamespace(source, namespace);
+126-    const lifecycle = lifecycleStage || 'observation';
+########## mission_runtime.js head + create/list ##########
+12:class MissionRuntime {
+18:  constructor(options = {}) {
+########## routes/missions.js ##########
+7:function createMissionRoutes(missionRuntime) {
+11:  // Get mission stats
+12:  router.get('/stats', async (req, res) => {
+14:      const stats = await missionRuntime.getStats();
+21:  // Create a mission
+22:  router.post('/', async (req, res) => {
+24:      const { missionType, payload, priority, createdBy } = req.body;
+25:      const missionId = await missionRuntime.create(missionType, payload, { priority, createdBy });
+26:      res.json({ status: 'ok', missionId });
+32:  // Get pending missions (for Orca scheduler)
+33:  router.get('/pending', async (req, res) => {
+36:      const missions = await missionRuntime.getPending(limit);
+37:      res.json({ status: 'ok', missions, count: missions.length });
+43:  // Get active missions
+44:  router.get('/active', async (req, res) => {
+46:      const missions = await missionRuntime.getActive();
+47:      res.json({ status: 'ok', missions, count: missions.length });
+########## qdrant_adapter collections ##########
+30:   * Ensure a collection exists. Creates it if missing.
+32:  async ensureCollection(name, vectorSize = 768) {
+33:    const existing = await this._fetch('/collections').catch(() => ({ result: { collections: [] } }));
+34:    const names = (existing.result?.collections || []).map(c => c.name);
+36:    await this._fetch(`/collections/${name}`, {
+43:   * Upsert points into a collection.
+45:  async upsert(collection, points) {
+46:    return this._fetch(`/collections/${collection}/points`, {
+55:  async search(collection, vector, limit = 10) {
+56:    const result = await this._fetch(`/collections/${collection}/points/search`, {
+########## worker_runtime tenant ##########
+85:            // preserve its namespace (privacy boundary) via BaseWorker._emit.

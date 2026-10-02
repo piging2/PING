@@ -1,0 +1,24 @@
+# PATCH-08 — Witness Verdict Binding (explicit verified field)
+
+- **AXIOMS CLOSED:** W1 (gap closure).
+- **FILES:** `ping-runtime/workers/canonical_workers.js` (`WitnessWorker.handle` canonical path).
+- **SYMBOLS:** `WITNESS_CREATED` payload `witness` object.
+- **SCHEMA CHANGE:** None (payload-level, additive field).
+- **BEFORE:** WITNESS_CREATED attests replay R / input I / version V / root H / completeness C, but the verdict X (`verified`) is implied by the event type only. A reader of the row alone cannot see the verdict without knowing the type contract.
+- **AFTER:** Bind `verified: true` explicitly into the `witness` object. The attestation becomes self-contained: "replay R, over exact bounded input set I, under algorithm/version V, produced root H, with completeness C, verification verdict X=true." Unverified inputs continue to yield observable `WITNESS_REJECTED` (never WITNESS_CREATED).
+- **ALGORITHM:** One additive field on the already-constructed payload; the fail-closed gate (`certified.verified === true` read from the canonical row, W-1A) is unchanged.
+- **PSEUDODIFF:** In the witness object literal, add `verified: true,` alongside `witness_root` (the value is constant on this path because the gate already ensured it; binding it makes the attestation self-describing).
+- **FAIL-BEFORE TEST:** Read a WITNESS_CREATED row; assert no `verified` field is present (documents the gap).
+- **PASS-AFTER TEST:** Same; assert `witness.verified === true`; assert an unverified replay still yields exactly one WITNESS_REJECTED and zero WITNESS_CREATED.
+- **CRASH TEST:** n/a (pure payload change; attestation retry still dedups via logical_id).
+- **CONCURRENCY TEST:** n/a.
+- **HISTORY TEST:** Historical attestations lack the field (honestly pre-binding era); no backfill; consumers must treat absence as "verdict implied by type" for old rows.
+- **NAMESPACE TEST:** n/a (inherits replay row namespace).
+- **SECURITY TEST:** n/a.
+- **DEPENDENCIES:** None (composes with PATCH-09's certification of the dirty W-2 state).
+- **MIGRATION:** None.
+- **ROLLBACK:** Remove the field.
+- **OBSERVABILITY:** Witness rows become greppable for `verified:true` without type-contract knowledge.
+- **RESIDUAL FAILURE:** None identified; the binding was already semantically present, now explicit. Naming drift (`replay_engine_version` vs `algorithm_version`, `canonical_input_hash` holding the transcript hash) is documentation-level; do not rename stored fields.
+- **COMPLEXITY:** Trivial (1 line).
+- **CONFIDENCE:** High.

@@ -1,0 +1,36 @@
+===== N1: promote (knowledge candidate -> knowledge) =====
+/home/nolan/ping/gateway/test_knowledge_search.js:8: *   E3: EvidenceAuthority.rank promotes approved, down-ranks fallback/rejected.
+/home/nolan/ping/gateway/test_knowledge_search.js:9: *   F1: KnowledgePromoter promotes candidate → approved (confidence 1.0) on
+/home/nolan/ping/gateway/test_knowledge_search.js:20:const { KnowledgePromoter } = require('../ping-runtime/knowledge/knowledge_promoter');
+/home/nolan/ping/gateway/test_knowledge_search.js:331:test('E3: rank promotes approved, down-ranks fallback and rejected', async () => {
+/home/nolan/ping/gateway/test_knowledge_search.js:360:test('F1: SNIPPET_APPROVED promotes candidate to approved confidence 1.0', async () => {
+/home/nolan/ping/gateway/test_knowledge_search.js:363:  const promoter = new KnowledgePromoter({ pool, knowledgeGraph: kg });
+/home/nolan/ping/gateway/test_knowledge_search.js:365:  const result = await promoter.handle({
+/home/nolan/ping/gateway/test_knowledge_search.js:369:  assert.strictEqual(result.promoted, true);
+/home/nolan/ping/gateway/test_knowledge_search.js:379:  const promoter = new KnowledgePromoter({ pool, knowledgeGraph: kg });
+/home/nolan/ping/gateway/test_knowledge_search.js:381:  const result = await promoter.handle({
+/home/nolan/ping/gateway/test_knowledge_search.js:390:test('F1: promoter returns notFound for unknown sourceEventId', async () => {
+/home/nolan/ping/gateway/test_knowledge_search.js:393:  const promoter = new KnowledgePromoter({ pool, knowledgeGraph: kg });
+/home/nolan/ping/gateway/test_knowledge_search.js:394:  const result = await promoter.handle({
+/home/nolan/ping/gateway/test_knowledge_search.js:398:  assert.strictEqual(result.promoted, false);
+/home/nolan/ping/gateway/test_knowledge_search.js:399:  assert.strictEqual(promoter.getStats().notFound, 1);
+/home/nolan/ping/gateway/test_knowledge_search.js:402:test('F1: promoted node ranks above its candidate peer in search', async () => {
+/home/nolan/ping/gateway/test_knowledge_search.js:420:  // Approve evt-approved via promoter
+/home/nolan/ping/gateway/test_knowledge_search.js:421:  const promoter = new KnowledgePromoter({ pool, knowledgeGraph: kg });
+/home/nolan/ping/gateway/test_knowledge_search.js:422:  await promoter.handle({
+/home/nolan/ping/gateway/nversion_determinism.js:36: * No repository should be promoted into the permanent constitutional graph until it passes repeated convergence.
+/home/nolan/ping/gateway/generated/event_generator.js:323:      // observation evidence (confidence < 1); explicit approval promotes a node
+/home/nolan/ping/gateway/bootstrap/gateway_runtime.js:586:        // human approval promotes to knowledge (confidence 1.0). Local PG insert
+/home/nolan/ping/ping-runtime/evidence/test_evidence_authority.js:227:  assert.strictEqual(ranked[0].id, 'approved-node', 'approved promoted to top');
+/home/nolan/ping/ping-runtime/workers/canonical_workers.js:676:  // side-effect-only worker — SNIPPET_APPROVED / AI_RESPONSE_ACCEPTED promote a
+/home/nolan/ping/ping-runtime/workers/canonical_workers.js:679:    const { KnowledgePromoter } = require('../knowledge/knowledge_promoter');
+===== N2: capabilities endpoint / CapabilityAuthority.execute now =====
+/home/nolan/ping/gateway/routes/connectors.js:13:  router.get('/capabilities', async (req, res) => {
+===== N3: mission runtime files =====
+/home/nolan/ping/gateway/test_mission_runtime_time_authority.js
+/home/nolan/ping/gateway/test_mission_scheduler_time_authority.js
+/home/nolan/ping/ping-runtime/orchestration/mission_scheduler.js
+/home/nolan/ping/ping-runtime/orchestration/dormant_classifications/gateway_test_mission_runtime_time_authority.json
+/home/nolan/ping/ping-runtime/orchestration/dormant_classifications/gateway_test_mission_scheduler_time_authority.json
+/home/nolan/ping/ping-runtime/orchestration/mission_runtime.js
+===== N4: mission stuck states (failed/blocked/dead) =====

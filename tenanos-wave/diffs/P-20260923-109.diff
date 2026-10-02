@@ -1,0 +1,28 @@
+--- a/gateway/routes/ops.js
++++ b/gateway/routes/ops.js
+@@ -25,7 +25,11 @@
+ 
+       res.json({
+         status: 'ok',
+-        generated_runtime_authoritative: true,
++        // P-20260923-109 (continuation of P-20260923-086): no blanket authority
++        // claim. This assertion had no backend proof on any /ops/* route; the
++        // /ops/dashboard instance was already replaced with per-section
++        // provenance. Per-section provenance is each collector's own contract.
++        provenance: 'per-section; no blanket runtime-authority claim',
+         runtime_artifact_hash: runtimeHash || null,
+         uptime: process.uptime(),
+         components: {
+@@ -119,7 +123,11 @@
+       }
+       res.json({
+         status: 'ok',
+-        generated_runtime_authoritative: true,
++        // P-20260923-109 (continuation of P-20260923-086): no blanket authority
++        // claim. This assertion had no backend proof on any /ops/* route; the
++        // /ops/dashboard instance was already replaced with per-section
++        // provenance. Per-section provenance is each collector's own contract.
++        provenance: 'per-section; no blanket runtime-authority claim',
+         system: systemState,
+         generated_at: constitutionalTimeAuthority.nowAsISOString(),
+       });

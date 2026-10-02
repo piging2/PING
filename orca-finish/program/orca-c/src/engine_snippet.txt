@@ -1,0 +1,121 @@
+    };
+  }
+
+  collectWorkerOutput(workerId, missionId, output) {
+    const mission = this._missions.find(m => m.id === missionId);
+    if (!mission || mission._resolved) return null;
+
+    this._stateMachine.transition(workerId, 'waiting', { missionId });
+    const workerPort = this._workerPorts.get(workerId);
+    if (workerPort) workerPort.transition('waiting', { missionId });
+
+    if (!mission.workerOutputs) mission.workerOutputs = [];
+
+    const record = {
+      workerId,
+      ...output
+    };
+
+    mission.workerOutputs.push(record);
+
+    const proposalArtifact = this._proposalAuthority.produce(workerId, missionId, output);
+    const proposalId = proposalArtifact.id || proposalArtifact;
+
+    if (output.confidence !== undefined) {
+      this._registry.recordQuality(workerId, output.confidence);
+      this._registry.recordConfidence(workerId, output.confidence);
+    }
+
+    if (output.findings) {
+      for (const finding of output.findings) {
+        this._stateMachine.recordFinding(workerId, finding);
+      }
+    }
+
+    this._checkMissionComplete(mission);
+
+    return { proposalId, mission };
+  }
+
+  _checkMissionComplete(mission) {
+    const expectedWorkers = mission.metadata.expectedWorkerCount ||
+      (mission.metadata.priority >= 8 ? 3 : 1);
+    const completed = (mission.workerOutputs || []).length;
+
+    if (completed >= expectedWorkers) {
+      this._resolveMission(mission);
+    }
+  }
+
+  _resolveMission(mission) {
+    if (mission._resolved) return null;
+    mission._resolved = true;
+    const outputs = mission.workerOutputs || [];
+    const decision = this._consensus.evaluate(mission, outputs);
+
+    mission.status = decision.accepted ? 'completed' : 'failed';
+    mission.consensus = decision;
+
+    for (const output of outputs) {
+      const wasAccepted = decision.findings?.some(f =>
+        output.findings?.some(of =>
+          of.file === f.file && of.line === f.line
+        )
+      );
+      this._stateMachine.transition(output.workerId, decision.accepted ? 'completed' : 'failed', {
+        missionId: mission.id,
+        accepted: decision.accepted
+      });
+      let workerPort = this._workerPorts.get(output.workerId);
+      if (workerPort) {
+        workerPort.transition(decision.accepted ? 'completed' : 'failed', { missionId: mission.id });
+        workerPort.transition('idle', {});
+        if (output.confidence !== undefined) {
+          this._registry.recordQuality(output.workerId, output.confidence);
+        }
+      }
+      this._stateMachine.recordFix(output.workerId, output, wasAccepted, wasAccepted ? null : 'not_in_consensus');
+      this._registry.recordAcceptance(output.workerId, decision.accepted);
+      if (!decision.accepted) {
+        this._registry.recordFailure(output.workerId, `${mission.type}:consensus_rejected`);
+      }
+    }
+
+    const consensusArtifact = this._consensusAuthority.produce(decision, mission.id);
+    const consensusArtifactId = consensusArtifact.id || consensusArtifact;
+
+    const consensusEvent = this._eventQueue.emitChain(
+      decision.accepted ? 'consensus_reached' : 'consensus_failed',
+      {
+        missionId: mission.id,
+        decisionId: decision.decisionId || decision.id,
+        consensusArtifactId,
+        accepted: decision.accepted,
+        confidence: decision.averageConfidence || decision.confidence,
+        agreementLevel: decision.agreementLevel,
+        strongConsensus: decision.strongConsensus || false
+      }
+    );
+
+    let mergeArtifactId = null;
+    let mergeEvent = null;
+
+    if (decision.accepted) {
+      if (decision.findings && decision.findings.length > 0) {
+        for (const worker of (mission.workerOutputs || [])) {
+          this._stateMachine.recordPattern(
+            worker.workerId,
+            `${mission.type}:${mission.target || 'global'}`,
+            'pattern'
+          );
+        }
+      }
+
+      this._mergeGate.clear();
+      for (const file of (mission.files || [])) {
+        const fullPath = path.resolve(__dirname, '../../../', file);
+        if (fs.existsSync(fullPath)) {
+          this._mergeGate.validateFile(fullPath);
+        }
+      }
+      const gateResult = this._mergeGate.summary();

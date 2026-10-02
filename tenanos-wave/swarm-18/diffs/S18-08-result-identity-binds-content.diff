@@ -1,0 +1,36 @@
+# S18-08: resultIdentity binds result content (output/error/evidence)
+# Source: ~/workspace/orca-workstream-d/external_agent_adapter.js (lines 273-286)
+# Intended target: src/tenanos/external-agent/external_agent_adapter.js
+# Seam: SEAM-REPORT.md 3B — content-blind result_id + idempotent emission swallows differing re-delivered results (BROKEN)
+# Test: two different results for same (work_order_id, attempt) -> different result_ids.
+# ---
+--- a/tenanos/external-agent/external_agent_adapter.js
++++ b/tenanos/external-agent/external_agent_adapter.js
+@@ -271,8 +271,8 @@
+   return JSON.stringify(value);
+ }
+
+-function resultIdentity(_result, workOrder) {
++function resultIdentity(result, workOrder) {
+   const binding = {
+     work_order_id: workOrder.work_order_id,
+     mission_id: workOrder.mission_id,
+     task_id: workOrder.task_id,
+     attempt: workOrder.attempt,
+     agent_id: workOrder.agent_id,
+     capability: workOrder.capability,
+     context_pack_id: workOrder.context_pack_id,
+     namespace: workOrder.namespace,
++    // S18-08: bind the result content. Without this, two different results
++    // for the same attempt share a result_id, and idempotent emission
++    // (logical_id = result_id) silently swallows the second outcome.
++    content_sha256: crypto.createHash('sha256')
++      .update(stableStringify({
++        output: result ? result.output : null,
++        error: result ? result.error : null,
++        evidence: result ? result.evidence : null,
++      }))
++      .digest('hex'),
+   };
+   return crypto.createHash('sha256').update(`external-result:${stableStringify(binding)}`).digest('hex');
+ }

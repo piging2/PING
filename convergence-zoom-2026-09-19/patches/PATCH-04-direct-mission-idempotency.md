@@ -1,0 +1,26 @@
+# PATCH-04 — Direct Mission Idempotency Contract (explicit Idempotency-Key)
+
+- **AXIOMS CLOSED:** M3 (primary), M2 (direct path).
+- **FILES:** `gateway/routes/missions.js` (`POST /missions`); `ping-runtime/orchestration/mission_runtime.js` (`create()` fallback branch); new migration SQL.
+- **SYMBOLS:** `POST /missions`, `Idempotency-Key` header, `mission_idempotency_keys` table.
+- **SCHEMA CHANGE:** `CREATE TABLE mission_idempotency_keys(key TEXT PRIMARY KEY, mission_id TEXT NOT NULL, request_hash TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW(), expires_at TIMESTAMPTZ NOT NULL)`; index on `expires_at` for reaping. Additive `ping_missions.idempotency_key TEXT` (also used by M-ID-A).
+- **BEFORE:** `mission_id = sha256(missionType:JSON.stringify(payload)).slice(0,16)` for non-event missions: key-order-sensitive (same intent -> two missions), cross-tenant collapse (two intents -> one mission, silent), volatile fields (client timestamps) -> duplicate missions. Nothing in the protocol distinguishes client retry from coincidence.
+- **AFTER:** U1 contract. Client sends `Idempotency-Key: <opaque>`: server stores `key -> {mission_id, request_hash=sha256(canonical body), expires_at=now+24h}` scoped by API token. Same key + equivalent body -> 200 with the SAME missionId + `Idempotent-Replayed: true`. Same key + different body -> 409 Conflict. No key -> ALWAYS create a new mission (explicitly non-idempotent, documented); without key and without `event_id`, require explicit `?fresh=true` or reject 400 pointing at the key (the silent accidental dedup becomes a loud client choice). The `event_id` bridge branch is untouched (the event is the identity authority there). M-ID-A: on `ON CONFLICT (mission_id)`, compare stored `idempotency_key` with the attempted preimage; mismatch -> throw (collision-loud) instead of silent absorb.
+- **ALGORITHM:** Equivalence = hash of canonicalized body (sorted keys). Key lifecycle: 24h TTL, documented; expired key starts a new chain. Key store write and mission INSERT in one tx.
+- **PSEUDODIFF:**
+  - `missions.js`: read header; lookup key; 409 on body mismatch; else create-or-return with replay marker.
+  - `mission_runtime.js` `create()`: accept `options.idempotencyKey`; persist it in the new column; conflict path compares and throws on mismatch.
+- **FAIL-BEFORE TEST:** POST identical body twice (no key) -> assert two different mission_ids (documents accidental dedup/coincidence confusion); POST same body with different key order -> assert different mission_ids (documents the key-order defect).
+- **PASS-AFTER TEST:** POST with key K twice -> same missionId, second has `Idempotent-Replayed: true`; POST with K + different body -> 409; POST without key -> new mission each time; cross-tenant identical payloads (different tokens) -> two missions.
+- **CRASH TEST:** KILL after key-store write before mission INSERT (same tx -> both or neither); restart -> no orphaned key.
+- **CONCURRENCY TEST:** 10 concurrent POSTs with the same key -> one mission, 9 replays (unique key constraint serializes).
+- **HISTORY TEST:** Existing missions unaffected; new column NULL for historical rows (honestly default-era).
+- **NAMESPACE TEST:** Key store scoped by (token, key); namespace in the new-era preimage (M-ID-E) prevents cross-namespace collapse.
+- **SECURITY TEST:** Key guessing across tokens is impossible (scoped); 409 does not leak the original body.
+- **DEPENDENCIES:** PATCH-11 (namespace column, new-era preimage); independent of PATCH-01/02.
+- **MIGRATION:** Additive table + column; a reaper deletes expired keys (no PII concern: keys are opaque).
+- **ROLLBACK:** Drop table; route reverts to old fallback (documented as deprecated).
+- **OBSERVABILITY:** Counters: `idempotent_replays`, `idempotency_conflicts_409`, `fresh_creates`.
+- **RESIDUAL FAILURE:** Clients that never send keys get no dedup (by design, documented); TTL expiry can duplicate a very-late retry (documented).
+- **COMPLEXITY:** Small (~50 lines + migration).
+- **CONFIDENCE:** High. Do NOT just canonicalize the JSON: that fixes key order while preserving the intent/coincidence confusion, i.e. makes the wrong answer deterministic.

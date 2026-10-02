@@ -1,0 +1,20 @@
+# S18-07: Require explicit attempt (remove silent default 1)
+# Source: ~/workspace/orca-workstream-d/external_agent_adapter.js (line 212)
+# Intended target: src/tenanos/external-agent/external_agent_adapter.js
+# Seam: SEAM-REPORT.md 3A — caller forgetting attempt on retry silently re-issues attempt 1 (BROKEN with 3B)
+# Test: issueWorkOrder without attempt -> throws WORK_ORDER_DENIED; with attempt: 2 -> ok.
+# ---
+--- a/tenanos/external-agent/external_agent_adapter.js
++++ b/tenanos/external-agent/external_agent_adapter.js
+@@ -209,7 +209,10 @@
+ /**
+  * Build (but do not send) a WorkOrder envelope. Throws on authorization denial.
+  */
+-function issueWorkOrder({ agentId, capability, namespace, taskId, missionId, correlationId, contextPackId, input, constraints, resultPath, deadline, causationId, attempt = 1 }) {
++// S18-07: attempt is required and has no default. The old `= 1` default made
++// "retry as attempt 1" the easy path for a dispatcher that forgot to pass it;
++// the positive-integer check below already rejects undefined loudly.
++function issueWorkOrder({ agentId, capability, namespace, taskId, missionId, correlationId, contextPackId, input, constraints, resultPath, deadline, causationId, attempt }) {
+   const auth = authorizeWorkOrder({ agentId, capability, namespace, constraints });
+   if (!auth.granted) {
+     const err = new Error(`Work order denied: ${auth.reason}`);

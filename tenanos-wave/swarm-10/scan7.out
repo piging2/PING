@@ -1,0 +1,124 @@
+===== M1: gateway_runtime.js around line 586 =====
+        });
+        missionScheduler.start();
+        console.log('[GatewayRuntime] Mission Scheduler started');
+
+        // ─── Business Event Emitters ──────────────────────────────
+        // Producers route through the Canonicalization Service (the boundary),
+        // not the event runtime directly. Emitters are unchanged — they call
+        // emit(eventType, source, payload) which the service duck-types.
+        reviewEmitter = new ReviewEmitter(canonicalizationService);
+        customerEmitter = new CustomerEmitter(canonicalizationService);
+        projectEmitter = new ProjectEmitter(canonicalizationService);
+        connectorEmitter = new ConnectorEmitter(canonicalizationService);
+        systemEmitter = new SystemEmitter(canonicalizationService);
+        console.log('[GatewayRuntime] Business Event Emitters initialized (via Canonicalization Service)');
+
+        // ─── Event-to-Mission Bridge ──────────────────────────────
+        eventToMissionBridge = new EventToMissionBridge({
+          eventRuntime: unifiedEventRuntime,
+          missionRuntime: missionRuntime,
+        });
+        eventToMissionBridge.start();
+        console.log('[GatewayRuntime] Event-to-Mission Bridge started');
+
+        // ─── Graph Projection (async subscriber) ──────────────────
+        // Knowledge candidates: business + observation events project into the
+        // knowledge graph as status='candidate', confidence 0.5. Only explicit
+        // human approval promotes to knowledge (confidence 1.0). Local PG insert
+        // is ms-fast; this is not on the ingestion path.
+        const GRAPH_PROJECTION_EVENTS = [
+          'REVIEW_RECEIVED', 'REVIEW_RESPONDED',
+          'CUSTOMER_CREATED', 'CUSTOMER_UPDATED',
+          'PROJECT_CREATED', 'PROJECT_UPDATED', 'PROJECT_COMPLETED',
+          'LEAD_CREATED', 'LEAD_CONVERTED',
+          'ESTIMATE_CREATED', 'ESTIMATE_SENT', 'ESTIMATE_ACCEPTED',
+          'INVOICE_CREATED', 'INVOICE_SENT', 'INVOICE_PAID',
+          'OBSERVATION_CREATED', 'CLAIM_CREATED', 'RECOMMENDATION_CREATED',
+        ];
+        for (const type of GRAPH_PROJECTION_EVENTS) {
+          unifiedEventRuntime.on(type, async (event) => {
+            try {
+              const payload = event.payload || {};
+              const entityRef = payload.customer_id || payload.project_id || payload.review_id || payload.lead_id || payload.estimate_id || payload.invoice_id;
+              const label = `${event.event_type} ${entityRef || event.event_id.slice(0, 12)}`;
+              await knowledgeGraph.addNode('event', label, {
+                event_type: event.event_type,
+                source: event.source,
+                payload,
+              }, {
+                // Namespace comes from the spine event (always resolved); the
+                // 'core::system' default is owned by UnifiedEventRuntime.emit() only.
+                namespace: event.namespace,
+                // Read confidence delivered by the spine producer. Null when
+                // genuinely absent (legacy events before confidence propagation
+                // was wired). Knowledge graph nodes with null confidence are
+                // explicitly "not yet assessed" — correct for candidates.
+                confidence: event.metadata?.confidence != null ? event.metadata.confidence : null,
+                status: 'candidate',
+                sourceEventId: event.event_id,
+                // Trace fields: correlation_id links all events from the same
+                // originating observation. confidence_provenance records whether
+                // confidence was inherited from a parent or computed fresh.
+===== M2: where are capabilities routes mounted =====
+===== M3: file existence =====
+ls: cannot access '/home/nolan/ping/gateway/exterior_auth_middleware.js': No such file or directory
+ls: cannot access '/home/nolan/ping/gateway/routes/capabilities.js': No such file or directory
+-rw-r--r-- 1 nolan nolan 841 Sep 16 09:41 /home/nolan/ping/gateway/background_workers.js
+===== M4: missions route (first 80 lines) =====
+/**
+ * Mission Runtime Routes — PING Core v1
+ * 
+ * Mission Control navigates via events/queues, not CRUD.
+ */
+
+function createMissionRoutes(missionRuntime) {
+  const express = require('express');
+  const router = express.Router();
+
+  // Get mission stats
+  router.get('/stats', async (req, res) => {
+    try {
+      const stats = await missionRuntime.getStats();
+      res.json({ status: 'ok', stats });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // Create a mission
+  router.post('/', async (req, res) => {
+    try {
+      const { missionType, payload, priority, createdBy } = req.body;
+      const missionId = await missionRuntime.create(missionType, payload, { priority, createdBy });
+      res.json({ status: 'ok', missionId });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // Get pending missions (for Orca scheduler)
+  router.get('/pending', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 10;
+      const missions = await missionRuntime.getPending(limit);
+      res.json({ status: 'ok', missions, count: missions.length });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // Get active missions
+  router.get('/active', async (req, res) => {
+    try {
+      const missions = await missionRuntime.getActive();
+      res.json({ status: 'ok', missions, count: missions.length });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  return router;
+}
+
+module.exports = createMissionRoutes;

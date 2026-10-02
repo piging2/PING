@@ -1,0 +1,32 @@
+# S18-06: Bind work_order_id to (mission_id, task_id)
+# Source: ~/workspace/orca-workstream-d/external_agent_adapter.js (lines 163-165, 246)
+# Intended target: src/tenanos/external-agent/external_agent_adapter.js
+# Seam: SEAM-REPORT.md 4A — sha256('workorder:'+taskId) collides across missions sharing a taskId (BROKEN)
+# Test: issueWorkOrder twice with same taskId but different missionIds -> distinct work_order_ids;
+#       same (missionId, taskId) twice -> same work_order_id (idempotent re-issue preserved).
+# ---
+--- a/tenanos/external-agent/external_agent_adapter.js
++++ b/tenanos/external-agent/external_agent_adapter.js
+@@ -161,8 +161,12 @@
+   },
+ };
+
+-function workOrderId(taskId) {
+-  return crypto.createHash('sha256').update('workorder:' + taskId).digest('hex').slice(0, 16);
++function workOrderId(missionId, taskId) {
++  // S18-06: bind the mission. The old form hashed taskId alone, so two
++  // missions sharing a taskId minted the same work_order_id, and a result
++  // envelope could validate against the wrong work order via the echo checks.
++  return crypto.createHash('sha256').update(`workorder:${missionId}:${taskId}`).digest('hex').slice(0, 16);
+ }
+
+ /**
+@@ -243,7 +247,7 @@
+     throw err;
+   }
+   return {
+-    work_order_id: workOrderId(taskId),
++    work_order_id: workOrderId(missionId, taskId),
+     agent_id: agentId,
+     mission_id: missionId,
+     task_id: taskId,

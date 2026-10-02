@@ -1,0 +1,81 @@
+--- /home/nolan/projects/constitutional-runtime/CascadeProjects/infra/ui-next/src/components/MissionControlHeader.tsx
++++ /home/nolan/projects/constitutional-runtime/CascadeProjects/infra/ui-next/src/components/MissionControlHeader.tsx
+@@ -1,20 +1,22 @@
+ 'use client'
+
+-import { useState, useEffect } from 'react'
++import { useState } from 'react'
+ import { Cpu, Network, Activity, Clock, Database, Zap } from 'lucide-react'
+
+ interface RuntimeStatus {
+   model: string
+   gateway: 'healthy' | 'unhealthy' | 'unknown'
+   ollama: 'connected' | 'disconnected' | 'unknown'
+   streaming: boolean
+-  latency: number
+-  contextUsage: number
++  // null = UNKNOWN: no backend health endpoint is wired. Never simulate.
++  latency: number | null
++  contextUsage: number | null
+ }
+
+ export default function MissionControlHeader() {
+-  const [status, setStatus] = useState<RuntimeStatus>({
+-    model: 'qwen3-coder',
+-    gateway: 'healthy',
+-    ollama: 'connected',
++  // PROVENANCE (P-20260923-081): no health fetch exists in this component.
++  // Every field renders UNKNOWN until wired to a real backend (e.g.
++  // GET /mc/system). Hardcoding 'healthy' and Math.random() metrics was
++  // fabricated status. UI CLAIM <= BACKEND PROOF.
++  const [status] = useState<RuntimeStatus>({
++    model: 'unknown',
++    gateway: 'unknown',
++    ollama: 'unknown',
+     streaming: false,
+-    latency: 0,
+-    contextUsage: 0
++    latency: null,
++    contextUsage: null
+   })
+-
+-  useEffect(() => {
+-    // Simulate runtime updates
+-    const interval = setInterval(() => {
+-      setStatus(prev => ({
+-        ...prev,
+-        latency: Math.random() * 100 + 50,
+-        contextUsage: Math.random() * 4096
+-      }))
+-    }, 2000)
+-
+-    return () => clearInterval(interval)
+-  }, [])
+
+   return (
+     <div className="bg-historical-900 border-b border-historical-700 px-4 py-2">
+@@ -71,7 +61,7 @@
+           <div className="flex items-center gap-2">
+             <Zap className={`w-4 h-4 ${status.streaming ? 'text-constitutional-400 animate-pulse' : 'text-historical-500'}`} />
+             <span className="text-historical-200 text-sm">
+-              {status.streaming ? `${Math.floor(Math.random() * 50 + 20)} tok/s` : 'Idle'}
++              {status.streaming ? 'Streaming' : 'unknown'}
+             </span>
+           </div>
+
+@@ -79,13 +69,13 @@
+           {/* Latency */}
+           <div className="flex items-center gap-2">
+             <Clock className="w-4 h-4 text-retrieval-400" />
+-            <span className="text-historical-200 text-sm">{status.latency.toFixed(1)}ms</span>
++            <span className="text-historical-200 text-sm">{status.latency === null ? 'unknown' : `${status.latency.toFixed(1)}ms`}</span>
+           </div>
+
+           {/* Context Usage */}
+           <div className="flex items-center gap-2">
+             <Database className="w-4 h-4 text-agents-400" />
+-            <span className="text-historical-200 text-sm">{Math.floor(status.contextUsage)} ctx</span>
++            <span className="text-historical-200 text-sm">{status.contextUsage === null ? 'unknown' : `${Math.floor(status.contextUsage)} ctx`}</span>
+           </div>
+         </div>
+       </div>

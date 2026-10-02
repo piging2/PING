@@ -1,0 +1,30 @@
+# S18-05: reapExpiredLeases counts the reclaim against retries
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_runtime.js (lines 300-316)
+# Intended target: src/tenanos/orchestration/mission_runtime.js
+# Seam: SEAM-REPORT.md 1H — crash-reclaim loop never increments retries, exhaustion unreachable (RISKY)
+# Test: mission reclaimed twice -> retries = 2 (was 0).
+# Follow-up (not this patch): route reclaimed missions with retries >= maxAttempts to 'failed' instead of 'created'.
+# ---
+--- a/tenanos/orchestration/mission_runtime.js
++++ b/tenanos/orchestration/mission_runtime.js
+@@ -306,11 +306,14 @@
+    * has passed, resets them to `created` (AVAILABLE) so the scheduler can
+    * re-claim them. Only catches missions NOT being actively renewed by the
+    * scheduler (orphans from crashed schedulers or stuck workers beyond the
+    * lease renewal window).
++   *
++   * S18-05: the reclaim increments `retries`. Previously a mission whose
++   * scheduler crashed every attempt cycled created->assigned->running->
++   * created forever with retries stuck at 0, so max_attempts exhaustion was
++   * unreachable on this path. The counter is now truthful.
+    *
+    * @returns {Promise<number>} count of reclaimed missions
+    */
+   async reapExpiredLeases() {
+     const result = await this._pool.query(
+       `UPDATE ping_missions
+-       SET status = 'created', assigned_to = NULL, lease_until = NULL, claimed_at = NULL, retry_at = NOW()
++       SET status = 'created', assigned_to = NULL, lease_until = NULL, claimed_at = NULL, retry_at = NOW(), retries = retries + 1
+        WHERE status IN ('running', 'assigned')
+          AND lease_until IS NOT NULL
+          AND lease_until < NOW()

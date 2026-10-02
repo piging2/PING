@@ -1,0 +1,28 @@
+# PATCH-12 — Failure Classification (wire the classifier, fix dead contracts, honest statuses)
+
+- **AXIOMS CLOSED:** F2 (partial), supports A1 (timeout taxonomy).
+- **FILES:** `ping-runtime/orchestration/mission_scheduler.js` / `mission_runtime.js` (`_failMission`, `failWithRetry`); `gateway/retry_policy.js`; `gateway/retry_authority.js`; `ping-runtime/workers/canonical_workers.js` (ProjectionWorker, ReplayWorker no-provider path).
+- **SYMBOLS:** `RetryPolicy._classifyError`, `RetryPolicy._isNonRetryable`, `FailureAuthority` (nonexistent), `failWithRetry`.
+- **SCHEMA CHANGE:** Additive `ping_missions.error_class TEXT` (nullable; stores the classification alongside the free-text error).
+- **SCHEMA CHANGE:** None otherwise.
+- **BEFORE:** Four collapses: (1) DETERMINISTIC_REJECTION -> RETRYABLE: `event_type_mismatch` burns 3 retries before failing; (2) dead contract: `retry_authority.js:130-131` consumes `failureClassification` "from FailureAuthority", a class that does not exist; `RetryPolicy._classifyError` exists but is unwired into the mission path; RetryAuthority is referenced only by `dead_letter_authority.js`; (3) UNKNOWN_OUTCOME -> success: ProjectionWorker Qdrant failure swallowed into ok (also PATCH-07); (4) INFRASTRUCTURE_UNAVAILABLE -> mission-ok: `no_replay_provider` emits honest `REPLAY_COMPLETED{verified:false}` but the worker returns `status:'ok'` so the mission completes.
+- **AFTER:** (1) Wire `RetryPolicy._classifyError`/`_isNonRetryable` into `_failMission`/`failWithRetry`: non-retryable classes skip the retry loop and go straight to `failed`; store `error_class` alongside `error`. (2) Either implement `FailureAuthority` or delete the reference in `retry_authority.js:130` (a contract referencing a nonexistent authority is worse than no contract; recommended: delete + document that `RetryPolicy` is the classifier). (3) Covered by PATCH-07 (PROJECTION_FAILED). (4) `no_replay_provider` path returns a non-`ok` status (e.g. `status:'degraded'`) so the mission does not complete as if healthy; the honest event stays.
+- **ALGORITHM:** Classification at failure time, stored durably; the retry decision reads the stored class, not message sniffing at each attempt.
+- **PSEUDODIFF:**
+  - `_failMission(err)`: `const cls = RetryPolicy._classifyError(err);` `if (cls==='non_retryable') return this._failNow(cls);` else existing `failWithRetry` with `error_class=cls`.
+  - `retry_authority.js:130`: remove the `FailureAuthority` reference or implement the class.
+  - ReplayWorker no-provider branch: `return {status:'degraded', ...}` instead of `ok`.
+- **FAIL-BEFORE TEST:** `event_type_mismatch` mission; assert 3 retries burned before failure (documents the collapse); `no_replay_provider`; assert mission `completed` (documents the dishonest status).
+- **PASS-AFTER TEST:** `event_type_mismatch` -> immediate `failed` with `error_class='non_retryable'`, zero retries; `no_replay_provider` -> mission not `completed`.
+- **CRASH TEST:** n/a.
+- **CONCURRENCY TEST:** n/a.
+- **HISTORY TEST:** `error_class` NULL for historical failures (honestly unclassified era).
+- **NAMESPACE TEST:** n/a.
+- **SECURITY TEST:** Classification must not treat auth failures as retryable (already in `_isNonRetryable` patterns: 42501/28000/28P01; keep).
+- **DEPENDENCIES:** PATCH-05 (attempt statuses `timed_out`/`orphaned` give the classifier honest inputs); PATCH-07 (projection side).
+- **MIGRATION:** Additive nullable column.
+- **ROLLBACK:** Revert wiring; column stays.
+- **OBSERVABILITY:** Failure-class histogram; alert on `non_retryable` spikes (indicates bad inputs, not bad infra).
+- **RESIDUAL FAILURE:** The 9-class algebra (Lane E) is not fully enforced; this patch wires the classifier and fixes the four concrete collapses. Full algebra enforcement is a later pass.
+- **COMPLEXITY:** Small (~40 lines).
+- **CONFIDENCE:** Medium-high. The classifier exists and is tested in isolation; the wiring is the new surface.

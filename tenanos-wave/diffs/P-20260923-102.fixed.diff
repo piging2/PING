@@ -1,0 +1,45 @@
+--- /home/nolan/ping/gateway/routes/knowledge.js
++++ /home/nolan/ping/gateway/routes/knowledge.js
+@@ -45,6 +45,12 @@
+   // Query nodes
+   router.get('/nodes', async (req, res) => {
+     try {
++      // P-04 (I5): namespace is the privacy boundary. An unscoped read
++      // returns rows from every tenant. POST /search already requires it;
++      // GET /nodes must too.
++      if (!req.query.namespace) {
++        return res.status(400).json({ status: 'error', error: 'namespace required (privacy boundary)' });
++      }
+       const nodes = await knowledgeGraph.queryNodes({
+         nodeType: req.query.type,
+         entityType: req.query.entityType,
+@@ -63,8 +69,13 @@
+   // Add a node
+   router.post('/nodes', async (req, res) => {
+     try {
+-      const { nodeType, label, data, entityType, entityId, namespace, status, confidence } = req.body;
+-      const nodeId = await knowledgeGraph.addNode(nodeType, label, data, { entityType, entityId, namespace, status, confidence });
++      // P-01 (I1): lifecycle fields are promoter-owned. The HTTP insert path
++      // is the observation path: it may only mint candidates, and it must
++      // not accept caller confidence. Caller-supplied status/confidence is
++      // dropped, never trusted. (No internal callers pass non-candidate
++      // status today; verified 2026-09-23.)
++      const { nodeType, label, data, entityType, entityId, namespace } = req.body;
++      const nodeId = await knowledgeGraph.addNode(nodeType, label, data, { entityType, entityId, namespace, status: 'candidate', confidence: null });
+       res.json({ status: 'ok', nodeId });
+     } catch (err) {
+       res.status(500).json({ status: 'error', error: err.message });
+--- /home/nolan/ping/ping-runtime/embeddings/embedding_service.js
++++ /home/nolan/ping/ping-runtime/embeddings/embedding_service.js
+@@ -224,6 +224,11 @@
+         embedding: fallback ? 'fallback' : 'ollama',
+         model,
+         projected_at: null,
++        // P-06: lifecycle state must be visible to the semantic leg.
++        // Without these fields, approval/rejection is invisible to vector
++        // retrieval forever (status was not in the payload at all).
++        status: options.status || null,
++        confidence: typeof options.confidence === 'number' ? options.confidence : null,
+       },
+     };
+ 

@@ -1,0 +1,89 @@
+########## routes/mission_control.js tenant ##########
+########## routes/knowledge.js tenant ##########
+20:  // Hybrid semantic + knowledge search (Phase E.2). Namespace is the privacy
+27:      const { query, namespace, limit } = req.body || {};
+31:      if (!namespace) {
+32:        return res.status(400).json({ status: 'error', error: 'namespace required (privacy boundary)' });
+36:        namespace,
+52:        namespace: req.query.namespace,
+66:      const { nodeType, label, data, entityType, entityId, namespace, status, confidence } = req.body;
+67:      const nodeId = await knowledgeGraph.addNode(nodeType, label, data, { entityType, entityId, namespace, status, confidence });
+########## memory_vector_store_authority tenant ##########
+9: * - Qdrant collection creation
+28:    await this._createCollections();
+32:   * Create Qdrant collections
+34:  async _createCollections() {
+35:    const collections = [
+50:    for (const collection of collections) {
+52:        await this._qdrant.createCollection({
+53:          collection_name: collection,
+60:        // Collection might already exist
+61:        console.log(`Collection ${collection} might already exist`);
+69:   * @param {string} collection - Collection name
+74:  async storeEmbedding(collection, id, embedding, payload) {
+76:      collection_name: collection,
+91:   * @param {string} collection - Collection name
+96:  async searchMemory(collection, queryEmbedding, limit = 10) {
+98:      collection_name: collection,
+########## hybrid_search tenant ##########
+7: *     ping_events row (canonical_hash + namespace + source_event_id chain).
+11: * result): `{ canonical_hash, namespace, confidence, evidence:[eventIds], verified, source }`.
+13: * ADD-only — reads Qdrant/Postgres, never writes. Namespace filtering happens
+15: * results from a different namespace are structurally dropped.
+35:   * @param {string} params.namespace — required privacy boundary (core::* / tenant::<id>)
+39:  async search({ query, namespace, limit = 10 }) {
+57:        if (namespace && payload.namespace !== namespace) continue; // privacy boundary
+69:          namespace: payload.namespace || namespace,
+87:          namespace,
+95:            namespace: node.namespace,
+########## evidence_authority tenant ##########
+10: *                                lineage + namespace consistency; for Qdrant hits,
+19:const NAMESPACE_RE = /^(core|tenant)::[a-zA-Z0-9_-]+$/;
+45:   *   timestamp, payload, metadata, namespace).
+53:      `SELECT event_id, event_type, source, timestamp, payload, metadata, namespace
+65:   *   canonical object: { kind, payload, canonical_hash, lineage, namespace, identity }
+66:   *   Qdrant hit:       { id, score, payload: { canonical_hash, namespace, source_event_id } }
+69:   * namespace consistency (object.namespace vs identity.namespace).
+70:   * Qdrant hit: trace payload.source_event_id back to ping_events; namespace must
+77:    const checks = { hash: null, lineage: null, namespace: null, backingEvent: null };
+90:      checks.namespace = NAMESPACE_RE.test(evidence.payload.namespace || '');
+94:          `SELECT event_id, event_type, source, timestamp, payload, metadata, namespace
+101:          checks.namespace = checks.namespace && row.namespace === evidence.payload.namespace;
+108:          checks.namespace = false;
+129:      const objNamespace = evidence.namespace;
+130:      const identityNamespace = evidence.identity && evidence.identity.namespace;
+131:      checks.namespace =
+132:        (!objNamespace || NAMESPACE_RE.test(objNamespace)) &&
+133:        (!objNamespace || !identityNamespace || objNamespace === identityNamespace);
+180:module.exports = { EvidenceAuthority, NAMESPACE_RE };
+########## canonical_event_envelope tenant ##########
+4: * P001: The standardized event schema for all TenantOS events.
+6: * Every tenant (HPP, future) emits events through this envelope.
+14: * - Tenant isolation enforced
+66:   * @param {string} tenantId
+72:  generateEventId(tenantId, eventType, timestamp, sequence) {
+74:    const name = `${tenantId}:${eventType}:${timestamp}:${sequence}`;
+95:   * Get next sequence number for tenant
+97:   * @param {string} tenantId
+100:  async getNextSequence(tenantId) {
+104:       WHERE tenant_id = $1`,
+105:      [tenantId]
+116:   * @param {string} command.tenantId - Tenant identifier
+128:      tenantId,
+138:    const sequence = await this.getNextSequence(tenantId);
+140:    const eventId = this.generateEventId(tenantId, eventType, timestamp, sequence);
+146:      tenant_id: tenantId,
+175:       (event_id, event_type, event_version, tenant_id, timestamp, sequence, 
+178:       ON CONFLICT (tenant_id, sequence) DO NOTHING`,
+180:        event.event_id, event.event_type, event.event_version, event.tenant_id,
+202:    if (!event.tenant_id) errors.push('tenant_id required');
+216:   * @param {string} [params.tenantId] - Filter by tenant
+226:    tenantId,
+238:    if (tenantId) {
+239:      query += ` AND tenant_id = $${paramIndex++}`;
+240:      params.push(tenantId);
+263:    query += ` ORDER BY tenant_id, sequence ASC`;
+274:   * @param {string} [tenantId] - Filter by tenant
+277:  async executeGetStats(tenantId) {
+280:        tenant_id,
+289:    if (tenantId) {

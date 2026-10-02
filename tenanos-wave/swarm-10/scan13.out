@@ -1,0 +1,61 @@
+===== engine.js decision points =====
+160:      console.log(`  No workers available for ${mission.type} — deferring`);
+285:      this._resolveMission(mission);
+289:  _resolveMission(mission) {
+327:      decision.accepted ? 'consensus_reached' : 'consensus_failed',
+365:      mergeEvent = this._eventQueue.emitChain('merge_decision_created', {
+370:        canCommit: gateResult.can_commit,
+385:      this._eventQueue.emitChain('mission_accepted', {
+403:      this._eventQueue.emitChain('mission_rejected', {
+410:        reason: decision.reason || 'consensus_failed'
+507:        canCommit: gateResult.can_commit
+567:    console.log(`  ${d.merge_gate.canCommit ? 'PASS' : 'BLOCKED'}`);
+698:  console.log(`Merge gate: ${report.dashboard.merge_gate.canCommit ? 'PASS' : 'BLOCKED'}`);
+===== node_registry approve/commit =====
+312:class ApproveNodeExecutor extends BaseNodeExecutor {
+336:class CommitNodeExecutor extends BaseNodeExecutor {
+342:    if (approval.data.approval_status !== 'approved') {
+347:          reason: 'Not approved' 
+===== merge_queue stages/review =====
+11:  'constitutional_review',
+51:      reviews_required: 1,
+96:    entry.stage = result.can_commit ? 'merge_gate' : 'constitutional_review';
+129:    entry.reviews_required = count;
+135:  completeReview(id, decision, reviewer, notes) {
+150:    } else if (entry.reviews_completed >= entry.reviews_required) {
+151:      entry.stage = 'constitutional_review';
+153:        stage: 'constitutional_review',
+155:        details: `${entry.reviews_completed}/${entry.reviews_required} reviews complete`
+167:    if (entry.stage !== 'constitutional_review' && entry.stage !== 'merge_gate') return false;
+244:      reviews: `${entry.reviews_completed}/${entry.reviews_required}`,
+===== mission_scheduler fail/deadletter =====
+88:   * @param {object} options.deadLetterAuthority — P0-5: receives recordDeadLetter(job, error) on exhaustion
+89:   * @param {object} options.retryPolicy — P0-4: { max_attempts, backoff_delay_ms } default retry config
+98:    this._retryPolicy = options.retryPolicy || { max_attempts: 3, backoff_delay_ms: 5000 };
+256:      //   (b) dispatchResult is null/undefined → no worker matched → skip (phantom-complete prevention)
+259:        await this._failMission(mission, dispatchResult.error || 'worker returned failed status');
+266:        await this._failMission(mission, `no worker matched event_type=${event.event_type}`);
+276:      await this._failMission(mission, err.message);
+286:   * (retries >= max_attempts), the mission is `failed` and, when a
+289:  async _failMission(mission, error) {
+298:      if (retries >= this._retryPolicy.max_attempts && this._deadLetterAuthority) {
+303:          await this._deadLetterAuthority.recordDeadLetter(
+===== mission_runtime fail/retry =====
+127:   * that is already completed, failed, or retry_pending is never restarted.
+144:   * that is failed, retry_pending, or already completed is never overwritten.
+172:  async fail(missionId, error) {
+175:       WHERE mission_id = $2 AND status IN ('running', 'assigned', 'retry_pending')`,
+187:   * Increments `retries`, sets `retry_pending` status and `retry_at` to enforce
+191:   * `getPending()` only returns `created` missions, so retry_pending missions
+192:   * are invisible until `retry_at` is reached and `reclaimRetryPending()`
+202:  async failWithRetry(missionId, error, options = {}) {
+216:      // Exhausted — mark failed permanently
+219:         WHERE mission_id = $3 AND status IN ('running', 'assigned', 'retry_pending')`,
+227:        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3
+303:   * Returns missions in `created` status AND `retry_pending` missions whose
+310:          OR (status = 'retry_pending' AND retry_at IS NOT NULL AND retry_at <= NOW())
+===== knowledge promoter =====
+22:const APPROVE_EVENTS = new Set(['SNIPPET_APPROVED', 'AI_RESPONSE_ACCEPTED']);
+23:const REJECT_EVENTS = new Set(['SNIPPET_REJECTED', 'AI_RESPONSE_REJECTED']);
+25:class KnowledgePromoter extends BaseWorker {
+36:  async handle(event) {

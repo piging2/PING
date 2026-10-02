@@ -1,0 +1,357 @@
+--- /dev/null
++++ /home/nolan/projects/ping/src/tenanos/sandbox/profiles.ts
+@@ -0,0 +1,354 @@
++/**
++ * src/tenanos/sandbox/profiles.ts
++ * Sandbox execution profile registry (P-20260923-012).
++ *
++ * Every autonomous tool invocation runs inside an nsjail jail (mode ONCE) whose
++ * config is rendered deterministically from exactly one of these profiles.
++ *
++ * BOUNDARY (constitutional): this module renders enforcement config FROM the
++ * capability decision. It grants no authority and decides no capability. The
++ * capability vocabulary is owned by the constitutional sprint; the caller maps
++ * its capability decision to a ToolRiskClass before calling profileFor().
++ * Unknown or unmapped risk -> strictest profile (fail closed).
++ *
++ * EFFECT SEMANTICS:
++ *   ACK != EFFECT: the tool's self-reported result is never trusted.
++ *   RESULT != VERIFIED OUTCOME: the sandbox-observed EffectReceipt carries
++ *     profile_hash (sha256 of the canonical rendered config). A receipt whose
++ *     hash does not match the Run's claimed profile is rejected.
++ *   RETRY != IDEMPOTENCY: the jail bounds effects; it does not make them
++ *     idempotent. Resume re-executes in a fresh jail with the same
++ *     (tenant_id, run_id, step_id) idempotency key.
++ *
++ * nsjail itself is NOT vendored or imported: it is a pinned external binary
++ * deployed alongside the executor. This file only generates its config.
++ */
++
++import { createHash } from 'node:crypto';
++
++/** Risk classes, strictest first. The registry is keyed by these names. */
++export type ToolRiskClass =
++  | 'tenant-code-strict'
++  | 'tool-standard'
++  | 'tool-egress'
++  | 'trusted-internal';
++
++export interface SandboxMount {
++  src?: string;          // host path; omitted for fstype mounts (tmpfs/proc)
++  dst: string;           // path inside the jail (required)
++  is_bind: boolean;
++  rw?: boolean;          // default false: read-only
++  fstype?: string;       // e.g. 'tmpfs', 'proc'
++  options?: string;      // e.g. 'size=67108864' for tmpfs
++  nosuid?: boolean;      // default true
++  nodev?: boolean;       // default true
++  noexec?: boolean;
++  mandatory?: boolean;   // default true: fail jail setup if mount fails
++}
++
++export interface SandboxRlimits {
++  as_mb: number;         // address space cap
++  cpu_sec: number;       // CPU time cap
++  fsize_mb: number;      // max file size (disk-bomb bound)
++  nofile: number;        // max open FDs
++  nproc: number;         // max processes/threads (fork-bomb bound)
++  time_limit_sec: number;// wall-clock cap for the invocation
++}
++
++export interface SandboxCgroup {
++  mem_max_bytes: number; // 0 = no cap
++  pids_max: number;      // 0 = no cap
++  cpu_ms_per_sec: number;// 0 = no cap
++}
++
++export interface EgressRule {
++  dst_ip: string;        // CIDR, e.g. '203.0.113.0/24'
++  dport: number;
++  proto: 'TCP' | 'UDP';
++}
++
++export interface SandboxProfile {
++  /** Registry key. Also carried on the Run record as profile_name. */
++  name: ToolRiskClass;
++  description: string;
++  /** kafel seccomp-bpf policy. Default-deny (DEFAULT KILL) for tenant code. */
++  seccomp_policy: string;
++  mounts: SandboxMount[];
++  rlimits: SandboxRlimits;
++  cgroup: SandboxCgroup;
++  /** Explicit env allowlist. keep_env is always false: no ambient credentials. */
++  envar: string[];
++  /** 'none' = fresh network namespace with no interfaces (fully offline). */
++  net: 'none' | 'egress-allowlist';
++  egress_allowlist?: EgressRule[];
++}
++
++// ---------------------------------------------------------------------------
++// Registry: one declarative nsjail config per capability class.
++// ---------------------------------------------------------------------------
++
++const STRICT_SECCOMP = [
++  'DEFAULT KILL',
++  'ALLOW {',
++  '  read, write, open, openat, openat2, close,',
++  '  stat, fstat, lstat, statx, access, faccessat2,',
++  '  mmap, mprotect, munmap, brk, mremap,',
++  '  rt_sigaction, rt_sigprocmask, rt_sigreturn, sigaltstack,',
++  '  exit, exit_group, getpid, getuid, geteuid, getgid,',
++  '  arch_prctl, set_tid_address, set_robust_list, rseq,',
++  '  futex, nanosleep, clock_gettime, clock_nanosleep, gettimeofday,',
++  '  readv, writev, pread64, pwrite64, lseek, dup, dup2, dup3,',
++  '  pipe, pipe2, poll, ppoll, select, epoll_create1, epoll_ctl, epoll_pwait,',
++  '  uname, sysinfo',
++  '}',
++  '// NOTE: socket/connect/sendto are deliberately absent: no network.',
++  '// The writer hardens this allowlist per tool binary before approval.',
++].join('\n');
++
++const STANDARD_SECCOMP = [
++  'DEFAULT KILL',
++  'ALLOW {',
++  '  read, write, open, openat, openat2, close,',
++  '  stat, fstat, lstat, statx, access, faccessat2,',
++  '  mmap, mprotect, munmap, brk, mremap, madvise,',
++  '  rt_sigaction, rt_sigprocmask, rt_sigreturn, sigaltstack,',
++  '  exit, exit_group, getpid, getuid, geteuid, getgid, getppid,',
++  '  arch_prctl, set_tid_address, set_robust_list, rseq,',
++  '  futex, nanosleep, clock_gettime, clock_nanosleep, gettimeofday,',
++  '  readv, writev, pread64, pwrite64, lseek, dup, dup2, dup3,',
++  '  pipe, pipe2, poll, ppoll, select, epoll_create1, epoll_ctl, epoll_pwait,',
++  '  uname, sysinfo, getrandom,',
++  '  clone, clone3, wait4, waitid',
++  '}',
++  '// No network syscalls: offline. tool-egress adds a network allowlist instead.',
++].join('\n');
++
++const EGRESS_SECCOMP = STANDARD_SECCOMP.replace(
++  '// No network syscalls: offline. tool-egress adds a network allowlist instead.',
++  [
++    '// Egress variant: socket syscalls allowed, traffic_rule allowlist',
++    '// in the rendered config restricts destinations (defense in depth).',
++    'ALLOW {',
++    '  socket, socketpair, connect, bind, listen, accept, accept4,',
++    '  sendto, recvfrom, sendmsg, recvmsg, shutdown,',
++    '  getsockname, getpeername, getsockopt, setsockopt',
++    '}',
++  ].join('\n'),
++);
++
++/** Read-only runtime library mounts shared by all profiles. */
++const BASE_LIB_MOUNTS: SandboxMount[] = [
++  { src: '/lib', dst: '/lib', is_bind: true },
++  { src: '/lib64', dst: '/lib64', is_bind: true, mandatory: false },
++  { src: '/usr/lib', dst: '/usr/lib', is_bind: true },
++  { src: '/bin', dst: '/bin', is_bind: true },
++  { src: '/usr/bin', dst: '/usr/bin', is_bind: true },
++  { src: '/etc/passwd', dst: '/etc/passwd', is_bind: true, mandatory: false },
++  { src: '/dev/null', dst: '/dev/null', is_bind: true, rw: true },
++  { src: '/dev/urandom', dst: '/dev/urandom', is_bind: true },
++];
++
++/** Writable scratch: exactly one tmpfs. Nothing else is writable. */
++const SCRATCH_MOUNT: SandboxMount = {
++  dst: '/scratch',
++  fstype: 'tmpfs',
++  is_bind: false,
++  rw: true,
++  options: 'size=67108864', // 64 MiB
++};
++
++const TIGHT_RLIMITS: SandboxRlimits = {
++  as_mb: 512, cpu_sec: 60, fsize_mb: 16, nofile: 64, nproc: 32,
++  time_limit_sec: 120,
++};
++
++const STANDARD_RLIMITS: SandboxRlimits = {
++  as_mb: 2048, cpu_sec: 600, fsize_mb: 256, nofile: 256, nproc: 128,
++  time_limit_sec: 600,
++};
++
++export const REGISTRY: Record<ToolRiskClass, SandboxProfile> = {
++  'tenant-code-strict': {
++    name: 'tenant-code-strict',
++    description:
++      'LLM-generated or otherwise untrusted code. Default-kill seccomp, ' +
++      'no network namespace interfaces, tmpfs scratch only, tight rlimits.',
++    seccomp_policy: STRICT_SECCOMP,
++    mounts: [...BASE_LIB_MOUNTS, SCRATCH_MOUNT],
++    rlimits: TIGHT_RLIMITS,
++    cgroup: { mem_max_bytes: 536870912, pids_max: 64, cpu_ms_per_sec: 500 },
++    envar: ['PATH=/usr/bin:/bin', 'TMPDIR=/scratch', 'HOME=/scratch'],
++    net: 'none',
++  },
++  'tool-standard': {
++    name: 'tool-standard',
++    description:
++      'Known tool binaries with declared file effects. Offline, read-only ' +
++      'binds plus one writable scratch dir.',
++    seccomp_policy: STANDARD_SECCOMP,
++    mounts: [...BASE_LIB_MOUNTS, SCRATCH_MOUNT],
++    rlimits: STANDARD_RLIMITS,
++    cgroup: { mem_max_bytes: 2147483648, pids_max: 256, cpu_ms_per_sec: 0 },
++    envar: ['PATH=/usr/bin:/bin', 'TMPDIR=/scratch', 'HOME=/scratch'],
++    net: 'none',
++  },
++  'tool-egress': {
++    name: 'tool-egress',
++    description:
++      'Tools with declared network effects. Socket syscalls allowed but the ' +
++      'rendered config adds traffic_rule entries restricting destinations ' +
++      'to the egress allowlist.',
++    seccomp_policy: EGRESS_SECCOMP,
++    mounts: [...BASE_LIB_MOUNTS, SCRATCH_MOUNT],
++    rlimits: STANDARD_RLIMITS,
++    cgroup: { mem_max_bytes: 2147483648, pids_max: 256, cpu_ms_per_sec: 0 },
++    envar: ['PATH=/usr/bin:/bin', 'TMPDIR=/scratch', 'HOME=/scratch'],
++    net: 'egress-allowlist',
++    // Populated by the writer per tool from its declared egress set.
++    egress_allowlist: [],
++  },
++  'trusted-internal': {
++    name: 'trusted-internal',
++    description:
++      "PING's own deterministic machinery. Still fully namespaced " +
++      '(user/mount/pid/ipc/uts/net/cgroup), no ambient credentials, but ' +
++      'broader syscall and resource bounds. Never used for tenant code.',
++    seccomp_policy: STANDARD_SECCOMP,
++    mounts: [...BASE_LIB_MOUNTS, SCRATCH_MOUNT],
++    rlimits: { ...STANDARD_RLIMITS, time_limit_sec: 3600 },
++    cgroup: { mem_max_bytes: 0, pids_max: 1024, cpu_ms_per_sec: 0 },
++    envar: ['PATH=/usr/bin:/bin', 'TMPDIR=/scratch', 'HOME=/scratch'],
++    net: 'none',
++  },
++};
++
++/**
++ * Resolve a risk class to its profile. Pure and total: unknown input fails
++ * closed to the strictest profile. Never returns an open or permissive jail
++ * for an unrecognized class.
++ */
++export function profileFor(riskClass: string): SandboxProfile {
++  const p = (REGISTRY as Record<string, SandboxProfile>)[riskClass];
++  return p ?? REGISTRY['tenant-code-strict'];
++}
++
++// ---------------------------------------------------------------------------
++// Deterministic rendering: profile -> nsjail textproto config.
++// ---------------------------------------------------------------------------
++
++function renderMount(m: SandboxMount): string {
++  const lines = ['mount {'];
++  if (m.src !== undefined) lines.push(`  src: "${m.src}"`);
++  lines.push(`  dst: "${m.dst}"`);
++  lines.push(`  is_bind: ${m.is_bind}`);
++  if (m.rw === true) lines.push('  rw: true');
++  if (m.fstype !== undefined) lines.push(`  fstype: "${m.fstype}"`);
++  if (m.options !== undefined) lines.push(`  options: "${m.options}"`);
++  // nosuid/nodev default true when not stated: least privilege.
++  lines.push(`  nosuid: ${m.nosuid !== false}`);
++  lines.push(`  nodev: ${m.nodev !== false}`);
++  if (m.noexec === true) lines.push('  noexec: true');
++  if (m.mandatory === false) lines.push('  mandatory: false');
++  lines.push('}');
++  return lines.join('\n');
++}
++
++/**
++ * Render the nsjail config for a profile. Deterministic: fixed field order,
++ * mounts sorted by dst, so identical profiles always render identical bytes
++ * and hash identically.
++ */
++export function renderNsjailConfig(profile: SandboxProfile): string {
++  const out: string[] = [];
++  out.push(`name: "${profile.name}"`);
++  out.push(`description: "${profile.description}"`);
++  out.push('');
++  out.push('mode: ONCE');
++  out.push('hostname: "TENANTOS"');
++  out.push('cwd: "/scratch"');
++  out.push('');
++  out.push(`time_limit: ${profile.rlimits.time_limit_sec}`);
++  out.push('');
++  // No ambient environment: keep_env stays false; only the allowlist is set.
++  for (const e of profile.envar) out.push(`envar: "${e}"`);
++  out.push('');
++  out.push('keep_caps: false');
++  out.push('');
++  const r = profile.rlimits;
++  out.push(`rlimit_as: ${r.as_mb}`);
++  out.push(`rlimit_cpu: ${r.cpu_sec}`);
++  out.push(`rlimit_fsize: ${r.fsize_mb}`);
++  out.push(`rlimit_nofile: ${r.nofile}`);
++  out.push(`rlimit_nproc: ${r.nproc}`);
++  out.push('');
++  const c = profile.cgroup;
++  if (c.mem_max_bytes > 0) out.push(`cgroup_mem_max: ${c.mem_max_bytes}`);
++  if (c.pids_max > 0) out.push(`cgroup_pids_max: ${c.pids_max}`);
++  if (c.cpu_ms_per_sec > 0) out.push(`cgroup_cpu_ms_per_sec: ${c.cpu_ms_per_sec}`);
++  out.push('detect_cgroupv2: true');
++  out.push('');
++  // Namespaces: default-deny. clone_newnet with no interfaces = offline.
++  out.push('clone_newuser: true');
++  out.push('clone_newns: true');
++  out.push('clone_newpid: true');
++  out.push('clone_newipc: true');
++  out.push('clone_newuts: true');
++  out.push('clone_newnet: true');
++  out.push('clone_newcgroup: true');
++  out.push('');
++  const mounts = [...profile.mounts].sort((a, b) => a.dst.localeCompare(b.dst));
++  for (const m of mounts) out.push(renderMount(m));
++  out.push('');
++  if (profile.net === 'egress-allowlist') {
++    for (const rule of profile.egress_allowlist ?? []) {
++      out.push('traffic_rule {');
++      out.push(`  dst_ip: "${rule.dst_ip}"`);
++      out.push(`  dport: ${rule.dport}`);
++      out.push(`  proto: ${rule.proto}`);
++      out.push('  action: ALLOW');
++      out.push('}');
++    }
++    out.push('');
++  }
++  // kafel policy, one seccomp_string line per source line.
++  for (const line of profile.seccomp_policy.split('\n')) {
++    out.push(`seccomp_string: "${line.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
++  }
++  out.push('');
++  return out.join('\n');
++}
++
++/** sha256 hex of the canonical rendered config. Carried on the receipt. */
++export function profileHash(profile: SandboxProfile): string {
++  return createHash('sha256').update(renderNsjailConfig(profile), 'utf8').digest('hex');
++}
++
++// ---------------------------------------------------------------------------
++// Effect receipt: sandbox-observed outcome. Never the tool's self-report.
++// ---------------------------------------------------------------------------
++
++export interface EffectReceipt {
++  run_id: string;
++  profile_name: string;
++  /** sha256 of the canonical config the jail actually ran. */
++  profile_hash: string;
++  exit_code: number;
++  /** 128 = seccomp kill (SIGSYS), per Linux signal encoding. */
++  wall_time_ms: number;
++  max_rss_kb: number;
++  seccomp_violations: number;
++  stdout_ref: string; // payload ref, never inline
++  stderr_ref: string; // payload ref, never inline
++}
++
++/**
++ * Verify a receipt against the Run's claimed profile. Returns false (reject)
++ * when the receipt's hash does not match the canonical rendering of the named
++ * profile: the jail that ran is not the jail that was claimed.
++ * RESULT != VERIFIED OUTCOME.
++ */
++export function verifyReceipt(profileName: string, receipt: EffectReceipt): boolean {
++  const profile = profileFor(profileName);
++  if (receipt.profile_name !== profile.name) return false;
++  return receipt.profile_hash === profileHash(profile);
++}

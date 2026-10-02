@@ -1,0 +1,67 @@
+{
+  "ledger": [
+    {
+      "unit": "t1",
+      "from": null,
+      "to": "PLANNED",
+      "at": "2026-09-24T01:50:34.264Z",
+      "evidence": "02-plan.json",
+      "sourceRule": null,
+      "detail": {
+        "taskKey": "t1-summarize",
+        "capability": "text.transform",
+        "agentId": "hermes"
+      }
+    },
+    {
+      "unit": "t1",
+      "from": "PLANNED",
+      "to": "AUTHORIZED",
+      "at": "2026-09-24T01:50:34.273Z",
+      "evidence": "policy-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "AUTHORIZED",
+      "to": "QUEUED",
+      "at": "2026-09-24T01:50:34.294Z",
+      "evidence": "workorder-t1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "QUEUED",
+      "to": "RUNNING",
+      "at": "2026-09-24T01:50:34.299Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "RUNNING",
+      "to": "EVIDENCE_PENDING",
+      "at": "2026-09-24T01:50:34.511Z",
+      "evidence": "dispatch-t1-a1.json",
+      "sourceRule": null,
+      "detail": {}
+    },
+    {
+      "unit": "t1",
+      "from": "EVIDENCE_PENDING",
+      "to": "VERIFICATION_FAILED",
+      "at": "2026-09-24T01:50:34.513Z",
+      "evidence": "verify-t1-a1.json",
+      "sourceRule": null,
+      "detail": {
+        "reason": "executor mismatch (authorized, invoked, and result agent must match)"
+      }
+    }
+  ],
+  "states": {
+    "t1": "VERIFICATION_FAILED"
+  }
+}

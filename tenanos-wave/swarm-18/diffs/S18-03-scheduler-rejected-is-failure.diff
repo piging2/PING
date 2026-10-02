@@ -1,0 +1,29 @@
+# S18-03: Scheduler completion gate understands worker 'rejected'
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_scheduler.js (lines 334-342)
+# Intended target: src/tenanos/orchestration/mission_scheduler.js
+# Seam: SEAM-REPORT.md 8A/11A — witness worker 'rejected' completed as success (BROKEN)
+# Test: worker returns {status:'rejected', reason:'x'}; assert mission goes to failed/retry path, never 'completed'.
+# ---
+--- a/tenanos/orchestration/mission_scheduler.js
++++ b/tenanos/orchestration/mission_scheduler.js
+@@ -334,13 +334,18 @@
+       const dispatchResult = await this._dispatchWithTimeout(event);
+       this._stats.dispatched++;
+
+       // P0-3: complete() only when worker returns verified ok.
+-      // Three outcomes:
++      // S18-03: the worker outcome vocabulary includes 'rejected' (witness
++      // worker: unverified replay, missing root, unsupported trigger). A
++      // rejection is NOT success: it must fail the mission, never complete it.
++      // Four outcomes:
+       //   (a) dispatchResult.status === 'failed' → fail the mission (worker reported failure)
+-      //   (b) dispatchResult is null/undefined → no worker matched → skip (phantom-complete prevention)
+-      //   (c) dispatchResult.status === 'ok' (or truthy without status:'failed') → complete
+-      if (dispatchResult && dispatchResult.status === 'failed') {
+-        await this._failMission(mission, dispatchResult.error || 'worker returned failed status');
++      //   (b) dispatchResult.status === 'rejected' → fail the mission (worker refused the outcome)
++      //   (c) dispatchResult is null/undefined → no worker matched → fail (phantom-complete prevention)
++      //   (d) dispatchResult.status === 'ok' (or truthy without status:'failed'/'rejected') → complete
++      if (dispatchResult && (dispatchResult.status === 'failed' || dispatchResult.status === 'rejected')) {
++        await this._failMission(mission, dispatchResult.error || dispatchResult.reason || `worker returned ${dispatchResult.status} status`);
+       } else if (!dispatchResult) {

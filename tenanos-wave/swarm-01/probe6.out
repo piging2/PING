@@ -1,0 +1,339 @@
+########## gateway/routes/tenants.js ##########
+/**
+ * Tenant Registry Routes
+ * 
+ * P003: HTTP interface for the Tenant Registry Authority.
+ * 
+ * POST /tenants — Register tenant
+ * GET /tenants — List tenants
+ * GET /tenants/:id — Resolve tenant
+ * PUT /tenants/:id — Update tenant
+ * DELETE /tenants/:id — Remove tenant
+ * POST /tenants/:id/heartbeat — Record heartbeat
+ */
+
+const express = require('express');
+const router = express.Router();
+const { asyncHandler } = require('../route_middleware');
+
+function createTenantRoutes(tenantRegistry) {
+  router.post('/', asyncHandler('POST /tenants', async (req) => {
+    const {
+      tenant_id, name, domains, health_endpoint, metrics_endpoint,
+      logs_endpoint, traces_endpoint, events_endpoint, capabilities, metadata,
+    } = req.body;
+
+    if (!tenant_id || !name) {
+      throw new Error('tenant_id and name are required');
+    }
+
+    const tenant = await tenantRegistry.executeRegisterTenant({
+      tenantId: tenant_id,
+      name,
+      domains,
+      healthEndpoint: health_endpoint,
+      metricsEndpoint: metrics_endpoint,
+      logsEndpoint: logs_endpoint,
+      tracesEndpoint: traces_endpoint,
+      eventsEndpoint: events_endpoint,
+      capabilities,
+      metadata,
+    });
+
+    return { tenant };
+  }));
+
+  router.get('/', asyncHandler('GET /tenants', async (req) => {
+    const { status } = req.query;
+    const tenants = await tenantRegistry.executeListTenants({ status });
+    return { tenants, count: tenants.length };
+  }));
+
+  router.get('/:id', asyncHandler('GET /tenants/:id', async (req) => {
+    const { id } = req.params;
+    const tenant = await tenantRegistry.executeResolveTenant(id);
+    if (!tenant) throw new Error(`Tenant ${id} not found`);
+    return { tenant };
+  }));
+
+  router.put('/:id', asyncHandler('PUT /tenants/:id', async (req) => {
+    const { id } = req.params;
+    const updates = req.body;
+    const tenant = await tenantRegistry.executeUpdateTenant(id, updates);
+    if (!tenant) throw new Error(`Tenant ${id} not found`);
+    return { tenant };
+  }));
+
+  router.delete('/:id', asyncHandler('DELETE /tenants/:id', async (req) => {
+    const { id } = req.params;
+    await tenantRegistry.executeRemoveTenant(id);
+    return { removed: true, tenant_id: id };
+  }));
+
+  router.post('/:id/heartbeat', asyncHandler('POST /tenants/:id/heartbeat', async (req) => {
+    const { id } = req.params;
+    await tenantRegistry.executeRecordHeartbeat(id);
+    return { heartbeat: true, tenant_id: id };
+  }));
+
+  return router;
+}
+
+module.exports = createTenantRoutes;
+########## mcp/ping_mcp_server.py ##########
+"""
+PING MCP Server
+Thin proxy to Mission Control - NO business logic, NO duplicate authority
+All tools call existing Mission Control endpoints
+"""
+
+import requests
+import os
+from typing import Optional, List, Dict, Any
+import json
+
+# Mission Control base URL
+MISSION_CONTROL_URL = os.getenv("MISSION_CONTROL_URL", "http://mission-control:8000")
+
+
+def search_constitution(query: str, limit: int = 5) -> Dict[str, Any]:
+    """Search constitutional documents from PING's authoritative constitutional collection."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/constitution/search",
+            params={"query": query, "limit": limit},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Search failed: {str(e)}"}
+
+
+def get_constitution_doc(doc_id: str) -> Dict[str, Any]:
+    """Get a specific constitutional document by ID."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/constitution/doc/{doc_id}",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Document retrieval failed: {str(e)}"}
+
+
+def search_constitutional_memory(query: str, top_k: int = 5) -> Dict[str, Any]:
+    """
+    Search constitutional memory with lineage resolution and authority verification.
+    
+    Constitutional Law: TRUTH ≠ EMBEDDINGS
+    - Query is embedded
+    - Qdrant search retrieves projections
+    - Lineage resolution traces back to truth sources
+    - Authority verification ensures constitutional compliance
+    
+    Returns:
+    - snippets: Content snippets with scores
+    - citations: Source citations
+    - authority_chain: Authority chain of sources
+    - lineage: Lineage information
+    """
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/constitutional/query",
+            params={"query": query, "top_k": top_k},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Constitutional memory search failed: {str(e)}"}
+
+
+def search_memory(query: str, limit: int = 5) -> Dict[str, Any]:
+    """Search memory collections."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/memory/search",
+            params={"query": query, "limit": limit},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Memory search failed: {str(e)}"}
+
+
+def memory_stats() -> Dict[str, Any]:
+    """Get memory statistics."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/memory/stats",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Memory stats failed: {str(e)}"}
+
+
+def recent_events(limit: int = 10) -> Dict[str, Any]:
+    """Get recent events."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/events/recent",
+            params={"limit": limit},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Recent events failed: {str(e)}"}
+
+
+def event_summary(event_type: Optional[str] = None, stream: Optional[str] = None) -> Dict[str, Any]:
+    """Get event summary by type/stream."""
+    try:
+        params = {}
+        if event_type:
+            params["event_type"] = event_type
+        if stream:
+            params["stream"] = stream
+        
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/events/summary",
+            params=params,
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Event summary failed: {str(e)}"}
+
+
+def lineage_lookup(entity_id: str) -> Dict[str, Any]:
+    """Lookup lineage graph for entity."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/lineage/graph",
+            params={"entity_id": entity_id},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Lineage lookup failed: {str(e)}"}
+
+
+def continuity_status() -> Dict[str, Any]:
+    """Get continuity status."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/continuity/status",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Continuity status failed: {str(e)}"}
+
+
+def replay_status() -> Dict[str, Any]:
+    """Get replay status."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/replay/status",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Replay status failed: {str(e)}"}
+
+
+def credential_inventory() -> Dict[str, Any]:
+    """Get credential inventory."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/credentials/inventory",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Credential inventory failed: {str(e)}"}
+
+
+def infrastructure_status() -> Dict[str, Any]:
+    """Get infrastructure status."""
+    try:
+        response = requests.get(
+            f"{MISSION_CONTROL_URL}/infrastructure/status",
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"Infrastructure status failed: {str(e)}"}
+
+
+if __name__ == "__main__":
+    # Test all tools
+    print("Testing MCP tools...")
+    
+    print("\n1. Infrastructure Status:")
+    print(infrastructure_status())
+    
+    print("\n2. Constitutional Authority:")
+    print(search_constitution("test", limit=1))
+    
+    print("\n3. Constitutional Memory Search:")
+    print(search_constitutional_memory("replay law", top_k=3))
+    
+    print("\n4. Memory Stats:")
+    print(memory_stats())
+    
+    print("\n5. Recent Events:")
+    print(recent_events(limit=1))
+########## auth middleware files ##########
+/home/nolan/ping/gateway/prompt_authority.js
+/home/nolan/ping/gateway/filesystem_authority.js
+/home/nolan/ping/gateway/repository_discovery_authority.js
+/home/nolan/ping/gateway/runtime/replay_decision_authority.js
+/home/nolan/ping/gateway/lineage_authority.js
+/home/nolan/ping/gateway/memory_vector_store_authority.js
+/home/nolan/ping/gateway/semantic_authority.js
+/home/nolan/ping/gateway/memory_persistence_authority.js
+/home/nolan/ping/gateway/runtime_authority.js
+/home/nolan/ping/gateway/runtime_io_authority.js
+/home/nolan/ping/gateway/context_compression_authority.js
+/home/nolan/ping/gateway/inference_authority.js
+/home/nolan/ping/gateway/replay/kernel/canonical_hash_authority.js
+/home/nolan/ping/gateway/replay/kernel/witness_authority.js
+/home/nolan/ping/gateway/test_canonical_envelope_time_authority.js
+/home/nolan/ping/gateway/test_runtime_modules_time_authority.js
+/home/nolan/ping/gateway/replay_certificate_authority.js
+/home/nolan/ping/gateway/execution_authority.js
+/home/nolan/ping/gateway/verification_authority.js
+/home/nolan/ping/gateway/memory_authority.js
+/home/nolan/ping/CONSTITUTIONAL_AUTHORITY_MAP.md
+/home/nolan/ping/authority_matrix.md
+/home/nolan/ping/INFERENCE_AND_TOOL_AUTHORITY_AUDIT.md
+/home/nolan/ping/LINEAGE_AUTHORITY_DIFF.md
+/home/nolan/ping/runtime/authorities
+/home/nolan/ping/tests/test_runtime_authority_boundaries.py
+/home/nolan/ping/AUTHORITY_INFRASTRUCTURE_RELEVANCE_REPORT.md
+/home/nolan/ping/HASH_AUTHORITY_AUDIT.md
+/home/nolan/ping/AUTHORITY_OWNERSHIP_ANALYSIS.md
+/home/nolan/ping/POSTGRES_AUTHORITY_AUDIT.md
+/home/nolan/ping/AUTHORITY_RECLASSIFICATION.md
+/home/nolan/ping/ping-runtime/authorities
+/home/nolan/ping/_test_auth3.py
+/home/nolan/ping/_test_auth2.py
+/home/nolan/ping/CONSTITUTIONAL_PATCH_20_AUTHORITY_SOURCE.md
+/home/nolan/ping/constitutional-authorities.yaml
+/home/nolan/ping/AUTHORITY_REGISTRY.md
+/home/nolan/ping/GOOGLE_DRIVE_OAUTH_AUDIT.md
+/home/nolan/ping/mission_control_authority_endpoint.py
+/home/nolan/ping/WITNESS_AUTHORITY_REDUCTION.md

@@ -1,0 +1,44 @@
+# S18-09: 64 KiB JSON bounds on work-order input and result evidence
+# Source: ~/workspace/orca-workstream-d/external_agent_adapter.js (lines 44-46, 226-230, 305-307)
+# Intended target: src/tenanos/external-agent/external_agent_adapter.js
+# Seam: SEAM-REPORT.md 4B/9A — unbounded input (prompt bloat) and unbounded evidence (journal-row bloat) (RISKY)
+# Test: issue with >64KiB input -> WORK_ORDER_DENIED; result with >64KiB evidence -> invalid.
+# ---
+--- a/tenanos/external-agent/external_agent_adapter.js
++++ b/tenanos/external-agent/external_agent_adapter.js
+@@ -43,6 +43,11 @@
+ const _canonicalization = require('../canonicalization/canonicalization_service.js');
+ const NAMESPACE_RE = _canonicalization.NAMESPACE_RE || /^(core|tenant)::[a-z0-9_.-]+$/;
+
++// S18-09: envelope payload bounds. Unbounded input bloats the dispatch
++// prompt (Hermes/Ollama inline input); unbounded evidence rides verbatim
++// into the canonical event payload. 64 KiB keeps both bounded.
++const MAX_JSON_BYTES = 65536;
++
+ /**
+  * Exterior agent profiles. Data, not code. Mirrors the shape of the live
+@@ -224,6 +229,11 @@
+   if (!input || typeof input !== 'object' || Array.isArray(input)) {
+     const err = new Error('Work order denied: input must be an object');
+     err.code = 'WORK_ORDER_DENIED';
+     throw err;
+   }
++  if (Buffer.byteLength(JSON.stringify(input), 'utf8') > MAX_JSON_BYTES) {
++    const err = new Error(`Work order denied: input exceeds ${MAX_JSON_BYTES} bytes`);
++    err.code = 'WORK_ORDER_DENIED';
++    throw err;
++  }
+   if (!Number.isFinite(Date.parse(deadline))) {
+     const err = new Error('Work order denied: deadline must be an ISO date-time');
+     err.code = 'WORK_ORDER_DENIED';
+@@ -303,6 +313,10 @@
+   if (!result.evidence || typeof result.evidence !== 'object' || Array.isArray(result.evidence)) {
+     return invalidResult('evidence must be an object');
+   }
++  // S18-09: evidence is embedded verbatim in the canonical event payload.
++  if (Buffer.byteLength(JSON.stringify(result.evidence), 'utf8') > MAX_JSON_BYTES) {
++    return invalidResult(`evidence exceeds ${MAX_JSON_BYTES} bytes`);
++  }
+   if (result.work_order_id !== workOrder.work_order_id) {
+     return invalidResult('work_order_id mismatch (envelope does not match issued work order)');
+   }

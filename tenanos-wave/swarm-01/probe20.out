@@ -1,0 +1,175 @@
+########## routes/mission_control.js top ##########
+/**
+ * Mission Control Routes — PING Core v1
+ *
+ * Every widget answers a real business question.
+ * Every widget is backed by canonical events from ping_events.
+ * If a widget has no data, it returns empty with the precise upstream reason.
+ * Never fabricates.
+ */
+
+function createMissionControlRoutes(services) {
+  const express = require('express');
+  const router = express.Router();
+  const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+  const { unifiedEventRuntime, knowledgeGraph, missionRuntime, aiRuntime,
+    googleConnector, connectorRegistry, workerRuntime, missionScheduler, eventBridge,
+    eventToMissionBridge, replayProvider } = services;
+
+  const hasPG = !!(unifiedEventRuntime && missionRuntime);
+
+  const requirePG = (req, res, next) => {
+    if (!hasPG) return res.status(503).json({ error: 'Postgres unavailable', degraded: true });
+    next();
+  };
+
+  // ─── Helper: companion COUNT(*) for a WHERE clause mirroring
+  //     unifiedEventRuntime.query() (WHERE 1=1 + optional filters).
+  //     Gives the TRUE matching-cohort cardinality (not LIMIT-capped),
+  //     so totalEvents / truncated are mathematically truthful.
+  async function countEvents(whereConds, params) {
+    if (!unifiedEventRuntime._pool) return 0;
+    const result = await unifiedEventRuntime._pool.query(
+      `SELECT COUNT(*)::int AS count FROM ping_events WHERE ${whereConds.join(' AND ')}`,
+      params,
+    );
+    return Number(result.rows[0].count);
+  }
+
+  // ─── Helper: query events by type ──────────────────────────────
+  async function queryEventsByType(eventType, limit = 100) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ eventType, limit }),
+      countEvents(['1=1', 'event_type = $1'], [eventType]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ─── Helper: get all events in time window ─────────────────────
+  async function queryEventsSince(since, limit = 500) {
+    const [result, totalEvents] = await Promise.all([
+      unifiedEventRuntime.query({ since, limit }),
+      countEvents(['1=1', 'timestamp >= $1'], [since]),
+    ]);
+    const events = result.events || [];
+    return { events, count: events.length, totalEvents, truncated: totalEvents > events.length };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DASHBOARD — Projection-backed operating system overview
+########## routes/knowledge.js top ##########
+/**
+ * Knowledge Graph Routes — PING Core v1
+ */
+
+function createKnowledgeRoutes(knowledgeGraph, options = {}) {
+  const express = require('express');
+  const router = express.Router();
+  const hybridSearch = options.hybridSearch || null;
+
+  // Get knowledge stats
+  router.get('/stats', async (req, res) => {
+    try {
+      const stats = await knowledgeGraph.getStats();
+      res.json({ status: 'ok', stats });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // Hybrid semantic + knowledge search (Phase E.2). Namespace is the privacy
+  // boundary and is required — every result carries evidence + verification.
+  router.post('/search', async (req, res) => {
+    if (!hybridSearch) {
+      return res.status(503).json({ status: 'error', error: 'hybrid search not available' });
+    }
+    try {
+      const { query, namespace, limit } = req.body || {};
+      if (!query) {
+        return res.status(400).json({ status: 'error', error: 'query required' });
+      }
+      if (!namespace) {
+        return res.status(400).json({ status: 'error', error: 'namespace required (privacy boundary)' });
+      }
+      const result = await hybridSearch.search({
+        query,
+        namespace,
+        limit: parseInt(limit) || 10,
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // Query nodes
+  router.get('/nodes', async (req, res) => {
+    try {
+      const nodes = await knowledgeGraph.queryNodes({
+        nodeType: req.query.type,
+        entityType: req.query.entityType,
+########## hybrid_search search() body ##########
+  async search({ query, namespace, limit = 10 }) {
+    if (!query || typeof query !== 'string') {
+      return { status: 'ok', results: [], total: 0, stats: this.getStats(), error: 'query required' };
+    }
+
+    const results = [];
+
+    // ─── Semantic leg ─────────────────────────────────────────────
+    if (this._embedding) {
+      let hits = [];
+      try {
+        hits = await this._embedding.search(query, { limit: limit * 3 });
+      } catch (err) {
+        this._stats.rejected++;
+        console.error(`[HybridSearch] embedding search failed: ${err.message}`);
+      }
+      for (const hit of hits || []) {
+        const payload = hit.payload || {};
+        if (namespace && payload.namespace !== namespace) continue; // privacy boundary
+        let verified = null;
+        if (this._evidence) {
+          const verification = await this._evidence.verify(hit);
+          verified = verification.verified;
+          if (verified) this._stats.verified++;
+          else this._stats.rejected++;
+        }
+        this._stats.semanticHits++;
+        results.push({
+          id: hit.id,
+          canonical_hash: payload.canonical_hash || null,
+          namespace: payload.namespace || namespace,
+          confidence: typeof payload.confidence === 'number' ? payload.confidence : null,
+          evidence: payload.source_event_id ? [payload.source_event_id] : [],
+          verified,
+          source: 'qdrant',
+          score: typeof hit.score === 'number' ? hit.score : null,
+          embedding: payload.embedding || null,
+          text: payload.text || null,
+          kind: payload.kind || null,
+        });
+      }
+    }
+
+    // ─── Knowledge graph context leg ─────────────────────────────
+    if (this._kg) {
+      try {
+        const nodes = await this._kg.queryNodes({
+          search: query,
+          namespace,
+          limit,
+        });
+        for (const node of nodes || []) {
+          this._stats.kgHits++;
+          results.push({
+            id: node.node_id,
+            canonical_hash: (node.data && node.data.canonical_hash) || null,
+            namespace: node.namespace,
+            confidence: node.confidence,
+            evidence: node.source_event_id ? [node.source_event_id] : [],
+            verified: true, // stored node — already passed the graph write path
+            source: 'knowledge',
+            status: node.status,

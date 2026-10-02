@@ -1,0 +1,49 @@
+# S18-11: Context pack — sha256-16 slug-bound version + resolvable manifest
+# Source: ~/workspace/tandem/build-context-pack.py (lines 14, 183-195)
+# Intended target: tandem/build-context-pack.py (workspace tooling; not src/tenanos)
+# Seam: SEAM-REPORT.md 5A/5B — context_pack_id unresolvable; version = sha1[:10] (RISKY)
+# Test: build twice -> same pack_id; tamper one byte -> different pack_id; manifest resolves pack_id -> pack bytes.
+# ---
+--- a/tandem/build-context-pack.py
++++ b/tandem/build-context-pack.py
+@@ -11,7 +11,7 @@
+ and caches. Prints the pack file path. Usage: build-context-pack.py <brief-slug>
+ """
+-import hashlib, json, os, re, sys
++import datetime, hashlib, json, os, re, sys
+
+ HOME = os.path.expanduser('~')
+ WS = os.path.join(HOME, 'workspace')
+@@ -180,13 +180,35 @@
+ {CONTRACT}
+ """
+-    version = hashlib.sha1(pack.encode()).hexdigest()[:10]
++    # S18-11: sha256, 16 hex chars (64 bits), slug-bound pack_id. The old
++    # sha1[:10] (40 bits) was not principled and the version did not bind
++    # the slug. The manifest makes context_pack_id resolvable: a verifier
++    # maps the ID to exact pack bytes instead of string-comparing.
++    version = hashlib.sha256(f'{slug}\n'.encode() + pack.encode()).hexdigest()[:16]
++    pack_id = f'pack:{version}'
+     path = os.path.join(CACHE, f'{slug}-{version}.md')
++    manifest_path = os.path.join(CACHE, f'{slug}-{version}.manifest.json')
+     if not os.path.exists(path):
+         with open(path, 'w', encoding='utf-8') as f:
+             f.write(pack)
++    manifest = {
++        'pack_id': pack_id,
++        'context_pack_id': pack_id,
++        'slug': slug,
++        'version': version,
++        'algo': 'sha256(slug + "\\n" + pack)[:16]',
++        'pack_sha256': hashlib.sha256(pack.encode()).hexdigest(),
++        'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
++        'sources': ['outreach/pitch.md', '~/AGENTS.md',
++                    'your_files/western-co-prospects.jsonl',
++                    'outreach/pipeline.md', 'your_files/prospect-digest.md'],
++    }
++    with open(manifest_path, 'w', encoding='utf-8') as f:
++        json.dump(manifest, f, ensure_ascii=False, indent=2)
+     # print path and version for the caller
+     print(path)
++    print(f'PACK_ID={pack_id}', file=sys.stderr)
+     print(f'PACK_VERSION={version}', file=sys.stderr)

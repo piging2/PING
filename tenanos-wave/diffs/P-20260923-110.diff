@@ -1,0 +1,55 @@
+--- a/gateway/routes/orchestration.js
++++ b/gateway/routes/orchestration.js
+@@ -37,42 +37,16 @@
+    * }
+    */
+   router.post('/missions', asyncHandler('POST /orchestration/missions', async (req, res) => {
+-    const {
+-      type = 'GENERAL',
+-      target,
+-      priority = 5,
+-      description,
+-      requiredCapabilities = [],
+-      metadata = {},
+-      files,
+-    } = req.body;
+-
+-    if (!type) return res.status(400).json({ error: 'type is required' });
+-
+-    const mission = {
+-      id: `mission_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+-      type,
+-      target,
+-      status: 'pending',
+-      files: files || (target ? [target] : []),
+-      metadata: {
+-        priority,
+-        description: description || `${type} mission`,
+-        requiredCapabilities: requiredCapabilities.length > 0
+-          ? requiredCapabilities
+-          : ['orchestration.review'],
+-        ...metadata,
+-      },
+-      createdAt: constitutionalTimeAuthority.nowAsISOString(),
+-    };
+-
+-    engine._missions.push(mission);
+-
+-    res.status(201).json({
+-      missionId: mission.id,
+-      type: mission.type,
+-      status: mission.status,
+-      priority: mission.metadata.priority,
++    // DEPRECATED (P-20260923-110, completes P-20260923-083): POSTing into
++    // engine._missions created shadow-authority missions with random,
++    // non-deterministic IDs that no read route could return after the
++    // GET /orchestration/missions* 410s — an orphaned write. Mission
++    // creation belongs to the canonical authority: ping_missions via
++    // MissionRuntime (POST /missions).
++    return res.status(410).json({
++      status: 'gone',
++      reason: 'Competing mission authority removed. POSTing to engine._missions created missions no read route could return. Use POST /missions (canonical: ping_missions via MissionRuntime).',
++      canonical: ['POST /missions'],
+     });
+   }));
+ 

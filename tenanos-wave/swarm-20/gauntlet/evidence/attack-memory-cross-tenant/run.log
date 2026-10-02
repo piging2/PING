@@ -1,0 +1,21 @@
+[2026-09-24T01:51:09.202Z] START: run gauntlet-attack-memory-cross-tenant; tenant=gauntlet-tenant-memory-cross-tenant; objective e94a50747b57 (state=ACTIVE)
+[2026-09-24T01:51:09.205Z] LOCK: coordinator lease acquired (pid 99587)
+[2026-09-24T01:51:09.206Z] RECONCILE: 0 durable work order(s) for objective e94a50747b57
+[2026-09-24T01:51:09.207Z] MEMORY: DENIED (fail-closed): cross-tenant retrieval denied: requester 'gauntlet-tenant-memory-cross-tenant' may not read tenant 'tenant-b' memories
+[2026-09-24T01:51:09.209Z] MEMORY: proceeding with empty permitted memory set (denial is fail-closed and correct)
+[2026-09-24T01:51:09.212Z] PLAN: t1: work_order_id=2e80eca1d963...
+[2026-09-24T01:51:09.213Z] BUDGET: t1: durable usage 0/2
+[2026-09-24T01:51:09.216Z] POLICY: t1: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:09.221Z] ISSUE: t1: work order issued (durable=2e80eca1d963..., adapter=e04b8c2e4aa8...)
+[2026-09-24T01:51:09.230Z] DISPATCH: t1: spawned synthetic worker pid 99595 (attempt 1, fault=honest)
+[2026-09-24T01:51:09.435Z] VERIFY: t1: WORKER_COMPLETED event_id=f3311ad68763... deduplicated=false
+[2026-09-24T01:51:09.439Z] MEMORY: candidate cand-b330d3e8812ed002 proposed (justified by 1 event(s), approval required)
+[2026-09-24T01:51:09.441Z] PLAN: t2: work_order_id=1d78dcfcd6cc...
+[2026-09-24T01:51:09.442Z] BUDGET: t2: durable usage 1/2
+[2026-09-24T01:51:09.443Z] POLICY: t2: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:09.470Z] ISSUE: t2: work order issued (durable=1d78dcfcd6cc..., adapter=0e29eb592130...)
+[2026-09-24T01:51:09.511Z] DISPATCH: t2: spawned synthetic worker pid 99603 (attempt 1, fault=honest)
+[2026-09-24T01:51:09.896Z] VERIFY: t2: WORKER_COMPLETED event_id=4bcdde70039f... deduplicated=false
+[2026-09-24T01:51:09.896Z] MEMORY: candidate cand-5fcb67c6d2863b0a proposed (justified by 2 event(s), approval required)
+[2026-09-24T01:51:09.902Z] MISSION-CONTROL: snapshot: workerActivity=2, candidates=2
+[2026-09-24T01:51:09.904Z] CLOSE: run closed; events f3311ad68763, 4bcdde70039f; objective COMPLETED

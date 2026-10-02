@@ -1,0 +1,47 @@
+########## query() namespace/tenant filter ##########
+224:  async query(options = {}) {
+225-    if (!this._pool) return { status: 'error', error: 'No pool' };
+226-
+227-    let sql = 'SELECT * FROM ping_events WHERE 1=1';
+228-    const params = [];
+229-    let idx = 1;
+230-
+231-    if (options.eventType) {
+232-      sql += ` AND event_type = $${idx++}`;
+233-      params.push(options.eventType);
+234-    }
+235-    if (options.source) {
+236-      sql += ` AND source = $${idx++}`;
+237-      params.push(options.source);
+238-    }
+239-    if (options.since) {
+240-      sql += ` AND timestamp >= $${idx++}`;
+241-      params.push(options.since);
+242-    }
+243-    if (options.unprocessed) {
+244-      sql += ` AND processed = FALSE`;
+245-    }
+246-
+247-    sql += ` ORDER BY timestamp DESC`;
+248-    if (options.limit) {
+249-      sql += ` LIMIT $${idx++}`;
+250-      params.push(options.limit);
+251-    }
+252-
+253-    const result = await this._pool.query(sql, params);
+254-    return { status: 'ok', events: result.rows, count: result.rowCount };
+255-  }
+256-
+257-  /**
+258-   * Get direct children of an event (events caused by it).
+259-   * Uses the causation_id expression index for O(log n) lookup.
+260-   * @param {string} eventId — parent event_id
+261-   * @param {number} [limit=50]
+262-   * @returns {{ status: string, events: Array }}
+263-   */
+264-  async getChildren(eventId, limit = 50) {
+265-    if (!this._pool) return { status: 'error', error: 'No pool' };
+266-    const result = await this._pool.query(
+267-      `SELECT event_id, event_type, source, timestamp, payload, metadata, namespace
+268-       FROM ping_events
+269-       WHERE metadata->>'causation_id' = $1

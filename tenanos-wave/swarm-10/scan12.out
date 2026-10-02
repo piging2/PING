@@ -1,0 +1,39 @@
+===== S1: dead_letter_authority methods =====
+30: * - replayable (boolean)
+48:  async initialize() {
+74:          replayable BOOLEAN NOT NULL DEFAULT true,
+91:        CREATE INDEX IF NOT EXISTS idx_dead_letters_replayable ON repository_dead_letters(replayable)
+112:  async recordDeadLetter(job, error, options = {}) {
+119:    const replayable = retryPolicy.isReplayable(error);
+139:      replayable: replayable,
+159:        replayable, witness, witness_hash, metadata
+180:      deadLetter.replayable,
+196:  async getDeadLetter(deadLetterId) {
+215:  async getDeadLettersByJobType(jobType, options = {}) {
+218:    const replayableOnly = options.replayableOnly !== false;
+227:    if (replayableOnly) {
+228:      query += ` AND replayable = $${paramIndex}`;
+246:  async getDeadLettersByMission(missionId) {
+259:   * @param {Function} replayFn - Replay function
+262:  async replayDeadLetter(deadLetterId, replayFn) {
+269:    if (!deadLetter.replayable) {
+270:      throw new Error(`Dead letter is not replayable: ${deadLetterId}`);
+274:      const result = await replayFn(deadLetter);
+276:      // Mark as replayed
+281:      // Update dead letter with replay failure
+291:  async getStats() {
+296:        replayable,
+299:      GROUP BY job_type, failure_reason, replayable
+===== S2: approval event emitters in /home/nolan/projects/ping =====
+===== S3: mission_execution_graph approve/commit line numbers =====
+456:  async _executeApprove(node, results, context) {
+462:    const approval = await this._approvalAuthority.requestApproval({
+477:  async _executeCommit(node, results, context) {
+480:    if (approval.data.approval_status !== 'approved') {
+485:          reason: 'Not approved' 
+===== S4: approval_authority manual/constitutional policy line numbers =====
+136:    // Default to automatic policy for now
+201:      return 'pending_manual';
+205:      return 'pending_constitutional';
+217:  async approveManually(approvalId, approvedBy) {
+273:  async getPendingApprovals() {

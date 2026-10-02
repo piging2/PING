@@ -1,0 +1,141 @@
+########## tenant_registry.js ##########
+18:class TenantRegistry {
+19-  constructor(storage) {
+20-    this._storage = storage;
+21-    this._dependencies = ['storage'];
+22-    this._authorityVersion = '1.0.0';
+23-  }
+24-
+25-  /**
+26-   * Declare dependencies for computed startup ordering
+27-   * 
+28-   * @returns {string[]} Required service names
+29-   */
+30-  get dependencies() {
+31-    return this._dependencies;
+32-  }
+33-
+34-  /**
+35-   * Execute RegisterTenantCommand
+36-   * 
+37-   * @param {Object} command
+38-   * @param {string} command.tenantId - Tenant identifier (URI: tenant://{id})
+39-   * @param {string} command.name - Display name
+40-   * @param {string[]} [command.domains] - Domains
+41-   * @param {string} [command.healthEndpoint] - Health check URL
+42-   * @param {string} [command.metricsEndpoint] - Metrics URL
+43-   * @param {string} [command.logsEndpoint] - Logs URL
+--
+50:  async executeRegisterTenant(command) {
+51-    const { tenantId, name, domains = [], healthEndpoint, metricsEndpoint,
+52-      logsEndpoint, tracesEndpoint, eventsEndpoint, capabilities = [], metadata = {} } = command;
+53-
+54-    // Input validation
+55-    if (!tenantId) throw new Error('tenantId is required');
+56-    if (!name) throw new Error('name is required');
+57-
+58-    const result = await this._storage.query(
+59-      `INSERT INTO tenant_registry 
+60-       (tenant_id, name, domains, health_endpoint, metrics_endpoint, 
+61-        logs_endpoint, traces_endpoint, events_endpoint, capabilities, metadata)
+62-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+63-       ON CONFLICT (tenant_id) DO UPDATE SET
+64-        name = EXCLUDED.name,
+65-        domains = EXCLUDED.domains,
+66-        health_endpoint = EXCLUDED.health_endpoint,
+67-        metrics_endpoint = EXCLUDED.metrics_endpoint,
+68-        logs_endpoint = EXCLUDED.logs_endpoint,
+69-        traces_endpoint = EXCLUDED.traces_endpoint,
+70-        events_endpoint = EXCLUDED.events_endpoint,
+71-        capabilities = EXCLUDED.capabilities,
+72-        metadata = EXCLUDED.metadata,
+73-        updated_at = NOW()
+74-       RETURNING *`,
+75-      [
+--
+93:  async executeResolveTenant(tenantId) {
+94-    const result = await this._storage.query(
+95-      'SELECT * FROM tenant_registry WHERE tenant_id = $1',
+96-      [tenantId]
+97-    );
+98-    return result.rows[0] || null;
+99-  }
+100-
+101-  /**
+102-   * Execute ListTenantsQuery
+103-   * 
+104-   * @param {Object} params
+105-   * @param {string} [params.status] - Filter by status
+106-   * @returns {Object[]} Tenants
+107-   */
+108:  async executeListTenants({ status } = {}) {
+109-    let query = 'SELECT * FROM tenant_registry';
+110-    const params = [];
+111-
+112-    if (status) {
+113-      query += ' WHERE status = $1';
+114-      params.push(status);
+115-    }
+116-
+117-    query += ' ORDER BY registered_at ASC';
+118-
+########## qdrant collections created ##########
+
+  /**
+   * Create Qdrant collections
+   */
+  async _createCollections() {
+    const collections = [
+      'memory_facts',
+      'memory_goals',
+      'memory_projects',
+      'memory_repositories',
+      'memory_people',
+      'memory_apis',
+      'memory_errors',
+      'memory_fixes',
+      'memory_architecture',
+      'memory_preferences',
+      'memory_patterns',
+      'memory_failures'
+    ];
+
+    for (const collection of collections) {
+      try {
+        await this._qdrant.createCollection({
+          collection_name: collection,
+          vectors: {
+            size: 1536,
+            distance: 'Cosine'
+          }
+        });
+      } catch (error) {
+        // Collection might already exist
+        console.log(`Collection ${collection} might already exist`);
+      }
+    }
+  }
+
+########## orca control loop tenant ##########
+28: * objective_id is derived from logical intent only (namespace + objective text
+84:const NAMESPACE = 'core::system';
+655:  log('AUTHORIZE', `${taskKey}: requesting ${capability} for ${AGENT_ID} in ${NAMESPACE} (work_order_id=${woId.slice(0, 12)}...)`);
+719:    adapter, agentId: AGENT_ID, capability, namespace: NAMESPACE, constraints: CONSTRAINTS,
+729:  const auth = adapter.authorizeWorkOrder({ agentId: AGENT_ID, capability, namespace: NAMESPACE, constraints: CONSTRAINTS });
+740:    capability, agent_id: AGENT_ID, namespace: NAMESPACE,
+754:    agentId: AGENT_ID, capability, namespace: NAMESPACE, taskId: taskKey,
+772:      namespace: workOrder.namespace,
+1054:  OBJECTIVE_ID = objRuntime.deriveObjectiveId({ namespace: NAMESPACE, objectiveText: objective, constraints: CONSTRAINTS });
+1055:  const objRec = objRuntime.registerObjective(DATA_ROOT, NAMESPACE, objective, { constraints: CONSTRAINTS, maxWorkOrders: MAX_WORK_ORDERS });
+--- dispatch test copy ---
+42:const NAMESPACE = 'core::system';
+245:  log('AUTHORIZE', `${taskKey}: requesting ${capability} for ${AGENT_ID} in ${NAMESPACE}`);
+246:  const auth = adapter.authorizeWorkOrder({ agentId: AGENT_ID, capability, namespace: NAMESPACE, constraints: CONSTRAINTS });
+252:    agentId: AGENT_ID, capability, namespace: NAMESPACE, taskId,
+########## LIVE gateway probes (read-only GET) ##########
+{"status":"healthy","uptime":113678.792614451,"components":{"gateway":{"status":"healthy","uptime":113678.793343961,"memory":{"rss":138452992,"heapTotal":106360832,"heapUsed":103200136,"external":22825970,"arrayBuffers":2052135}},"generated_artifacts":{"status":"healthy","artifacts":5},"integrations":{"status":"healthy","integrations":{"total":3,"healthy":3,"error":0,"integrations":{"posthog":{"st
+--- GET /tenants ---
+{"tenants":[],"count":0}
+########## ping-gateway container mounts ##########
+/var/lib/docker/volumes/muse-workspace/_data -> /app/workspace/muse 
+

@@ -1,0 +1,24 @@
+# S18-01: Unknown mission_type fails with retry instead of infinite skip
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_scheduler.js (lines 242-247)
+# Intended target: src/tenanos/orchestration/mission_scheduler.js
+# Seam: SEAM-REPORT.md 1A — unknown mission_type livelock (BROKEN)
+# Test: create mission with mission_type 'TYPO_X'; assert it reaches 'failed' + DLQ within bounded polls, never spins in 'created'.
+# ---
+--- a/tenanos/orchestration/mission_scheduler.js
++++ b/tenanos/orchestration/mission_scheduler.js
+@@ -241,9 +241,14 @@
+    */
+   async _dispatch(mission) {
+     const workerName = MISSION_WORKER_MAP[mission.mission_type];
+     if (!workerName) {
+-      console.log(`[MissionScheduler] No worker for mission type '${mission.mission_type}' — skipping ${mission.mission_id}`);
+-      this._stats.skipped++;
++      // S18-01: unknown mission_type is a poison pill, not a transient skip.
++      // Skipping leaves the mission in 'created' forever: re-polled every
++      // cycle, never terminal, never DLQ'd, invisible to Mission Control.
++      // Fail with retry gives bounded patience for late worker registration,
++      // then a terminal state + dead-letter.
++      console.log(`[MissionScheduler] No worker for mission type '${mission.mission_type}' — failing ${mission.mission_id}`);
++      await this._failMission(mission, `unknown mission_type '${mission.mission_type}': no worker registered`);
+       return;
+     }

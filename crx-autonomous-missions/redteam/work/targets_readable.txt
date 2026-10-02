@@ -1,0 +1,440 @@
+====================================================================================================
+ID: O-1
+SOURCE: orca-cli/orca @ 5beeefcb57555962bb93facc54b5f82484731802
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Workers lose all in-flight execution state when the agent session compacts, dies, or is killed; the coordinator tracks attempts conversationally and reconstruction is manual.
+--- MECHANISM ---
+Durable run row: UUIDv7 id, typed status, prompt, worktree_path, adapter, branch, started/completed timestamps in SQLite; single writer (SetMaxOpenConns(1)), WAL mode, busy_timeout, foreign keys on; status changes via UpdateStatus with updated_at bump.
+--- INVARIANT ---
+Every unit of agent execution has exactly one durable identity row before it starts; status transitions are the only mutation path.
+--- FAILURE_MODEL ---
+Process death mid-run leaves row in running state (no heartbeat/lease yet); DB file corruption loses local state (no replication); concurrent writers serialized by single-conn pool.
+--- SECURITY_MODEL ---
+Local file; no auth layer; any process with file access can mutate runs.
+--- SCALING_MODEL ---
+Single SQLite file; fine to thousands of runs; FTS5 keeps log search fast; no multi-machine story.
+--- CRX_ANALOG ---
+MissionRuntime missions (idempotent deterministic IDs) exist; durable per-attempt Run identity is a proven gap (crx-audit gap #3). JSONL run ledgers exist but are not queryable state.
+--- SEMANTIC_DELTA ---
+Orca's unit is the attempt (worker+worktree+lifecycle); CRX's unit is the mission. Orca rows survive worker death; CRX mission state lives in coordinator context.
+====================================================================================================
+ID: orka-write-once-execution-binding
+SOURCE: orka-agents/orka @ cb73ac8019117c4e86d04fcfd3237ac65f56662a
+LICENSE: MIT (Microsoft Corporation) | CLASS: ADAPT
+--- PROBLEM ---
+A coordinator that re-resolves routing at every step can dispatch the same work twice, route retries to a changed runtime, or lose the link between what was authorized and what actually ran. Recovery cannot distinguish the original execution context from a later one.
+--- MECHANISM ---
+AgentExecutionBinding is a write-once record created before dispatch and authoritative for routing, recovery, cancellation, settlement, and finalization. It freezes task and namespace identity, agent UID and generation, runtime protocol and backend, snapshot digest, runtime profile, and binding digest. Observed at commit cb73ac8019117c4e86d04fcfd3237ac65f56662a in api/v1alpha1/agent_execution_binding_types.go, line 97.
+--- INVARIANT ---
+One binding per attempt; the binding is immutable once created. Every worker action is validated against the frozen binding, never against live coordinator state.
+--- FAILURE_MODEL ---
+If the binding is lost, the attempt cannot proceed and is classified by the recovery path; bindings are durable records so loss means record-store failure, which is a terminal infrastructure failure, not an ambiguous state.
+--- SECURITY_MODEL ---
+Freezing the binding at dispatch prevents a compromised or stale coordinator from re-routing an attempt to a different runtime, model, or credential set mid-flight.
+--- SCALING_MODEL ---
+Bindings are small immutable records created once per attempt; read-heavy, write-once. Scales with attempt count.
+--- CRX_ANALOG ---
+One canonical Run binding event per attempt, recorded before execution begins: mission, attempt number, worker profile, input digest, authorization snapshot, tool policy. This directly fills CRX's proven gap of no durable per-attempt Run identity.
+--- SEMANTIC_DELTA ---
+CRX tracks missions and journal events; the delta is freezing the full execution context into an immutable binding before the first worker action, so authorization and routing are verifiable after the fact.
+====================================================================================================
+ID: orka-outcome-unknown-fail-closed
+SOURCE: orka-agents/orka @ cb73ac8019117c4e86d04fcfd3237ac65f56662a
+LICENSE: MIT (Microsoft Corporation) | CLASS: ADAPT
+--- PROBLEM ---
+When a worker or coordinator fails at or after a side-effect boundary (a prompt was possibly accepted by the runtime), retrying risks double execution, while declaring failure risks hiding real work that happened. Most frameworks collapse this ambiguity into either silent retry or empty success.
+--- MECHANISM ---
+The execution state machine distinguishes pre-submission failures (safe to requeue: Pending, Reserved, Submitting) from post-boundary failures, which settle to a terminal OutcomeUnknown that must never be treated as generic retryable failure and must be a unique durable value, never an empty or omitted string. Recovery never replays a possibly-accepted prompt: source message is 'outcome is unknown and was not replayed'. Observed at commit cb73ac8019117c4e86d04fcfd3237ac65f56662a in api/v1alpha1/task_runtime_types.go, lines 66 and 85, internal/controller/acp_recovery.go, line 101.
+--- INVARIANT ---
+Ambiguity is a terminal, explicitly named state, never an absence of state. A prompt that may have been accepted is never re-submitted by recovery.
+--- FAILURE_MODEL ---
+Pre-boundary failures are recoverable by resume. Post-boundary failures are terminal and honest: the record says the outcome is unknown and says it was not replayed, so no silent duplicate work and no false success.
+--- SECURITY_MODEL ---
+The no-replay rule prevents a crash-looping coordinator from being weaponized into repeated side effects (repeated tool calls, repeated publishes).
+--- SCALING_MODEL ---
+No retry amplification at the boundary. Recovery work is a bounded classification pass over stale attempts at leadership change, not unbounded re-execution.
+--- CRX_ANALOG ---
+Give CRX run attempts an explicit terminal OutcomeUnknown with a unique durable marker. This is exactly CRX's typed-failure rule: never silently convert failure or ambiguity into empty success.
+--- SEMANTIC_DELTA ---
+CRX already types failures; the delta is making ambiguity its own terminal value with a non-empty marker, and enforcing that recovery never replays across a side-effect boundary it cannot prove uncrossed.
+====================================================================================================
+ID: orka-single-control-authority
+SOURCE: orka-agents/orka @ cb73ac8019117c4e86d04fcfd3237ac65f56662a
+LICENSE: MIT (Microsoft Corporation) | CLASS: ADAPT
+--- PROBLEM ---
+Adding a second store for control-adjacent data (outbox tables, session databases, payload stores) silently creates a second control authority: the two stores disagree after partial failure, and recovery must reconcile competing truths.
+--- MECHANISM ---
+Outbox and payload stores are explicitly committed behind the primary control fences: SQLite transactions carry the Kubernetes controller epoch and session fences, and the architecture documents that the payload store is never a second control authority. Execution snapshots are AES-256-GCM encrypted with a controller-managed 32-byte key; losing the key fails startup closed rather than minting a new one and orphaning snapshots. Observed at commit cb73ac8019117c4e86d04fcfd3237ac65f56662a in internal/store/task_data_transaction.go, cmd/agent_execution_snapshot_secret.go, website/docs/concepts/architecture.md.
+--- INVARIANT ---
+There is exactly one control authority. Every auxiliary store commits under its fences or it does not commit.
+--- FAILURE_MODEL ---
+A failed auxiliary write fails the fenced transaction; there is no state where the auxiliary store disagrees with the authority, because it cannot commit alone.
+--- SECURITY_MODEL ---
+Encrypted snapshots with fail-closed key management mean a lost key is a loud startup failure, not silent data orphaning or re-encryption under a new key.
+--- SCALING_MODEL ---
+Auxiliary stores scale as read models of the authority; they never need independent consensus.
+--- CRX_ANALOG ---
+Cite as the standing guardrail against second-universe proposals: adapt new state into CRX's existing event journal under its fences; never bolt on a parallel durable store that can disagree with it.
+--- SEMANTIC_DELTA ---
+Names the anti-pattern explicitly and shows the alternative: auxiliary stores as fenced projections of one authority.
+====================================================================================================
+ID: oa-tool-invocation-identity
+SOURCE: openai/openai-agents-python @ 32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Tool calls arrive as provider-shaped raw items with unstable identities; approvals, ledgers, and retries need one canonical identity per invocation.
+--- MECHANISM ---
+tool_invocation_identity() returns (invocation_type, provider call_id, SHA-256 fingerprint) where the fingerprint is over a normalized semantic payload: type, name, namespace, server_label, arguments/input/action/operation, environment, caller. Normalization sorts mapping keys, excludes None, parses JSON argument strings before hashing, and unwraps hosted-MCP approval request nesting. Covers function_call, mcp_approval_request, shell/local_shell/computer/apply_patch/custom tool calls. Source: https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/_tool_invocation.py
+--- INVARIANT ---
+Two invocations with identical normalized semantics produce identical fingerprints regardless of JSON key order or whitespace; distinct providers call IDs never collide in the same scope.
+--- FAILURE_MODEL ---
+Normalization falls back to str(value) for unrecognized types; if arguments cannot be parsed as JSON they are hashed as raw string. Identity computation never raises: unrecognized types return None.
+--- SECURITY_MODEL ---
+Fingerprint covers arguments/input/action but not secrets beyond what the caller passes; hosted MCP approval requests are unwrapped so the fingerprint describes the actual request. No cross-invocation auth is derived from the fingerprint alone.
+--- SCALING_MODEL ---
+O(size of semantic payload) SHA-256 per invocation; stateless pure function, no locks; thread-safe.
+--- CRX_ANALOG ---
+CRX has no durable per-attempt Run identity and no tool-execution path; the closest CRX concepts are idempotent deterministic IDs in MissionRuntime and fail-closed canonicalization at ingress.
+--- SEMANTIC_DELTA ---
+CRX canonicalizes events at ingress; the SDK canonicalizes tool invocations at plan time and separates call identity (provider call_id) from semantic identity (fingerprint). CRX would need the semantic fingerprint for stable dedupe across retries, which provider call IDs alone do not give.
+====================================================================================================
+ID: oa-approval-scope-fingerprint
+SOURCE: openai/openai-agents-python @ 32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+An approval granted for one tool call must not silently authorize a different call: argument changes or namespace changes must invalidate the grant.
+--- MECHANISM ---
+tool_invocation_approval_scope() returns (invocation_type, scope_fingerprint) where the scope payload is type + invocation_role + the resolved function-tool lookup key (or tool name + MCP server_label for hosted MCP). Approvals bind to the scope fingerprint, not the call ID, so always_approve grants survive retries of the same scoped call but do not transfer to a different tool, namespace, or server. Source: https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/_tool_invocation.py
+--- INVARIANT ---
+Same scope fingerprint implies same authorization target; a different tool lookup key or server label always changes the fingerprint.
+--- FAILURE_MODEL ---
+If the lookup key cannot be resolved, approval scope returns None and the caller must fail closed (no scope, no cached approval).
+--- SECURITY_MODEL ---
+Scope deliberately excludes raw arguments for function tools (keyed by lookup key instead), trading per-argument granularity for a stable grant; argument-level binding lives in the semantic fingerprint, not the approval scope.
+--- SCALING_MODEL ---
+Same cost as the identity fingerprint; cached per run in the approval map.
+--- CRX_ANALOG ---
+CRX action-level authorization is absent (ingress only). This is the closest working model of action-scope authorization keys.
+--- SEMANTIC_DELTA ---
+CRX authorizes at ingress; the SDK authorizes per tool invocation with a two-level key (scope for grants, semantic fingerprint for exactness). CRX adopting scope fingerprints would move authorization from ingress-only to per-action without conflating call identity with grant identity.
+====================================================================================================
+ID: oa-tool-invocation-ledger
+SOURCE: openai/openai-agents-python @ 32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+A run must know which tool invocations were planned, which actually executed, and which completed, across pauses, resumes, and retries.
+--- MECHANISM ---
+_ToolInvocationRecord{invocation_type, approval_scope, fingerprint, executed, completed} is stored per provider call ID in RunContextWrapper._tool_invocations. _mark_tool_invocation_executed is called before execution (including on the rejection path, so rejections are recorded), _mark_tool_call_completed after. RunState._serialize_tool_invocations persists the ledger, described in source as the run-owned canonical tool invocation ledger, and from_json rebuilds it. Source: https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/run_context.py; https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/run_state.py
+--- INVARIANT ---
+executed=True implies the invocation left the planning stage exactly once per recorded call ID; completed=True implies a receipt was recorded; the ledger survives serialization round-trips with identical records.
+--- FAILURE_MODEL ---
+Duplicate call IDs across nested agent-tool runs raise UserError rather than merging (distinct call IDs required). Restored ledgers mark unbound approvals explicitly.
+--- SECURITY_MODEL ---
+Ledger keys are provider call IDs; collisions across nested runs are rejected loudly instead of merged, preventing one run's approval from authorizing another run's call.
+--- SCALING_MODEL ---
+Per-call dict entry; serialization is O(n) over invocations; no global locks, run-local state.
+--- CRX_ANALOG ---
+CRX worker results reify as canonical events; CRX lacks a per-attempt run ledger. The ledger maps to a CRX Run-scoped projection of TOOL ATTEMPT / TOOL RECEIPT events.
+--- SEMANTIC_DELTA ---
+CRX records worker results as events but has no attempt/completion lifecycle flags per tool call. The SDK's ledger gives the exact state machine (planned, executed, completed) CRX's proven gaps list is missing.
+====================================================================================================
+ID: oa-guardrail-tripwire-audit
+SOURCE: openai/openai-agents-python @ 32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Safety checks must halt the run fail-closed and still leave an auditable record of what tripped.
+--- MECHANISM ---
+Input/output guardrails run per turn; tool input/output guardrails run per tool call. Each emits a guardrail span with name and triggered bool. Results are appended to a results sink as each guardrail completes, including the tripping result, before the tripwire exception (Input/Output/ToolInput/ToolOutputGuardrailTripwireTriggered) propagates. Both streamed and non-streamed paths use the same sink discipline. A tripwire also attaches a SpanError to the current/parent span. Source: https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/run_internal/guardrails.py; https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/tracing/span_data.py; https://github.com/openai/openai-agents-python/blob/32edd3c3ecde37a7fb6bf4b082f35f1d8f7f086b/src/agents/exceptions.py
+--- INVARIANT ---
+A tripped guardrail always leaves both a span record (triggered=true) and a results-sink entry; no exit path can omit a result that already finished.
+--- FAILURE_MODEL ---
+Guardrail functions run concurrently; on a trip, siblings are cancelled and awaited so none leak past the function return. Guardrail exceptions propagate as typed tripwire exceptions, never as silent skips.
+--- SECURITY_MODEL ---
+Guardrails see full input/output including sensitive data; their results may carry excerpts. Treat guardrail outputs as sensitive payloads in any export.
+--- SCALING_MODEL ---
+Guardrails run concurrently per stage (asyncio tasks), so check latency is max, not sum, of guardrail latencies.
+--- CRX_ANALOG ---
+CRX has fail-closed canonicalization at ingress and typed failure semantics; guardrail tripwires are the SDK's closest analog for policy verification with audit.
+--- SEMANTIC_DELTA ---
+CRX fails closed at ingress; the SDK fails closed at four checkpoints (input, output, tool-input, tool-output) and records the trip in the sink even as it raises. CRX's VERIFICATION slot can adopt the record-before-raise discipline directly.
+====================================================================================================
+ID: RESTATE-INVOCATION-ID
+SOURCE: restatedev/restate @ c0b4a74abec859e5783c7c5af6f3b68f0f1fc9b7
+LICENSE: BSL-1.1 | CLASS: PATTERN
+--- PROBLEM ---
+Every unit of durable work needs a globally unique, routable, stable identity across crashes and retries.
+--- MECHANISM ---
+crates/types/src/identifiers.rs: InvocationId = partition_key (routing) + InvocationUuid(u128) (uniqueness). The ID encodes where the invocation lives and uniquely names it; AttachInvocation and GetInvocationOutput let other parties rendezvous on an invocation by ID.
+--- INVARIANT ---
+One invocation ID names exactly one logical execution across all retries and recoveries.
+--- FAILURE_MODEL ---
+UUID collision is negligible; partition-key mismatch misroutes.
+--- SECURITY_MODEL ---
+IDs are opaque; knowledge of an ID grants attach/output access (bearer-ish).
+--- SCALING_MODEL ---
+Partition key embedded in the ID enables routing without a lookup.
+--- CRX_ANALOG ---
+Directly fills CRX's proven gap: no durable per-attempt Run identity. CRX attempt IDs should be (mission ID, attempt sequence, UUIDv7) with the mission ID embedded for routing/lineage, exactly this shape.
+--- SEMANTIC_DELTA ---
+Restate embeds a partition key for its sharded runtime. CRX embeds the mission ID for causation lineage. Same shape, different routing key.
+====================================================================================================
+ID: LANGGRAPH-INTERRUPT
+SOURCE: langchain-ai/langgraph @ bdb85b5aa87a21de68371d2e534b81aeed398f57
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+An agent must be able to stop mid-node, ask a human a typed question, and resume with the answer, without losing state.
+--- MECHANISM ---
+libs/langgraph/langgraph/types.py: interrupt(value, response_schema) raises inside a node; the interrupt is captured as an Interrupt {value (the question/payload), id (stable interrupt ID), response_schema (expected answer shape)}. Execution suspends with the checkpoint intact. Resume via Command(resume={interrupt_id: answer} | single value). Multiple interrupts are keyed by ID, so parallel approval gates resolve independently.
+--- INVARIANT ---
+Interrupts are values in the checkpoint, not control flow. Resume is a data command mapping interrupt IDs to answers; replaying the checkpoint reproduces the interrupt instead of re-asking.
+--- FAILURE_MODEL ---
+Answer failing response_schema validation is rejected at resume (typed gate). Lost interrupt ID = unresolvable gate (IDs are stable in the checkpoint, so this means checkpoint loss).
+--- SECURITY_MODEL ---
+None built-in; the answer is trusted. CRX must not inherit this: answers need provenance.
+--- SCALING_MODEL ---
+In-checkpoint; no extra infra.
+--- CRX_ANALOG ---
+The cleanest human-approval primitive in the survey: typed question (response_schema), stable ID, data-only resume. CRX approval gates should be interrupt records: {gate ID, prompt shown, schema, raised-by attempt, answered-by, answer, answered-at}. Resume = Command-like decision event with causation link.
+--- SEMANTIC_DELTA ---
+LangGraph trusts the answer. CRX must evidence-grade it: who answered, what they saw, schema validation, and the answer becomes an evidence event, not just control-flow data.
+====================================================================================================
+ID: DBOS-STEP-RECORDING
+SOURCE: dbos-inc/dbos-transact-py @ 8ee67815fa117c4682ea9397e9566508fdb5405b
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+UNKNOWN_OUTCOME: a step may have executed its side effect but crashed before reporting; on recovery, re-executing could duplicate the effect.
+--- MECHANISM ---
+dbos/_dbos.py + _sys_db.py: every step is recorded in the system DB as it completes ('the update is recorded as a step so it runs exactly once even if the workflow is recovered'). Recovery replays from the recorded step prefix: recorded steps return stored outputs; only unrecorded steps execute. Child workflow spawning is transactional: 'Insert a child's status row and record it as the parent's step in one transaction, so a crash leaves both or neither' (_sys_db.py:5201).
+--- INVARIANT ---
+Recorded = done, never re-executed. The record and the side effect commit atomically where possible (single DB transaction for DB-backed steps).
+--- FAILURE_MODEL ---
+Non-transactional side effects (external API calls) remain at-least-once; the recording bounds the re-execution to the unrecorded suffix, it does not make external calls idempotent. Crash between side effect and record = duplicate on recovery (the residual UNKNOWN_OUTCOME window).
+--- SECURITY_MODEL ---
+System DB is trusted; step records are authoritative.
+--- SCALING_MODEL ---
+One row per step in Postgres.
+--- CRX_ANALOG ---
+This is CRX's UNKNOWN_OUTCOME answer: the step journal with atomic (record step output + commit effects) where effects are CRX-internal, and explicit at-least-once labeling where effects are external (API calls, emails). Subagent spawn recorded atomically with the parent's step (mirrors the child-status-row transaction).
+--- SEMANTIC_DELTA ---
+DBOS steps are Python functions; many are DB-transactional. CRX steps are tool calls; most are NOT transactional, so CRX must label each step (transactional/at-least-once) and the retry planner must respect the label.
+====================================================================================================
+ID: ORCA-14
+SOURCE: alex2481kobe/orca @ 5b339e8c235408ae9d7c61514c76190fdeed0091
+LICENSE: Apache-2.0 | CLASS: PATTERN
+--- PROBLEM ---
+A Claude Code orchestrator is only woken by its own tool output: a completed lane enqueues a durable wakeup event, but nothing delivers it — the orchestrator discovers the finish only when asked (real incident: lane finished 17:01, found out much later).
+--- MECHANISM ---
+Lane-state watcher (src/cli-watch.js, wired by commits bb416e6 + 5b339e8): markLaneCompleted/Failed/Stopped enqueue a durable wakeup event; the watcher CLI polls the non-mutating lane.list route and prints exactly one line per real lane state change ('<laneId8> <title> <from>→<to>'), silent otherwise, one line on daemon outage and one on reconnect, no tokens in output, exits when no active lane remains (--forever to persist). It is meant to run under a Monitor-style streaming-output tool so each printed line becomes tool output that wakes the session. orchestrator.register and executor.spawn return the exact ready-to-run watch command in a `watch` field; role instructions tell every registering orchestrator to start it after the first spawn.
+--- INVARIANT ---
+Every terminal lane transition is observable as a single line of tool output by the orchestrator that spawned it; the orchestrator never has to compose the watch command.
+--- FAILURE_MODEL ---
+Polling (default interval) not push: latency bounded by interval; a watcher killed silently stops wakeups (the durable queue still holds them).
+--- SECURITY_MODEL ---
+Uses the non-mutating route; no tokens in output; lease-scoped.
+--- SCALING_MODEL ---
+One poll per interval per orchestrator; lane.list is a read projection.
+--- CRX_ANALOG ---
+CRX subagent results are delivered automatically by the runtime into parent context — push, not pull. But for any future daemon-mode coordinator (persistent, outside a chat), the wakeup problem is real and unsolved.
+--- SEMANTIC_DELTA ---
+Orca acknowledges the pull/push mismatch explicitly and ships a dedicated watcher rather than pretending the queue is enough. The 'return the exact command in the spawn response' wiring is a nice contract touch.
+====================================================================================================
+ID: LETTA-GIT-MEMORY
+SOURCE: letta-ai/letta (archive branch) @ 56ba9c2
+LICENSE: Apache-2.0 | CLASS: ADAPT
+--- PROBLEM ---
+Memory edits destroy history: a correction overwrites the record it corrects, so disputes and rollbacks are impossible.
+--- MECHANISM ---
+GitEnabledBlockManager: when an agent carries the git-memory-enabled tag, all block writes go to git first (source of truth, full version history), PostgreSQL is synced as a read cache. get_block_at_commit and get_block_history give point-in-time memory reads; sync_blocks_from_git repairs cache drift.
+--- INVARIANT ---
+Every memory state is recoverable by commit; the cache never invents a state git does not have.
+--- FAILURE_MODEL ---
+If git is unavailable the manager degrades to standard BlockManager behavior (git features disabled, not failed writes).
+--- SECURITY_MODEL ---
+Version history is append-only in git; no destructive rewrite path exposed to the agent.
+--- SCALING_MODEL ---
+Reads served from PG cache; git history grows linearly with edits; per-agent opt-in via tag.
+--- CRX_ANALOG ---
+Directly addresses CRX's 'correction survival broken (re-emission demotes approved nodes)' gap: corrections become new commits; approved nodes are never demoted by re-emission because history is the authority.
+--- SEMANTIC_DELTA ---
+Memory becomes a versioned, auditable, rollback-capable record instead of a mutable blob.
+====================================================================================================
+ID: GRAPHITI-BITEMPORAL-INVALIDATE
+SOURCE: getzep/graphiti @ 13587ea
+LICENSE: Apache-2.0 | CLASS: ADAPT
+--- PROBLEM ---
+Facts change over time; deleting the old fact destroys the evidence needed to understand what was true when, and concurrent corrections race.
+--- MECHANISM ---
+EntityEdge carries valid_at (when the fact became true), invalid_at (when it stopped being true), expired_at (when invalidated), created_at. resolve_edge_contradictions applies pure timestamp logic: if a new edge contradicts an existing one and new.valid_at > old.valid_at with overlapping windows, the old edge is stamped invalid_at=new.valid_at, expired_at=now(). Old facts are never deleted; current truth is derived by filtering on validity windows.
+--- INVARIANT ---
+Supersession is append-only: contradiction resolves to timestamp stamps, never to mutation or deletion of the old edge.
+--- FAILURE_MODEL ---
+Deterministic (no LLM in the invalidation step); window-overlap edge cases are skipped (continue) rather than force-resolved.
+--- SECURITY_MODEL ---
+Invalidation requires a contradicting edge produced through the same extraction pipeline; no direct timestamp writes exposed.
+--- SCALING_MODEL ---
+Per-ingestion cost is bounded by candidate edges between the same node pair plus hybrid-search candidates.
+--- CRX_ANALOG ---
+CRX is event-sourced with causation/correlation lineage: bi-temporal invalidation maps to superseding events that stamp prior knowledge without rewriting history — the event journal stays the source truth, derived projections compute 'current'.
+--- SEMANTIC_DELTA ---
+Corrections stop destroying evidence; 'what is true now' becomes a deterministic function of the edge history.
+====================================================================================================
+ID: MEM0-EXPIRATION
+SOURCE: mem0ai/mem0 @ 83b07b1
+LICENSE: Apache-2.0 | CLASS: REUSE
+--- PROBLEM ---
+Memories go stale (EAB detections, prices, personnel) but nothing retires them; manual deletion does not scale.
+--- MECHANISM ---
+Per-memory expiration_date (YYYY-MM-DD, validated at write, ValueError on malformed). _payload_is_expired compares against UTC today; search and get_all hide expired rows by default (show_expired=False opt-in). Expiration is data, not a background job — staleness is evaluated at read time.
+--- INVARIANT ---
+A memory past its expiration_date is invisible to default reads; the row is retained for audit.
+--- FAILURE_MODEL ---
+Malformed dates fail closed at write; unparseable stored dates are treated as not-expired (fail-open read, conservative).
+--- SECURITY_MODEL ---
+Expiration is set by the writer; readers cannot extend it (no API to bump expiration without update rights).
+--- SCALING_MODEL ---
+O(1) per-row date comparison at read/filter time.
+--- CRX_ANALOG ---
+CRX has no forgetting path (proven gap). Per-record expiration_date evaluated at projection time is the lowest-cost forgetting mechanism: no sweeper, no probabilistic machinery, fully auditable.
+--- SEMANTIC_DELTA ---
+Staleness becomes a first-class, declarative property of a memory record.
+====================================================================================================
+ID: MEMORYBANK-EBBINGHAUS
+SOURCE: zhongwanjun/MemoryBank-SiliconFriend @ cf61c41
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Memory systems either remember everything (storage explosion, stale cruft) or only the newest (lose important-but-old knowledge).
+--- MECHANISM ---
+forgetting_curve(t, S) = exp(-t*S/5) over days since last recall. At load, each dialog is kept with probability = retention, otherwise deleted from the JSON bank (initial_load_forget_and_save). Retrieval reinforces: update_memory_when_searched bumps memory_strength += 1 and resets last_recall_date — recall is consolidation. Strength grows with importance and recall count, so frequently-used memories decay slower.
+--- INVARIANT ---
+Retention is a function of (time-since-recall, strength); reinforcement only happens through actual retrieval.
+--- FAILURE_MODEL ---
+Probabilistic deletion can drop something still valuable (accepted tradeoff); summaries are retained with their own strength metadata.
+--- SECURITY_MODEL ---
+Per-user memory banks (memory_bank[user]); no cross-user recall.
+--- SCALING_MODEL ---
+O(memories) scan at load; no background process needed.
+--- CRX_ANALOG ---
+The only source-verified forgetting implementation found (survey: 4/27 systems). CRX's no-forgetting gap: Ebbinghaus decay over (last_access, strength) is the principled complement to mem0-style declarative expiration.
+--- SEMANTIC_DELTA ---
+Forgetting becomes a continuous, usage-driven process rather than a manual or TTL-only event.
+====================================================================================================
+ID: CHAMNAN-REDACTOR
+SOURCE: ArcticFox2029/chamnan @ 9c76ab0
+LICENSE: MIT | CLASS: REUSE
+--- PROBLEM ---
+Untrusted inputs (repo content, tool output) projected into memory leak secrets; 'credentials are stripped' is usually an unmeasured claim.
+--- MECHANISM ---
+lib/redact secret redactor evaluated by tools/redactor_recall.py against a synthetic labelled corpus, publishing precision/recall as two numbers; documents its own ceiling honestly (no-network rule forecloses live-key verification, so precision is bounded). Redaction runs at ingestion into memory, before persistence.
+--- INVARIANT ---
+No string enters memory without passing the redactor; redactor quality is measured, not asserted.
+--- FAILURE_MODEL ---
+False negatives (missed secrets) are the residual risk, quantified by recall; false positives redact aggressively (safe direction).
+--- SECURITY_MODEL ---
+Deny-by-shape (synthetic test keys of real shapes); no live verification by design.
+--- SCALING_MODEL ---
+Regex-based; O(content length).
+--- CRX_ANALOG ---
+Directly addresses CRX's proven gap 'untrusted inputs projected into memory with no trust gate': a measured redaction gate at the memory-ingestion boundary.
+--- SEMANTIC_DELTA ---
+Memory ingestion gains a trust boundary with quantified quality.
+====================================================================================================
+ID: MCP-M04
+SOURCE: modelcontextprotocol/python-sdk @ f1b6589088534632fef92238ee9750951e3c0185
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Abandoned tool calls (caller timeout, task cancellation) keep consuming server resources while nobody wants the result.
+--- MECHANISM ---
+RequestOptions.cancel_on_abandon (default True): when the caller abandons a request through timeout or cancellation, the client sends notifications/cancelled; initialize is excluded because the protocol forbids cancelling it. Source: src/mcp/shared/dispatcher.py:95-100.
+--- INVARIANT ---
+Every abandonment is signaled unless the protocol forbids it.
+--- FAILURE_MODEL ---
+The notification is best-effort and may be lost on a dead transport; the server may still complete the work. Cancellation is advisory, not a kill.
+--- SECURITY_MODEL ---
+Bounds resource exhaustion from abandoned long-running calls; no authentication implications.
+--- SCALING_MODEL ---
+O(1) per request.
+--- CRX_ANALOG ---
+EXECUTION link. CRX WorkerRuntime results reify as canonical events, but the proven gap is that NOT STARTED/STARTED/SUCCEEDED/FAILED/TIMED_OUT/CANCELLED/UNKNOWN are indistinguishable. CANCELLED must become a first-class terminal state with a causation link to the abandoning event.
+--- SEMANTIC_DELTA ---
+CRX tool-call lifecycle gains explicit CANCELLED; abandonment emits a canonical event rather than vanishing.
+====================================================================================================
+ID: MCP-M06
+SOURCE: modelcontextprotocol/python-sdk @ f1b6589088534632fef92238ee9750951e3c0185
+LICENSE: MIT | CLASS: ADAPT
+--- PROBLEM ---
+Tool calls can hang forever; hung calls pin workers and mask server death.
+--- MECHANISM ---
+Layered, explicit bounds: client read_timeout_seconds per tools/call round, init_timeout for the handshake, disconnect_timeout; server session_idle_timeout (DEFAULT_SESSION_IDLE_TIMEOUT) and request_read_timeout_seconds. 0 disables a bound explicitly, never accidentally. Source: src/mcp/client/client.py:755, src/mcp/server/lowlevel/server.py:730, src/mcp/server/session.py:97-114.
+--- INVARIANT ---
+Every wait has a bound; disabling a bound is always an explicit opt-out.
+--- FAILURE_MODEL ---
+No server-side bound on tool handler execution time was found in SDK v2; timeouts cover reads and idleness, not execution. A hung handler holds the session.
+--- SECURITY_MODEL ---
+Timeouts bound slow-server resource exhaustion (slowloris class) on both sides.
+--- SCALING_MODEL ---
+Per-request timers; negligible overhead.
+--- CRX_ANALOG ---
+EXECUTION link. CRX needs TIMED_OUT as a terminal state distinct from FAILED, with the budget recorded on the call.
+--- SEMANTIC_DELTA ---
+CRX tool-call records gain timeout budget fields; expiry emits a canonical TIMED_OUT event with causation.
+====================================================================================================
+ID: MCP-M26
+SOURCE: PrefectHQ/fastmcp @ c6165d9193887d61a9c6ff2f7a50f1ee842ac70d
+LICENSE: Apache-2.0 | CLASS: ADAPT
+--- PROBLEM ---
+Per-tool authorization must be enforced at both discovery and execution, without leaking which tools exist but are forbidden.
+--- MECHANISM ---
+AuthorizationMiddleware (default deny) filters unauthorized tools from discovery listings and re-resolves and re-checks authorization immediately before execution, using the resolved access context; if no auth context exists it fails closed (deny). Listings return ambiguous not found or not authorized, preventing enumeration of forbidden tools. STDIO deliberately skips OAuth authorization as a trusted local-process boundary. Source: fastmcp_slim/fastmcp/server/middleware/authorization.py (AuthCheck base, authorize() flow, discovery filtering, execution re-check, fail-closed default).
+--- INVARIANT ---
+Authorization is checked at discovery AND at execution; missing context denies; forbidden tools are indistinguishable from absent ones.
+--- FAILURE_MODEL ---
+Authorization is time-of-check: a revocation between the execution re-check and handler start is not covered; the re-check narrows but does not close the race.
+--- SECURITY_MODEL ---
+Default-deny, fail-closed, enumeration-resistant. The tool layer enforces decisions made by the auth context; it does not mint authority (contrast M35).
+--- SCALING_MODEL ---
+Two auth checks per call (discovery-filtered, then re-checked); context resolution cached per request.
+--- CRX_ANALOG ---
+AUTHORIZATION link, the strongest per-tool model found anywhere in the ecosystem. CRX ToolAuthority should mirror: filter at resolution, re-check at execution, fail closed on missing context, ambiguous denial.
+--- SEMANTIC_DELTA ---
+CRX tool calls gain a two-gate authorization: resolution-time filtering plus execution-time re-check against fresh context.
+====================================================================================================
+ID: BORS-HEAD-RACE-DETECTION
+SOURCE: bors-ng @ ca725797e53a88e954998de0bbb14a8a5acb13ab (2024-01-31)
+LICENSE: Apache-2.0 (LICENSE-APACHE verified in repo) | CLASS: ADAPT
+--- PROBLEM ---
+Between approval and batch assembly, a PR head can move (new pushes) or the target branch can move; merging on stale assumptions produces untested landings.
+--- MECHANISM ---
+lib/worker/batcher.ex, start_waiting_batch: reads the current target branch, builds a temporary staging commit from it, fetches each PR head, and compares pr.head_sha to the recorded patch.commit. Mismatch becomes :race, a state distinct from :conflict (merge conflict). Raced patches are re-evaluated against the new base rather than merged on the old assumption.
+--- INVARIANT ---
+A patch is only batchable against the exact head SHA that was reviewed and tested; any head movement is detected before the batch is built.
+--- FAILURE_MODEL ---
+:race is retryable (rebase and re-evaluate); :conflict requires author intervention. The two are never conflated, so the system does not ask humans to resolve races or retry conflicts blindly.
+--- SECURITY_MODEL ---
+Head SHAs are read from the hosting provider at batch time; the recorded commit is the trust anchor from the approval path.
+--- SCALING_MODEL ---
+Race detection is per-batch O(patches); it runs at batch assembly, not per-push, so it does not amplify webhook load.
+--- CRX_ANALOG ---
+Before synthesizing any candidate integration tree, the gate re-reads current heads and the target ref, compares against the SHAs bound at review/approval time, and emits a typed stale-base state on mismatch.
+--- SEMANTIC_DELTA ---
+CRX binds approvals to SHAs on canonical events (approval event references exact tree SHA), so race detection is a pure event comparison rather than an API re-fetch.
+====================================================================================================
+ID: BORS-PREFLIGHT-MERGE-GATE
+SOURCE: bors-ng @ ca725797e53a88e954998de0bbb14a8a5acb13ab (2024-01-31)
+LICENSE: Apache-2.0 (LICENSE-APACHE verified in repo) | CLASS: ADAPT
+--- PROBLEM ---
+Merging a PR whose approvals, checks, or head are stale or incomplete silently lands unreviewed or untested code.
+--- MECHANISM ---
+lib/worker/batcher.ex, patch_preflight/3, requires all of: no CI-skip marker, no blocking labels, no configured status in error, no configured status still running, every required status present, review threshold satisfied, no changes-requested review, CODEOWNERS approvals where enabled, and approval tied to the current commit where up_to_date_approvals is enabled. Any unmet condition blocks the patch from entering the batch; the gate is evaluated at batch assembly time, not at approval time.
+--- INVARIANT ---
+Approval is only meaningful when bound to the exact commit being merged; required checks must be present and green at gate time, not merely at some earlier time.
+--- FAILURE_MODEL ---
+Each unmet condition is a distinct block reason; the patch waits or is rejected, never merged hopefully. Stale approvals (commit moved) fail the up-to-date check.
+--- SECURITY_MODEL ---
+CI-skip markers and blocking labels are deny signals the gate honors; CODEOWNERS enforcement is configurably mandatory.
+--- SCALING_MODEL ---
+Preflight is per-patch at batch assembly; cheap checks gate entry to the expensive batch CI run.
+--- CRX_ANALOG ---
+Merge gate preflight as a checklist evaluated at candidate-tree assembly: approvals bound to exact tree SHA, required receipts present and green, no deny markers, scope-conflict check; every unmet condition a typed block event.
+--- SEMANTIC_DELTA ---
+CRX replaces GitHub-specific signals (labels, statuses, CODEOWNERS) with canonical equivalents: approval events referencing tree SHAs, test receipt events, deny-marker events, scope ownership records.

@@ -1,0 +1,70 @@
+# S18-12: Temporal executeWorkOrder — fail closed until the adapter is wired
+# Source: /home/nolan/ping/ping-runtime/temporal/activities/mission_activities.js (lines 14-52)
+# Intended target: src/tenanos/temporal/activities/mission_activities.js
+# Seam: SEAM-REPORT.md 7A — stub fabricated {success:true} for any capability, auth commented out (BROKEN)
+# Test: call executeWorkOrder -> throws 'not wired'; never returns success.
+# ---
+--- a/tenanos/temporal/activities/mission_activities.js
++++ b/tenanos/temporal/activities/mission_activities.js
+@@ -14,43 +14,25 @@
+ /**
+  * Activity: Execute WorkOrder via ExternalAgentAdapter
+  *
+  * NOTE: ExternalAgentAdapter is in feature/external-agent-hardening branch
+  * This activity will be wired to ExternalAgentAdapter during integration.
+- * For now, this is a stub that returns the expected structure.
++ *
++ * S18-12: FAIL-CLOSED until wired. The previous stub returned
++ * {success:true} with a fabricated draft for ANY capability without
++ * authorization, issuance, or verification — a phantom-success generator
++ * on the execution path (email.send/sms.send "succeeded" with no approval
++ * gate). An unwired activity must fail loudly, never succeed silently.
+  */
+ async function executeWorkOrder(params) {
+-  const { missionId, capability, input, constraints, externalAgentId } = params;
+-
+-  // Production wiring (TODO during integration):
+-  // const adapter = new ExternalAgentAdapter();
+-  // const authorization = adapter.authorizeWorkOrder({
+-  //   agentId: externalAgentId,
+-  //   capability,
+-  //   namespace: input.context_pack_id ? 'tenant::default' : 'core::default',
+-  //   constraints,
+-  // });
+-  // if (!authorization.granted) {
+-  //   return { success: false, error: authorization.reason };
+-  // }
+-  // const workOrder = adapter.issueWorkOrder({
+-  //   agentId: externalAgentId,
+-  //   missionId,
+-  //   taskId: missionId,
+-  //   correlationId: input.correlation_id || missionId,
+-  //   capability,
+-  //   input,
+-  //   constraints,
+-  // });
+-  // const result = await adapter.verifyResultEnvelope({ workOrder, resultPath: workOrder.result_path });
+-  // return { success: result.verified, outcome: result.result, requiresApproval: false };
+-
+-  // Stub for testing Temporal wiring
+-  return {
+-    success: true,
+-    requiresApproval: capability === 'email.send' || capability === 'sms.send',
+-    outcome: {
+-      result: 'Draft generated',
+-      draft: 'Hi Jane, thanks for reaching out...',
+-    },
+-  };
++  // Production wiring (TODO during integration). NOTE (S18-12): the removed
++  // commented sketch was contract-drifted and must NOT be restored as-is:
++  //   - verifyResultEnvelope(result, workOrder, {invokedAgentId, verifiedAt})
++  //     takes the RESULT first, not {workOrder, resultPath}.
++  //   - namespace must come from the tenant context (payload.namespace),
++  //     never the hardcoded 'tenant::default'.
++  //   - issueWorkOrder requires contextPackId, resultPath, deadline, and an
++  //     explicit attempt (no silent default since S18-07).
++  throw new Error(
++    'executeWorkOrder: ExternalAgentAdapter not wired (integration TODO). ' +
++    'Refusing to fabricate success.'
++  );
+ }

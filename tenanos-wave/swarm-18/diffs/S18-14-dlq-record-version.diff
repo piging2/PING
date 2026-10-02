@@ -1,0 +1,30 @@
+# S18-14: DLQ record — version the record shape explicitly
+# Source: ~/workspace/convergence-zoom-2026-09-19/lane-d-execution/pig-src/ping-runtime/orchestration/mission_scheduler.js (lines 30-32, 392)
+# Intended target: src/tenanos/orchestration/mission_scheduler.js
+# Seam: SEAM-REPORT.md — authority_version '1.0.0' is version-ambiguous (1.0.0 of what?) (RISKY, tiny)
+# Test: DLQ record carries scheduler_version '1.0.0' with a comment binding it to the record shape.
+# Note: field renamed from authority_version for clarity; value unchanged. If a DLQ consumer
+# reads authority_version, keep both keys during a transition window (coordinator call).
+# ---
+--- a/tenanos/orchestration/mission_scheduler.js
++++ b/tenanos/orchestration/mission_scheduler.js
+@@ -28,6 +28,11 @@
+ const crypto = require('crypto');
+ const { constitutionalTimeAuthority } = require('../authorities/constitutional_time_authority.js');
+
++// S18-14: versions the DLQ record SHAPE emitted by _failMission below.
++// Bump when the record fields change. This is not the scheduler's version
++// and not the authority's version — it is the dead-letter record's.
++const DLQ_RECORD_VERSION = '1.0.0';
++
+ // Map mission_type → worker name
+ // Workers register with WorkerRuntime using these names
+ //
+@@ -389,7 +394,7 @@
+               causation_id: payload.event_id || mission.mission_id,
+               authority: 'MissionScheduler',
+-              authority_version: '1.0.0',
++              scheduler_version: DLQ_RECORD_VERSION,
+               created_at: mission.created_at ? new Date(mission.created_at).getTime() : Date.now(),
+               retry_count: retries,
+               payload,

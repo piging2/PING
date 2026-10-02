@@ -1,0 +1,55 @@
+diff --git a/ping-runtime/orchestration/mission_runtime.js b/ping-runtime/orchestration/mission_runtime.js
+index 9da4872a7..9f631ffd0 100644
+--- a/ping-runtime/orchestration/mission_runtime.js
++++ b/ping-runtime/orchestration/mission_runtime.js
+@@ -147,8 +147,21 @@ class MissionRuntime {
+   /**
+    * Complete a mission.
+    *
++   * Completion-requires-emission invariant (Lane J, 2026-09-19): the
++   * canonical MISSION_COMPLETED event must be ACCEPTED by the event
++   * authority BEFORE the ping_missions row transitions to 'completed'.
++   * Previously the UPDATE committed first and the emit result was never
++   * checked, so a rejected or failed emission left a mission reading
++   * 'completed' with no canonical result event (phantom completion,
++   * proven by failure injection). Now: emit first, require
++   * {status:'ok'}; only then apply the conditional UPDATE. A rejected
++   * emission throws and the row stays 'running', so the scheduler's
++   * normal retry/fail path handles it instead of recording a lie.
++   *
+    * Conditional: only transitions from 'running' to 'completed'. A mission
+    * that is failed, retry_pending, or already completed is never overwritten.
++   *
++   * @returns {Promise<number>} rowCount — 1 if completed, 0 if not completable
+    */
+   async complete(missionId, result = {}) {
+     // Calculate duration from started_at
+@@ -163,14 +176,25 @@ class MissionRuntime {
+       }
+     } catch (_) {}
+ 
++    // Gate the state transition on canonical emission acceptance.
++    // UnifiedEventRuntime.emit() signals rejection by RETURNING
++    // {status:'error', ...} (governance/validator/identity/persist), not by
++    // throwing — so the returned status must be inspected, not just awaited.
++    if (this._eventRuntime) {
++      const emitted = await this._eventRuntime.emit('MISSION_COMPLETED', 'mission-runtime', { missionId, result, duration_ms });
++      if (!emitted || emitted.status !== 'ok') {
++        throw new Error(
++          `MISSION_COMPLETED not accepted for mission ${missionId}: ${(emitted && (emitted.error || emitted.code)) || 'unknown emission failure'}`
++        );
++      }
++    }
++
+     const updateResult = await this._pool.query(
+       `UPDATE ping_missions SET status = 'completed', result = $1, completed_at = NOW() WHERE mission_id = $2 AND status = 'running'`,
+       [JSON.stringify({ ...result, duration_ms }), missionId]
+     );
+ 
+-    if ((updateResult.rowCount || 0) === 1 && this._eventRuntime) {
+-      await this._eventRuntime.emit('MISSION_COMPLETED', 'mission-runtime', { missionId, result, duration_ms });
+-    }
++    return updateResult.rowCount || 0;
+   }
+ 
+   /**

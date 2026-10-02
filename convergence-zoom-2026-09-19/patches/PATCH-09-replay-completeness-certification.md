@@ -1,0 +1,24 @@
+# PATCH-09 — Replay Completeness Certification (commit and prove the dirty W-2 fail-closed state)
+
+- **AXIOMS CLOSED:** R1 (certification; the semantics are already proven).
+- **FILES:** `ping-runtime/workers/canonical_workers.js` (dirty fail-closed line ~340); `gateway/test_witness_w2_versioning.js` (dirty W2-9 test, lines 270-309); `gateway/kernel_replay_execution_provider.js` (W-2, committed).
+- **SYMBOLS:** `kernelResult.completeness`, `isVerified`, `WITNESS_REJECTED` reason `incomplete_input_set`.
+- **SCHEMA CHANGE:** None.
+- **BEFORE:** Dirty worktree holds the fail-closed line (`kernelResult.completeness === 'COMPLETE' ? 'COMPLETE' : 'INCOMPLETE'`) and the W2-9 test, uncommitted and uncertified. Pre-W-2 code defaulted missing completeness to COMPLETE (the exact hole).
+- **AFTER:** The dirty state is committed and certified: W2-9 runs green in CI; the fail-closed line is covered; the W-2 version bindings (`replay_engine_version`, `witness_algorithm_version`, `witness_version`, NULL for pre-W-2 rows, never backfilled) are asserted by test.
+- **ALGORITHM:** No new semantics. Certification = run the suite, record the evidence, commit.
+- **PSEUDODIFF:** None (already in the worktree). The certification records: W2-9's exact assertions (legacy provider returning ok + zero violations but no completeness field -> `verified:false`, `completeness:'INCOMPLETE'`, zero WITNESS_CREATED, exactly one WITNESS_REJECTED with reason containing `incomplete_input_set`).
+- **FAIL-BEFORE TEST:** N/A (the defect it closes is pre-W-2; document via git history: the old `|| 'COMPLETE'` default).
+- **PASS-AFTER TEST:** W2-9 green; full witness versioning suite green.
+- **CRASH TEST:** n/a.
+- **CONCURRENCY TEST:** n/a.
+- **HISTORY TEST:** Pre-W-2 rows keep NULL versions (honestly pre-version era); the 12-leaf P0 invariant holds (pinned root `d9a012f0...` reproduces byte-identically; TS-only 13th leaf stays out of the executed artifact).
+- **NAMESPACE TEST:** n/a.
+- **SECURITY TEST:** n/a.
+- **DEPENDENCIES:** None. Must land before any consumer trusts `completeness` for automation.
+- **MIGRATION:** None.
+- **ROLLBACK:** n/a (certification of existing state).
+- **OBSERVABILITY:** WITNESS_REJECTED reasons are already observable; add a dashboard counter for `incomplete_input_set`.
+- **RESIDUAL FAILURE:** `no_replay_provider` still returns worker `status:'ok'` (see PATCH-12 item 4); that is a separate collapse (INFRASTRUCTURE_UNAVAILABLE -> mission-ok), not a completeness defect.
+- **COMPLEXITY:** Zero code; process (run, record, commit).
+- **CONFIDENCE:** High. R1 is the best-proven axiom in the ledger.

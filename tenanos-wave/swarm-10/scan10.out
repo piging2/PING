@@ -1,0 +1,35 @@
+===== Q1: dead letter authority =====
+/home/nolan/ping/gateway/dead_letter_authority.js
+/home/nolan/ping/gateway/test_dead_letter_wiring.js
+/home/nolan/ping/ping-runtime/orchestration/dormant_classifications/gateway_test_dead_letter_wiring.json
+--- consumers of recordDeadLetter / dead letter reads ---
+/home/nolan/ping/gateway/routes/mission_control.js:641:        letters = await dlq.getDeadLettersByJobType(jobType, { limit, offset, replayableOnly: false });
+/home/nolan/ping/gateway/routes/mission_control.js:668:      const letters = await dlq.getDeadLettersByMission(req.params.id);
+/home/nolan/ping/gateway/dead_letter_authority.js:15: * repository_dead_letters
+/home/nolan/ping/gateway/dead_letter_authority.js:56:        CREATE TABLE IF NOT EXISTS repository_dead_letters (
+/home/nolan/ping/gateway/dead_letter_authority.js:57:          dead_letter_id TEXT PRIMARY KEY,
+/home/nolan/ping/gateway/dead_letter_authority.js:67:          dead_lettered_at BIGINT NOT NULL,
+/home/nolan/ping/gateway/dead_letter_authority.js:83:        CREATE INDEX IF NOT EXISTS idx_dead_letters_job_type ON repository_dead_letters(job_type)
+/home/nolan/ping/gateway/dead_letter_authority.js:87:        CREATE INDEX IF NOT EXISTS idx_dead_letters_mission ON repository_dead_letters(mission_id)
+/home/nolan/ping/gateway/dead_letter_authority.js:91:        CREATE INDEX IF NOT EXISTS idx_dead_letters_replayable ON repository_dead_letters(replayable)
+/home/nolan/ping/gateway/dead_letter_authority.js:95:        CREATE INDEX IF NOT EXISTS idx_dead_letters_created ON repository_dead_letters(dead_lettered_at)
+/home/nolan/ping/gateway/dead_letter_authority.js:112:  async recordDeadLetter(job, error, options = {}) {
+/home/nolan/ping/gateway/dead_letter_authority.js:122:      dead_letter_id: deadLetterId,
+/home/nolan/ping/gateway/dead_letter_authority.js:132:      dead_lettered_at: now,
+/home/nolan/ping/gateway/dead_letter_authority.js:154:      INSERT INTO repository_dead_letters (
+/home/nolan/ping/gateway/dead_letter_authority.js:155:        dead_letter_id, original_job_id, job_type, mission_id, execution_id,
+/home/nolan/ping/gateway/dead_letter_authority.js:157:        created_at, dead_lettered_at, retry_count, payload,
+/home/nolan/ping/gateway/dead_letter_authority.js:163:      deadLetter.dead_letter_id,
+/home/nolan/ping/gateway/dead_letter_authority.js:173:      deadLetter.dead_lettered_at,
+/home/nolan/ping/gateway/dead_letter_authority.js:198:      SELECT * FROM repository_dead_letters
+/home/nolan/ping/gateway/dead_letter_authority.js:199:      WHERE dead_letter_id = $1
+===== Q2: API routes emitting SNIPPET_APPROVED / AI_RESPONSE_ACCEPTED =====
+--- any route with approv in name ---
+===== Q3: mission generator - decision/escalation lines =====
+80:      failure_reason: payload.failure_reason,
+283:  fail(error) {
+284:    this.status = 'failed';
+439:      generation.fail(error);
+527:        generation.fail(new Error(event.payload.error.message));
+541:      [MissionTypes.BUG_FIX]: `Fix ${parameters.failure_reason || parameters.violation_type || parameters.divergence_reason}`,
+646:        failed_at: constitutionalTimeAuthority.nowAsMillis()

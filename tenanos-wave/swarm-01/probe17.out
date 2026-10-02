@@ -1,0 +1,28 @@
+########## routes/identities.js ##########
+72:  router.get(
+101:  router.post(
+########## routes/events.js tenant ##########
+########## event_to_mission_bridge tenant ##########
+128:        namespace: event.namespace,
+########## mission_scheduler 220-240 ##########
+      // dispatching mission_type (e.g. LEAD_FOLLOWUP) would silently no-op and
+      // produce a phantom completion. Mirrors test_commissioning.js:345-352.
+      const payload = typeof mission.payload === 'string'
+        ? JSON.parse(mission.payload)
+        : (mission.payload || {});
+      const event = {
+        // Thread the original event fields through so downstream workers can
+        // project (needs event_id), preserve namespace (privacy boundary) and
+        // source, and unwrap the bridge's nested payload so workers read the
+        // business payload directly (e.g. ObservationWorker's documentId).
+        event_id: payload.event_id || mission.mission_id,
+        event_type: payload.event_type || mission.mission_type,
+        source: payload.source || 'mission-scheduler',
+        // Namespace is set by the bridge from the spine event (always resolved);
+        // the 'core::system' default is owned by UnifiedEventRuntime.emit() only.
+        namespace: payload.namespace,
+        mission_id: mission.mission_id,
+        payload: payload.payload || payload,
+        metadata: {
+          mission_type: mission.mission_type,
+          priority: mission.priority,

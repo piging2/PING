@@ -1,0 +1,200 @@
+########## gateway entrypoint candidates ##########
+/home/nolan/ping/gateway/acquisition_authority.js
+/home/nolan/ping/gateway/adapter_authority.js
+/home/nolan/ping/gateway/adapter_compiler_v2.js
+/home/nolan/ping/gateway/advisory_lock.js
+/home/nolan/ping/gateway/api_controller.js
+/home/nolan/ping/gateway/append_orchestrator.js
+/home/nolan/ping/gateway/application_port.js
+/home/nolan/ping/gateway/approval_authority.js
+/home/nolan/ping/gateway/artifact_authority.js
+/home/nolan/ping/gateway/artifact_builder.js
+/home/nolan/ping/gateway/artifact_repository_port.js
+/home/nolan/ping/gateway/artifact_type_registry.js
+/home/nolan/ping/gateway/audit_scanner.js
+/home/nolan/ping/gateway/authority_container.js
+/home/nolan/ping/gateway/authority_purity_audit.js
+/home/nolan/ping/gateway/authority_registry.js
+/home/nolan/ping/gateway/authority_repository.js
+/home/nolan/ping/gateway/automatic_mission_generator.js
+/home/nolan/ping/gateway/background_workers.js
+/home/nolan/ping/gateway/best_in_class_integration.js
+/home/nolan/ping/gateway/boot_authority.js
+/home/nolan/ping/gateway/boot_graph_repository.js
+/home/nolan/ping/gateway/bootstrapping_validation.js
+/home/nolan/ping/gateway/bullmq_adapter.js
+/home/nolan/ping/gateway/canonical_event_envelope.js
+/home/nolan/ping/gateway/canonical_graph_authority.js
+/home/nolan/ping/gateway/canonical_graph_compiler.js
+/home/nolan/ping/gateway/canonical_object_authority.js
+/home/nolan/ping/gateway/canonical_object_generator.js
+/home/nolan/ping/gateway/canonical_symbol_authority.js
+########## server/app bootstrap: auth middleware ##########
+--- /home/nolan/ping/gateway/server.js ---
+########## where tenants routes mounted ##########
+/home/nolan/ping/gateway/routes/tenants.js:18:function createTenantRoutes(tenantRegistry) {
+/home/nolan/ping/gateway/routes/tenants.js:81:module.exports = createTenantRoutes;
+/home/nolan/ping/gateway/bootstrap/gateway_runtime.js:27:const createTenantRoutes = require('../routes/tenants');
+/home/nolan/ping/gateway/bootstrap/gateway_runtime.js:688:      this._app.use('/tenants', createTenantRoutes(services.tenantRegistry));
+########## mission_control_authority_endpoint.py head ##########
+"""
+Simple FastAPI endpoint for authority resolution (read-only, query-only).
+This is a light-weight stub that demonstrates the expected API and response
+format. It does not implement complex resolution logic — that's for Phase E.3.
+"""
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import os
+import psycopg2
+from psycopg2 import sql
+import json
+
+app = FastAPI()
+
+POSTGRES_DSN = {
+    'host': os.getenv('POSTGRES_HOST', 'localhost'),
+    'port': int(os.getenv('POSTGRES_PORT', '5432')),
+    'database': os.getenv('POSTGRES_DB', 'crx_runtime'),
+    'user': os.getenv('POSTGRES_USER', 'postgres'),
+    'password': os.getenv('POSTGRES_PASSWORD', '')
+}
+
+class ResolveRequest(BaseModel):
+    artifact_id: str
+    question: str
+
+@app.get('/authority/resolve')
+def health():
+    return {'status': 'ok'}
+
+@app.post('/authority/resolve')
+def resolve(req: ResolveRequest):
+    """
+    Constitutional authority resolution.
+    
+    Returns a full explanation of WHY a source won:
+    - Selected Artifact
+    - Authority Level
+    - Superseding Artifact
+    - Lineage Depth
+    - Event Verification
+    - Projection Verification
+    - Witness Verification
+    - Reason Selected
+    """
+    try:
+        conn = psycopg2.connect(**POSTGRES_DSN)
+        cur = conn.cursor()
+        
+        # Get authority objects
+        cur.execute(sql.SQL("""
+            SELECT authority_id, authority_type, authority_level, title, payload_hash, sha256,
+                   source_system, canonical_path, created_at, status
+            FROM authority_objects
+            WHERE artifact_id = %s
+            ORDER BY authority_level DESC
+        """), (req.artifact_id,))
+        rows = cur.fetchall()
+        authorities = []
+        for r in rows:
+            authorities.append({
+                'authority_id': str(r[0]),
+                'authority_type': r[1],
+                'authority_level': r[2],
+                'title': r[3],
+                'payload_hash': r[4],
+                'sha256': r[5],
+                'source_system': r[6],
+                'canonical_path': r[7],
+                'created_at': str(r[8]),
+                'status': r[9]
+            })
+        
+        # Build authority resolution explanation
+        highest = authorities[0] if authorities else None
+        resolution = {}
+        if highest:
+            # Check supersession
+            supersedes = None
+            try:
+########## ingest.js namespace handling ##########
+/**
+ * Ingest Routes — PING Canonical Boundary v1
+ *
+ * POST /ingest — single HTTP boundary for the Canonicalization Service.
+ * This route is a THIN ADAPTER only: validate → canonicalize → emit → respond.
+ * No business logic lives here. The boundary is the CanonicalizationService,
+ * not this route.
+ *
+ * Body: {
+ *   source: string,         // producing source/authority ID (required)
+ *   eventType: string,      // event type (required, validated against registry)
+ *   payload: object,        // event data (required)
+ *   namespace?: string,     // core::<name> | tenant::<id> (default core::owner)
+ *   logicalId?: string,     // explicit logical identity (default: timestamp-stripped payload)
+ *   confidence?: number,    // default 0.5 (observations are not knowledge)
+ *   evidence?: string[],    // evidence event IDs
+ *   lifecycleStage?: string // observation | candidate | knowledge
+ * }
+ *
+ * Responses:
+ *   201 — event canonicalized + emitted
+ *   400 — missing/invalid fields, invalid namespace
+ *   422 — event type rejected by governance/validator
+ */
+
+const express = require('express');
+
+function createIngestRoutes(canonicalizationService) {
+  const router = express.Router();
+
+  router.post('/', async (req, res) => {
+    const body = req.body || {};
+
+    if (!body.source || typeof body.source !== 'string') {
+      return res.status(400).json({ status: 'error', error: 'source (string) required' });
+    }
+    if (!body.eventType || typeof body.eventType !== 'string') {
+      return res.status(400).json({ status: 'error', error: 'eventType (string) required' });
+    }
+    if (!body.payload || typeof body.payload !== 'object') {
+      return res.status(400).json({ status: 'error', error: 'payload (object) required' });
+    }
+
+    try {
+      // Boundary authorization: a producer may claim its per-source namespace or
+      // an explicit override. Unauthorized claims (invalid namespace) are rejected
+      // here BEFORE canonicalization — the route guard for the namespace boundary.
+      const auth = canonicalizationService.authorizeNamespace(body.source, body.namespace);
+      if (!auth.authorized) {
+        return res.status(400).json({ status: 'error', error: auth.reason });
+      }
+
+      const result = await canonicalizationService.canonicalizeAndEmit({
+        source: body.source,
+        eventType: body.eventType,
+        payload: body.payload,
+        namespace: body.namespace,
+        logicalId: body.logicalId,
+        confidence: body.confidence,
+        evidence: body.evidence,
+        lifecycleStage: body.lifecycleStage,
+      });
+
+      if (result.status !== 'ok') {
+        const rejected = /unknown event_type|not registered|invalid event type/i.test(result.error || '');
+        return res.status(rejected ? 422 : 400).json({ status: 'error', error: result.error });
+      }
+
+      return res.status(201).json({
+        status: 'ok',
+        eventId: result.eventId,
+        objectId: result.objectId,
+        canonicalHash: result.canonicalHash,
+        canonicalVersion: result.canonicalVersion,
+        namespace: result.namespace,
+      });
+    } catch (err) {
+      return res.status(400).json({ status: 'error', error: err.message });
+    }
+  });

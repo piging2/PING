@@ -1,0 +1,27 @@
+--- /home/nolan/ping/gateway/routes/mission_control.js
++++ /home/nolan/ping/gateway/routes/mission_control.js
+@@ -85,14 +85,19 @@
+         workerActivity: (counts.WORKER_COMPLETED || 0) + (counts.WORKER_FAILED || 0),
+       };
+
+-      // Ensure no negative values
++      // P-20260923-087: negative counters indicate in-window counter drift
++      // (e.g. more REVIEW_RESPONDED than REVIEW_RECEIVED inside the capped
++      // 500-event / 24h window). Silently zeroing them masked the drift and
++      // made a lossy rollup look exact. Surface the clamp as data.
++      const clamped = {};
+       for (const k of Object.keys(business)) {
+-        if (business[k] < 0) business[k] = 0;
++        if (business[k] < 0) { clamped[k] = true; business[k] = 0; }
+       }
+
+       res.json({
+         status: 'ok',
+         dashboard: {
+           business,
++          // Fields listed here were negative before clamping; their zero is
++          // a display floor over a capped window, not a measured zero.
++          clamped,
+           missions: missionStats,
+           eventSummary: { total: totalEvents, count: ev.count, truncated: ev.truncated, byType: counts, window_size_ms: 86400000, cap: 500 },
+           uptime: process.uptime(),

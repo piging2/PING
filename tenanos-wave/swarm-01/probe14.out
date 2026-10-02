@@ -1,0 +1,41 @@
+########## ping_objects.sql tenant ##########
+########## capability_resolver tenant ##########
+########## tool_gateway.js tenant ##########
+########## background_workers.js tenant ##########
+########## routes/mission_control.js endpoints ##########
+62:  router.get('/dashboard', requirePG, async (req, res) => {
+112:  router.get('/business/who-needs-followup', requirePG, async (req, res) => {
+154:  router.get('/business/stalled-estimates', requirePG, async (req, res) => {
+181:  router.get('/business/pending-reviews', requirePG, async (req, res) => {
+206:  router.get('/business/ai-recommendations', requirePG, async (req, res) => {
+236:  router.get('/business/today-work', requirePG, async (req, res) => {
+253:  router.get('/business/unpaid-invoices', requirePG, async (req, res) => {
+277:  router.get('/business/at-risk-projects', requirePG, async (req, res) => {
+305:  router.get('/business/marketing', requirePG, async (req, res) => {
+336:  router.get('/inbox', requirePG, async (req, res) => {
+349:  router.get('/queues', requirePG, async (req, res) => {
+368:  router.get('/queues/:eventType', requirePG, async (req, res) => {
+381:  router.get('/missions/active', requirePG, async (req, res) => {
+390:  router.get('/missions/pending', requirePG, async (req, res) => {
+400:  router.get('/missions/stats', requirePG, async (req, res) => {
+412:  router.get('/missions/:id/trace', requirePG, async (req, res) => {
+427:  router.get('/knowledge', requirePG, async (req, res) => {
+443:  router.get('/system', async (req, res) => {
+474:  router.get('/activity', requirePG, async (req, res) => {
+488:  router.get('/bridge', (req, res) => {
+494:  router.get('/event-mission-bridge', (req, res) => {
+500:  router.get('/scheduler', (req, res) => {
+506:  router.get('/workers', (req, res) => {
+520:  router.get('/replay/stats', requirePG, async (req, res) => {
+568:  router.get('/witness/stats', requirePG, async (req, res) => {
+591:  router.get('/replay/trace/:correlationId', requirePG, async (req, res) => {
+632:  router.get('/dead-letters', async (req, res) => {
+653:  router.get('/dead-letters/stats', async (req, res) => {
+664:  router.get('/dead-letters/:id', async (req, res) => {
+########## event_bridge tenant ##########
+230:   *   event_id UUID PK, event_type, event_version, tenant_id,
+243:      SELECT event_id, event_type, tenant_id, source, actor,
+275:        payload._tenant_id = row.tenant_id;
+289:              tenant_id: row.tenant_id,
+########## unified_event_runtime tenant ##########
+104:    //    privacy boundary (core::<name> | tenant::<id>) is validated at this one

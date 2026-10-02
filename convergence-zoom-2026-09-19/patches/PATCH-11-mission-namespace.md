@@ -1,0 +1,28 @@
+# PATCH-11 — Mission Namespace (durable, creator-populated)
+
+- **AXIOMS CLOSED:** Supports M2 (domain separation declared, not just inherited).
+- **FILES:** `ping-runtime/orchestration/event_to_mission_bridge.js`; `gateway/routes/missions.js`; `ping-runtime/orchestration/mission_runtime.js` (`create()`); new migration SQL.
+- **SYMBOLS:** `namespace`, `core::<name> | tenant::<id>` boundary.
+- **SCHEMA CHANGE:** `ALTER TABLE ping_missions ADD COLUMN namespace TEXT NOT NULL DEFAULT 'core::system';` (also on `ping_mission_obligations`, PATCH-01).
+- **BEFORE:** Namespace IS in the `event_id` preimage (proven: `unified_event_runtime.js:132` -> `generateId`), so event-derived missions are transitively domain-separated. But the separation is inherited, not declared, and the direct HTTP path has no tenant concept: `POST /missions` carries no namespace, identical cross-tenant payloads collapse via ON CONFLICT (Lane C defect 2).
+- **AFTER:** Every mission row carries `namespace`, populated by its creator from an authoritative source, never inferred from payload: bridge from `event.namespace`; HTTP from an explicit `namespace` body field defaulting to `'core::system'`, validated against the `core::<name> | tenant::<id>` boundary (the same boundary UER enforces at its choke point). New-era identity preimage (M-ID-E) folds namespace in directly: `{identity_version, namespace, source_event_id | payload_hash, mission_type, semantic_key}` via `IdentityAuthority.generateId('mission', preimage)` -> `mission_<16hex>` (M-ID-B). Historical bare-16hex IDs never rewritten; the `mission_` prefix makes era confusion impossible by construction.
+- **ALGORITHM:** Column default marks pre-column rows as default-era honestly. HTTP validation rejects malformed namespaces with 400. Identity: canonical preimage serialization (sorted keys) via CanonicalBytes.
+- **PSEUDODIFF:**
+  - Migration: the ADD COLUMN above.
+  - Bridge: `namespace: event.namespace` in the mission INSERT.
+  - Route: `const ns = validateNamespace(body.namespace || 'core::system')`.
+  - `create()`: new-era branch `generateId('mission', {identity_version:'1', namespace: ns, source_event_id, mission_type, semantic_key: ''})`; old bare IDs untouched.
+- **FAIL-BEFORE TEST:** Two tenants POST identical payloads; assert one mission row (documents cross-tenant collapse).
+- **PASS-AFTER TEST:** Same; assert two mission rows with distinct `mission_<16hex>` IDs and correct namespaces; event-derived mission keeps transitive separation AND direct namespace.
+- **CRASH TEST:** n/a.
+- **CONCURRENCY TEST:** n/a.
+- **HISTORY TEST:** Historical rows keep bare IDs and `namespace='core::system'` default (honestly marked); no rewrite.
+- **NAMESPACE TEST:** This IS the namespace test: `tenant::a` and `tenant::b` never share a mission row or identity.
+- **SECURITY TEST:** Namespace validation prevents `../../../`-style or `core::system` spoofing from untrusted callers; the Bearer token scope still gates the route.
+- **DEPENDENCIES:** PATCH-04 (idempotency_key column rides the same migration wave); PATCH-01 (obligation namespace).
+- **MIGRATION:** Additive; default backfills honestly.
+- **ROLLBACK:** Drop column; revert `create()` to the old branch for new rows (old IDs remain valid).
+- **OBSERVABILITY:** Count missions by namespace; alert on `core::system` share dropping unexpectedly (indicates tenant misconfiguration).
+- **RESIDUAL FAILURE:** None identified; the event-path separation was already sound, this declares it and closes the HTTP gap.
+- **COMPLEXITY:** Small (~30 lines + migration).
+- **CONFIDENCE:** High. M-ID-C (full SHA-256) rejected: no need at mission volumes; M-ID-D merged into B.

@@ -1,0 +1,26 @@
+# S18-10b: meta-pass.sh — unique, timezone-stable run IDs (standalone path)
+# Source: ~/workspace/pig-fb/meta-pass.sh (lines 24, 37)
+# Intended target: pig-fb/meta-pass.sh (workspace tooling; not src/tenanos)
+# Seam: SEAM-REPORT.md 2A — RUN_ID=$TS-$SLUG regenerated per invocation collides (BROKEN)
+# Test: run meta-pass.sh <slug> twice within one second -> distinct run_ids, two ledger rows, no clobbered files.
+# Note: TS is also the sidecar "timestamp"; moving it to UTC aligns it with the ledger's UTC timestamps.
+# ---
+--- a/pig-fb/meta-pass.sh
++++ b/pig-fb/meta-pass.sh
+@@ -21,7 +21,10 @@
+ # Exit codes: 0 ok, 3 capture_failed (fail closed), 2 infra.
+ set -u
+ SLUG="$1"
+ JOBFILE="${2:-}"  # optional structured job envelope from new-job.sh
+-TS=$(date +%Y%m%d-%H%M%S)
++# S18-10: UTC + PID suffix. See S18-10a. Without a job file the run_id is
++# minted here; same-second same-slug invocations must not share an identity.
++TS=$(date -u +%Y%m%d-%H%M%S)
+ OUTDIR=/home/hatch/workspace/goals/ping-social-outreach-campaign/hidden_files/meta-ai-intel
+@@ -34,7 +37,7 @@
+ JOB_REF=""
+ MISSION_ID=""
+-RUN_ID="$TS-$SLUG"
++RUN_ID="$TS-$SLUG-$$"
+ if [ -n "$JOBFILE" ]; then
+   [ -f "$JOBFILE" ] || { echo "job file not found: $JOBFILE" >&2; exit 2; }

@@ -1,0 +1,24 @@
+# PATCH-10 — Routing Version (durable routing obligation)
+
+- **AXIOMS CLOSED:** Supports M1, C1 (version pinning makes reconciliation honest).
+- **FILES:** `ping-runtime/orchestration/event_to_mission_bridge.js` (`EVENT_MISSION_MAP`, new `ROUTING_LAW_VERSION`); `ping_mission_obligations` table (PATCH-01); a unit test enforcing the version bump.
+- **SYMBOLS:** `EVENT_MISSION_MAP`, `ROUTING_LAW_VERSION`.
+- **SCHEMA CHANGE:** `routing_version TEXT NOT NULL` on `ping_mission_obligations` (PATCH-01) and additive `ping_missions.routing_version TEXT`.
+- **BEFORE:** `EVENT_MISSION_MAP` is a static const with no version, no history. Git history proves the law is mutable (`LINEAGE_CREATED` made terminal, W-1A added `REPLAY_COMPLETED -> WITNESS_ATTEST`). A reconciler replaying old events through today's law would derive missions never required at event time (e.g. every pre-W-1A REPLAY_COMPLETED spawning WITNESS_ATTEST); replaying through historical laws would resurrect deliberately killed routings.
+- **AFTER:** Every obligation row records the law version that derived it (`routing_version`). Reconciliation of never-derived obligations uses CURRENT law under an explicitly declared contract (an obligation never recorded has no historical record to contradict; current law is the only law the system can honestly claim to enforce; current law is loop-free by construction because each change is reviewed as a law change). (A) routing_version on the event is rejected (would make UER know the bridge's law version: authority violation). (C) immutable semantics falsified by history. (D) historical router versions rejected (resurrects killed routings). Adopted: (B) version on the obligation + (E) explicit current-policy reconciliation.
+- **ALGORITHM:** `ROUTING_LAW_VERSION` constant bumped in the same commit as any `EVENT_MISSION_MAP` change, enforced by a unit test that fails when the map's canonical serialization changes without a version bump. Reconciler logs `(event_id, derived_under_version, current_version)` skew. Guard: law changes that remove routings must drain outstanding obligations first (checklist item in the version-bump test).
+- **PSEUDODIFF:** `const ROUTING_LAW_VERSION = '2026-09-19.1';` beside the map; bridge populates `routing_version` in the obligation INSERT; test: `canonical(map) changed && version unchanged -> fail`.
+- **FAIL-BEFORE TEST:** Reconcile a pre-W-1A REPLAY_COMPLETED under today's map; assert a WITNESS_ATTEST obligation is derived (documents the unversioned behavior).
+- **PASS-AFTER TEST:** Same; assert the obligation is derived (declared current-policy) AND pinned to the current version, with the skew logged.
+- **CRASH TEST:** n/a.
+- **CONCURRENCY TEST:** n/a.
+- **HISTORY TEST:** Historical missions get `routing_version=NULL` (honestly pre-version era); the version-bump test only constrains future changes.
+- **NAMESPACE TEST:** n/a (routing is global; obligations carry namespace separately).
+- **SECURITY TEST:** The map is code, not data; only deploys change it.
+- **DEPENDENCIES:** PATCH-01 (the obligation table carries the column).
+- **MIGRATION:** Additive column; constant + test.
+- **ROLLBACK:** Remove the constant; column stays (harmless).
+- **OBSERVABILITY:** Skew log `(event_id, derived_under_version, current_version)`; alert if a version bump ships without the drain checklist.
+- **RESIDUAL FAILURE:** Current-policy reconciliation can derive a mission for an old event that "would not have been required then" (accepted explicitly; the alternative resurrects killed routings, which is worse). Non-monotone law removals need the drain guard.
+- **COMPLEXITY:** Trivial (~10 lines + test).
+- **CONFIDENCE:** High.

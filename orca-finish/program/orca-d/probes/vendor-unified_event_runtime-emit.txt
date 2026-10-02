@@ -1,0 +1,61 @@
+  async emit(eventType, source, payload, options = {}) {
+    // 1. Generate deterministic event_id (content-based, no Date.now()).
+    //    Identity material = { eventType, source, [namespace], [logical_id|payload] }.
+    //    Namespace + logical_id are only included when provided, so legacy callers
+    //    keep their existing event IDs (idempotent retries preserved).
+    //    logical_id is the timestamp-stripped logical identity — two emissions of the
+    //    same logical event (even with different timestamps in payload) hash identically.
+    const identity = { eventType, source };
+    if (options.namespace) identity.namespace = options.namespace;
+    identity[options.logical_id ? 'logical_id' : 'payload'] = options.logical_id || payload;
+    // Canonical identity (convergence 2026-09-18): route through the in-repo canonical
+    // primitive. CanonicalBytes.serialize() sorts keys recursively, so identity is a
+    // pure function of content regardless of caller key order (JSON.stringify was
+    // insertion-order dependent for nested payloads). NEW EVENTS ONLY: historical
+    // ping_events rows keep their existing 64-hex IDs (frozen, era-marked). New IDs
+    // are `event_` + 16 hex chars, making the scheme era self-identifying at the ID level.
+    const eventId = identityAuthority.generateId('event', identity);
+
+    // 2. Validate event type
+    if (this._eventValidator) {
+      if (typeof this._eventValidator.validateEventType === 'function') {
+        const validation = this._eventValidator.validateEventType(eventType);
+        if (!validation.valid) {
+          this._stats.failed++;
+          return { status: 'error', error: validation.error, eventId };
+        }
+      } else if (typeof this._eventValidator.isRegistered === 'function') {
+        if (!this._eventValidator.isRegistered(eventType)) {
+          this._stats.failed++;
+          return { status: 'error', error: `Unknown event_type: ${eventType}`, eventId };
+        }
+      }
+    }
+
+    // 3. Check governance (skip for bridge-sourced events that are already governed).
+    //    Namespace is resolved exactly once here — the spine is the single owner of
+    //    the 'core::system' default — and passed into governance so the canonical
+    //    privacy boundary (core::<name> | tenant::<id>) is validated at this one
+    //    choke point rather than re-derived by every downstream caller.
+    const namespace = options.namespace || 'core::system';
+    if (this._eventGovernance && !options._skipGovernance) {
+      const governance = this._eventGovernance.validateEvent({
+        event_type: eventType,
+        source,
+        payload,
+        namespace,
+      });
+      if (!governance.valid) {
+        this._stats.failed++;
+        // _reject() returns { errors:[reason], code } — surface the reason string.
+        const reason = governance.error || (governance.errors && governance.errors[0]) || 'Governance violation';
+        return { status: 'error', error: reason, code: governance.code, eventId };
+      }
+    }
+
+    // 4. Build canonical event (namespace resolved in step 3)
+    //    Confidence is optional — producers that compute it pass it via options.metadata.confidence.
+    //    The spine carries but does NOT compute confidence; each worker re-evaluates at its hop.
+    const event = {
+      event_id: eventId,
+      event_type: eventType,

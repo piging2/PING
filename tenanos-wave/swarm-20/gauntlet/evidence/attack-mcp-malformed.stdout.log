@@ -1,0 +1,14 @@
+[2026-09-24T01:51:02.202Z] START: run gauntlet-attack-mcp-malformed; tenant=gauntlet-tenant-mcp-malformed; objective 7d900ea63d94 (state=ACTIVE)
+[2026-09-24T01:51:02.205Z] LOCK: coordinator lease acquired (pid 99509)
+[2026-09-24T01:51:02.218Z] RECONCILE: 0 durable work order(s) for objective 7d900ea63d94
+[2026-09-24T01:51:02.228Z] MEMORY: retrieved 1 active, excluded 0 stale, contradictory=false
+[2026-09-24T01:51:02.238Z] PLAN: t1: work_order_id=cf1c5a927a94...
+[2026-09-24T01:51:02.241Z] BUDGET: t1: durable usage 0/2
+[2026-09-24T01:51:02.244Z] POLICY: t1: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:51:02.248Z] ISSUE: t1: work order issued (durable=cf1c5a927a94..., adapter=a87767648941...)
+[2026-09-24T01:51:02.262Z] DISPATCH: t1: spawned synthetic worker pid 99519 (attempt 1, fault=honest)
+[2026-09-24T01:51:03.035Z] VERIFY: t1: WORKER_FAILED event_id=e2f71ab5c653... deduplicated=false
+[2026-09-24T01:51:03.038Z] RETRY: t1: attempt 2 (same durable work_order_id, idempotent)
+[2026-09-24T01:51:03.068Z] DISPATCH: t1: spawned synthetic worker pid 99538 (attempt 2, fault=honest)
+[2026-09-24T01:51:03.541Z] VERIFY: t1: WORKER_FAILED event_id=d6fd9a6ad5ff... deduplicated=false
+[2026-09-24T01:51:03.554Z] ESCALATE: worker failed and retry budget exhausted for t1: MCP tool returned malformed result

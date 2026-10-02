@@ -1,0 +1,590 @@
+diff --git a/src/tenanos/tenant/tenant-context.ts b/src/tenanos/tenant/tenant-context.ts
+new file mode 100644
+index 0000000..f73ffbb
+--- /dev/null
++++ b/src/tenanos/tenant/tenant-context.ts
+@@ -0,0 +1,148 @@
++/**
++ * TenantContext carrier for the TenantOS execution substrate.
++ *
++ * The substrate has two parallel tenant mechanisms with no canonical mapping:
++ *   (a) `tenant_id` columns  (canonical_events, tenant_registry, ...)
++ *   (b) `tenant::<id>` namespace strings (ingest, knowledge, memory, evidence)
++ * This module defines the ONE canonical mapping between them and the
++ * fail-closed context object every substrate hop must carry.
++ *
++ * Canonical rule: the tenant identity string IS `tenant::<slug>`.
++ *   tenantIdToNamespace('acme')          -> 'tenant::acme'
++ *   namespaceToTenantId('tenant::acme')  -> 'acme'
++ *   namespaceToTenantId('core::system')  -> null  (system scope, not a tenant)
++ *
++ * Fail-closed: a missing or mismatched context throws TenantBoundaryError.
++ * A cross-tenant reference is REFUSED, never answered with an empty result.
++ *
++ * Harvested from the live substrate (swarm-01 BOUNDARY-MAP.md, 2026-09-23):
++ *   - EvidenceAuthority's NAMESPACE_RE shape check (kept, not duplicated)
++ *   - tenant_registry docstring `tenant://{id}` vs `tenant::<id>` vs bare
++ *     `tenant_id`: three spellings collapsed to the canonical `tenant::<slug>`.
++ */
++
++export const TENANT_SLUG_PATTERN = /^[a-z0-9-]{1,64}$/;
++export const NAMESPACE_RE = /^(core|tenant)::[a-zA-Z0-9_-]+$/;
++
++export type TenantBoundaryCode =
++  | 'TENANT_CONTEXT_MISSING'
++  | 'CROSS_TENANT_REFERENCE'
++  | 'INVALID_TENANT_ID';
++
++export class TenantBoundaryError extends Error {
++  readonly code: TenantBoundaryCode;
++  /**
++   * @param code - the boundary violated
++   * @param message - names the boundary, never the other tenant's data
++   */
++  constructor(code: TenantBoundaryCode, message: string) {
++    super(message);
++    this.name = 'TenantBoundaryError';
++    this.code = code;
++  }
++}
++
++export interface TenantContext {
++  readonly tenantId: string;
++  readonly namespace: string;
++  readonly actorId: string | null;
++}
++
++/**
++ * Canonical mapping: tenant slug -> namespace string.
++ * Throws INVALID_TENANT_ID on a malformed slug (fail closed, no silent coerce).
++ */
++export function tenantIdToNamespace(tenantId: string): string {
++  if (typeof tenantId !== 'string' || !TENANT_SLUG_PATTERN.test(tenantId)) {
++    throw new TenantBoundaryError(
++      'INVALID_TENANT_ID',
++      `invalid tenant id (must match ${TENANT_SLUG_PATTERN})`,
++    );
++  }
++  return `tenant::${tenantId}`;
++}
++
++/**
++ * Canonical mapping: namespace string -> tenant slug, or null for core::*.
++ * Returns null (not throw) for core::* — system scope is a valid non-tenant scope.
++ */
++export function namespaceToTenantId(namespace: string): string | null {
++  if (typeof namespace !== 'string' || !NAMESPACE_RE.test(namespace)) {
++    throw new TenantBoundaryError(
++      'INVALID_TENANT_ID',
++      'invalid namespace (must be core::<name> or tenant::<id>)',
++    );
++  }
++  const [kind, id] = namespace.split('::');
++  if (kind !== 'tenant') return null;
++  if (typeof id !== 'string' || !TENANT_SLUG_PATTERN.test(id)) {
++    throw new TenantBoundaryError(
++      'INVALID_TENANT_ID',
++      'tenant namespace id is not a valid tenant slug',
++    );
++  }
++  return id;
++}
++
++export interface BindTenantContextOptions {
++  tenantId: string;
++  actorId?: string;
++}
++
++/**
++ * Create a TenantContext from TRUSTED inputs only (server-side resolution:
++ * authenticated principal -> tenant registry). Never build one from a raw
++ * request body field.
++ */
++export function bindTenantContext(
++  options: BindTenantContextOptions = {} as BindTenantContextOptions,
++): TenantContext {
++  const { tenantId, actorId } = options;
++  const namespace = tenantIdToNamespace(tenantId); // throws on bad input
++  return Object.freeze({ tenantId, namespace, actorId: actorId ?? null });
++}
++
++/**
++ * Fail-closed accessor: throws TENANT_CONTEXT_MISSING unless ctx is a
++ * well-formed TenantContext. Every substrate hop calls this before touching
++ * tenant-owned state.
++ */
++export function requireTenantContext(ctx: unknown): TenantContext {
++  if (!ctx || typeof ctx !== 'object') {
++    throw new TenantBoundaryError(
++      'TENANT_CONTEXT_MISSING',
++      'tenant context is required and was not provided',
++    );
++  }
++  // Re-validate: never trust a context object that was not built by bindTenantContext.
++  const candidate = ctx as Partial<TenantContext>;
++  if (typeof candidate.tenantId !== 'string') {
++    throw new TenantBoundaryError(
++      'TENANT_CONTEXT_MISSING',
++      'tenant context carries no tenant id',
++    );
++  }
++  const namespace = tenantIdToNamespace(candidate.tenantId);
++  if (candidate.namespace !== namespace) {
++    throw new TenantBoundaryError(
++      'TENANT_CONTEXT_MISSING',
++      'tenant context failed integrity check',
++    );
++  }
++  return { tenantId: candidate.tenantId, namespace, actorId: candidate.actorId ?? null };
++}
++
++/**
++ * Refuse cross-tenant access. Throws CROSS_TENANT_REFERENCE on mismatch;
++ * never returns an empty result as a hiding place (SOUL #11).
++ */
++export function assertSameTenant(ctx: unknown, tenantId: string): TenantContext {
++  const c = requireTenantContext(ctx);
++  if (c.tenantId !== tenantId) {
++    throw new TenantBoundaryError(
++      'CROSS_TENANT_REFERENCE',
++      'tenant boundary refusal: context tenant does not match target tenant',
++    );
++  }
++  return c;
++}
+
+diff --git a/src/tenanos/tenant/namespace-binding.ts b/src/tenanos/tenant/namespace-binding.ts
+new file mode 100644
+index 0000000..cea51bf
+--- /dev/null
++++ b/src/tenanos/tenant/namespace-binding.ts
+@@ -0,0 +1,105 @@
++/**
++ * Namespace binding policy for the canonical boundary.
++ *
++ * Problem (proven 2026-09-23, swarm-01): CanonicalizationService.resolveNamespace
++ * accepts an explicit `requested` namespace override from ANY source with only a
++ * format check. Any unauthenticated caller of POST /ingest can emit canonical
++ * events into any tenant's namespace (`tenant::<victim>`). The "authorize" in
++ * authorizeNamespace is a misnomer: it validates shape, not authority.
++ *
++ * This module is the binding POLICY. CanonicalizationService keeps ownership of
++ * resolution (single owner, no competing implementation); its authorizeNamespace
++ * delegates the allow/deny decision here. Bindings are source -> permitted
++ * namespace(s), registered by the platform operator (from tenant registry),
++ * never by the caller.
++ *
++ * REFACTOR (not replace): resolveNamespace keeps its signature and remains the
++ * one choke point; only the override branch changes from "requested wins" to
++ * "requested wins iff bound".
++ */
++
++import { NAMESPACE_RE, tenantIdToNamespace } from './tenant-context';
++
++export interface AuthorizeDecision {
++  authorized: boolean;
++  namespace?: string;
++  reason?: string;
++}
++
++export interface NamespaceBinder {
++  authorize(source: string, requested?: string | null): AuthorizeDecision;
++  bindSource(source: string, namespaces: string | string[]): void;
++  bindSourceToTenant(source: string, tenantId: string): void;
++}
++
++export interface NamespaceBinderOptions {
++  /** bindings: { [source]: namespace | namespace[] } — namespaces this source may emit into. */
++  bindings?: Record<string, string | string[]>;
++  defaultNamespace?: string;
++}
++
++export function createNamespaceBinder(
++  options: NamespaceBinderOptions = {},
++): NamespaceBinder {
++  const { bindings = {}, defaultNamespace = 'core::owner' } = options;
++  const table = new Map<string, Set<string>>();
++  for (const [source, ns] of Object.entries(bindings)) {
++    table.set(source, new Set(Array.isArray(ns) ? ns : [ns]));
++  }
++
++  function isValidNamespace(ns: unknown): ns is string {
++    return typeof ns === 'string' && NAMESPACE_RE.test(ns);
++  }
++
++  /**
++   * Decide whether `source` may emit into `requested`.
++   * Priority: bound explicit override > per-source default > global default.
++   * An explicit override for a namespace the source is NOT bound to is DENIED
++   * (this is the behavior change vs the current honor system).
++   */
++  function authorize(source: string, requested?: string | null): AuthorizeDecision {
++    if (requested !== undefined && requested !== null) {
++      if (!isValidNamespace(requested)) {
++        return {
++          authorized: false,
++          reason: `Invalid namespace: '${requested}' (must be core::<name> or tenant::<id>)`,
++        };
++      }
++      const allowed = table.get(source);
++      if (allowed && allowed.has(requested)) {
++        return { authorized: true, namespace: requested };
++      }
++      return {
++        authorized: false,
++        reason: `source '${source}' is not bound to namespace '${requested}'`,
++      };
++    }
++    const allowed = table.get(source);
++    if (allowed && allowed.size > 0) {
++      const first = [...allowed][0];
++      return { authorized: true, namespace: first as string };
++    }
++    return { authorized: true, namespace: defaultNamespace };
++  }
++
++  /** Operator-side registration: bind a source to the namespaces it may use. */
++  function bindSource(source: string, namespaces: string | string[]): void {
++    if (typeof source !== 'string' || !source) {
++      throw new Error('bindSource: source required');
++    }
++    const list = (Array.isArray(namespaces) ? namespaces : [namespaces]).filter(
++      isValidNamespace,
++    );
++    if (list.length === 0) {
++      throw new Error('bindSource: at least one valid namespace required');
++    }
++    table.set(source, new Set(list));
++  }
++
++  /** Convenience: bind a source to exactly its tenant's namespace. */
++  function bindSourceToTenant(source: string, tenantId: string): void {
++    bindSource(source, tenantIdToNamespace(tenantId));
++  }
++
++  return { authorize, bindSource, bindSourceToTenant };
++}
+
+diff --git a/src/tenanos/tenant/bridge-tenant.ts b/src/tenanos/tenant/bridge-tenant.ts
+new file mode 100644
+index 0000000..6958f38
+--- /dev/null
++++ b/src/tenanos/tenant/bridge-tenant.ts
+@@ -0,0 +1,72 @@
++/**
++ * Tenant propagation for the canonical -> spine event bridge.
++ *
++ * Problem (proven 2026-09-23, swarm-01): EventBridge._bridgeCanonicalEvents
++ * reads tenant_id from canonical_events, stashes it in payload._tenant_id and
++ * metadata.tenant_id, then calls UnifiedEventRuntime.emit WITHOUT options.namespace.
++ * UnifiedEventRuntime.emit resolves `options.namespace || 'core::system'`, so
++ * every bridged tenant event is re-namespaced to core::system: system-namespace
++ * laundering. Downstream (event->mission bridge, scheduler, workers) then
++ * faithfully preserves the WRONG namespace via payload.namespace / BaseWorker._emit.
++ *
++ * This module derives the emit options the bridge must pass so the tenant
++ * survives as the enforced namespace, not just as inert metadata.
++ *
++ * Unknown-tenant policy: when row.tenant_id is null/empty the bridge cannot
++ * invent a tenant. It keeps the 'core::system' default (current behavior) but
++ * tags metadata.tenant_unknown=true so the laundering is OBSERVABLE instead
++ * of silent. A fail-closed refusal here would wedge the background worker;
++ * observability is the correct worker posture.
++ */
++
++import { tenantIdToNamespace, NAMESPACE_RE } from './tenant-context';
++
++export const SYSTEM_NAMESPACE = 'core::system';
++
++export interface TenantNamespaceResolution {
++  namespace: string;
++  tenantUnknown: boolean;
++}
++
++/**
++ * Map a canonical_events tenant_id value to the enforced namespace.
++ * Accepts both the canonical 'tenant::<slug>' form and a bare slug.
++ */
++export function namespaceForTenantId(tenantId: unknown): TenantNamespaceResolution {
++  if (tenantId === null || tenantId === undefined || tenantId === '') {
++    return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++  }
++  const raw = String(tenantId);
++  if (NAMESPACE_RE.test(raw)) return { namespace: raw, tenantUnknown: false };
++  try {
++    return { namespace: tenantIdToNamespace(raw), tenantUnknown: false };
++  } catch {
++    return { namespace: SYSTEM_NAMESPACE, tenantUnknown: true };
++  }
++}
++
++export interface CanonicalEventRow {
++  tenant_id: unknown;
++}
++
++export interface EmitBaseOptions {
++  metadata?: Record<string, unknown>;
++  [key: string]: unknown;
++}
++
++/**
++ * Build the options object for UnifiedEventRuntime.emit from a canonical_events
++ * row, preserving the tenant as the enforced namespace.
++ *
++ * Integration (event_bridge.js, _bridgeCanonicalEvents): pass the returned
++ * `namespace` into the existing emit options object alongside _skipGovernance.
++ */
++export function emitOptionsForCanonicalRow<TBase extends EmitBaseOptions>(
++  row: CanonicalEventRow,
++  baseOptions: TBase = {} as TBase,
++): TBase & { namespace: string; metadata: Record<string, unknown> } {
++  const { namespace, tenantUnknown } = namespaceForTenantId(row.tenant_id);
++  const metadata: Record<string, unknown> = { ...(baseOptions.metadata ?? {}) };
++  if (tenantUnknown) metadata.tenant_unknown = true;
++  return { ...baseOptions, namespace, metadata };
++}
+
+diff --git a/src/tenanos/tenant/tenant-scope.ts b/src/tenanos/tenant/tenant-scope.ts
+new file mode 100644
+index 0000000..3c6c046
+--- /dev/null
++++ b/src/tenanos/tenant/tenant-scope.ts
+@@ -0,0 +1,82 @@
++/**
++ * Tenant scoping helpers for substrate read paths.
++ *
++ * Backend half of the P-20260923-088 contract (swarm-08 PROJECTION-WIRING.md):
++ * the 088 spec requires every projection query to take a resolved tenant_id
++ * and enforce it (default-deny on the event query; tenant_id column or
++ * payload->>'namespace' scoping on missions; namespace passed to knowledge
++ * queries). These helpers give every read path the same predicate
++ * construction. They are additive: query builders keep ownership of their
++ * SQL; they just append the clause produced here.
++ *
++ * Interim mission filtering reads payload._tenant_id (written by the bridge
++ * today) until a tenant_id column lands on ping_missions.
++ */
++
++import {
++  tenantIdToNamespace,
++  requireTenantContext,
++  TenantContext,
++} from './tenant-context';
++
++export interface SqlPredicate {
++  clause: string;
++  params: string[];
++}
++
++/**
++ * SQL predicate for namespace-scoped tables (ping_events).
++ * e.g. { clause: 'namespace = $3', params: ['tenant::acme'] }
++ */
++export function namespacePredicate(ctx: unknown, paramIndex = 1): SqlPredicate {
++  const c: TenantContext = requireTenantContext(ctx);
++  return { clause: `namespace = $${paramIndex}`, params: [c.namespace] };
++}
++
++/**
++ * SQL predicate for tenant_id-column tables (canonical_events).
++ */
++export function tenantIdPredicate(ctx: unknown, paramIndex = 1): SqlPredicate {
++  const c: TenantContext = requireTenantContext(ctx);
++  return { clause: `tenant_id = $${paramIndex}`, params: [c.tenantId] };
++}
++
++export interface MissionRow {
++  mission_id?: string;
++  payload?: unknown;
++}
++
++/**
++ * Interim in-memory filter for ping_missions rows whose tenant survives only
++ * as payload._tenant_id. Rows with no tenant marker are treated as SYSTEM
++ * scope and are visible only to a system (non-tenant) caller, never to a
++ * tenant caller. Throws on cross-tenant access instead of returning [].
++ */
++export function filterMissionsByTenant(
++  missions: MissionRow[] | null | undefined,
++  ctx: unknown,
++): MissionRow[] {
++  const c: TenantContext = requireTenantContext(ctx);
++  const wanted = tenantIdToNamespace(c.tenantId);
++  return (missions ?? []).filter((m) => {
++    let payload: unknown = m.payload;
++    if (typeof payload === 'string') {
++      try {
++        payload = JSON.parse(payload);
++      } catch {
++        payload = {};
++      }
++    }
++    const record =
++      payload !== null && typeof payload === 'object'
++        ? (payload as Record<string, unknown>)
++        : {};
++    const marker = record._tenant_id ?? record.tenant_id;
++    if (marker === undefined || marker === null || marker === '') return false; // unmarked missions are system scope: invisible to tenants
++    const markerStr = String(marker);
++    const ns = markerStr.startsWith('tenant::')
++      ? markerStr
++      : tenantIdToNamespace(markerStr);
++    return ns === wanted;
++  });
++}
+
+diff --git a/src/tenanos/__tests__/tenant-kit.test.ts b/src/tenanos/__tests__/tenant-kit.test.ts
+new file mode 100644
+index 0000000..5a48d57
+--- /dev/null
++++ b/src/tenanos/__tests__/tenant-kit.test.ts
+@@ -0,0 +1,149 @@
++/**
++ * Tenant boundary kit tests (swarm-01).
++ * Runs under the scoped substrate config src/tenanos/jest.config.cjs
++ * (testEnvironment node, ts-jest strict). Covers the additive kit only; the
++ * attack scripts in ~/workspace/tenanos-wave/swarm-01/tests cover the existing
++ * substrate code paths this kit hardens.
++ */
++import { describe, test, expect } from '@jest/globals';
++import {
++  TENANT_SLUG_PATTERN,
++  TenantBoundaryError,
++  tenantIdToNamespace,
++  namespaceToTenantId,
++  bindTenantContext,
++  requireTenantContext,
++  assertSameTenant,
++} from '../tenant/tenant-context';
++import { createNamespaceBinder } from '../tenant/namespace-binding';
++import {
++  namespaceForTenantId,
++  emitOptionsForCanonicalRow,
++} from '../tenant/bridge-tenant';
++import {
++  namespacePredicate,
++  tenantIdPredicate,
++  filterMissionsByTenant,
++} from '../tenant/tenant-scope';
++
++describe('tenant-context', () => {
++  test('canonical mapping tenant slug <-> namespace', () => {
++    expect(tenantIdToNamespace('acme')).toBe('tenant::acme');
++    expect(namespaceToTenantId('tenant::acme')).toBe('acme');
++    expect(namespaceToTenantId('core::system')).toBeNull();
++    expect(TENANT_SLUG_PATTERN.test('acme')).toBe(true);
++  });
++  test('invalid slugs fail closed', () => {
++    expect(() => tenantIdToNamespace('ACME')).toThrow(TenantBoundaryError);
++    expect(() => tenantIdToNamespace('../../etc')).toThrow(TenantBoundaryError);
++    expect(() => tenantIdToNamespace('')).toThrow(TenantBoundaryError);
++  });
++  test('bind/require round-trip; tampered context refused', () => {
++    const ctx = bindTenantContext({ tenantId: 'acme', actorId: 'op-1' });
++    expect(requireTenantContext(ctx).tenantId).toBe('acme');
++    expect(() => requireTenantContext(null)).toThrow(TenantBoundaryError);
++    expect(() =>
++      requireTenantContext({ ...ctx, namespace: 'tenant::victim' }),
++    ).toThrow(TenantBoundaryError);
++  });
++  test('assertSameTenant refuses cross-tenant, never empty', () => {
++    const ctx = bindTenantContext({ tenantId: 'acme' });
++    expect(assertSameTenant(ctx, 'acme').tenantId).toBe('acme');
++    expect(() => assertSameTenant(ctx, 'victim')).toThrow(TenantBoundaryError);
++    try {
++      assertSameTenant(ctx, 'victim');
++      throw new Error('should have thrown');
++    } catch (e) {
++      expect((e as TenantBoundaryError).code).toBe('CROSS_TENANT_REFERENCE');
++    }
++  });
++});
++
++describe('namespace-binding', () => {
++  test('unbound explicit override is DENIED (the honor-system fix)', () => {
++    const binder = createNamespaceBinder({
++      bindings: { 'review-emitter': ['tenant::acme'] },
++    });
++    const denied = binder.authorize('attacker-source', 'tenant::victim');
++    expect(denied.authorized).toBe(false);
++    expect(denied.reason).toMatch(/not bound/);
++  });
++  test('bound override allowed; per-source default; global default', () => {
++    const binder = createNamespaceBinder({
++      bindings: { 'review-emitter': ['tenant::acme'] },
++    });
++    expect(binder.authorize('review-emitter', 'tenant::acme')).toEqual({
++      authorized: true,
++      namespace: 'tenant::acme',
++    });
++    expect(binder.authorize('review-emitter')).toEqual({
++      authorized: true,
++      namespace: 'tenant::acme',
++    });
++    expect(binder.authorize('unknown-source')).toEqual({
++      authorized: true,
++      namespace: 'core::owner',
++    });
++  });
++  test('malformed namespace denied, not coerced', () => {
++    const binder = createNamespaceBinder({});
++    expect(binder.authorize('s', 'not a namespace').authorized).toBe(false);
++  });
++  test('bindSourceToTenant maps slug to canonical namespace', () => {
++    const binder = createNamespaceBinder({});
++    binder.bindSourceToTenant('billing-emitter', 'acme');
++    expect(binder.authorize('billing-emitter', 'tenant::acme').authorized).toBe(
++      true,
++    );
++    expect(binder.authorize('billing-emitter', 'tenant::victim').authorized).toBe(
++      false,
++    );
++  });
++});
++
++describe('bridge-tenant', () => {
++  test('canonical row tenant_id becomes enforced namespace', () => {
++    const opts = emitOptionsForCanonicalRow(
++      { tenant_id: 'tenant::acme' },
++      { _skipGovernance: true },
++    );
++    expect(opts.namespace).toBe('tenant::acme');
++    expect(opts._skipGovernance).toBe(true);
++    expect(opts.metadata.tenant_unknown).toBeUndefined();
++  });
++  test('bare slug tenant_id is canonicalized', () => {
++    expect(namespaceForTenantId('acme').namespace).toBe('tenant::acme');
++  });
++  test('unknown tenant stays system-scoped but OBSERVABLE', () => {
++    const opts = emitOptionsForCanonicalRow({ tenant_id: null }, {});
++    expect(opts.namespace).toBe('core::system');
++    expect(opts.metadata.tenant_unknown).toBe(true);
++  });
++});
++
++describe('tenant-scope', () => {
++  const ctx = bindTenantContext({ tenantId: 'acme' });
++  test('predicates build the right clauses', () => {
++    expect(namespacePredicate(ctx, 3)).toEqual({
++      clause: 'namespace = $3',
++      params: ['tenant::acme'],
++    });
++    expect(tenantIdPredicate(ctx, 2)).toEqual({
++      clause: 'tenant_id = $2',
++      params: ['acme'],
++    });
++  });
++  test('mission filter keeps own tenant, drops others and unmarked', () => {
++    const missions = [
++      { mission_id: 'm1', payload: JSON.stringify({ _tenant_id: 'tenant::acme' }) },
++      { mission_id: 'm2', payload: JSON.stringify({ _tenant_id: 'tenant::victim' }) },
++      { mission_id: 'm3', payload: JSON.stringify({}) },
++    ];
++    const kept = filterMissionsByTenant(missions, ctx);
++    expect(kept.map((m) => m.mission_id)).toEqual(['m1']);
++  });
++  test('scope helpers fail closed without context', () => {
++    expect(() => namespacePredicate(null)).toThrow(TenantBoundaryError);
++    expect(() => filterMissionsByTenant([], null)).toThrow(TenantBoundaryError);
++  });
++});

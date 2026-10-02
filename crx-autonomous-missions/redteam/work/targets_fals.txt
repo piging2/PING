@@ -1,0 +1,132 @@
+====================================================================================================
+ID: O-1
+--- FALSIFICATION_TEST ---
+Kill a worker mid-run; a fresh worker must reconstruct run identity, status, and worktree from durable state alone with no coordinator explanation.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: closes proven gap #3; makes workers disposable; prerequisite for rehydration protocol and interruption experiments. | Low: schema plus store methods; implement as run-scoped namespace of the canonical PG event journal, not a second SQLite writer.
+====================================================================================================
+ID: orka-write-once-execution-binding
+--- FALSIFICATION_TEST ---
+Change the agent profile mid-attempt and retry; the retry must either reuse the original frozen binding or create a new attempt with a new binding. If a retry runs under silently changed routing, the binding is not authoritative.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high. Turns per-attempt identity from implicit to durable; enables honest retry, cancellation, and settlement semantics. | Medium. Add a write-once run-binding event type to the journal and enforce that dispatchers build only from immutable snapshots of it.
+====================================================================================================
+ID: orka-outcome-unknown-fail-closed
+--- FALSIFICATION_TEST ---
+Kill the coordinator after the request-write boundary and restart it. The attempt must end OutcomeUnknown with the unknown marker and no replacement attempt. If a replacement is allocated or the record reads as success or empty, the mechanism failed.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high. Eliminates the most dangerous silent-failure mode in autonomous missions: unknown work reported as success. | Low to medium. Add the terminal state to the attempt outcome enum and enforce the no-replay rule in the recovery path.
+====================================================================================================
+ID: orka-single-control-authority
+--- FALSIFICATION_TEST ---
+Write to the auxiliary store while the control authority is unavailable. The write must fail or be fenced, never commit independently. If it commits, there are two authorities.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High as a design constraint: prevents the most expensive architectural mistake (competing truths) before it is made. | None as a guardrail; it constrains how other mechanisms are integrated.
+====================================================================================================
+ID: oa-tool-invocation-identity
+--- FALSIFICATION_TEST ---
+Implement the normalizer, then feed the same arguments with different JSON key order and whitespace and assert identical fingerprints; assert that dropping an argument field changes the fingerprint; assert unrecognized raw types return None instead of raising.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: gives CRX the missing per-attempt tool identity with retry-stable dedupe and scope-safe approval binding. | Low-moderate: port the normalization+fingerprint functions into CRX canonicalization as a ToolAttempt identity layer; wire into existing event canonicalization.
+====================================================================================================
+ID: oa-approval-scope-fingerprint
+--- FALSIFICATION_TEST ---
+Grant always_approve for tool A, then invoke tool A with a different MCP server_label and assert the cached approval does not apply; assert approval scope resolution returns None for a call missing its lookup key.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Medium-high: closes part of the action-level authorization gap with a proven two-level key design. | Moderate: add an authorization-scope key to CRX worker tool calls, derived from the canonicalized tool reference rather than the attempt ID.
+====================================================================================================
+ID: oa-tool-invocation-ledger
+--- FALSIFICATION_TEST ---
+Serialize a RunState mid-run, restore it, and assert the invocation ledger round-trips with executed/completed flags intact; inject a duplicate call ID across a nested agent-tool run and assert UserError.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: directly addresses CRX's no-durable-per-attempt-Run-identity gap. | Moderate: add executed/completed lifecycle to CRX tool-attempt events and a run-scoped projection; adopt the duplicate-call-ID loud-failure rule.
+====================================================================================================
+ID: oa-guardrail-tripwire-audit
+--- FALSIFICATION_TEST ---
+Trip an output guardrail and assert the result appears in both the span data (triggered=true) and the results sink despite the exception; assert sibling guardrails are cancelled, not leaked.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Medium: turns verification from a gate into auditable evidence. | Low-moderate: adopt the record-before-raise sink discipline for CRX verification checkpoints; map tripwire types onto CRX typed failures.
+====================================================================================================
+ID: RESTATE-INVOCATION-ID
+--- FALSIFICATION_TEST ---
+Generate 1M attempt IDs; assert uniqueness, correct embedded mission ID, and that attempt lookup by ID needs no secondary index.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: the identity foundation everything else (journal, heartbeats, signals, approval) keys off. Without it, none of the other mechanisms have a stable subject. | Low: define the attempt-ID format and use it as the primary key of the attempt record and step journal.
+====================================================================================================
+ID: LANGGRAPH-INTERRUPT
+--- FALSIFICATION_TEST ---
+Raise two interrupts in one node, checkpoint, kill, resume with Command(resume={id1: a1}); assert id2 still pending, id1 resolved with schema-validated a1, and replay of the checkpoint reproduces both interrupts.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high: the approval primitive with the best replay story (interrupts survive in checkpoints; resume is data). | Medium: interrupt as a first-class journal/checkpoint entry + typed resume command. MIT code referenceable.
+====================================================================================================
+ID: DBOS-STEP-RECORDING
+--- FALSIFICATION_TEST ---
+Crash between an external API call and its step record; assert recovery re-executes the call AND the journal shows the step as at-least-once (not silently exactly-once). Crash between a DB-backed step's commit and record; assert atomicity holds (both or neither).
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high: the precise, honest treatment of UNKNOWN_OUTCOME: shrink the window with atomic recording, label what remains, never pretend at-least-once is exactly-once. | Medium: step journal with per-step effect-class labels; atomic spawn recording. MIT code referenceable.
+====================================================================================================
+ID: ORCA-14
+--- FALSIFICATION_TEST ---
+Complete a lane while the orchestrator idles: the watcher must print exactly one line for the transition and nothing else; kill the watcher: the event must still be drainable from the queue.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Medium: the pattern (terminal-transition wakeups + exact-command handoff) applies to any CRX persistent-coordinator design; the polling implementation is a stopgap. | Low for the pattern; the CLI itself is Orca-specific.
+====================================================================================================
+ID: LETTA-GIT-MEMORY
+--- FALSIFICATION_TEST ---
+letta/services/block_manager_git.py exists with GitEnabledBlockManager, get_block_at_commit, get_block_history, and the 'write to git first, sync PG as cache' docstring.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high: fixes correction survival, the exact gap CRX's audit named. | High: git/object-store backend + cache-sync discipline per memory scope.
+====================================================================================================
+ID: GRAPHITI-BITEMPORAL-INVALIDATE
+--- FALSIFICATION_TEST ---
+graphiti_core/edges.py EntityEdge has valid_at/invalid_at/expired_at fields; edge_operations.py resolve_edge_contradictions sets edge.invalid_at = resolved_edge.valid_at and never deletes.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Very high: the strongest correction/contradiction mechanism found in any source. | Medium: bi-temporal fields on knowledge records + deterministic invalidation pass on write.
+====================================================================================================
+ID: MEM0-EXPIRATION
+--- FALSIFICATION_TEST ---
+mem0/memory/main.py defines _normalize_expiration_date, _payload_is_expired, and show_expired=False defaults on search/get_all.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: cheapest credible answer to the no-forgetting gap. | Low: add expiration_date to memory schema + filter in projections.
+====================================================================================================
+ID: MEMORYBANK-EBBINGHAUS
+--- FALSIFICATION_TEST ---
+memory_bank/memory_retrieval/forget_memory.py defines forgetting_curve, probabilistic deletion (random.random() > retention_probability -> pop), and update_memory_when_searched reinforcement.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: the reference implementation of learned forgetting. | Medium: per-record (strength, last_recall) metadata + load/sweep pass.
+====================================================================================================
+ID: CHAMNAN-REDACTOR
+--- FALSIFICATION_TEST ---
+tools/redactor_recall.py exists with synthetic POSITIVES corpus and precision/recall measurement; lib/redact.py implements the redactor.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: closes a named CRX security gap. | Low: redaction pass at ingestion; adopt the measure-don't-assert discipline.
+====================================================================================================
+ID: MCP-M04
+--- FALSIFICATION_TEST ---
+Start a long tool call, cancel the caller scope, and assert notifications/cancelled is emitted on the wire.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Typed cancellation semantics for the missing CRX tool-call lifecycle; no more silent abandonment. | S: a terminal state plus a cancellation signal on the worker boundary.
+====================================================================================================
+ID: MCP-M06
+--- FALSIFICATION_TEST ---
+Call a tool that sleeps longer than read_timeout_seconds; assert TimeoutError and a notifications/cancelled emission.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+Basic liveness hygiene CRX currently lacks for tools; converts hangs into typed events. | S: budget fields plus timer enforcement on the worker boundary.
+====================================================================================================
+ID: MCP-M26
+--- FALSIFICATION_TEST ---
+List tools as an unauthorized identity and assert forbidden tools are absent (not flagged). Then call one directly and assert ambiguous not found or not authorized. Then drop the auth context entirely and assert deny.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+The reference implementation for CRX's missing per-tool authorization; deny-by-default with enumeration resistance. | M: auth-context plumbing through the CRX tool boundary plus the double-check discipline.
+====================================================================================================
+ID: BORS-HEAD-RACE-DETECTION
+--- FALSIFICATION_TEST ---
+Inspect lib/worker/batcher.ex start_waiting_batch for the pr.head_sha vs patch.commit comparison and the :race outcome; simulate a head move between approval and batching and confirm :race, not :conflict.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: eliminates the entire class of 'approved X, landed Y' failures; the cheapest high-value gate in the set. | Low-medium: the race-vs-conflict distinction and re-read-at-assembly discipline port directly into the CRX merge gate.
+====================================================================================================
+ID: BORS-PREFLIGHT-MERGE-GATE
+--- FALSIFICATION_TEST ---
+Inspect lib/worker/batcher.ex patch_preflight/3 for each required condition and the up_to_date_approvals commit binding; attempt to batch a patch whose head moved after approval and confirm it is blocked.
+--- EXPECTED_VALUE / INTEGRATION_COST ---
+High: the preflight checklist is the highest-leverage defect filter in the lane; most bad landings are stale or incomplete gates, not bad code. | Medium: the checklist logic ports directly; CRX must define its canonical approval and receipt event schemas.

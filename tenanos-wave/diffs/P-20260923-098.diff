@@ -1,0 +1,353 @@
+# P-20260923-098: minimal memory-to-worker context pack assembler (src/tenanos/memory/)
+# Source: swarm-05 CONVERGED-PIPELINE.md CONTEXT PACK row (gap: MEMORY->WORKER edge unbuilt).
+# New files: src/tenanos/memory/context-pack.ts + src/tenanos/__tests__/context-pack.test.ts.
+# Pure function: ranked retrieval results in, worker-safe pack out. No I/O, no events,
+# no store writes. NOT a store, NOT an orchestrator, NOT an authority; promotion
+# authority stays with the memory owner (swarm-05 convergence).
+# Enforces I3: rank_score/score die at the boundary; pack items carry only
+# {text, status, confidence, confidence_provenance, evidence, verified, truncated}.
+# confidence null stays null (never fabricated); verified is a strict boolean from the
+# evidence trace (truthy-but-not-true is false).
+# Enforces I5: items whose namespace != requested tenant are dropped and counted.
+# pack_id = `pack:` + sha256-16 over the canonical item payload (aligns with S18-11
+# pack-id format; swarm-18 owns the manifest/version surface, this consumes the format).
+# created_at is recording time only and is NOT part of pack_id.
+# Coordination: does not touch swarm-18 S18-13/P-20260923-089 MemoryCandidate schema
+# (proposal surface) or swarm-14 P-20260923-009 invalidation.ts (store-side supersession).
+# Verified: 12/12 jest tests pass under ts-jest with the exact transform settings of
+# src/tenanos/jest.config.cjs (strict true); tsc --noEmit clean.
+# Test: npx jest --config src/tenanos/jest.config.cjs
+# ---
+diff --git a/src/tenanos/memory/context-pack.ts b/src/tenanos/memory/context-pack.ts
+new file mode 100644
+index 0000000..bc44892
+--- /dev/null
++++ b/src/tenanos/memory/context-pack.ts
+@@ -0,0 +1,172 @@
++/**
++ * context-pack.ts — minimal memory-to-worker context pack assembler (swarm-05).
++ *
++ * Pipeline stage: RETRIEVAL -> CONTEXT PACK -> WORKER.
++ * Pure function: ranked retrieval results in, worker-safe pack out. No I/O,
++ * no events, no store writes. This is NOT a store, NOT an orchestrator,
++ * NOT an authority. Promotion authority stays with the memory owner.
++ *
++ * Enforces the converged-pipeline contract (CONVERGED-PIPELINE.md):
++ *  - I3: rank_score is presentation-only and dies here. The pack carries
++ *        {text, status, confidence, confidence_provenance, evidence, verified}
++ *        and nothing rank-derived. confidence is never fabricated
++ *        (null stays null); verified is a strict boolean from the evidence
++ *        trace, never inferred from rank.
++ *  - I5: tenant boundary re-enforced. Items whose namespace does not equal
++ *        the requested tenant are dropped and counted, never passed through.
++ *
++ * Alignment: pack_id uses the `pack:<sha256-16>` format from S18-11
++ * (swarm-18 owns the manifest/version surface; this assembler consumes that
++ * format and does not redefine it). The pack does not carry rank order as
++ * data: input order is preserved and that is the only ordering signal.
++ */
++
++import { createHash } from 'crypto';
++
++export const CONTEXT_PACK_SCHEMA_VERSION = '1.0.0' as const;
++
++export const DEFAULT_MAX_ITEMS = 12;
++export const DEFAULT_MAX_CHARS_PER_ITEM = 2000;
++
++/**
++ * One ranked hit from the retrieval front door (HybridSearch results after
++ * EvidenceAuthority.rank). Extra legs may add fields; everything not listed
++ * on PackItem is dropped.
++ */
++export interface RetrievalItem {
++  id?: string;
++  text?: string | null;
++  label?: string | null;
++  status?: string | null;
++  confidence?: number | null;
++  confidence_provenance?: string | null;
++  evidence?: unknown;
++  verified?: unknown;
++  namespace?: string | null;
++  /** Presentation-only score. Always dropped (I3). */
++  rank_score?: unknown;
++  /** Raw semantic score. Always dropped (I3). */
++  score?: unknown;
++  [key: string]: unknown;
++}
++
++/** Worker-safe pack item. Closed shape: nothing rank-derived survives. */
++export interface PackItem {
++  text: string;
++  status: string;
++  confidence: number | null;
++  confidence_provenance: string | null;
++  evidence: string[];
++  verified: boolean;
++  truncated: boolean;
++}
++
++export interface AssembleOptions {
++  /** Required tenant namespace, e.g. 'tenant::hpp'. Fail-closed: empty throws. */
++  tenant: string;
++  maxItems?: number;
++  maxCharsPerItem?: number;
++}
++
++export interface ContextPack {
++  pack_id: string;
++  schema_version: typeof CONTEXT_PACK_SCHEMA_VERSION;
++  tenant: string;
++  /** ISO-8601 UTC. Recording time only; NOT part of pack_id. */
++  created_at: string;
++  item_count: number;
++  dropped_cross_namespace: number;
++  items: PackItem[];
++  budgets: { maxItems: number; maxCharsPerItem: number };
++}
++
++function sha256Hex(input: string): string {
++  return createHash('sha256').update(input, 'utf8').digest('hex');
++}
++
++/**
++ * Deterministic pack identity over the tenant and the exact item payload.
++ * Key order is fixed by construction (no JSON.stringify key-order dependence).
++ */
++export function packIdFor(tenant: string, items: PackItem[]): string {
++  const canonical = JSON.stringify([
++    tenant,
++    items.map((it) => [
++      it.text,
++      it.status,
++      it.confidence,
++      it.confidence_provenance,
++      it.evidence,
++      it.verified,
++    ]),
++  ]);
++  return 'pack:' + sha256Hex(canonical).slice(0, 16);
++}
++
++function coerceEvidence(evidence: unknown): string[] {
++  if (!Array.isArray(evidence)) return [];
++  return evidence.filter((e): e is string => typeof e === 'string' && e.length > 0);
++}
++
++function toPackItem(item: RetrievalItem, maxCharsPerItem: number): PackItem {
++  const rawText = item.text ?? item.label ?? '';
++  const text = typeof rawText === 'string' ? rawText : String(rawText);
++  const truncated = text.length > maxCharsPerItem;
++  return {
++    text: truncated ? text.slice(0, maxCharsPerItem) : text,
++    status: typeof item.status === 'string' && item.status.length > 0 ? item.status : 'unknown',
++    // I3: null confidence stays null. Never fabricate a number.
++    confidence: typeof item.confidence === 'number' ? item.confidence : null,
++    confidence_provenance:
++      typeof item.confidence_provenance === 'string' ? item.confidence_provenance : null,
++    evidence: coerceEvidence(item.evidence),
++    // I3: verified is a strict boolean from the evidence trace.
++    // Truthy-but-not-true (1, 'yes', null from an unverified leg) is false.
++    verified: item.verified === true,
++    truncated,
++  };
++}
++
++/**
++ * Assemble a worker context pack from ranked retrieval results.
++ * Pure: does not mutate its input. Input order (rank order) is preserved.
++ */
++export function assembleContextPack(
++  results: RetrievalItem[],
++  options: AssembleOptions
++): ContextPack {
++  const tenant = options.tenant;
++  if (!tenant || typeof tenant !== 'string') {
++    throw new Error('assembleContextPack: options.tenant is required (I5: no tenant-ambiguous packs)');
++  }
++  const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS;
++  const maxCharsPerItem = options.maxCharsPerItem ?? DEFAULT_MAX_CHARS_PER_ITEM;
++  if (!Number.isInteger(maxItems) || maxItems < 0) {
++    throw new Error('assembleContextPack: maxItems must be a non-negative integer');
++  }
++  if (!Number.isInteger(maxCharsPerItem) || maxCharsPerItem <= 0) {
++    throw new Error('assembleContextPack: maxCharsPerItem must be a positive integer');
++  }
++
++  let dropped_cross_namespace = 0;
++  const items: PackItem[] = [];
++  for (const result of results || []) {
++    if (result.namespace !== tenant) {
++      dropped_cross_namespace++;
++      continue;
++    }
++    items.push(toPackItem(result, maxCharsPerItem));
++    if (items.length >= maxItems) break;
++  }
++
++  return {
++    pack_id: packIdFor(tenant, items),
++    schema_version: CONTEXT_PACK_SCHEMA_VERSION,
++    tenant,
++    created_at: new Date().toISOString(),
++    item_count: items.length,
++    dropped_cross_namespace,
++    items,
++    budgets: { maxItems, maxCharsPerItem },
++  };
++}
+diff --git a/src/tenanos/__tests__/context-pack.test.ts b/src/tenanos/__tests__/context-pack.test.ts
+new file mode 100644
+index 0000000..004e05e
+--- /dev/null
++++ b/src/tenanos/__tests__/context-pack.test.ts
+@@ -0,0 +1,149 @@
++/**
++ * context-pack.test.ts — tests for the minimal context pack assembler.
++ *
++ * Guards the converged-pipeline contract at the RETRIEVAL -> CONTEXT PACK
++ * boundary (swarm-05, CONVERGED-PIPELINE.md):
++ *  - I3: rank_score / score never reach the worker; confidence never
++ *        fabricated; verified is a strict boolean from the evidence trace.
++ *  - I5: cross-namespace items are dropped, never passed through.
++ *  - Determinism: same input -> same pack_id; the ID carries no timestamp.
++ *  - Budgets: maxItems / maxCharsPerItem honored; truncation is flagged.
++ *
++ * Run from the wave repo root:
++ *   npx jest --config src/tenanos/jest.config.cjs
++ */
++import {
++  assembleContextPack,
++  packIdFor,
++  CONTEXT_PACK_SCHEMA_VERSION,
++  DEFAULT_MAX_ITEMS,
++  type RetrievalItem,
++} from '../memory/context-pack';
++
++const TENANT = 'tenant::hpp';
++const OTHER = 'tenant::other';
++
++function rankedItem(overrides: Partial<RetrievalItem> = {}): RetrievalItem {
++  return {
++    id: 'node-1',
++    text: 'the shop closes at 6pm on Sundays',
++    status: 'approved',
++    confidence: 1.0,
++    confidence_provenance: 'human-approval',
++    evidence: ['evt-1'],
++    verified: true,
++    namespace: TENANT,
++    rank_score: 0.97,
++    score: 0.83,
++    approved: true,
++    ...overrides,
++  };
++}
++
++describe('I3: rank-derived fields die at the pack boundary', () => {
++  test('rank_score and score never appear in pack items', () => {
++    const pack = assembleContextPack([rankedItem()], { tenant: TENANT });
++    expect(pack.item_count).toBe(1);
++    const item = pack.items[0] as unknown as Record<string, unknown>;
++    expect(item).not.toHaveProperty('rank_score');
++    expect(item).not.toHaveProperty('score');
++    expect(item).not.toHaveProperty('approved');
++    expect(Object.keys(item).sort()).toEqual(
++      ['confidence', 'confidence_provenance', 'evidence', 'status', 'text', 'truncated', 'verified'].sort()
++    );
++  });
++
++  test('status, confidence, provenance, evidence, verified pass through', () => {
++    const pack = assembleContextPack([rankedItem()], { tenant: TENANT });
++    const item = pack.items[0];
++    expect(item.status).toBe('approved');
++    expect(item.confidence).toBe(1.0);
++    expect(item.confidence_provenance).toBe('human-approval');
++    expect(item.evidence).toEqual(['evt-1']);
++    expect(item.verified).toBe(true);
++  });
++
++  test('null confidence is never fabricated', () => {
++    const pack = assembleContextPack([rankedItem({ confidence: null })], { tenant: TENANT });
++    expect(pack.items[0].confidence).toBeNull();
++  });
++
++  test('verified is a strict boolean from the evidence trace, never inferred', () => {
++    const truthy = assembleContextPack([rankedItem({ verified: 1 as unknown as boolean })], {
++      tenant: TENANT,
++    });
++    expect(truthy.items[0].verified).toBe(false);
++    const missing = assembleContextPack([rankedItem({ verified: undefined })], {
++      tenant: TENANT,
++    });
++    expect(missing.items[0].verified).toBe(false);
++  });
++});
++
++describe('I5: tenant boundary', () => {
++  test('cross-namespace items are dropped and counted', () => {
++    const pack = assembleContextPack(
++      [rankedItem(), rankedItem({ id: 'node-2', namespace: OTHER }), rankedItem({ id: 'node-3', namespace: null })],
++      { tenant: TENANT }
++    );
++    expect(pack.item_count).toBe(1);
++    expect(pack.dropped_cross_namespace).toBe(2);
++  });
++
++  test('missing tenant option fails closed', () => {
++    expect(() => assembleContextPack([rankedItem()], { tenant: '' })).toThrow(/tenant is required/);
++  });
++});
++
++describe('determinism and budgets', () => {
++  test('same input yields the same pack_id; id carries no timestamp', () => {
++    const a = assembleContextPack([rankedItem()], { tenant: TENANT });
++    const b = assembleContextPack([rankedItem()], { tenant: TENANT });
++    expect(a.pack_id).toBe(b.pack_id);
++    expect(a.pack_id).toMatch(/^pack:[0-9a-f]{16}$/);
++    expect(a.pack_id).not.toContain(a.created_at);
++  });
++
++  test('pack_id changes when the payload changes', () => {
++    const a = assembleContextPack([rankedItem()], { tenant: TENANT });
++    const b = assembleContextPack([rankedItem({ text: 'different text' })], { tenant: TENANT });
++    expect(a.pack_id).not.toBe(b.pack_id);
++    expect(packIdFor(TENANT, a.items)).toBe(a.pack_id);
++  });
++
++  test('maxItems budget honored; input order preserved', () => {
++    const items = [0, 1, 2, 3, 4].map((i) => rankedItem({ id: `n${i}`, text: `t${i}` }));
++    const pack = assembleContextPack(items, { tenant: TENANT, maxItems: 3 });
++    expect(pack.item_count).toBe(3);
++    expect(pack.items.map((it) => it.text)).toEqual(['t0', 't1', 't2']);
++    expect(pack.budgets.maxItems).toBe(3);
++  });
++
++  test('long text is truncated and flagged', () => {
++    const pack = assembleContextPack([rankedItem({ text: 'abcdefghij' })], {
++      tenant: TENANT,
++      maxCharsPerItem: 5,
++    });
++    expect(pack.items[0].text).toBe('abcde');
++    expect(pack.items[0].truncated).toBe(true);
++    const short = assembleContextPack([rankedItem({ text: 'abc' })], {
++      tenant: TENANT,
++      maxCharsPerItem: 5,
++    });
++    expect(short.items[0].truncated).toBe(false);
++  });
++
++  test('assembler is pure: input is not mutated', () => {
++    const input = [rankedItem({ text: 'x'.repeat(5000) })];
++    const snapshot = JSON.stringify(input);
++    assembleContextPack(input, { tenant: TENANT, maxItems: 1, maxCharsPerItem: 10 });
++    expect(JSON.stringify(input)).toBe(snapshot);
++  });
++
++  test('pack carries schema version and defaults', () => {
++    const pack = assembleContextPack([], { tenant: TENANT });
++    expect(pack.schema_version).toBe(CONTEXT_PACK_SCHEMA_VERSION);
++    expect(pack.tenant).toBe(TENANT);
++    expect(pack.budgets).toEqual({ maxItems: DEFAULT_MAX_ITEMS, maxCharsPerItem: 2000 });
++  });
++});

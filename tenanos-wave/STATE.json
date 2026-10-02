@@ -1,0 +1,1478 @@
+{
+  "base_branch": "fyd-factory",
+  "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+  "integration_branch": "tenanos-wave/integration",
+  "proposals": [
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave/P-20260923-001-jest-config",
+      "claimed_areas": [
+        "src/tenanos/jest.config.cjs"
+      ],
+      "commit": "10ed47b75a028c4e6daccc67769c8ada6916b2b7",
+      "created_at": "2026-09-23T18:50:00-06:00",
+      "decided_by": "swarm-19",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "files_touched": [
+        "src/tenanos/jest.config.cjs"
+      ],
+      "id": "P-20260923-001",
+      "integration_commit": "56d5f5ab65c3049ae4188d6c134ed1d3aab6b3dc",
+      "integration_branch": "tenanos-wave/integration",
+      "integration_worktree": "/home/nolan/projects/ping-wave-integration",
+      "notes": "P0 enabler: root `npm test` (bare jest) has no TS transform; all 12 non-FYD TS suites fail at parse (verified 2026-09-23). The wave needs a working scoped config before any substrate test gate is meaningful. Single-writer file; no other proposal may claim it while non-terminal. Modeled on src/fyd/jest.config.cjs.",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "19",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:12:00Z",
+      "test_results": {
+        "writer_gates": {
+          "config_parses": "pass",
+          "smoke_test_ts_transform": "pass (1 passed, temp file removed after)",
+          "tsc_noEmit": "pass"
+        },
+        "integration_gates": {
+          "merge": "clean, 1 file (src/tenanos/jest.config.cjs, 29 insertions)",
+          "jest_listTests": "pass (empty set, exit 0)",
+          "tsc_noEmit_merged": "pass",
+          "tree_clean": "pass"
+        },
+        "proposal_commit": "10ed47b75a028c4e6daccc67769c8ada6916b2b7",
+        "push": "none (forbidden)"
+      },
+      "title": "Create scoped ts-jest config for TenantOS substrate tests (src/tenanos/jest.config.cjs)",
+      "updated_at": "2026-09-24T01:12:00Z",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-001",
+      "writer": "19",
+      "updated_by": "coordinator"
+    },
+    {
+      "base_commit": null,
+      "branch": null,
+      "commit": null,
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-081.diff",
+      "failure_ledger": [],
+      "integration_commit": null,
+      "oracle_touch": false,
+      "status": "rejected_from_wave",
+      "swarm": "08",
+      "approved_by": null,
+      "approved_at": null,
+      "test_results": null,
+      "worktree": null,
+      "writer": null,
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "id": "P-20260923-081",
+      "title": "MissionControlHeader: replace fabricated status/metrics with UNKNOWN",
+      "claimed_areas": [
+        "/home/nolan/projects/constitutional-runtime/CascadeProjects/infra/ui-next/src/components/MissionControlHeader.tsx"
+      ],
+      "files_touched": [
+        "/home/nolan/projects/constitutional-runtime/CascadeProjects/infra/ui-next/src/components/MissionControlHeader.tsx"
+      ],
+      "notes": "P0 FAKE. Component hardcodes gateway:'healthy', ollama:'connected', model:'qwen3-coder' and simulates latency/contextUsage/tok-s with Math.random(); zero fetch calls in 93 lines; consumed by chat/page.tsx. Diff rewrites initial state to 'unknown'/null, deletes the simulation interval, renders 'unknown' until a real /mc/system-backed fetch exists. Target repo: /home/nolan/projects/constitutional-runtime (NOT the wave repo). No src/tenanos changes; no FYD contact. [INT-FINAL: REJECTED_FROM_WAVE per scratch/eval-081.json (confidence 0.9). One-owner rule: the wave must not write to the constitutional-sprint-owned repo /home/nolan/projects/constitutional-runtime (MissionControlHeader.tsx); the constitutional sprint owns the write or the rejection. Sprint has NOT acted: zero commits to the file since 2026-09-24 (the only modification is a pre-existing line-ending-only change, mtime 2026-07-28). The routing via ~/workspace/constitutional-sprint/INBOUND-FROM-TENANOS-WAVE.md stands with its explicit 'own or reject' ask. Retained artifacts: diff at diffs/P-20260923-081.diff (verified sound against HEAD content), audit evidence in swarm-08/MC-AUDIT.md (F-05) and PROJECTION-WIRING.md.]",
+      "target_repo": "/home/nolan/projects/constitutional-runtime",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "ef360b2f5822da30b9c6d8435ec03dd668fb9b21",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-082.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-082",
+      "title": "engine.js getReport: mark closure/velocity percentages UNKNOWN",
+      "claimed_areas": [
+        "/home/nolan/ping/ping-runtime/orchestration/execution/engine.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/ping-runtime/orchestration/execution/engine.js"
+      ],
+      "notes": "P0 FAKE. missionClosureRate/missionAcceptRate/closureRate computed over the engine's in-memory _missions session array, fed by the autonomous loop's fabricated 0.85-confidence findings (P-20260923-084). Served at GET /orchestration/engine/report. Diff nulls the three fields and adds a provenance pointer to canonical ping_missions via MissionRuntime.getStats(). Counts (total/pending/completed/failed) kept as session counts. Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "6f2df9d05461b455462b0dd80b330bfbd2296c49",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-083.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-083",
+      "title": "Deprecate competing /orchestration/missions* reads (410 + canonical pointer)",
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/orchestration.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/orchestration.js"
+      ],
+      "notes": "P0 competing authority. GET /orchestration/missions and GET /orchestration/missions/:id serve engine._missions (in-memory session array); canonical mission state is ping_missions via MissionRuntime (/missions/*, /mc/missions/*). Two mission counts = no single truth. Diff returns 410 Gone with canonical route pointers. POST /orchestration/missions (random-id, non-durable, no tenant) flagged in audit for follow-up; engine compile/loop/dispatch endpoints untouched (engine ops, not mission authority). Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "9a05f4eb25b94f6aa22435c618ec9fd3c585a702",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-084.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-084",
+      "title": "startAutonomousLoop: mark synthetic output, null the fabricated 0.85 confidence",
+      "claimed_areas": [
+        "/home/nolan/ping/ping-runtime/orchestration/execution/engine.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/ping-runtime/orchestration/execution/engine.js"
+      ],
+      "notes": "P0 FAKE. The loop fabricates worker output inline with hardcoded confidence 0.85, which flows into collectWorkerOutput -> consensus -> getReport percentages. Diff adds synthetic:true, renames bypass_type to synthetic_placeholder, and nulls confidence. Caveat: collectWorkerOutput validation of null confidence unverified; writer should run the engine test suite. Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "c5d742ec8e4807d72444c14af760c3d7f3cb9ada",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-085.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-085",
+      "title": "system_authority collectMissions: stop hardcoding completed/failed, report UNKNOWN",
+      "claimed_areas": [
+        "/home/nolan/ping/ping-runtime/runtime/system_authority.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/ping-runtime/runtime/system_authority.js"
+      ],
+      "notes": "P0 FAKE. collectMissions() counts MISSION_CREATED events and reports completed=total with queued/executing/failed/blocked hardcoded 0 \u2014 every created mission shown completed, always, under the /ops/dashboard authoritative banner. Diff returns status:'unknown' with reason + raw created-event count; per-status counts nulled. Proper fix (query ping_missions GROUP BY status) needs a MissionRuntime handle the collector lacks; noted in MC-AUDIT. Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "1a784242beb1f08d5675d93ff973bc67a54e2577",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-086.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-086",
+      "title": "/ops/dashboard: drop always-empty organizational_health, remove blanket authority claim",
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/ops.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/ops.js"
+      ],
+      "notes": "FAKE-adjacent. organizational_health key occurs 0 times in SystemAuthority.getSystemState() \u2014 the section is always {}. generated_runtime_authoritative:true blankets per-section collectors of mixed provenance (session-scoped, UNKNOWN). Diff removes the empty section and replaces the claim with provenance:'per-section; no blanket runtime-authority claim'. Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "commit": "6596799aeb20bf947c016e0cc74151ac176fe2ca",
+      "decided_by": "swarm-08",
+      "diff_ref": "~/workspace/tenanos-wave/diffs/P-20260923-087.diff",
+      "failure_ledger": [],
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T01:45:00Z",
+      "test_results": null,
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "id": "P-20260923-087",
+      "title": "/mc/dashboard: expose clamped flags instead of silently zeroing negative counters",
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/mission_control.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/mission_control.js"
+      ],
+      "notes": "Honest-but-lossy. Business rollup derives counters from a 500-event/24h capped window and silently clamps negatives to 0, masking counter drift. Diff adds a clamped{} map to the response so UIs can distinguish a measured zero from a display floor; existing truncated/totalEvents/window metadata kept. Target repo: /home/nolan/ping gateway. [coordinator: approved 01:45Z; gateway-repo track, base tag tenanos-wave-gateway-base-20260923] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping"
+    },
+    {
+      "base_commit": null,
+      "branch": null,
+      "commit": "76f030cd8",
+      "decided_by": "swarm-08",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "integration_commit": "63ad28388",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "08",
+      "approved_by": null,
+      "approved_at": null,
+      "test_results": {
+        "adapter_unit": "16/16 pass (node --test tenant-context.unit.test.js)",
+        "mission_trace": "T1-T5 pass; T6 pass after fixture fix (was 403: mock mission payload lacked namespace)",
+        "replay_observability": "OB-1, OB-2, OB-3, OB-5, OB-6, OB-7 pass; OB-4 pass after fixture fix (was 403: mock events lacked top-level namespace); OB-8 FAILS (pre-existing on pristine tip: services object missing replayProvider, unrelated to tenant gating)",
+        "syntax": "node --check passes on all 7 changed/new JS files",
+        "integration": "integrated 2026-09-24 as 76f030cd8 (fast-forward from ed4371b13) with fixture-fix follow-up 63ad28388 on tenanos-wave-gateway/integration; never pushed"
+      },
+      "worktree": null,
+      "writer": null,
+      "created_at": "2026-09-23T19:10:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "id": "P-20260923-088",
+      "title": "Tenant/namespace filters across Mission Control projections (spec, no diff)",
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/mission_control.js",
+        "/home/nolan/ping/ping-runtime/events/unified_event_runtime.js",
+        "/home/nolan/ping/ping-runtime/orchestration/mission_runtime.js",
+        "/home/nolan/ping/ping-runtime/knowledge/knowledge_graph.js"
+      ],
+      "files_touched": [
+        "gateway/lib/tenant-context.js",
+        "gateway/routes/mission_control.js",
+        "gateway/routes/missions.js",
+        "ping-runtime/events/unified_event_runtime.js",
+        "ping-runtime/orchestration/mission_runtime.js",
+        "gateway/test_mission_trace.js",
+        "gateway/test_replay_observability.js"
+      ],
+      "notes": "P0 gap, no diff (new capability, not a removal; audit+proposal only per swarm charter). Zero tenant mentions in mission_control.js; unifiedEventRuntime.query() has no namespace param; ping_missions has no tenant column (tenant only inside JSONB payload.namespace); POST /missions takes no tenant; /mc/knowledge doesn't pass namespace though queryNodes() supports it. Full contract in PROJECTION-WIRING.md: query() gains namespace filter (default-deny), mission methods take tenantId (migration or GIN on payload->>'namespace'), POST /missions requires tenant_id, DLQ needs tenant column before per-tenant views. Suggested owner: swarm 01 (tenant reality/boundaries) \u2014 filed here as the MC-side contract, not a competing implementation. [INT-FINAL: TWO-STAGE PATH. First attempt BLOCKED-088 on the behavior-change gate (patch-03 made /mc/* without ?tenant= return 400, breaking in-tree callers test_mission_trace.js T5/T6 and test_replay_observability.js OB-1..OB-6; nothing applied, no partial commit). Then integrated at 76f030cd8 with fixture-fix follow-up commit 63ad28388 (branch tip): 8 URL assertion changes (test_mission_trace.js T5, T6; test_replay_observability.js OB-1, OB-2, OB-3, OB-4, OB-5, OB-6  -  all ?tenant=acme; no test logic, fixtures, or expectations weakened) + 4 fixture namespace additions in 63ad28388 (mission payload gains namespace: 'tenant::acme' for T6; replayEvt, witnessEvt, witnessRejected gain top-level namespace: 'tenant::acme' for OB-4). Two bugs fixed during integration: backticks inside a JS template literal in patch-02 SQL comment (SyntaxError); trace.forbidden dereferenced before null check in patch-03 (404s became 500s). Residual/follow-ups: OB-8 fails on pristine tip too (pre-existing); Orca scheduler GETs (/stats, /pending, /active in missions.js) intentionally left ungated until the scheduler is tenant-aware; repository_dead_letters has no tenant column (per-tenant DLQ views need column + backfill migration, deferred).]",
+      "target_repo": "/home/nolan/ping",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-002",
+      "title": "Durable per-attempt Run identity + journal vocabulary (Restate pattern)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/runs/schema.ts",
+        "src/tenanos/__tests__/runs-schema.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/runs/schema.ts"
+      ],
+      "notes": "Add Run row beneath Mission: tenant_id, mission_id, run_id (uuidv7), attempt, fencing_token, status, journal_ref; journal entry vocabulary (input/output/state/call/sleep/awaitable). Restate BSL-1.1: pattern only. PING ping_events stays canonical. [INT-FINAL: integrated b769ba5d. attempt_id is the sole PK; base CREATE TABLE tenanos_run_attempts omits the five 103-owned mechanics columns (fencing_token, status, lease_until, checkpoint_seq, input_digest); branch-tree 103 SQL (src/tenanos/run/schema-attempt-fencing.sql:30-38) adds exactly those five via ALTER TABLE ADD COLUMN IF NOT EXISTS; seam header in source documents the split.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "b769ba5d",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "22/22 src/tenanos/__tests__/runs-schema.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "b769ba5d",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-003",
+      "title": "Atomic tenant-scoped task claim with attach-to-winner (Hatchet)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/claim/claim.ts",
+        "src/tenanos/__tests__/claim.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/claim/claim.ts"
+      ],
+      "notes": "Single-statement claim: lock rows ORDER BY (tenant_id,key) FOR UPDATE; claimable iff absent or expired; ON CONFLICT DO UPDATE only when claimable; return won + holder. Synthetic SQLite port 4/4 PASS. [INT-FINAL: integrated 0798f869. Pure-additive; no seam conflicts.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "0798f869",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "15/15 src/tenanos/__tests__/claim.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "0798f869",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-004",
+      "title": "P0: holder+fencing-token CAS lease renewal (Hatchet LeaseManager)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/leases/lease.ts",
+        "src/tenanos/__tests__/leases.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/leases/lease.ts"
+      ],
+      "notes": "P0 fix for CE-002 analog renewLease defect: renewal UPDATE must predicate on tenant_id, run_id, holder, fencing_token; zero rows => stop, fenced out. Tenant-scoped lease kinds: run/worker/queue. [INT-FINAL: integrated 1b653b35. New tenanos_leases table; run-kind subject_id binds to tenanos_run_attempts.attempt_id (no parallel identity authority).]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "1b653b35",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "20/20 src/tenanos/__tests__/leases.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "1b653b35",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-005",
+      "title": "Checkpoint schema: values+versions+versions-seen (LangGraph shape)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/checkpoints/schema.ts",
+        "src/tenanos/__tests__/checkpoint-schema.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/checkpoint/schema.ts"
+      ],
+      "notes": "Re-key LangGraph checkpoint fields to PING Run/step: checkpoint_id monotonic, step_id, state as payload refs (no inline secrets), channel versions, versions-seen lineage. Checkpoints do not make effects idempotent; tools carry idempotency keys. [INT-FINAL: integrated b526b352 at src/tenanos/checkpoints/schema.ts (plural). Test import relocated to the integrated path. Seam: 005 owns checkpoint record shape and validation; 103 (attempt-fencing.ts:194,216) retains fenced write discipline and sequential checkpoint enforcement (NonMonotonicCheckpointError, seq = prevSeq + 1).]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "b526b352",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "16/16 src/tenanos/__tests__/checkpoint-schema.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "b526b352",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-006",
+      "title": "Lazy reconciliation via pure overdue predicate (Dapr)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/reconcile/overdue.ts",
+        "src/tenanos/__tests__/overdue.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/reconcile/overdue.ts"
+      ],
+      "notes": "isOverdue(state, dueAt, now, grace) pure function wired into status-read and claim paths; enqueues redrive, never mutates inline. No sweeper service, no second orchestrator. [INT-FINAL: integrated c716deb9. Canonical overdue predicate consumed by 013.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "c716deb9",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "14/14 src/tenanos/__tests__/overdue.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "c716deb9",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-007",
+      "title": "Tool execution auth boundary: list-filter + call-recheck (FastMCP pattern)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/auth_boundary.ts",
+        "src/tenanos/__tests__/auth_boundary.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/tools/auth_boundary.ts"
+      ],
+      "notes": "Mirror FastMCP AuthMiddleware: filter tools at discovery, re-resolve + re-check capability at call time (TOCTOU), fail closed on missing context, ambiguous not-found/not-authorized. Policy delegates to PING capability authority. [INT-FINAL: integrated a0b44816. Seam: the rebased 093 diff defines no GrantResolver (classification Lookup); 007's GrantResolver remains the one grant-resolution interface; call-time authorization verdict feeds the separate 093 safety gate.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "a0b44816",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "4/4 src/tenanos/__tests__/auth_boundary.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "a0b44816",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-008",
+      "title": "Context budget blocks + typed budget overview (Letta pattern)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/blocks.ts",
+        "src/tenanos/__tests__/blocks.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/context/blocks.ts"
+      ],
+      "notes": "Reserved ContextBlocks with char limits + readOnly enforced at write time; ContextBudget overview computed by assembler (read-only to agent); fail-closed exact-match memory edits. [INT-FINAL: integrated e72ad4ad. Required FL-E3-03 guard added: ContextBlock.supersededBy?: string | null, SUPERSEDED typed error, editBlock() rejects even exact-match edits when superseded, markSuperseded() idempotent on same superseder and conflict-rejecting otherwise; three new tests cover the guard.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "e72ad4ad",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "9/9 src/tenanos/__tests__/blocks.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "e72ad4ad",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-009",
+      "title": "Bitemporal memory supersession, never delete (Graphiti)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/invalidation.ts",
+        "src/tenanos/__tests__/invalidation.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/memory/invalidation.ts"
+      ],
+      "notes": "resolve contradictions by setting invalid_at=new.valid_at, expired_at=now(); old facts never deleted. Tenant-scoped candidate selection. Detection (heuristic) kept separate from invalidation (deterministic). [INT-FINAL: integrated 9cb4ad65. Seam with 099 supersession kept through supersedes / superseded_by.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "9cb4ad65",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "6/6 src/tenanos/__tests__/invalidation.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "9cb4ad65",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-010",
+      "title": "Fail-closed Run budget enforcement (PydanticAI UsageLimits pattern)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "rejected",
+      "files_touched": [
+        "src/tenanos/budget/limits.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/budget/limits.ts"
+      ],
+      "notes": "cost/request/token/tool-call limits with checkBeforeRequest (throws BudgetExceeded) + post-response accounting; fail CLOSED on accounting error. Explicitly REJECT OmniRoute quota as authority: its enforce.ts documents fail-open B16. [INT-FINAL: REJECTED per scratch/eval-010.json (confidence 0.9). Non-conforming duplicate of 090: throw semantics (throws BudgetExceeded) violate the standing coordinator decision that typed BUDGET_EXHAUSTED values are canonical  -  exhaustion is an enumerable outcome, never a thrown exception. 090 implements the conforming form (CheckResult discriminated union, zero throw statements, C1..C8 contract). Two 010 deltas recorded, neither silent: (1) FOLDED IN  -  'REJECT OmniRoute quota as authority (its enforce.ts documents fail-open B16)' added as a one-line header addition to budgets.ts at 090's integration (commit fcf3859f); (2) OPEN  -  the cost-dimension question (execution-safety in scope vs metering-for-charge out of scope) needs a coordinator call, not a silent add. No diff was filed for 010 (diff_ref null), so rejection discards nothing on disk.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": null,
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": null,
+      "integration_commit": null,
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-011",
+      "title": "Routing seam under capability authority (OmniRoute pipeline shape)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/routing/pipeline.ts",
+        "src/tenanos/__tests__/pipeline.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/routing/pipeline.ts"
+      ],
+      "notes": "Router scores/filters only the capability-authorized candidate set; ProviderExecutionPolicy shape (allowModelFallback, allowedModels, expectedConnectionId); lease-mismatch guard; routing receipt to journal. Router decides WHERE/HOW, never WHETHER. [INT-FINAL: integrated 25873a5b. Header paths corrected to integrated layout. Ordering retained: budget 090, capability 007, routing 011. expectedLeaseId remains an exclusion filter. 103 wiring explicitly left as follow-up.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "25873a5b",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "10/10 src/tenanos/__tests__/pipeline.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "25873a5b",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-012",
+      "title": "Sandbox execution profile registry (nsjail mechanism)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/sandbox/profiles.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/sandbox/profiles.ts"
+      ],
+      "notes": "Sandboxing lane complete. Evaluation: ~/workspace/tenanos-wave/swarm-14/SANDBOX-EVALUATION.md. Recommendation: nsjail as the OS execution-isolation mechanism (external pinned binary, never vendored); profiles.ts renders one declarative, deterministic, hash-pinned nsjail config per capability class (tenant-code-strict / tool-standard / tool-egress / trusted-internal). Evidence: source-read of vendored nsjail@f100fd9 (unshare flags subproc.cc:527-538, seccomp install sandbox.cc:122, kafel policy compiler in-tree, config.proto policy shape, example default-deny configs); kernel 7.0 namespace-isolation experiment 3/3 PASS (secret hidden, net blocked, host unaffected); 12/12 runtime behavior checks on the proposed module PASS (fail-closed unknown class, deterministic render, hash==sha256(render), receipt verify/reject paths, no ambient credential mounts). Vendored trees pruned 171M/1817 files -> 1.5M/103 files (nsjail evidence kept; all pruned trees re-fetchable via clone.sh at pinned SHAs). Overlap check vs all non-terminal proposals: clean. Boundary: profiles.ts renders enforcement FROM the capability decision (constitutional sprint owns capability); grants nothing; no second orchestrator/event authority/capability system. [coordinator: approved 02:20Z; 12/12 tests, overlap clean, single new file] [writer: commit eec54a76, 1 file (416 lines, 62 hardening), 14/14 behavior checks, kafel REPRESENTATIVE, ToolRiskClass consumer seam] [integrated 03:21Z as cc90f2ba; purely additive, writer gates stand]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": "tenanos-wave/P-20260923-012-sandbox",
+      "commit": "eec54a763644a45520de541a3857bc5f700ae819",
+      "diff_ref": "diffs/P-20260923-012.diff",
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T03:21:00Z",
+      "test_results": null,
+      "integration_commit": "cc90f2ba",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-012",
+      "writer": "9f8bffe7-7152-487a-9277-100814d1c969",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:20:00Z"
+    },
+    {
+      "id": "P-20260923-013",
+      "title": "Recovery: re-enqueue + atomic claim, never resume in place (DBOS)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/reconcile/recover.ts",
+        "src/tenanos/__tests__/recover.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/recovery/recover.ts"
+      ],
+      "notes": "Recoverer only enqueues redrive as new Run (new run_id, attempt+1); Lane 2 claim elects runner. Dead-executor predicate = lease expired + grace elapsed. Journal names dead executor and new run. [INT-FINAL: integrated da6533e6. Required seam resolved: isDeadExecutor() delegates to canonical 006 isOverdue({ state: 'RUNNING', dueAtMs: leaseUntilMs, nowMs, graceMs }); the mirrored predicate implementation was removed.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "da6533e6",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "15/15 src/tenanos/__tests__/recover.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "da6533e6",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-014",
+      "title": "OTel gen_ai.* telemetry vocabulary as projection (observability)",
+      "swarm": "14",
+      "decided_by": "swarm-14",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/otel/semconv.ts",
+        "src/tenanos/__tests__/semconv.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/observability/semconv.ts"
+      ],
+      "notes": "Thin journal->gen_ai.* attribute mapping; spans carry tenant_id+run_id for journal anti-join. Exporters are projections, not evidence authorities; pin stable core, skip experimental agent conventions. [INT-FINAL: integrated 47764b5a. Journal remains evidence authority; OTel exporters are projection-only; tenant/run/event join keys retained.]",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "commit": "47764b5a",
+      "diff_ref": null,
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-23T19:35:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "test_results": {
+        "item_tests": "8/8 src/tenanos/__tests__/semconv.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "47764b5a",
+      "worktree": null,
+      "writer": "14",
+      "approved_by": null,
+      "approved_at": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-089",
+      "title": "MemoryCandidate JSON schema: typed worker-facing memory-proposal surface (src/tenanos/memory/)",
+      "swarm": "18",
+      "decided_by": "swarm-18",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/memory/MemoryCandidate.schema.json"
+      ],
+      "claimed_areas": [
+        "src/tenanos/memory/MemoryCandidate.schema.json"
+      ],
+      "notes": "S18-13 from swarm-18 SEAM-REPORT Boundary 10 (10A: loop MEMORY step has no typed artifact). New single file; no competing implementation exists. Proposal surface ONLY: required candidate_id (cand:<16hex>, idempotent re-proposal), schema_version const 1.0.0, tenant (required, (core|tenant):: namespace), actor (required), created_at ISO-8601, kind closed enum [fact|preference|correction|observation|relationship], content 8 KiB bound, evidence_refs (<=32, optional), confidence 0..1 (explicit null allowed, missing invalid). By design carries NO status field and NO promotion logic: validation/promotion stays with swarm-05 (CONVERGED-PIPELINE.md MEMORY CANDIDATE stage: M2 knowledge_nodes status='candidate' + M3 Qdrant; promoter is sole lifecycle writer per I1). Pre-validation evidence (jsonschema Draft7, 2026-09-24): 1 positive accepted; 11 negatives rejected (missing tenant/actor/confidence, 9 KiB content, unknown kind, wrong schema_version, bad candidate_id/tenant format, confidence>1, extra property, empty content). Writer tests: same matrix under ts-jest config P-20260923-001 plus ajv in-repo. Directory co-location note: P-20260923-009 (swarm-14) claims src/tenanos/memory/invalidation.ts in the same new directory; distinct artifacts (invalidation logic vs proposal schema), no file overlap. Claim is file-scoped; if swarm-05 later claims src/tenanos/memory/** the overlap tool will surface it for coordinator serialization. Staged by swarm-18 per resume directive; coordinator approval still required (STATE owned by coordinator). COLLISION LOG 2026-09-24 ~01:38-01:47Z: this filename was concurrently overwritten by unregistered writers: (a) a swarm-16 verification-engine diff (~1040 lines, src/tenanos/verification/*) \u2014 content LOST before preservation (overwritten by (b)); (b) an unattributed tenant-kit diff (src/tenanos/tenant/*), writer later self-resolved to P-20260923-092 (swarm-01, registered); (c) swarm-05's P0-FIX lifecycle diff (ping-runtime/knowledge/knowledge_graph.js, re-emission must never demote lifecycle state) \u2014 preserved at diffs/COLLISION-P-20260923-089-swarm05-P0FIX-UNREGISTERED.diff (sha256 2ef4c06b0f346092fffbfda20756e748e1b17bbdea550ee97cf29647620662db), no STATE entry as of 01:47Z. Registry (this entry) is the authoritative 089 claim; disk content re-synced to it 01:47Z. PROCESS FINDING: 'check diffs/ then pick next free 09X' is racy under concurrent workers; recommend STATE-first atomic claim (register ID before writing the diff file). [coordinator: approved 02:45Z; schema validated 1+/11-, no overlap, single new file] [writer: commit 04e420e2, 1 file, Draft-07 valid, 1+/12- validation, diff-fidelity byte-verified] [integrated 02:58Z as 45361109; purely additive JSON schema, writer gates stand]",
+      "base_commit": null,
+      "branch": "tenanos-wave/P-20260923-089-memory-candidate",
+      "commit": "04e420e24ae5ac09c82973c7c4afb79c311a67e9",
+      "diff_ref": "diffs/P-20260923-089.diff",
+      "failure_ledger": [],
+      "oracle_touch": false,
+      "created_at": "2026-09-24T01:36:30Z",
+      "updated_at": "2026-09-24T02:58:00Z",
+      "test_results": null,
+      "integration_commit": "45361109",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-089",
+      "writer": "6d1d03fd-331b-4c98-8e5a-ab11b8390c2a",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:45:00Z"
+    },
+    {
+      "id": "P-20260923-090",
+      "title": "Execution budgets mechanism (src/tenanos/budgets.ts + tests)",
+      "swarm": "17",
+      "writer": "17",
+      "status": "integrated",
+      "decided_by": "swarm-17",
+      "created_at": "2026-09-23T19:19:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "worktree": null,
+      "commit": "fcf3859f",
+      "diff_ref": "diffs/P-20260923-090.diff",
+      "claimed_areas": [
+        "src/tenanos/budgets.ts",
+        "src/tenanos/__tests__/budgets.test.ts"
+      ],
+      "files_touched": [
+        "src/tenanos/budgets/budgets.ts",
+        "src/tenanos/__tests__/budgets.test.ts"
+      ],
+      "oracle_touch": false,
+      "failure_ledger": [],
+      "test_results": {
+        "item_tests": "11/11 src/tenanos/__tests__/budgets.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "fcf3859f",
+      "notes": "Renamed from P-20260923-002.diff (collision: 002 belongs to swarm-14 run-identity). Possible semantic overlap with swarm-10 decision-budget and P-20260923-010 (PydanticAI UsageLimit) \u2014 reconcile before approval. SWARM-17 verification 2026-09-24 ~01:40 UTC: 11/11 fail-before tests pass (fail-closed reservation, typed exhaustion w/ named dimension+scope, parent-chain composition R1, R2/R3 accounting, injected-clock wall checks, WorkerSlots denial, precedented defaults, C1..C8 contract with C5-before-capability ordering); tsc --strict clean; apply --check clean. BLOCKER: diffs/P-20260923-090.diff on disk does NOT contain this proposal's content (currently a verification-engine diff naming P-20260923-089; diffs/P-20260923-091.diff is also non-matching). Verified budgets diff staged at swarm-17/staged-budgets-P-20260923-090.diff for coordinator placement under a clean ID. Semantic overlap triage: gate PASS (no claimed-area overlap). P-20260923-010 (swarm-14, budget/limits.ts, throws BudgetExceeded) tensions: (a) throw-vs-value exhaustion semantics \u2014 this design mandates typed values, never throws (repairs deployment-transaction.ts:890); (b) tool-call accounting must flow through one ledger authority (budgets.ts), not a second ledger, or counts diverge; (c) 010's cost limits need a call on whether cost caps are execution-safety (allowed) vs metering-for-charge (out of scope). P-20260923-008 (context blocks) composes as context-assembly, no conflict with D4 ledger. P-20260923-091 (swarm-10 decision-budget) is escalation/override taxonomy \u2014 complementary: this design's only override path already routes through the human decision budget. [coordinator 02:10Z: diff file repaired \u2014 budgets diff restored to diffs/P-20260923-090.diff after tool-safety collision; staged copy consumed] [INT-FINAL: integrated fcf3859f. Required header line added exactly: 'OmniRoute quota is not a budget authority (fail-open B16).'  -  this folds in eval-010 delta 1 (010 REJECTED as non-conforming duplicate). No cost dimension added (eval-010 delta 2 remains OPEN: execution-safety vs metering-for-charge needs a coordinator call). Comment-stripped scan confirmed zero actual throw statements; budget exhaustion stays typed BUDGET_EXHAUSTED.]",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-091",
+      "title": "Decision-budget reference implementation: escalation taxonomy, auto-resolvers, envelope, metrics, hook-points (src/tenanos/decision-budget/)",
+      "swarm": "10",
+      "writer": null,
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/decision-budget/taxonomy.ts",
+        "src/tenanos/decision-budget/auto-resolvers.ts",
+        "src/tenanos/decision-budget/escalation-envelope.ts",
+        "src/tenanos/decision-budget/metrics.ts",
+        "src/tenanos/decision-budget/hook-points.ts",
+        "src/tenanos/decision-budget/__tests__/decision-budget.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/decision-budget/**"
+      ],
+      "diff_ref": "diffs/P-20260923-091.diff",
+      "branch": null,
+      "worktree": null,
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "commit": null,
+      "integration_commit": "beafca12",
+      "oracle_touch": false,
+      "test_results": {
+        "writer_gates": {
+          "tsc_noEmit": "pass (local mirror of wave scoped ts-jest config, src/tenanos/decision-budget/** only)",
+          "jest": "pass: 1 suite, 21 tests (fail-before suite now green against the implementation)",
+          "diff_applies": "pass (git apply --check on empty tree)"
+        }
+      },
+      "failure_ledger": [],
+      "decided_by": null,
+      "notes": "Proves the decision-budget enforcement design: pure classify() over the 10-class taxonomy (auto classes take precedence), bounded auto-resolvers per R1-R5 (RESOLUTION_BOUNDS: 1 fix+reverify, 1 history replay, 3 runtime rechecks, 1 experiment/hypothesis, 5min default experiment timeout), minimum-payload escalation envelope with bounce validation (single-question, destructive TTL<=1h), budget metrics (auto_resolve_rate target >=0.95, repeat_key repeat detection), and machine-readable hook-points for all 27 inventory sites (E-01..E-28 minus E-19/E-29/E-30, which are healthy/excluded/dev-time). Pure classification: no new authority, store, or event bus; consumes existing sources. Supersedes the P-20260923-002 reference in the swarm-10 stage notes: that id is held by swarm-17's budgets.ts diff under reconciliation and was not reused. Writer gates run on a local node_modules mirror of the wave's scoped ts-jest config (src/tenanos/jest.config.cjs, P-20260923-001, integrated); Gate 2 proper runs on the isolated branch/worktree. [coordinator: approved 02:00Z; 21/21 tests pass, tsc clean, overlap gate exit 0, 6 new files, no existing-code modification] [coordinator 02:10Z: diff file repaired \u2014 decision-budget diff regenerated from swarm-10/stage/ after verification-engine collision; git apply --check OK] [coordinator: integrated 02:30Z as beafca12 (merge of b49c9e19). Writer gates passed (tsc, 21/21 jest). Merged-state tsc/jest pending: Pig SSH path flaky (runtime metadata timeouts) at integration time; will re-verify on recovery. Possible stray node_modules symlink in integration worktree from interrupted gate attempt \u2014 remove on recovery.]",
+      "created_at": "2026-09-24T01:39:31Z",
+      "updated_at": "2026-09-24T01:39:31Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:00:00Z"
+    },
+    {
+      "id": "P-20260923-092",
+      "title": "Tenant boundary kit: canonical tenant-context, namespace-binding, bridge-tenant, tenant-scope modules + tests (additive, src/tenanos/tenant/)",
+      "swarm": "01",
+      "writer": "1bef0bab-8739-4f79-b7ad-d6640b684839",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/tenant/tenant-context.ts",
+        "src/tenanos/tenant/namespace-binding.ts",
+        "src/tenanos/tenant/bridge-tenant.ts",
+        "src/tenanos/tenant/tenant-scope.ts",
+        "src/tenanos/__tests__/tenant-kit.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/tenant/**",
+        "src/tenanos/__tests__/tenant-kit.test.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-092.diff",
+      "branch": "tenanos-wave/P-20260923-092-tenant-kit",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-092",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "commit": "6cbd64af",
+      "integration_commit": "49b7abf7",
+      "oracle_touch": false,
+      "test_results": {
+        "typecheck": {
+          "command": "tsc --noEmit -p tsconfig.check.json (scoped-config tsconfig options: target ES2017, module commonjs, moduleResolution node, esModuleInterop, strict, skipLibCheck)",
+          "pass": true,
+          "at": "2026-09-23T19:44:01-06:00"
+        },
+        "unit": {
+          "command": "npx jest --config src/tenanos/jest.config.cjs",
+          "suites": 1,
+          "tests": 14,
+          "pass": true,
+          "at": "2026-09-23T19:44:01-06:00"
+        },
+        "lint": null,
+        "adversarial": null,
+        "merged": null
+      },
+      "failure_ledger": [],
+      "decided_by": null,
+      "notes": "Swarm-01 tenant-isolation mission: defines and proves the tenant-boundary enforcement substrate (where tenant context is established, propagated, enforced). Kit is purely additive: 4 new modules + 1 test file, zero modifications to existing code, no new orchestrator/event-authority/capability system. Ported from checkpoint JS kit (~/workspace/tenanos-wave/swarm-01/kit/) to strict TypeScript so the test is picked up by the scoped config's testMatch (src/tenanos/__tests__/*.test.ts) and passes ts-jest strict diagnostics; ts-jest diagnostics + standalone tsc --noEmit (TS 6.0.3) both clean. Test ran locally against a VERBATIM copy of the scoped jest.config.cjs (byte-identical, diffed) with the src/tenanos tree staged; Pig worktree untouched. Explicit '@jest/globals' import in the test because the scoped config's inline tsconfig sets no 'types' field (describe/test/expect globals otherwise fail TS2304). Backend half of the P-20260923-088 contract (swarm-08 PROJECTION-WIRING.md): 088 is the MC-side spec; this kit is the substrate-side plumbing it consumes (namespacePredicate / tenantIdPredicate for query builders, filterMissionsByTenant interim until ping_missions gains tenant_id, emitOptionsForCanonicalRow for the bridge laundering fix, createNamespaceBinder policy for the resolveNamespace honor-system fix). Does NOT duplicate 088. Adjacent, not overlapping: swarm-14 P-20260923-003 (src/tenanos/claim/claim.ts tenant-scoped task claim) \u2014 different directory, complementary. REFACTOR targets from BOUNDARY-MAP (bridge emit, resolveNamespace, route_middleware logging) live in the /home/nolan/ping gateway repo, outside the wave's src/tenanos/** root \u2014 recorded as classification only, no wave diffs filed. Gateway auth (the root P0) remains a Nolan decision, not silently designed. ID note: checkpoint plan referenced P-002 for this kit; P-20260923-002 is under ID collision (swarm-17 diff file vs swarm-14 STATE entry), and 089/090/091 were claimed by other swarms during this run \u2014 filed as P-20260923-092. [coordinator: approved 02:45Z; 14/14 tests, tsc clean, apply-check clean, backend half of 088] [writer: commit 6cbd64af, 5 files, 14/14 tests, tsc clean] [integrated 03:16Z as 49b7abf7; purely additive, writer gates stand]",
+      "created_at": "2026-09-23T19:44:01-06:00",
+      "updated_at": "2026-09-24T03:16:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:45:00Z"
+    },
+    {
+      "base_commit": null,
+      "branch": null,
+      "claimed_areas": [
+        "src/tenanos/tool-safety/**",
+        "src/tenanos/__tests__/tool-safety-side-effects.test.ts"
+      ],
+      "commit": "ca8946d4",
+      "created_at": "2026-09-24T01:45:00-06:00",
+      "decided_by": "swarm-04",
+      "diff_ref": "diffs/P-20260923-093.rebased.diff",
+      "failure_ledger": [],
+      "files_touched": [
+        "src/tenanos/tool-safety/tool-classification.ts",
+        "src/tenanos/tool-safety/fail-closed-guard.ts",
+        "src/tenanos/__tests__/tool-safety-side-effects.test.ts"
+      ],
+      "id": "P-20260923-093",
+      "integration_commit": "ca8946d4",
+      "notes": "Implements TOOL-CLASSIFICATION.md sections 6-9 as the src/tenanos/tool-safety/ guard layer (NEW layer, not a fork of CapabilityAuthority; no second authority created). Overlap check: clean vs all non-terminal proposals (the two hits reported are pre-existing swarm-08<->swarm-08 collisions, unrelated). Test file placed at src/tenanos/__tests__/ (not src/tenanos/tool-safety/__tests__/) because the scoped jest config testMatch only matches src/tenanos/__tests__/*.test.ts. Unauthenticated-mount P0 reported, not diffed (live-server behavior change needs coordinator/human call). [coordinator 02:10Z: reassigned 090->093 after file collision; original 090.diff held swarm-17 budgets] [INT-FINAL: integrated ca8946d4. INTEGRATED SOURCE WAS diffs/P-20260923-093.rebased.diff (v2026-09-24.1-rebased), NOT the original diffs/P-20260923-093.diff. Two mechanical repairs to the rebased diff, both semantics-preserving: (1) unterminated doc comment at tool-classification.ts:76 closed with ' */' (it was swallowing const CAPABILITIES into a comment, ReferenceError at load); (2) five missing commas added after line-split evidence: strings (TS1005). 093 version marker 2026-09-24.1-rebased retained. Seam: 007's GrantResolver remains the grant-resolution interface; 093 contributes the classification Lookup + fail-closed guard.]",
+      "oracle_touch": false,
+      "status": "integrated",
+      "swarm": "04",
+      "test_results": {
+        "item_tests": "12/12 src/tenanos/__tests__/tool-safety-side-effects.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "title": "Tool-safety substrate: typed side-effect classification registry + fail-closed guard + falsification tests (src/tenanos/tool-safety/)",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "worktree": null,
+      "writer": null,
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-094",
+      "title": "Verification engine: typed verifier + evidence + interview (src/tenanos/verification/)",
+      "swarm": "16",
+      "writer": "16",
+      "status": "integrated",
+      "decided_by": "swarm-16",
+      "created_at": "2026-09-24T02:10:00Z",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": null,
+      "worktree": null,
+      "commit": "805d0213",
+      "diff_ref": "diffs/P-20260923-094.diff",
+      "claimed_areas": [
+        "src/tenanos/verification/**"
+      ],
+      "files_touched": [
+        "src/tenanos/verification/types.ts",
+        "src/tenanos/verification/evidence.ts",
+        "src/tenanos/verification/verifier.ts",
+        "src/tenanos/verification/interview.ts",
+        "src/tenanos/__tests__/verification-verifier.test.ts",
+        "src/tenanos/__tests__/verification-evidence.test.ts",
+        "src/tenanos/__tests__/verification-interview.test.ts"
+      ],
+      "oracle_touch": false,
+      "failure_ledger": [],
+      "test_results": {
+        "item_tests": "29/29 verification tests under src/tenanos/__tests__/verification-*.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "integration_commit": "805d0213",
+      "notes": "[coordinator 02:10Z: reassigned 091->094 after file collision (header comment already rewritten 089->094). Worker owns verification; entry pre-filed to hold the ID.] [INT-FINAL: integrated 805d0213 from diffs/P-20260923-094.diff. Relocation choice (gate NOT weakened): production kept at src/tenanos/verification/ with the doubled path de-nested (verification/verification/ -> verification/); the three node:test tests moved to src/tenanos/__tests__/verification-{verifier,evidence,interview}.test.ts and converted to jest (@jest/globals; it->test; assert->expect; '.ts'-suffixed imports adapted). Scoped jest testMatch unchanged. Three tsc-strict type errors repaired semantics-preserving (writer gated on --experimental-strip-types, no typecheck): interview.ts best-grade reduce given explicit <EvidenceGrade>; verifier.test.ts journalCheck override type corrected to Partial<RequeryInput<{ seq: number }>>.]",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-100",
+      "title": "Gateway bootstrap substrate record: boot phases, route tiers, mission-loop reuse/replace verdicts",
+      "swarm": "07",
+      "writer": "86e3eb1a-ffaa-4b68-9e6f-9877df5c8f22",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/bootstrap/gateway-bootstrap-substrate.ts",
+        "src/tenanos/__tests__/gateway-bootstrap-substrate.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/bootstrap/gateway-bootstrap-substrate.ts",
+        "src/tenanos/__tests__/gateway-bootstrap-substrate.test.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-100.diff",
+      "branch": "tenanos-wave/P-20260923-100-bootstrap",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-100",
+      "base_commit": null,
+      "commit": "3a578131b68e51e897d76d0341fe81d0f565979c",
+      "integration_commit": "d3821556",
+      "oracle_touch": false,
+      "test_results": null,
+      "failure_ledger": [],
+      "decided_by": "swarm-07",
+      "notes": "Resumed post daemon-restart from on-disk checkpoint (swarm-07/scratch/gateway/bootstrap/gateway_runtime.js capture; prior worker left no analysis). Read-only trace of GatewayRuntime bootstrap (runtime init, route wiring, capability exposure) against /home/nolan/ping (refactor/runtime-authority-convergence) plus swarm-02/ENGINE-INVENTORY.md (consumed, not re-investigated) and swarm-08 P-082..P-084 evidence. Record codifies: 3 boot phases with load-bearing order, 25 routes in ALWAYS_ON/PG_GATED/CONDITIONAL tiers (PG_GATED = explicit 503 stub in degraded mode), 26 components under KEEP/PROPAGATE/REFACTOR/REPLACE/DROP, 8 binding boot invariants, and MISSION_LOOP_VERDICT: reuse the live spine (UER, CanonicalizationService, ProducerEventPort, EventToMissionBridge, MissionRuntime, MissionScheduler, WorkerRuntime, 8 canonical workers, DeadLetterAuthority, GatewayToKernelAdapter); replace the Orca synthetic autonomous loop (engine.js:579 verified fabricating 0.85-confidence worker output) and its session-scoped mission surfaces. New-file proposal: no behavior change, read-only investigation. Pre-verification by investigator: tsc --strict clean on both files; 9/9 structural tests pass under a minimal jest shim (writer gates per playbook still apply). Does not touch gateway behavior. Note: parent directed ID 095 after 089 went to swarm-18 and 091 was approved for swarm-10; this proposal is the bootstrap substrate record, not run-state authority. [coordinator 02:25Z: reassigned 095->100 (095 is swarm-11 run-state authority; file holds 095). Worker to re-stage diff under 100.] [coordinator: approved 02:45Z; 9/9 tests, tsc clean, overlap clean, gateway bootstrap substrate] [writer: commit 3a578131, 2 files, 9/9 tests, tsc clean] [integrated 03:16Z as d3821556; purely additive, writer gates stand]",
+      "created_at": "2026-09-23T19:55:00-06:00",
+      "updated_at": "2026-09-24T03:16:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:45:00Z"
+    },
+    {
+      "id": "P-20260923-096",
+      "title": "P0: re-emission must never demote knowledge-node lifecycle state (I1)",
+      "swarm": "05",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "status": "integrated",
+      "files_touched": [
+        "ping-runtime/knowledge/knowledge_graph.js"
+      ],
+      "claimed_areas": [
+        "ping-runtime/knowledge/knowledge_graph.js"
+      ],
+      "diff_ref": "diffs/P-20260923-096.diff",
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "base_commit": null,
+      "commit": "135b4bb9400ae8053388352d448418f91b32c011",
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "test_results": {
+        "p0_regression": {
+          "tests": 6,
+          "pass": true,
+          "note": "3 demotion tests FAIL pre-fix, proving capture; module byte-identical to running container"
+        }
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-05",
+      "notes": "One-line ON CONFLICT fix: addNode may refresh data/namespace/correlation_id/confidence_provenance on conflict but must not write status (promoter-owned via updateNodeBySourceEvent). Target repo: /home/nolan/ping (live gateway tree, module verified byte-identical to running container). Coordinator decision: direct gateway-tree patch vs port into src/tenanos/** (wave root rule); regression test is placement-agnostic (MODULE_PATH env). Overlap: P-20260923-088 (swarm-08 tenant-filter spec, non-terminal) claims this file; 088 is spec-only (no diff); the conflict-clause edit does not interact with the 088 design. Coordinator to serialize. [coordinator: approved 02:20Z; 1-line SQL fix, 6/6 pass, 3 fail pre-fix. Gateway track, queued after 082-087. Target repo /home/nolan/ping, base tag tenanos-wave-gateway-base-20260923. Duplicate entry merged.] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping",
+      "created_at": "2026-09-23T19:55:00-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:20:00Z"
+    },
+    {
+      "id": "P-20260923-097",
+      "title": "Wire KG status string into approved/rejected booleans that EvidenceAuthority.rank() reads",
+      "swarm": "05",
+      "writer": null,
+      "status": "integrated",
+      "files_touched": [
+        "ping-runtime/search/hybrid_search.js"
+      ],
+      "claimed_areas": [
+        "/home/nolan/ping/ping-runtime/search/hybrid_search.js"
+      ],
+      "diff_ref": "diffs/P-20260923-097.fixed.diff",
+      "branch": null,
+      "worktree": null,
+      "base_commit": null,
+      "commit": "3cb7a77c3",
+      "integration_commit": "3cb7a77c3",
+      "oracle_touch": false,
+      "test_results": {
+        "writer_gates": "ping-runtime/evidence/test_evidence_authority.js 12/12 pass; KG-leg shape check with stubbed knowledgeGraph (queryNodes): approved=true/rejected=true track node.status, rank() orders approved>candidate>rejected at equal confidence",
+        "integration": "integrated 2026-09-24 as 3cb7a77c3 on tenanos-wave-gateway/integration (base 870069ca7); 6-line addition to ping-runtime/search/hybrid_search.js; diff source diffs/P-20260923-097.fixed.diff (E8 fixed hunk-envelope; apply-check clean at tip); never pushed"
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-05",
+      "notes": "The KG leg pushes status: node.status (string) but never sets the approved/rejected booleans rank() reads (approved x1.2, rejected x0.2); both are dead code for KG results today. 5-line addition. Semantic leg needs no change (verified already comes from evidence trace). Known adjacent seam (out of scope, flagged in diff): KG leg hardcodes verified:true instead of tracing source_event_id to ping_events. Target repo: /home/nolan/ping. [INT-FINAL: integrated 3cb7a77c3 on tenanos-wave-gateway/integration. 6-line addition to ping-runtime/search/hybrid_search.js; no follow-ups.]",
+      "target_repo": "/home/nolan/ping",
+      "created_at": "2026-09-23T19:55:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-098",
+      "title": "Minimal memory-to-worker context pack assembler (src/tenanos/memory/context-pack.ts)",
+      "swarm": "05",
+      "writer": "63c90642-2d2d-4f1f-a9ac-06d54ad3305c",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/memory/context-pack.ts",
+        "src/tenanos/__tests__/context-pack.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/memory/context-pack.ts",
+        "src/tenanos/__tests__/context-pack.test.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-098.diff",
+      "branch": "tenanos-wave/P-20260923-098-context-pack",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-098",
+      "base_commit": null,
+      "commit": "13f21b598567bfa1779aea337f564cd85e461a74",
+      "integration_commit": "4b183f8e",
+      "oracle_touch": false,
+      "test_results": {
+        "unit": {
+          "command": "npx jest --config src/tenanos/jest.config.cjs (mirrored locally: ts-jest, strict true, same transform settings)",
+          "suites": 1,
+          "tests": 12,
+          "pass": true,
+          "at": "2026-09-24T01:38:00Z",
+          "note": "Run in sandbox scratch against staged files; the real gate runs on the integration branch via src/tenanos/jest.config.cjs"
+        },
+        "typecheck": {
+          "command": "tsc --noEmit --strict --skipLibCheck",
+          "pass": true,
+          "at": "2026-09-24T01:39:00Z"
+        }
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-05",
+      "notes": "Pure function closing the RETRIEVAL->CONTEXT PACK->WORKER edge (CONVERGED-PIPELINE.md). Enforces I3 (rank_score/score die at the boundary; null confidence never fabricated; verified is a strict boolean from the evidence trace) and I5 (cross-namespace items dropped and counted). pack_id = pack:<sha256-16> over canonical payload (aligns with S18-11 format; swarm-18 owns manifest/version surface). No overlap with swarm-18 P-20260923-089 (MemoryCandidate.schema.json, different file) or swarm-14 P-20260923-009 (memory/invalidation.ts, different file and layer). [coordinator: approved 02:45Z; 12/12 tests, tsc clean, context-pack assembler] [writer: commit 13f21b59, 2 files, 12/12 tests, tsc clean; canonical diff header repaired by coordinator] [integrated 03:19Z as 4b183f8e; purely additive, writer gates stand]",
+      "created_at": "2026-09-23T19:55:00-06:00",
+      "updated_at": "2026-09-24T03:19:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:45:00Z"
+    },
+    {
+      "id": "P-20260923-099",
+      "title": "Transition log I4: KNOWLEDGE_TRANSITIONED events make lifecycle corrections replayable (spec, no diff)",
+      "swarm": "05",
+      "writer": null,
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/transitions/transition-log.ts",
+        "src/tenanos/__tests__/transition-log.test.ts"
+      ],
+      "claimed_areas": [
+        "/home/nolan/ping/ping-runtime/knowledge/knowledge_promoter.js"
+      ],
+      "diff_ref": null,
+      "branch": null,
+      "worktree": null,
+      "base_commit": null,
+      "commit": "b7f1f78d0",
+      "integration_commit": "b7f1f78d0",
+      "oracle_touch": false,
+      "test_results": {
+        "typecheck": "tsc --strict (5.9.3) pass on src/tenanos/transitions",
+        "unit": "jest 23/23 pass via ts-jest",
+        "integration": "integrated 2026-09-24 as b7f1f78d0 on tenanos-wave-gateway/integration; source copied from impl/P-20260923-099/src/tenanos/transitions/ (sha256 verified both sides); never pushed"
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-05",
+      "notes": "Spec at swarm-05/TRANSITION-LOG-SPEC.md. Recommends M1 KNOWLEDGE_TRANSITIONED events (zero new tables, zero new authorities); promoter emits first, then updates the row (fail-closed). Reduce semantics: materialized row = pure fold of ordered transitions; out-of-order/duplicate/non-transition re-emission cannot alter lifecycle state; backward transitions require explicit human-correction markers. Includes supersede-linking; coordinated with swarm-14 P-20260923-009 (009 owns store-side bitemporal representation, this spec owns the event/replay level; 009 consumes the supersedes_node_id link). Coordinator decisions: M1 events vs knowledge_transitions table; hard vs best-effort emission gate. [INT-FINAL: integrated b7f1f78d0 on tenanos-wave-gateway/integration (KNOWLEDGE_TRANSITIONED events, transition log for knowledge-node lifecycle). One toolchain-driven edit: test file used jest<30 alias toThrowError (2 sites); renamed to canonical toThrow for the @types/jest v30 toolchain. Semantics identical. supersedes_node_id seam kept exactly as the field name for P-20260923-009 consumption (no second transition vocabulary).]",
+      "created_at": "2026-09-23T19:55:00-06:00",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-102",
+      "title": "Memory promotion-path gate fixes: route self-promotion guard, namespace-required reads, vector payload lifecycle fields",
+      "swarm": "06",
+      "writer": "7b410c03-bfc3-4a9c-bbb3-d652af5c3405",
+      "status": "integrated",
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/knowledge.js",
+        "/home/nolan/ping/ping-runtime/embeddings/embedding_service.js"
+      ],
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/knowledge.js",
+        "/home/nolan/ping/ping-runtime/embeddings/embedding_service.js"
+      ],
+      "diff_ref": "diffs/P-20260923-102.diff",
+      "branch": "tenanos-wave-gateway/mc-honesty-082-087",
+      "worktree": "/home/nolan/ping-wave-gateway-mc-honesty",
+      "base_commit": "cc6856c3bc78e0535e66f168c66dc31abee2c073",
+      "commit": "24b915d736b897c19038997ec51ca793589ce38e",
+      "integration_commit": "77feb5d09",
+      "oracle_touch": false,
+      "test_results": null,
+      "failure_ledger": [],
+      "decided_by": "swarm-06",
+      "notes": "Adversarial suite: swarm-06/harness/promote-attack.js (node --test on the Pig, real modules from /home/nolan/ping @ cc6856c3b, FakePool parses the modules' own SQL, fail-closed). 6 promotion-path attacks, all demonstrated FAILING pre-fix (0/6 pass): P-01 POST /nodes minted status=approved confidence=1.0 with zero human approval; P-02 bare SNIPPET_APPROVED (no actor) promoted a node; P-03 approve->reject left 0 transition records; P-04 GET /nodes with no namespace returned HTTP 200 spanning tenant::a and tenant::b; P-05 approved node tied a candidate at rank 0.5 (promotion invisible to retrieval); P-06 Qdrant payload had no status/confidence keys. Fix simulation (diff hunks applied to scratch copies of the 3 modules): 3/6 pass (P-01, P-04, P-06). Remaining 3 fail as designed: P-05 owned by P-20260923-097 (swarm-05, approved/rejected wiring), P-03 owned by P-20260923-099 (swarm-05, I4 transition log), P-02 fix deferred to the constitutional sprint (identity semantics for promoter actor attestation). This diff does not touch knowledge_graph.js (claimed by P-20260923-088) or hybrid_search.js (claimed by P-20260923-097). Target repo for the writer: /home/nolan/ping (gateway track, base tag tenanos-wave-gateway-base-20260923 @ cc6856c3b). [coordinator: approved 02:55Z; 6 adversarial attacks 0/6 pre-fix, 3/6 post-fix simulation; queued for gateway writer after 096] [integrated 03:05Z as 77feb5d09; writer gates: node-check, smoke-require, 25/25 tests, 6/6 P0 regression]",
+      "target_repo": "/home/nolan/ping",
+      "created_at": "2026-09-23T20:27:34-06:00",
+      "updated_at": "2026-09-24T03:05:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:55:00Z"
+    },
+    {
+      "id": "P-20260923-095",
+      "title": "Run-state authority: canonical execution/run-state vocabulary, projection + pure reconciliation classifier (src/tenanos/run/)",
+      "swarm": "11",
+      "writer": "c0fef69d-4b2c-427f-933c-f8cd04a1cb54",
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/run/run-state-authority.ts",
+        "src/tenanos/run/schema.sql",
+        "src/tenanos/run/__tests__/run-state-authority.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/run/run-state-authority.ts",
+        "src/tenanos/run/schema.sql",
+        "src/tenanos/run/__tests__/run-state-authority.test.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-095.diff",
+      "branch": "tenanos-wave/P-20260923-095-run-state",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-095",
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "commit": "82ed23e67ad5373b8009c943385007b9b6a6f47a",
+      "integration_commit": "db80f142",
+      "oracle_touch": false,
+      "test_results": {
+        "tsc_strict": "clean",
+        "kb01_battery": "21/21 PASS",
+        "apply_check": "PASS"
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-11",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T02:45:00Z",
+      "notes": "Regenerated 2026-09-24 ~01:50 UTC from corrupt predecessor (envelope bugs). Coordinator: approved 02:45Z. Single-ownership seam with 002: 002 owns identity+journal (runs/schema.ts); 095 owns state vocabulary+transitions+classifier; 095 schema.sql narrows to reconciliation queue if 002 subsumes tables. [writer: commit 82ed23e6, 3 files, 18/18 tests, tsc strict clean; schema.sql narrowed to reconciliation queue per 002/095 seam] [integrated 03:24Z as db80f142; purely additive, writer gates stand, 002/095 seam enforced]",
+      "created_at": "2026-09-24T01:55:00Z",
+      "updated_at": "2026-09-24T03:24:00Z"
+    },
+    {
+      "id": "P-20260923-101",
+      "title": "Run reconciler: idempotent startup/orphan reconciliation pass over existing MissionRuntime (src/tenanos/run/reconciler.ts)",
+      "swarm": "11",
+      "writer": null,
+      "status": "integrated",
+      "files_touched": [
+        "src/tenanos/run/reconciler.ts",
+        "src/tenanos/__tests__/reconciler.test.ts"
+      ],
+      "claimed_areas": [
+        "src/tenanos/run/reconciler.ts",
+        "src/tenanos/run/__tests__/reconciler.test.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-101.restored.diff",
+      "branch": null,
+      "worktree": null,
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "commit": "51d4a187",
+      "integration_commit": "51d4a187",
+      "oracle_touch": false,
+      "test_results": {
+        "item_tests": "8/8 src/tenanos/__tests__/reconciler.test.ts",
+        "merged_tree_gates": "merged-tree gates: scoped jest 20 suites / 234 tests all pass; strict tsc clean over src/tenanos/** (final tip 51d4a187)",
+        "integration_gates": "INT-PING worktree /home/nolan/projects/ping-wave-integration; never pushed; shared /home/nolan/projects/ping tree untouched"
+      },
+      "failure_ledger": [],
+      "decided_by": "swarm-11",
+      "notes": "Valid diff staged at diffs/P-20260923-096.diff was overwritten by swarm-05 P0 (096 reassigned). Diff to be re-staged from swarm-11/RESTAGE-NOTE.md + corrupt predecessor content (envelope bugs only, content intact). Layering: 006=detect, 101=classify/decide, 013=execute. [INT-FINAL: integrated 51d4a187 (branch tip). DIFF REPOINT: the actual integrated source is diffs/P-20260923-101.restored.diff; diffs/P-20260923-101.diff was never staged and was NOT used. Target repo: /home/nolan/projects/ping. Test relocated from src/tenanos/run/__tests__/reconciler.test.ts to src/tenanos/__tests__/reconciler.test.ts with imports adapted ('../run/reconciler', '../run/run-state-authority'); scoped jest testMatch unchanged. Depends on the pre-integrated 095 run-state-authority vocabulary (db80f142). Layering: 006=detect, 101=classify/decide, 013=execute.]",
+      "created_at": "2026-09-24T02:45:00Z",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "target_repo": "/home/nolan/projects/ping",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-105",
+      "title": "P0: Kit webhook requires HMAC signature + replay protection (fail-closed)",
+      "swarm": "15",
+      "writer": "9672fc2c-1bfb-4fbc-9315-c99a9cd0168d",
+      "status": "written",
+      "files_touched": [
+        "src/app/api/kit/webhook/route.ts",
+        "src/lib/events.ts",
+        "scripts/security-regression/d1-kit-webhook-regression.ts"
+      ],
+      "claimed_areas": [
+        "src/app/api/kit/webhook/route.ts",
+        "src/lib/events.ts",
+        "scripts/security-regression/d1-kit-webhook-regression.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-105.diff",
+      "branch": "tenanos-wave/P-20260923-104-105-security",
+      "worktree": "/home/nolan/projects/ping-wave-security-104-105",
+      "base_commit": null,
+      "commit": "1df0f98cad19eb6736c5f5a8bf674bac530a9087",
+      "integration_commit": null,
+      "oracle_touch": false,
+      "test_results": {
+        "regression": {
+          "command": "npx tsx scripts/security-regression/d1-kit-webhook-regression.ts",
+          "checks": 4,
+          "pass": true,
+          "note": "4/4 FAIL pre-fix (unsigned->200, bad-sig->200, replay->2 events, no-secret->200); 4/4 PASS post-fix; tsc --noEmit clean on changed files"
+        }
+      },
+      "failure_ledger": [],
+      "decided_by": null,
+      "notes": "Target repo /home/nolan/projects/ping (website repo, NOT src/tenanos substrate). D1 from DEPENDENCIES-FOR-CONVERGENCE-WAVE.md. Live proof: route.ts has no verify/hmac/signature/timingSafeEqual refs, never calls kitAdapter.handleWebhook; logEvent called without provenance so replays duplicate. Fix: x-kit-signature HMAC-SHA256 over raw body vs KIT_WEBHOOK_SECRET (scheme matches kit-adapter.ts verifyKitSignature), timingSafeEqual, 503 fail-closed when secret unset, provenance-based replay dedupe via new optional logEvent 5th param. CAVEAT for coordinator/Nolan: Kit's public docs do not document a webhook signature header; if Kit cannot sign, configure a signing proxy or accept removal of the route instead (route has no in-repo callers). RENAME 03:2xZ: entry re-issued as P-20260923-105 because diffs/P-20260923-103.diff was overwritten at 03:19:57Z by an unregistered swarm-02 artifact (attempt-fencing test, no STATE.json entry); D1 content regenerated byte-identical at diffs/P-20260923-105.diff. Coordinator: swarm-02's file at diffs/P-20260923-103.diff is preserved but has no STATE entry. [coordinator: approved 03:32Z; P0 security, regression tests pass, tsc clean] [writer: commits 9ca7d043/1df0f98c, gates pass, canonical diffs repaired (new file mode)]",
+      "created_at": "2026-09-24T03:17:32Z",
+      "updated_at": "2026-09-24T03:38:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T03:32:00Z"
+    },
+    {
+      "id": "P-20260923-104",
+      "title": "P0: resource-download route gains auth token, URL allowlist, email validation",
+      "swarm": "15",
+      "writer": "9672fc2c-1bfb-4fbc-9315-c99a9cd0168d",
+      "status": "written",
+      "files_touched": [
+        "src/app/api/resources/download/route.ts",
+        "scripts/security-regression/d2-resource-download-regression.ts"
+      ],
+      "claimed_areas": [
+        "src/app/api/resources/download/route.ts",
+        "scripts/security-regression/d2-resource-download-regression.ts"
+      ],
+      "diff_ref": "diffs/P-20260923-104.diff",
+      "branch": "tenanos-wave/P-20260923-104-105-security",
+      "worktree": "/home/nolan/projects/ping-wave-security-104-105",
+      "base_commit": null,
+      "commit": "9ca7d043927cdd79d2c297d7d91c49018f143644",
+      "integration_commit": null,
+      "oracle_touch": false,
+      "test_results": {
+        "regression": {
+          "command": "npx tsx scripts/security-regression/d2-resource-download-regression.ts",
+          "checks": 6,
+          "pass": true,
+          "note": "5/6 attack cases SUCCEED pre-fix (only legit-flow check passes); 6/6 PASS post-fix; tsc --noEmit clean"
+        }
+      },
+      "failure_ledger": [],
+      "decided_by": null,
+      "notes": "Target repo /home/nolan/projects/ping (website repo, NOT src/tenanos substrate). D2 from DEPENDENCIES-FOR-CONVERGENCE-WAVE.md. Live proof: route.ts has zero in-repo callers (dead), no auth, no email validation, reflects resourceUrl as downloadUrl. Fix: Bearer RESOURCE_DOWNLOAD_TOKEN (timingSafeEqual, 503 fail-closed), resourceUrl allowlist (RESOURCE_DOWNLOAD_ALLOWED_HOSTS or own-host default, https-only), email format validation before any Kit call. NOTE: route is dead code with no callers/UI/docs; coordinator may prefer outright removal over hardening. [coordinator: approved 03:32Z; P0 security, regression tests pass, tsc clean] [writer: commits 9ca7d043/1df0f98c, gates pass, canonical diffs repaired (new file mode)]",
+      "created_at": "2026-09-24T03:17:32Z",
+      "updated_at": "2026-09-24T03:38:00Z",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T03:32:00Z"
+    },
+    {
+      "id": "P-20260923-108",
+      "title": "P0: holder-bound renewLease (R-12)",
+      "swarm": "09",
+      "writer": "096af72c-bc2c-4e91-8c91-9fbf13043128",
+      "status": "integrated",
+      "files_touched": [],
+      "claimed_areas": [],
+      "diff_ref": null,
+      "branch": "tenanos-wave-gateway/P-20260923-106-107-108-lease-p0",
+      "worktree": "/home/nolan/ping-wave-P-20260923-106-107-108",
+      "base_commit": "cc6856c3bc78e0535e66f168c66dc31abee2c073",
+      "commit": "7ceaabe89abe212b53078998747d78bb53798e89",
+      "integration_commit": "870069ca7",
+      "oracle_touch": false,
+      "test_results": null,
+      "failure_ledger": [],
+      "decided_by": "agent-09",
+      "target_repo": "/home/nolan/ping",
+      "notes": "From AGENT09-EXECUTION-BOUNDARY.md. MissionScheduler passes holder; renewLease SQL requires assigned_to=holder match. Prevents any-caller lease extension. Spec in report; writer implements from spec. [renamed from 103 to 108: 103 belongs to swarm-02 attempt fencing (complete diff)] [writer: commit 7ceaabe8, P0 holder-bound renewLease, gates pass] [integrated 03:48Z as 870069ca7; writer gates pass]",
+      "created_at": "2026-09-24T03:26:00Z",
+      "updated_at": "2026-09-24T03:48:00Z"
+    },
+    {
+      "id": "P-20260923-106",
+      "title": "P0: abort dispatch when assign() rowCount!=1 (R-13)",
+      "swarm": "09",
+      "writer": "096af72c-bc2c-4e91-8c91-9fbf13043128",
+      "status": "integrated",
+      "files_touched": [],
+      "claimed_areas": [],
+      "diff_ref": null,
+      "branch": "tenanos-wave-gateway/P-20260923-106-107-108-lease-p0",
+      "worktree": "/home/nolan/ping-wave-P-20260923-106-107-108",
+      "base_commit": "cc6856c3bc78e0535e66f168c66dc31abee2c073",
+      "commit": "9ed144c49e7ca46a72db2b0b6aec73a636a3d8ea",
+      "integration_commit": "870069ca7",
+      "oracle_touch": false,
+      "test_results": null,
+      "failure_ledger": [],
+      "decided_by": "agent-09",
+      "target_repo": "/home/nolan/ping",
+      "notes": "From AGENT09-EXECUTION-BOUNDARY.md. _dispatch checks assign() rowCount; abort if !=1. Prevents claim stealing and double-execution. Spec in report; writer implements from spec. [writer: commit 9ed144c4, P0 abort on rowCount!=1, gates pass] [integrated 03:48Z as 870069ca7; writer gates pass]",
+      "created_at": "2026-09-24T03:27:00Z",
+      "updated_at": "2026-09-24T03:48:00Z"
+    },
+    {
+      "id": "P-20260923-107",
+      "title": "P0: fencing token column for mission leases (R-14)",
+      "swarm": "09",
+      "writer": "096af72c-bc2c-4e91-8c91-9fbf13043128",
+      "status": "integrated",
+      "files_touched": [],
+      "claimed_areas": [],
+      "diff_ref": null,
+      "branch": "tenanos-wave-gateway/P-20260923-106-107-108-lease-p0",
+      "worktree": "/home/nolan/ping-wave-P-20260923-106-107-108",
+      "base_commit": "cc6856c3bc78e0535e66f168c66dc31abee2c073",
+      "commit": "225238a1387ac1d694773a012f1500e474c8db53",
+      "integration_commit": "870069ca7",
+      "oracle_touch": false,
+      "test_results": null,
+      "failure_ledger": [],
+      "decided_by": "agent-09",
+      "target_repo": "/home/nolan/ping",
+      "notes": "From AGENT09-EXECUTION-BOUNDARY.md. Add fencing_token to mission lease; complete()/fail() require token match. Prevents stale worker overwriting new holder. Spec in report; writer implements from spec. [writer: commit 225238a1, P0 fencing token, gates pass] [integrated 03:48Z as 870069ca7; writer gates pass]",
+      "created_at": "2026-09-24T03:27:00Z",
+      "updated_at": "2026-09-24T03:48:00Z"
+    },
+    {
+      "base_commit": "e48ef710cb889bf4d59b833ef9766067a9e2bbf0",
+      "branch": "tenanos-wave/P-20260923-103-attempt-fencing",
+      "claimed_areas": [
+        "src/tenanos/run/attempt-fencing.ts",
+        "src/tenanos/run/schema-attempt-fencing.sql",
+        "src/tenanos/run/__tests__/attempt-fencing.test.ts"
+      ],
+      "commit": "a9d1c9d8522e9a0dc0e3804a1d4f81fe2b2c347f",
+      "created_at": "2026-09-24T03:05:00Z",
+      "decided_by": "swarm-02",
+      "diff_ref": "diffs/P-20260923-103.diff",
+      "failure_ledger": [],
+      "files_touched": [
+        "src/tenanos/run/attempt-fencing.ts",
+        "src/tenanos/run/schema-attempt-fencing.sql",
+        "src/tenanos/run/__tests__/attempt-fencing.test.ts"
+      ],
+      "id": "P-20260923-103",
+      "integration_commit": "218db490",
+      "notes": "Depends on P-20260923-095 (approved, not yet integrated): imports classifyUnknownExecution + ReconcileDirective from run-state-authority.ts and ALTERs its tenanos_run_attempts table (ADD COLUMN IF NOT EXISTS, idempotent). Ownership seam: 095 owns run-state vocabulary/projection/classifier + base attempt table; 103 owns attempt lifecycle MECHANICS (fencing tokens, status machine created/claimed/running/completed/failed/timed_out/stale, checkpoint monotonicity, short-ref resolution, zombie write discipline). No overlap with 095/101/002 claimed areas (check-overlap.py clean 2026-09-24). 46/46 jest tests pass in scratch against 095's actual classifier (scratch/tenanos-wave/scratch/swarm02-103). Diff applies cleanly (git apply --check). Does NOT create a second orchestrator/event authority/capability system: pure decider module, SQL is the enforcer. Legacy PING findings F-01/F-02 (retry_pending dead state; DLQ witness Buffer throw) recorded in FAILURE_LEDGER.md as FL-20260923-101/102; no legacy-repo diff filed (scope flag per WAVE-LEDGER line 95; coordinator's call). [coordinator: approved 03:30Z; 46/46 tests, apply-check clean, overlap clean, 095 dependency satisfied] [writer: commit a9d1c9d8, 3 files, 46/46 tests, tsc strict clean] [integrated 03:35Z as 218db490; purely additive, writer gates stand] [INT-FINAL: DUPLICATE_ALREADY_ON_BRANCH. git apply --check of diffs/P-20260923-103.diff against 51d4a187 fails with 'already exists in working directory' for all three files; content merged to the branch at 218db490 (a9d1c9d8). NOT re-applied, NOT re-verified. Seam verdicts confirmed against the branch tree: (a) 002's base CREATE TABLE tenanos_run_attempts omits the five 103-owned mechanics columns that the 103 ALTER TABLE adds; (b) 005 owns checkpoint record shape/validation while 103 keeps fenced write discipline and sequential checkpoint enforcement (attempt-fencing.ts:194 seq = prevSeq + 1, :216 NonMonotonicCheckpointError).]",
+      "oracle_touch": false,
+      "status": "duplicate_already_on_branch",
+      "swarm": "02",
+      "test_results": null,
+      "title": "Attempt fencing: durable attempt identity mechanics \u2014 fencing tokens, attempt status machine, checkpoint monotonicity, zombie-attempt write discipline (src/tenanos/run/attempt-fencing.ts)",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "worktree": "/home/nolan/projects/ping-wave-P-20260923-103",
+      "writer": "1b52b835-e652-4429-acbf-0d7c420f4c7d",
+      "approved_by": "coordinator",
+      "approved_at": "2026-09-24T03:30:00Z",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-109",
+      "title": "/ops/status + /ops/system: replace residual blanket-authority claim with per-section provenance (extends 086)",
+      "status": "integrated",
+      "swarm": "MC1",
+      "decided_by": "mc1-continuation",
+      "writer": null,
+      "branch": null,
+      "commit": "5c671369e",
+      "base_commit": null,
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/ops.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/ops.js"
+      ],
+      "target_repo": "/home/nolan/ping",
+      "diff_ref": "diffs/P-20260923-109.diff",
+      "notes": "Continuation of 086. MC1 re-verified the 11 unproven audit items: /ops/status (ops.js:28) and /ops/system (ops.js:122) still emit generated_runtime_authoritative:true with no backend proof. Replaced with provenance note. From worker MC1, read-only verified against tenanos-wave-gateway/integration @ 870069ca7. [INT-FINAL: integrated 5c671369e on tenanos-wave-gateway/integration. Removed generated_runtime_authoritative:true from /ops/status and /ops/system, replaced with provenance:'per-section; no blanket runtime-authority claim'; fixed the now-false file header comment (line 3). Grep at tip: the only remaining instance is gateway/routes/constitution.js:113, a COMPUTED boolean (!!consumers && ...) with real backend proof, not a blanket claim; out of 109's scope, left intact.]",
+      "oracle_touch": false,
+      "failure_ledger": [],
+      "test_results": {
+        "writer_gates": "gateway/test_ops_time_authority.js 5/5 pass (with NODE_PATH to gateway node_modules; bare run fails on missing express in the worktree, pre-existing env issue)",
+        "integration": "integrated 2026-09-24 as 5c671369e on tenanos-wave-gateway/integration from diffs/P-20260923-109.diff (apply-check clean at tip); never pushed"
+      },
+      "approved_by": null,
+      "approved_at": null,
+      "integration_branch": null,
+      "integration_commit": "5c671369e",
+      "integration_worktree": null,
+      "worktree": null,
+      "created_at": "2026-09-24T11:15:06Z",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "updated_by": "INT-FINAL"
+    },
+    {
+      "id": "P-20260923-110",
+      "title": "POST /orchestration/missions: 410 + canonical pointer (completes 083; kills orphaned write)",
+      "status": "integrated",
+      "swarm": "MC1",
+      "decided_by": "mc1-continuation",
+      "writer": null,
+      "branch": null,
+      "commit": "ed4371b13",
+      "base_commit": null,
+      "claimed_areas": [
+        "/home/nolan/ping/gateway/routes/orchestration.js"
+      ],
+      "files_touched": [
+        "/home/nolan/ping/gateway/routes/orchestration.js"
+      ],
+      "target_repo": "/home/nolan/ping",
+      "diff_ref": "diffs/P-20260923-110.diff",
+      "notes": "Completes 083. GET reads were 410'd but POST still fabricated random IDs into engine._missions \u2014 orphaned write (create succeeds, nothing can read it back). Replaced with 410 + canonical pointer to POST /missions. Open: /orchestration/missions/:id/dispatch and /:id/output still use engine._missions (engine-session ops, left for engine lane). [INT-FINAL: integrated ed4371b13 on tenanos-wave-gateway/integration. Orphaned-write claim VERIFIED on ref: the handler pushed random-ID (mission_Date.now()_random) missions into the in-memory engine._missions array while GET /orchestration/missions* already 410 (P-20260923-083), so no read route could return them; canonical reads go through MissionRuntime/ping_missions. The in-tree test asserted the createdAt line that 110 intentionally removed (single failure, confirmed empirically); updated that one assertion to check the 410 + canonical pointer + removal of the orphaned write, keeping the no-new-Date() guard intact. Header comment updated. /orchestration/missions/:id/dispatch and /:id/output left for the engine lane.]",
+      "oracle_touch": false,
+      "failure_ledger": [],
+      "test_results": {
+        "writer_gates": "gateway/test_orchestration_time_authority.js 5/5 pass after surgical test update (was 4/5 with 1 fail on the removed createdAt assertion, verified before the fix)",
+        "integration": "integrated 2026-09-24 as ed4371b13 on tenanos-wave-gateway/integration from diffs/P-20260923-110.diff (apply-check clean at tip); never pushed"
+      },
+      "approved_by": null,
+      "approved_at": null,
+      "integration_branch": null,
+      "integration_commit": "ed4371b13",
+      "integration_worktree": null,
+      "worktree": null,
+      "created_at": "2026-09-24T11:15:06Z",
+      "updated_at": "2026-09-24T12:25:00Z",
+      "updated_by": "INT-FINAL"
+    }
+  ],
+  "repo": "/home/nolan/projects/ping",
+  "schema_version": "1.0.0",
+  "updated_at": "2026-09-24T12:25:00Z",
+  "updated_by": "INT-FINAL",
+  "wave": "tenanos-autonomous-convergence"
+}

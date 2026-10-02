@@ -1,0 +1,161 @@
+########## gateway_runtime.js: middleware/auth/tenant (first 120 lines) ##########
+/**
+ * Gateway Runtime
+ * 
+ * PATCH_001: Introduce gateway-to-kernel adapter interface
+ * 
+ * The gateway now communicates with the kernel through the GatewayToKernelAdapter,
+ * ensuring proper layer separation and constitutional ownership.
+ */
+
+const express = require('express');
+const { EventReadAuthority } = require('../../ping-runtime/events/event_read_authority');
+const { RepositoryStore } = require('../../ping-runtime/events/repository_store');
+const { GatewayToKernelAdapter } = require('../../runtime/kernel/gateway_adapter');
+const { PostgresAdapter } = require('../postgres_adapter');
+const { CanonicalEventEnvelope } = require('../canonical_event_envelope');
+const { TenantRegistry } = require('../../ping-runtime/runtime/tenant_registry');
+const { DeploymentRegistry } = require('../../ping-runtime/runtime/deployment_registry');
+const { RuntimeRegistry } = require('../../ping-runtime/runtime/runtime_registry');
+const createEventRoutes = require('../routes/events');
+const createIdentityRoutes = require('../routes/identities');
+const createRepositoryRoutes = require('../routes/repository');
+const createContextRoutes = require('../routes/context');
+const createHealthRoutes = require('../routes/health');
+const createSystemRoutes = require('../routes/system');
+const ollamaRoutes = require('../routes/ollama');
+const createCanonicalEventRoutes = require('../routes/canonical_events');
+const createTenantRoutes = require('../routes/tenants');
+const createDeploymentRoutes = require('../routes/deployments');
+const createRuntimeRoutes = require('../routes/runtime');
+const createConstitutionRoutes = require('../routes/constitution');
+const createFingerprintRoutes = require('../routes/fingerprint');
+const { GenerationManifestLoader } = require('../generated/generation_manifest_loader');
+const { GeneratedArtifactLoader } = require('../generated/generated_artifact_loader');
+const { CompilerCompatibility } = require('../generated/compiler_compatibility');
+const { computeRuntimeArtifactHash } = require('../generated/runtime_artifact_hash');
+const { WorkflowExecutor } = require('../../ping-runtime/runtime/workflow_executor');
+const { EventValidator } = require('../../ping-runtime/events/event_validator');
+const { CapabilityResolver } = require('../../ping-runtime/runtime/capability_resolver');
+const { DeploymentLoader } = require('../../ping-runtime/runtime/deployment_loader');
+const { StateMachineExecutor } = require('../../ping-runtime/runtime/state_machine_executor');
+const { DriftDetector } = require('../../ping-runtime/runtime/drift_detector');
+const { RuntimeFingerprint } = require('../../ping-runtime/runtime/runtime_fingerprint');
+const { healthAuthority } = require('../health_authority');
+const { SystemAuthority } = require('../../ping-runtime/runtime/system_authority');
+const createOpsRoutes = require('../routes/ops');
+const { IntegrationManager } = require('../../ping-runtime/runtime/integration_manager');
+const { PostHogIntegration } = require('../../ping-runtime/connectors/posthog_integration');
+const { EmailIntegration } = require('../../ping-runtime/connectors/email_integration');
+const { SmsIntegration } = require('../../ping-runtime/connectors/sms_integration');
+const { EventGovernance } = require('../../ping-runtime/events/event_governance');
+const createGovernanceRoutes = require('../routes/governance');
+const { AnalyticsPolicy } = require('../../ping-runtime/runtime/analytics_policy');
+const { HuggingFaceAdapter } = require('../../ping-runtime/ai/huggingface_adapter');
+const { AIWorkspaceAuthority } = require('../../ping-runtime/business/ai_workspace_authority');
+const createAiWorkspaceRoutes = require('../routes/ai_workspace');
+const { GoogleAuth } = require('../google/google_auth');
+const { BusinessProfileAdapter } = require('../google/business_profile');
+const { ReviewAuthority } = require('../../ping-runtime/business/review_authority');
+const { createReviewRoutes } = require('../routes/reviews');
+const { GooglePeopleAdapter } = require('../google/people_adapter');
+const { GmailAdapter } = require('../google/gmail_adapter');
+const { GoogleCalendarAdapter } = require('../google/calendar_adapter');
+const { CustomerAuthority } = require('../../ping-runtime/business/customer_authority');
+const createCustomerRoutes = require('../routes/customers');
+const { ProjectAuthority } = require('../../ping-runtime/business/project_authority');
+const createProjectRoutes = require('../routes/projects');
+const { ExecutionEngine } = require('../../ping-runtime/orchestration/execution/engine');
+const createOrchestrationRoutes = require('../routes/orchestration');
+
+// PING Core v1
+const { UnifiedEventRuntime } = require('../../ping-runtime/events/unified_event_runtime');
+const { EventBridge } = require('../../ping-runtime/events/event_bridge');
+const { KnowledgeGraph } = require('../../ping-runtime/knowledge/knowledge_graph');
+const { MissionRuntime } = require('../../ping-runtime/orchestration/mission_runtime');
+const { MissionScheduler } = require('../../ping-runtime/orchestration/mission_scheduler');
+const { AIRuntime } = require('../../ping-runtime/ai/ai_runtime');
+const { OllamaProvider } = require('../../ping-runtime/ai/ollama_provider');
+const { GoogleConnector } = require('../../ping-runtime/connectors/google_connector');
+const { ConnectorRegistry } = require('../../ping-runtime/connectors/connector_registry');
+const { GitHubConnector } = require('../../ping-runtime/connectors/github_connector');
+const { PostHogConnector } = require('../../ping-runtime/connectors/posthog_connector');
+const { EmailConnector } = require('../../ping-runtime/connectors/email_connector');
+const { SMSConnector } = require('../../ping-runtime/connectors/sms_connector');
+const { CapabilityRegistry } = require('../../ping-runtime/connectors/capability_registry');
+const { OAuthFlowManager } = require('../../ping-runtime/connectors/oauth_provider');
+const { WorkerRuntime } = require('../../ping-runtime/workers/worker_runtime');
+const { registerCanonicalWorkers } = require('../../ping-runtime/workers/canonical_workers');
+const { EventToMissionBridge } = require('../../ping-runtime/orchestration/event_to_mission_bridge');
+const { ReviewEmitter, CustomerEmitter, ProjectEmitter, ConnectorEmitter, SystemEmitter } = require('../../ping-runtime/business/business_emitters');
+const { Neo4jAdapter } = require('../../ping-runtime/graph/neo4j_adapter');
+const { DeadLetterAuthority } = require('../dead_letter_authority');
+const { QdrantAdapter } = require('../../ping-runtime/search/qdrant_adapter');
+const createKnowledgeRoutes = require('../routes/knowledge');
+const createMissionRoutes = require('../routes/missions');
+const createAIRoutes = require('../routes/ai');
+const createConnectorRoutes = require('../routes/connectors');
+const createMissionControlRoutes = require('../routes/mission_control');
+const { CanonicalizationService } = require('../../ping-runtime/canonicalization/canonicalization_service');
+const { EmbeddingService } = require('../../ping-runtime/embeddings/embedding_service');
+const { EvidenceAuthority } = require('../../ping-runtime/evidence/evidence_authority');
+const { HybridSearch } = require('../../ping-runtime/search/hybrid_search');
+const { verifyCanonicalObject } = require('../../ping-runtime/canonicalization/canonical_object');
+const createIngestRoutes = require('../routes/ingest');
+const { KernelReplayExecutionProvider } = require('../kernel_replay_execution_provider');
+
+class GatewayRuntime {
+  constructor(pool) {
+    this._app = express();
+    this._pool = pool || null;
+    this._storage = null;
+
+    this._setupMiddleware();
+  }
+
+  _setupMiddleware() {
+    this._app.use(express.json());
+    this._app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+########## gateway_runtime.js: app.use lines ##########
+116:    this._app.use(express.json());
+117:    this._app.use((req, res, next) => {
+677:    this._app.use('/api/v1/ollama', ollamaRoutes(services.aiRuntime, services.ollamaProvider));
+678:    this._app.use('/health', createHealthRoutes(healthAuthority));
+682:      this._app.use('/events', createEventRoutes(services.eventReadAuthority, services.unifiedEventRuntime, services.pool));
+683:      this._app.use('/identities', createIdentityRoutes(services.unifiedEventRuntime, services.pool));
+684:      this._app.use('/context', createContextRoutes(services.eventReadAuthority));
+685:      this._app.use('/api/v1/repository', createRepositoryRoutes(services.repoStore));
+686:      this._app.use('/system', createSystemRoutes(services.eventReadAuthority));
+687:      this._app.use('/canonical-events', createCanonicalEventRoutes(services.canonicalEventEnvelope));
+688:      this._app.use('/tenants', createTenantRoutes(services.tenantRegistry));
+689:      this._app.use('/deployments', createDeploymentRoutes(services.deploymentRegistry));
+690:      this._app.use('/runtime', createRuntimeRoutes(services.runtimeRegistry));
+691:      this._app.use('/ingest', createIngestRoutes(services.canonicalizationService));
+694:      this._app.use('/events', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+695:      this._app.use('/context', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+696:      this._app.use('/api/v1/repository', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+697:      this._app.use('/system', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+698:      this._app.use('/canonical-events', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+699:      this._app.use('/tenants', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+700:      this._app.use('/deployments', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+701:      this._app.use('/runtime', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+702:      this._app.use('/ingest', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+706:    this._app.use('/constitution', createConstitutionRoutes({
+723:    this._app.use('/runtime/fingerprint', createFingerprintRoutes(services.fingerprint));
+763:    this._app.use('/ops', createOpsRoutes({
+777:    this._app.use('/governance', createGovernanceRoutes(services.eventGovernance));
+781:      this._app.use('/ai-workspace', createAiWorkspaceRoutes(services.aiWorkspaceAuthority));
+784:      this._app.use('/reviews', createReviewRoutes(services.reviewAuthority));
+787:      this._app.use('/customers', createCustomerRoutes(services.customerAuthority));
+790:      this._app.use('/projects', createProjectRoutes(services.projectAuthority));
+793:      this._app.use('/orchestration', createOrchestrationRoutes(services.executionEngine));
+798:      this._app.use('/knowledge', createKnowledgeRoutes(services.knowledgeGraph, {
+803:      this._app.use('/missions', createMissionRoutes(services.missionRuntime));
+806:    this._app.use('/ai', createAIRoutes(services.aiRuntime, services.ollamaProvider));
+808:    this._app.use('/connectors', createConnectorRoutes(services.connectorRegistry, services.capabilityRegistry, services.oauthManager));
+810:    this._app.use('/mc', createMissionControlRoutes(services));
+########## authorizeNamespace implementation ##########
+/home/nolan/ping/gateway/routes/ingest.js

@@ -1,0 +1,27 @@
+# PATCH-02 — Mission Completion Atomicity (shared transaction + deterministic completion identity)
+
+- **AXIOMS CLOSED:** M4 (primary). Supports A1 (attempt binding via result_event_id), RSLT3.
+- **FILES:** `ping-runtime/events/unified_event_runtime.js` (`emit()`); `ping-runtime/orchestration/mission_runtime.js` (`complete()`); `ping-runtime/orchestration/mission_scheduler.js` (rowCount honor).
+- **SYMBOLS:** `UnifiedEventRuntime.emit(eventType, source, payload, options)`, `options.pgClient`, post-commit dispatch hook, `MissionRuntime.complete(missionId, result)`.
+- **SCHEMA CHANGE:** None.
+- **BEFORE:** HEAD: UPDATE commits, emit unchecked (phantom completion W1/W2). Worktree reversal: checked emit, conditional UPDATE (re-execution W3, 0-row race W4, visibility inversion W5). Two auto-commit statements with observable handler dispatch between them.
+- **AFTER:** `emit()` accepts `options.pgClient`; when supplied, persistence runs on that client and handler/integration dispatch is returned as a post-commit callback (never runs inside the tx). `complete()` does: `client=pool.connect(); BEGIN; await emit('MISSION_COMPLETED', ..., {pgClient: client, logical_id:{kind:'mission-completion', mission_id}}); UPDATE ping_missions ... WHERE mission_id=$1 AND status='running' ON client; COMMIT; run post-commit dispatch`. Any failure -> ROLLBACK + throw (row stays `running`; existing retry path handles it). Scheduler honors `complete()` rowCount (0 = lost the race; do not count `stats.completed++`).
+- **ALGORITHM:** Provisional acceptance: `status:'ok'` from a tx-scoped emit means "accepted into the pending transaction" (documented). Deterministic completion identity: `logical_id` in the identity preimage makes the completion event idempotent across retries (ON CONFLICT dedups instead of minting a second event). The tx covers exactly two writes (event row, mission row); observers only see the event after COMMIT via the deferred dispatch.
+- **PSEUDODIFF:**
+  - `unified_event_runtime.js`: `const db = options.pgClient || this._pool;` at the two query sites (INSERT, conflict-SELECT). If `options.pgClient`: skip inline handler/integration dispatch; `return {..., _postCommit: () => runDispatch()}`.
+  - `mission_runtime.js` `complete()`: wrap as above; on ROLLBACK, throw `CompletionNotDurable`.
+  - `mission_scheduler.js:349`: `const n = await complete(...); if (n===1) stats.completed++`.
+- **FAIL-BEFORE TEST:** Inject emit rejection after UPDATE (Lane J injection); assert row reads `completed` with no MISSION_COMPLETED (documents W1/W2).
+- **PASS-AFTER TEST:** Same injection; assert row stays `running`, no MISSION_COMPLETED, retry path re-attempts; exactly one MISSION_COMPLETED row after success.
+- **CRASH TEST:** KILL_05 after result persistence before completion; KILL_06 after completion event before mission state transition: restart -> row `running` (tx rolled back) OR row `completed` + exactly one completion event (tx committed); never row-completed-without-event; never two completion events (logical_id dedup).
+- **CONCURRENCY TEST:** Two schedulers complete the same mission concurrently -> one UPDATE wins (rowCount 1/0), one event (dedup), loser does not count completion.
+- **HISTORY TEST:** No historical rows touched; pre-patch phantom completions (row completed, no event) are reported by a diagnostic query, not auto-rewritten.
+- **NAMESPACE TEST:** Completion emit carries the mission's namespace; tx does not cross namespace boundaries.
+- **SECURITY TEST:** `complete()` still requires the claim owner; the pgClient option is internal-only (not exposed on any HTTP route).
+- **DEPENDENCIES:** PATCH-03 (conflict-SELECT must run on the same client for the tx to be meaningful); PATCH-05 (attempt row transitions in the same tx shape).
+- **MIGRATION:** None.
+- **ROLLBACK:** Revert to HEAD ordering; the logical_id on the emit is harmless (dedup still works).
+- **OBSERVABILITY:** Emit `COMPLETION_TXN_ROLLBACK` counter; log provisional-acceptance usage.
+- **RESIDUAL FAILURE:** A second `complete()` after re-execution dedups the event but overwrites `ping_missions.result`; the attempt record (PATCH-05 `result_event_id`) is what disambiguates attempts. Readers inside the (tiny) tx window see neither write; that is the point.
+- **COMPLEXITY:** Small (~40 lines + docs). The post-commit deferral is load-bearing, not optional: naive client-passing without it lets handlers observe a rolled-back event.
+- **CONFIDENCE:** High. Rejected alternatives: C-B (more machinery, same guarantee), C-C (disproportionate), C-D (falsified: recreates the phantom at the projector).

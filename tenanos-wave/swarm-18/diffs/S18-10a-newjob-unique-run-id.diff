@@ -1,0 +1,24 @@
+# S18-10a: new-job.sh — unique, timezone-stable run IDs
+# Source: ~/workspace/pig-fb/new-job.sh (lines 7-9)
+# Intended target: pig-fb/new-job.sh (workspace tooling; not src/tenanos)
+# Seam: SEAM-REPORT.md 2A — RUN_ID=$TS-$SLUG with local-time 1s resolution collides (BROKEN)
+# Test: run new-job.sh twice within one second for the same slug -> distinct job_ids and distinct job files.
+# ---
+--- a/pig-fb/new-job.sh
++++ b/pig-fb/new-job.sh
+@@ -5,8 +5,13 @@
+ # Usage: new-job.sh <brief-slug>
+ # Env: META_RUN_INITIATOR (default "unknown"), META_RUN_AUTH_REF (default null).
+ # The job envelope is the REQUEST; runs.jsonl (written by meta-pass.sh) is the
+ # EXECUTION record. They join on job_id == run_id.
+ set -u
+ SLUG="$1"
+-TS=$(date +%Y%m%d-%H%M%S)
+-RUN_ID="$TS-$SLUG"
++# S18-10: run identity must be unique and timezone-stable. The old form
++# (local time, 1-second resolution) collided for same-second same-slug runs:
++# job file overwritten, sidecar clobbered, duplicate run_ids in the
++# append-only ledger. UTC keeps the ID sortable; the PID suffix keeps it unique.
++TS=$(date -u +%Y%m%d-%H%M%S)
++RUN_ID="$TS-$SLUG-$$"
+ OUTDIR=/home/hatch/workspace/goals/ping-social-outreach-campaign/hidden_files/meta-ai-intel

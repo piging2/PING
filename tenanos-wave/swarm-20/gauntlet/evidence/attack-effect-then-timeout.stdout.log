@@ -1,0 +1,16 @@
+[2026-09-24T01:50:35.004Z] START: run gauntlet-attack-effect-then-timeout; tenant=gauntlet-tenant-effect-then-timeout; objective 96057b7a0963 (state=ACTIVE)
+[2026-09-24T01:50:35.009Z] LOCK: coordinator lease acquired (pid 99207)
+[2026-09-24T01:50:35.010Z] RECONCILE: 0 durable work order(s) for objective 96057b7a0963
+[2026-09-24T01:50:35.016Z] MEMORY: retrieved 1 active, excluded 0 stale, contradictory=false
+[2026-09-24T01:50:35.025Z] PLAN: t1: work_order_id=f6a42fa6d6b0...
+[2026-09-24T01:50:35.027Z] BUDGET: t1: durable usage 0/2
+[2026-09-24T01:50:35.035Z] POLICY: t1: AUTO_EXECUTE (external_agent_adapter.authorizeWorkOrder:granted)
+[2026-09-24T01:50:35.054Z] ISSUE: t1: work order issued (durable=f6a42fa6d6b0..., adapter=1f3a55da5c8d...)
+[2026-09-24T01:50:35.080Z] DISPATCH: t1: spawned synthetic worker pid 99216 (attempt 1, fault=effect-then-timeout)
+[2026-09-24T01:50:47.116Z] DISPATCH: t1: TIMEOUT after 12057ms; honest failed envelope
+[2026-09-24T01:50:47.251Z] VERIFY: t1: WORKER_FAILED event_id=c50cd89fa816... deduplicated=false
+[2026-09-24T01:50:47.278Z] RETRY: t1: attempt 2 (same durable work_order_id, idempotent)
+[2026-09-24T01:50:47.286Z] DISPATCH: t1: spawned synthetic worker pid 99439 (attempt 2, fault=effect-then-timeout)
+[2026-09-24T01:50:59.885Z] DISPATCH: t1: TIMEOUT after 12550ms; honest failed envelope
+[2026-09-24T01:51:00.027Z] VERIFY: t1: WORKER_FAILED event_id=5ba0e0931798... deduplicated=false
+[2026-09-24T01:51:00.075Z] ESCALATE: worker failed and retry budget exhausted for t1: dispatcher timeout after 12550ms (no worker output); honest failure, no success fabricated

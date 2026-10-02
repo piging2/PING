@@ -1,0 +1,85 @@
+===== R1: mission_control dead letter routes (620-681) =====
+          status: 'not_found',
+          message: `No REPLAY_COMPLETED in correlation chain ${req.params.correlationId}`,
+          correlationId: req.params.correlationId,
+        });
+      }
+      res.json({
+        status: 'ok',
+        correlationId: req.params.correlationId,
+        groupSize: events.length,
+        replays: replays.map((e) => ({
+          event_id: e.event_id,
+          timestamp: e.timestamp,
+          replay: e.payload.replay || null,
+          authority: e.payload.authority || null,
+          witness: witnesses.filter((w) => w.payload && w.payload.upstreamEventId === e.event_id)
+            .map((w) => ({
+              event_type: w.event_type,
+              event_id: w.event_id,
+              timestamp: w.timestamp,
+              reason: w.payload.reason || null,
+              witness: w.payload.witness || null,
+            })),
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEAD LETTER OBSERVABILITY
+  // ═══════════════════════════════════════════════════════════════
+  router.get('/dead-letters', async (req, res) => {
+    const dlq = services.deadLetterAuthority;
+    if (!dlq) return res.json({ status: 'degraded', message: 'DeadLetterAuthority not initialized' });
+    try {
+      const jobType = req.query.jobType || null;
+      const limit = parseInt(req.query.limit) || 50;
+      const offset = parseInt(req.query.offset) || 0;
+      let letters;
+      if (jobType) {
+        letters = await dlq.getDeadLettersByJobType(jobType, { limit, offset, replayableOnly: false });
+      } else {
+        // No jobType filter — get all via stats aggregation (lighter than unbounded SELECT)
+        const stats = await dlq.getStats();
+        letters = { stats, message: 'Use ?jobType=<type> to list specific dead letters' };
+      }
+      res.json({ status: 'ok', deadLetters: letters, limit, offset });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  router.get('/dead-letters/stats', async (req, res) => {
+    const dlq = services.deadLetterAuthority;
+    if (!dlq) return res.json({ status: 'degraded', message: 'DeadLetterAuthority not initialized' });
+    try {
+      const stats = await dlq.getStats();
+      res.json({ status: 'ok', stats });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  router.get('/dead-letters/:id', async (req, res) => {
+    const dlq = services.deadLetterAuthority;
+    if (!dlq) return res.json({ status: 'degraded', message: 'DeadLetterAuthority not initialized' });
+    try {
+      const letters = await dlq.getDeadLettersByMission(req.params.id);
+      if (!letters || letters.length === 0) {
+        return res.status(404).json({ status: 'not_found', message: `No dead letters for mission ${req.params.id}` });
+      }
+      res.json({ status: 'ok', deadLetters: letters });
+    } catch (err) {
+      res.status(500).json({ status: 'error', error: err.message });
+    }
+  });
+
+  return router;
+}
+
+module.exports = createMissionControlRoutes;
+===== R2: accept/reject endpoints anywhere =====
+===== R3: canonical_events route - can clients post arbitrary event types =====

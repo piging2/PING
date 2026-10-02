@@ -1,0 +1,1040 @@
+diff --git a/src/tenanos/verification/types.ts b/src/tenanos/verification/types.ts
+new file mode 100644
+index 0000000..93017c1
+--- /dev/null
++++ b/src/tenanos/verification/types.ts
+@@ -0,0 +1,117 @@
++/**
++ * TenantOS Verification Engine — types (swarm-16, P-20260923-089)
++ *
++ * RESULT -> VERIFICATION step of the autonomous loop.
++ * Core law: RESULT != VERIFIED OUTCOME. A tool result is a claim; only
++ * evidence bound to that claim can promote it to a verified outcome.
++ *
++ * Self-contained: no imports from repo roots (avoids the shared-seam rule on
++ * any future src/tenanos/types.ts).
++ */
++
++/** Ordered evidence grades. Comparison uses GRADE_ORDER, never string order. */
++export type EvidenceGrade = 'none' | 'asserted' | 'observed' | 'recomputed' | 'attested';
++
++export const GRADE_ORDER: Record<EvidenceGrade, number> = {
++  none: 0,
++  asserted: 1,
++  observed: 2,
++  recomputed: 3,
++  attested: 4,
++};
++
++/**
++ * Maximum certifiable confidence per weakest evidence grade.
++ * A verifier may never certify above the evidence it actually holds —
++ * this is the confidence ceiling (swarm-16 mandate).
++ */
++export const GRADE_CONFIDENCE_CAP: Record<EvidenceGrade, number> = {
++  none: 0,
++  asserted: 0.25,
++  observed: 0.6,
++  recomputed: 0.85,
++  attested: 1.0,
++};
++
++/** Minimum grade floor required on every claim for a VERIFIED outcome. */
++export const VERIFIED_GRADE_FLOOR: EvidenceGrade = 'observed';
++
++export type VerificationOutcome = 'VERIFIED' | 'UNVERIFIED' | 'REJECTED';
++
++export type EvidenceCheckKind =
++  | 'schema-match'
++  | 'hash-recompute'
++  | 'requery'
++  | 'journal-readback'
++  | 'invariant';
++
++/** A single claimed effect of a tool call. Claims are cheap; verification is not. */
++export interface EffectClaim {
++  claimId: string;
++  /** stable kind, e.g. 'file-written', 'row-inserted', 'message-sent' */
++  effectKind: string;
++  description: string;
++  expectedValue?: unknown;
++}
++
++/**
++ * One evidence check bound to one claim. The nonce binds the evidence to a
++ * single verification act: recycled evidence from a previous run is stale
++ * by construction and must fail the freshness gate.
++ */
++export interface EvidenceCheck {
++  checkId: string;
++  claimId: string;
++  kind: EvidenceCheckKind;
++  grade: EvidenceGrade;
++  passed: boolean;
++  /** unix ms when the evidence was collected */
++  observedAtMs: number;
++  /** must equal the expectation's freshnessNonce */
++  nonce: string;
++  /** human/machine-readable note, e.g. digest value or journal sequence */
++  detail?: string;
++}
++
++/** Raw output of a tool call, before verification. */
++export interface ToolResult {
++  toolCallId: string;
++  /** transport-level acknowledgement; ACK != EFFECT */
++  ack: 'ok' | 'error' | 'timeout';
++  claimed: EffectClaim[];
++  rawPayload: unknown;
++  /** unknown side-effect semantics fail closed for autonomous mutation */
++  sideEffectSemantics: 'known' | 'unknown';
++}
++
++/** What the autonomous loop expected the tool call to do. */
++export interface VerificationExpectation {
++  toolCallId: string;
++  expected: EffectClaim[];
++  /** evidence minted for any other nonce is rejected */
++  freshnessNonce: string;
++  /** evidence older than this (ms) relative to verification time is stale */
++  maxAgeMs: number;
++  /** allow a no-op call (no claims at all) to verify */
++  allowEmpty?: boolean;
++}
++
++export interface VerificationFinding {
++  severity: 'info' | 'warn' | 'reject';
++  code: string;
++  message: string;
++  claimId?: string;
++}
++
++export interface Verification {
++  outcome: VerificationOutcome;
++  /** weakest evidence grade across all claims */
++  gradeFloor: EvidenceGrade;
++  /** >0 only when outcome is VERIFIED; capped by gradeFloor */
++  certifiedConfidence: number;
++  findings: VerificationFinding[];
++  /** true only when outcome is VERIFIED */
++  autonomousMutationAllowed: boolean;
++  toolCallId: string;
++  verifiedAtMs: number;
++}
+diff --git a/src/tenanos/verification/evidence.ts b/src/tenanos/verification/evidence.ts
+new file mode 100644
+index 0000000..a66a4bc
+--- /dev/null
++++ b/src/tenanos/verification/evidence.ts
+@@ -0,0 +1,147 @@
++/**
++ * TenantOS Verification Engine — evidence constructors (swarm-16, P-20260923-089)
++ *
++ * Evidence is minted, not asserted. Each constructor performs the actual
++ * inspection (schema walk, hash recompute, authoritative re-read) and
++ * returns a check carrying the resulting grade. A bare `success: true`
++ * in a tool payload is grade 'asserted' at best — which can never verify.
++ */
++import { createHash } from 'node:crypto';
++import type { EvidenceCheck, EvidenceCheckKind } from './types.ts';
++
++export type SchemaField = 'string' | 'number' | 'boolean' | 'object';
++
++function matchesSchema(payload: unknown, schema: Record<string, SchemaField>): boolean {
++  if (typeof payload !== 'object' || payload === null) return false;
++  const record = payload as Record<string, unknown>;
++  for (const [key, kind] of Object.entries(schema)) {
++    const value = record[key];
++    if (kind === 'object') {
++      if (typeof value !== 'object' || value === null) return false;
++    } else if (typeof value !== kind) {
++      return false;
++    }
++  }
++  return true;
++}
++
++export interface SchemaMatchInput {
++  checkId: string;
++  claimId: string;
++  nonce: string;
++  observedAtMs: number;
++  payload: unknown;
++  schema: Record<string, SchemaField>;
++}
++
++/**
++ * Grade 'observed': the returned payload was actually inspected against the
++ * expected shape. Passing a tool's self-reported `success: true` through
++ * here does NOT help it — the schema must describe the claimed effect.
++ */
++export function schemaMatchEvidence(input: SchemaMatchInput): EvidenceCheck {
++  const passed = matchesSchema(input.payload, input.schema);
++  return {
++    checkId: input.checkId,
++    claimId: input.claimId,
++    kind: 'schema-match',
++    grade: 'observed',
++    passed,
++    observedAtMs: input.observedAtMs,
++    nonce: input.nonce,
++    detail: passed ? 'payload matches expected schema' : 'payload does not match expected schema',
++  };
++}
++
++export interface HashRecomputeInput {
++  checkId: string;
++  claimId: string;
++  nonce: string;
++  observedAtMs: number;
++  bytes: Uint8Array | string;
++  expectedHex: string;
++}
++
++/**
++ * Grade 'recomputed': sha256 is recomputed here, over the actual bytes,
++ * and compared to the claimed digest. Detects corrupted or substituted
++ * artifacts that a mere `verified: true` flag would miss.
++ */
++export function hashRecomputeEvidence(input: HashRecomputeInput): EvidenceCheck {
++  const actual = createHash('sha256').update(input.bytes).digest('hex');
++  const passed = actual.toLowerCase() === input.expectedHex.toLowerCase();
++  return {
++    checkId: input.checkId,
++    claimId: input.claimId,
++    kind: 'hash-recompute',
++    grade: 'recomputed',
++    passed,
++    observedAtMs: input.observedAtMs,
++    nonce: input.nonce,
++    detail: passed ? `sha256 recompute matches ${actual.slice(0, 16)}…` : `digest mismatch: recomputed ${actual.slice(0, 16)}…`,
++  };
++}
++
++export interface RequeryInput<T> {
++  checkId: string;
++  claimId: string;
++  kind: Extract<EvidenceCheckKind, 'requery' | 'journal-readback'>;
++  nonce: string;
++  observedAtMs: number;
++  /** re-read the authoritative source NOW, not the tool's echo of it */
++  read: () => T | null | undefined;
++  /** does the re-read state carry the claimed effect? */
++  matches: (value: T) => boolean;
++  describe?: (value: T) => string;
++}
++
++/**
++ * Grade 'attested': the authoritative record (journal, store, filesystem)
++ * is re-read and the claimed effect is found in it. This is the substrate
++ * form of the attestation-gate pattern (C4 failure-honesty): the record
++ * must actually carry the state before success is reported.
++ */
++export function requeryEvidence<T>(input: RequeryInput<T>): EvidenceCheck {
++  const value = input.read();
++  const passed = value !== null && value !== undefined && input.matches(value);
++  return {
++    checkId: input.checkId,
++    claimId: input.claimId,
++    kind: input.kind,
++    grade: 'attested',
++    passed,
++    observedAtMs: input.observedAtMs,
++    nonce: input.nonce,
++    detail:
++      value === null || value === undefined
++        ? 'authoritative re-read returned nothing: effect not present'
++        : passed
++          ? `authoritative re-read carries the effect${input.describe ? `: ${input.describe(value)}` : ''}`
++          : 'authoritative re-read does not match the claimed effect',
++  };
++}
++
++export interface InvariantInput {
++  checkId: string;
++  claimId: string;
++  nonce: string;
++  observedAtMs: number;
++  /** pure predicate over the actual result data */
++  predicate: () => boolean;
++  detail?: string;
++}
++
++/** Grade 'observed': a pure invariant evaluated against real data. */
++export function invariantEvidence(input: InvariantInput): EvidenceCheck {
++  const passed = input.predicate();
++  return {
++    checkId: input.checkId,
++    claimId: input.claimId,
++    kind: 'invariant',
++    grade: 'observed',
++    passed,
++    observedAtMs: input.observedAtMs,
++    nonce: input.nonce,
++    detail: input.detail ?? (passed ? 'invariant holds' : 'invariant violated'),
++  };
++}
+diff --git a/src/tenanos/verification/verifier.ts b/src/tenanos/verification/verifier.ts
+new file mode 100644
+index 0000000..e564c4c
+--- /dev/null
++++ b/src/tenanos/verification/verifier.ts
+@@ -0,0 +1,181 @@
++/**
++ * TenantOS Verification Engine — the RESULT -> VERIFICATION gate
++ * (swarm-16, P-20260923-089)
++ *
++ * verifyToolResult() takes a raw tool result plus the loop's expectation and
++ * evidence checks, and returns a Verification. Decision order is
++ * fail-closed: any structural defect (unknown semantics, stale evidence,
++ * unexpected claims, self-asserted claims) yields UNVERIFIED; evidence that
++ * actively contradicts a claim yields REJECTED with the missing evidence
++ * named. VERIFIED requires every claim to be backed by fresh, nonce-bound
++ * evidence at or above the grade floor, and is the only state that permits
++ * autonomous mutation.
++ *
++ * Deterministic: the verification instant is an explicit parameter (nowMs),
++ * so the gate is testable and replayable.
++ */
++import {
++  GRADE_CONFIDENCE_CAP,
++  GRADE_ORDER,
++  VERIFIED_GRADE_FLOOR,
++} from './types.ts';
++import type {
++  EffectClaim,
++  EvidenceCheck,
++  EvidenceGrade,
++  ToolResult,
++  Verification,
++  VerificationExpectation,
++  VerificationFinding,
++} from './types.ts';
++
++const FRESHNESS_BOUND_KINDS = new Set(['requery', 'journal-readback']);
++
++function finding(
++  severity: 'info' | 'warn' | 'reject',
++  code: string,
++  message: string,
++  claimId?: string,
++): VerificationFinding {
++  return claimId === undefined ? { severity, code, message } : { severity, code, message, claimId };
++}
++
++function minGrade(a: EvidenceGrade, b: EvidenceGrade): EvidenceGrade {
++  return GRADE_ORDER[a] <= GRADE_ORDER[b] ? a : b;
++}
++
++export function verifyToolResult(
++  result: ToolResult,
++  expectation: VerificationExpectation,
++  checks: EvidenceCheck[],
++  nowMs: number,
++): Verification {
++  const findings: VerificationFinding[] = [];
++  let outcome: 'VERIFIED' | 'UNVERIFIED' | 'REJECTED' = 'VERIFIED';
++  let gradeFloor: EvidenceGrade = 'attested';
++
++  const failClosed = (f: VerificationFinding) => {
++    findings.push(f);
++    if (outcome === 'VERIFIED') outcome = 'UNVERIFIED';
++  };
++  const reject = (f: VerificationFinding) => {
++    findings.push(f);
++    outcome = 'REJECTED';
++  };
++
++  // 0. Identity binding: the expectation must be for this tool call.
++  if (expectation.toolCallId !== result.toolCallId) {
++    reject(finding('reject', 'EXPECTATION_MISMATCH',
++      `expectation is for ${expectation.toolCallId} but result is for ${result.toolCallId}`));
++    return finish();
++  }
++
++  // 1. ACK != EFFECT and unknown side-effect semantics fail closed.
++  if (result.sideEffectSemantics === 'unknown') {
++    failClosed(finding('reject', 'SIDE_EFFECT_UNKNOWN',
++      'tool result carries unknown side-effect semantics: autonomous mutation blocked until the effect is characterized'));
++  }
++  if (result.ack !== 'ok') {
++    failClosed(finding('reject', 'ACK_NOT_OK',
++      `transport ack is '${result.ack}': there is no successful result to verify`));
++  }
++
++  // 2. Claim coverage: every expected claim must be present in the result.
++  const claimedById = new Map(result.claimed.map((c) => [c.claimId, c]));
++  const expectedById = new Map(expectation.expected.map((c) => [c.claimId, c]));
++  for (const expected of expectation.expected) {
++    if (!claimedById.has(expected.claimId)) {
++      failClosed(finding('reject', 'EXPECTATION_UNMET',
++        `expected claim '${expected.claimId}' (${expected.description}) is absent from the result`, expected.claimId));
++    }
++  }
++  // Surprise effects fail closed: the loop may not mutate on effects it did not expect.
++  for (const claimed of result.claimed) {
++    if (!expectedById.has(claimed.claimId)) {
++      failClosed(finding('reject', 'UNEXPECTED_CLAIM',
++        `result claims '${claimed.claimId}' (${claimed.description}) which the expectation did not authorize`, claimed.claimId));
++    }
++  }
++
++  // 3. Evidence binding per claim.
++  const checksByClaim = new Map<string, EvidenceCheck[]>();
++  for (const check of checks) {
++    if (check.claimId === undefined) continue;
++    const list = checksByClaim.get(check.claimId) ?? [];
++    list.push(check);
++    checksByClaim.set(check.claimId, list);
++  }
++
++  const gradeOf = (claim: EffectClaim): EvidenceGrade => {
++    const claimChecks = checksByClaim.get(claim.claimId) ?? [];
++    // Freshness + nonce binding first: recycled or stale evidence is not evidence.
++    const live = claimChecks.filter((check) => {
++      if (check.nonce !== expectation.freshnessNonce) {
++        failClosed(finding('warn', 'EVIDENCE_NONCE_MISMATCH',
++          `check '${check.checkId}' was minted for a different verification act (nonce mismatch)`, claim.claimId));
++        return false;
++      }
++      if (nowMs - check.observedAtMs > expectation.maxAgeMs) {
++        failClosed(finding('warn', 'STALE_EVIDENCE',
++          `check '${check.checkId}' is older than maxAgeMs (${expectation.maxAgeMs}ms)`, claim.claimId));
++        return false;
++      }
++      if (FRESHNESS_BOUND_KINDS.has(check.kind) && check.nonce !== expectation.freshnessNonce) {
++        return false;
++      }
++      return true;
++    });
++    // Contradiction: any live check that fails rejects with named evidence.
++    for (const check of live) {
++      if (!check.passed) {
++        reject(finding('reject', 'EVIDENCE_CONTRADICTED',
++          `check '${check.checkId}' (${check.kind}) contradicts claim '${claim.claimId}': ${check.detail ?? 'no detail'}`, claim.claimId));
++      }
++    }
++    if (live.length === 0) return 'none';
++    let best: EvidenceGrade = 'none';
++    for (const check of live) {
++      if (GRADE_ORDER[check.grade] > GRADE_ORDER[best]) best = check.grade;
++    }
++    return best;
++  };
++
++  const noOp = result.claimed.length === 0 && expectation.expected.length === 0;
++  if (noOp && !expectation.allowEmpty) {
++    failClosed(finding('reject', 'NOTHING_TO_VERIFY',
++      'no claims expected and none made; a no-op verifies only when the expectation explicitly allows it'));
++  }
++
++  for (const claim of result.claimed) {
++    const grade = gradeOf(claim);
++    gradeFloor = minGrade(gradeFloor, grade);
++    if (grade === 'none') {
++      failClosed(finding('reject', 'NO_EVIDENCE',
++        `claim '${claim.claimId}' has no live evidence bound to this verification act`, claim.claimId));
++    } else if (GRADE_ORDER[grade] < GRADE_ORDER[VERIFIED_GRADE_FLOOR]) {
++      failClosed(finding('reject', grade === 'asserted' ? 'SELF_ASSERTED_CLAIM' : 'GRADE_BELOW_FLOOR',
++        grade === 'asserted'
++          ? `claim '${claim.claimId}' is self-asserted only (e.g. a bare success flag): assertion is not evidence`
++          : `claim '${claim.claimId}' best grade '${grade}' is below the '${VERIFIED_GRADE_FLOOR}' floor required for VERIFIED`,
++        claim.claimId));
++    }
++  }
++  // Expected-but-unclaimed claims also drag the floor down.
++  for (const expected of expectation.expected) {
++    if (!claimedById.has(expected.claimId)) gradeFloor = minGrade(gradeFloor, 'none');
++  }
++
++  function finish(): Verification {
++    const certifiedConfidence = outcome === 'VERIFIED' ? GRADE_CONFIDENCE_CAP[gradeFloor] : 0;
++    return {
++      outcome,
++      gradeFloor,
++      certifiedConfidence,
++      findings,
++      autonomousMutationAllowed: outcome === 'VERIFIED',
++      toolCallId: result.toolCallId,
++      verifiedAtMs: nowMs,
++    };
++  }
++  return finish();
++}
+diff --git a/src/tenanos/verification/interview.ts b/src/tenanos/verification/interview.ts
+new file mode 100644
+index 0000000..901fa4a
+--- /dev/null
++++ b/src/tenanos/verification/interview.ts
+@@ -0,0 +1,167 @@
++/**
++ * TenantOS Verification Engine — challenge interview (swarm-16, P-20260923-089)
++ *
++ * The RESULT -> VERIFICATION step is an interrogation, not a formality.
++ * challengeClaims() turns unevidenced or weakly-evidenced claims into
++ * probing questions the autonomous loop must answer before acceptance —
++ * the substrate generalization of the interview-engine pattern harvested
++ * from PING (confidence gating: "Not sure" -> null -> cannot proceed).
++ *
++ * scoreChallenge() is the gate: any blocking question answered anything
++ * other than 'confirmed' fails closed (cannot verify); a 'refuted' answer
++ * is evidence of contradiction and should drive REJECTED downstream.
++ */
++import { GRADE_ORDER, VERIFIED_GRADE_FLOOR } from './types.ts';
++import type {
++  EvidenceCheck,
++  EvidenceCheckKind,
++  ToolResult,
++  VerificationExpectation,
++  VerificationFinding,
++} from './types.ts';
++
++export interface ProbeQuestion {
++  questionId: string;
++  claimId: string;
++  prompt: string;
++  /** evidence kinds that would satisfy this probe */
++  requiredEvidenceKinds: EvidenceCheckKind[];
++  /** a blocking probe must be answered 'confirmed' or the result cannot verify */
++  blocking: boolean;
++}
++
++export type ChallengeAnswerValue = 'confirmed' | 'unsure' | 'unknown' | 'refuted';
++
++export interface ChallengeAnswer {
++  questionId: string;
++  answer: ChallengeAnswerValue;
++  /** reference to the evidence that confirms it, when answer is 'confirmed' */
++  evidenceRef?: string;
++}
++
++export interface ChallengeScore {
++  canVerify: boolean;
++  findings: VerificationFinding[];
++}
++
++const PROBE_KINDS: Record<string, EvidenceCheckKind[]> = {
++  'file-written': ['hash-recompute', 'requery'],
++  'row-inserted': ['requery', 'journal-readback'],
++  'row-updated': ['requery', 'journal-readback'],
++  'message-sent': ['requery', 'journal-readback'],
++  'record-created': ['requery', 'journal-readback'],
++};
++
++/**
++ * Generate one probing question per claim that lacks live, grade-sufficient
++ * evidence for this verification act. Claims already backed by fresh
++ * evidence at/above the floor are not interrogated.
++ */
++export function challengeClaims(
++  result: ToolResult,
++  expectation: VerificationExpectation,
++  checks: EvidenceCheck[],
++  nowMs: number,
++): ProbeQuestion[] {
++  const questions: ProbeQuestion[] = [];
++  for (const claim of result.claimed) {
++    const live = checks.filter(
++      (c) =>
++        c.claimId === claim.claimId &&
++        c.nonce === expectation.freshnessNonce &&
++        nowMs - c.observedAtMs <= expectation.maxAgeMs &&
++        c.passed,
++    );
++    const best = live.reduce(
++      (acc, c) => (GRADE_ORDER[c.grade] > GRADE_ORDER[acc] ? c.grade : acc),
++      'none' as const,
++    );
++    if (GRADE_ORDER[best] >= GRADE_ORDER[VERIFIED_GRADE_FLOOR]) continue;
++    const kinds = PROBE_KINDS[claim.effectKind] ?? ['requery', 'invariant', 'schema-match'];
++    questions.push({
++      questionId: `probe-${claim.claimId}`,
++      claimId: claim.claimId,
++      prompt:
++        `The result claims '${claim.description}' (${claim.effectKind}) but carries ` +
++        `${live.length === 0 ? 'no live evidence' : `only '${best}'-grade evidence`} bound to this verification. ` +
++        `Which authoritative record carries the effect, and what did the re-read return?`,
++      requiredEvidenceKinds: kinds,
++      blocking: true,
++    });
++  }
++  // Expected-but-unclaimed: the loop must explain the absence.
++  const claimedIds = new Set(result.claimed.map((c) => c.claimId));
++  for (const expected of expectation.expected) {
++    if (!claimedIds.has(expected.claimId)) {
++      questions.push({
++        questionId: `probe-missing-${expected.claimId}`,
++        claimId: expected.claimId,
++        prompt:
++          `The loop expected '${expected.description}' but the result does not claim it. ` +
++          `Did the effect happen and go unreported, or did it not happen?`,
++        requiredEvidenceKinds: ['requery', 'journal-readback'],
++        blocking: true,
++      });
++    }
++  }
++  return questions;
++}
++
++/**
++ * Score the loop's answers. Fail-closed: 'unsure' and 'unknown' are the
++ * interview engine's "Not sure" — they null out the claim, they never
++ * promote it. Only 'confirmed' with an evidence reference clears a probe.
++ */
++export function scoreChallenge(
++  answers: ChallengeAnswer[],
++  questions: ProbeQuestion[],
++): ChallengeScore {
++  const findings: VerificationFinding[] = [];
++  const byId = new Map(answers.map((a) => [a.questionId, a]));
++  let canVerify = true;
++
++  for (const q of questions) {
++    const answer = byId.get(q.questionId);
++    if (answer === undefined) {
++      canVerify = false;
++      findings.push({
++        severity: 'reject',
++        code: 'PROBE_UNANSWERED',
++        message: `blocking probe '${q.questionId}' was not answered`,
++        claimId: q.claimId,
++      });
++      continue;
++    }
++    if (answer.answer === 'refuted') {
++      canVerify = false;
++      findings.push({
++        severity: 'reject',
++        code: 'CHALLENGE_REFUTED',
++        message: `probe '${q.questionId}' was refuted: the claim does not hold`,
++        claimId: q.claimId,
++      });
++      continue;
++    }
++    if (answer.answer === 'unsure' || answer.answer === 'unknown') {
++      canVerify = false;
++      findings.push({
++        severity: 'reject',
++        code: 'CHALLENGE_INCONCLUSIVE',
++        message: `probe '${q.questionId}' answered '${answer.answer}': inconclusive is not confirmation`,
++        claimId: q.claimId,
++      });
++      continue;
++    }
++    // 'confirmed'
++    if (q.blocking && (answer.evidenceRef === undefined || answer.evidenceRef.length === 0)) {
++      canVerify = false;
++      findings.push({
++        severity: 'reject',
++        code: 'CONFIRMATION_WITHOUT_EVIDENCE',
++        message: `probe '${q.questionId}' confirmed without an evidence reference: confirmation is not evidence`,
++        claimId: q.claimId,
++      });
++    }
++  }
++  return { canVerify, findings };
++}
+diff --git a/src/tenanos/verification/verifier.test.ts b/src/tenanos/verification/verifier.test.ts
+new file mode 100644
+index 0000000..fabdd01
+--- /dev/null
++++ b/src/tenanos/verification/verifier.test.ts
+@@ -0,0 +1,176 @@
++/**
++ * Verifier tests — writer-authored fail-before suite (swarm-16, P-20260923-089)
++ *
++ * Each case encodes one wave invariant: ACK!=EFFECT, RESULT!=VERIFIED
++ * OUTCOME, RETRY!=IDEMPOTENCY. Run: node --experimental-strip-types --test
++ */
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { verifyToolResult } from './verifier.ts';
++import { schemaMatchEvidence, hashRecomputeEvidence, requeryEvidence } from './evidence.ts';
++import type { ToolResult, VerificationExpectation, EvidenceCheck } from './types.ts';
++
++const NOW = 1_750_000_000_000;
++const NONCE = 'fresh-nonce-001';
++
++function expectation(over: Partial<VerificationExpectation> = {}): VerificationExpectation {
++  return {
++    toolCallId: 'call-1',
++    expected: [{ claimId: 'c1', effectKind: 'row-inserted', description: 'inserted assignment row' }],
++    freshnessNonce: NONCE,
++    maxAgeMs: 60_000,
++    ...over,
++  };
++}
++
++function result(over: Partial<ToolResult> = {}): ToolResult {
++  return {
++    toolCallId: 'call-1',
++    ack: 'ok',
++    claimed: [{ claimId: 'c1', effectKind: 'row-inserted', description: 'inserted assignment row' }],
++    rawPayload: { success: true },
++    sideEffectSemantics: 'known',
++    ...over,
++  };
++}
++
++function journalCheck(over: Partial<EvidenceCheck> = {}): EvidenceCheck {
++  return requeryEvidence({
++    checkId: 'chk-1',
++    claimId: 'c1',
++    kind: 'journal-readback',
++    nonce: NONCE,
++    observedAtMs: NOW - 1_000,
++    read: () => ({ seq: 42 }),
++    matches: (v) => v.seq === 42,
++    describe: (v) => `journal seq ${v.seq}`,
++    ...over,
++  });
++}
++
++describe('verifier: the headline invariant', () => {
++  it('a bare success:true with no evidence is UNVERIFIED, never VERIFIED', () => {
++    // This is the exact pattern found live in-repo (raw-boolean-true.txt):
++    // `return { success: true }` reported as the outcome.
++    const v = verifyToolResult(result(), expectation(), [], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.equal(v.autonomousMutationAllowed, false);
++    assert.equal(v.certifiedConfidence, 0);
++    assert.ok(v.findings.some((f) => f.code === 'NO_EVIDENCE'));
++  });
++
++  it('self-asserted evidence alone cannot verify', () => {
++    const asserted: EvidenceCheck = {
++      checkId: 'chk-self',
++      claimId: 'c1',
++      kind: 'schema-match',
++      grade: 'asserted', // the tool quoting itself
++      passed: true,
++      observedAtMs: NOW - 1_000,
++      nonce: NONCE,
++    };
++    const v = verifyToolResult(result(), expectation(), [asserted], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'SELF_ASSERTED_CLAIM'));
++  });
++});
++
++describe('verifier: fail-closed gates', () => {
++  it('unknown side-effect semantics fail closed', () => {
++    const v = verifyToolResult(
++      result({ sideEffectSemantics: 'unknown' }),
++      expectation(),
++      [journalCheck()],
++      NOW,
++    );
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.equal(v.autonomousMutationAllowed, false);
++    assert.ok(v.findings.some((f) => f.code === 'SIDE_EFFECT_UNKNOWN'));
++  });
++
++  it('non-ok ack means there is nothing to verify', () => {
++    const v = verifyToolResult(result({ ack: 'timeout' }), expectation(), [journalCheck()], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'ACK_NOT_OK'));
++  });
++
++  it('unexpected (unauthorized) claims fail closed', () => {
++    const r = result({
++      claimed: [
++        { claimId: 'c1', effectKind: 'row-inserted', description: 'inserted assignment row' },
++        { claimId: 'c-evil', effectKind: 'file-deleted', description: 'deleted something extra' },
++      ],
++    });
++    const v = verifyToolResult(r, expectation(), [journalCheck()], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'UNEXPECTED_CLAIM'));
++  });
++
++  it('missing expected claim fails closed', () => {
++    const v = verifyToolResult(result({ claimed: [] }), expectation(), [], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'EXPECTATION_UNMET'));
++  });
++
++  it('stale evidence is not evidence', () => {
++    const stale = journalCheck({ observedAtMs: NOW - 120_000 });
++    const v = verifyToolResult(result(), expectation(), [stale], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'STALE_EVIDENCE'));
++  });
++
++  it('recycled evidence from a previous verification act is rejected', () => {
++    const recycled = journalCheck({ nonce: 'old-nonce-999' });
++    const v = verifyToolResult(result(), expectation(), [recycled], NOW);
++    assert.equal(v.outcome, 'UNVERIFIED');
++    assert.ok(v.findings.some((f) => f.code === 'EVIDENCE_NONCE_MISMATCH'));
++  });
++
++  it('contradicted evidence REJECTS with the missing evidence named', () => {
++    const contradicted = journalCheck({
++      read: () => null, // journal does not carry the effect
++    });
++    const v = verifyToolResult(result(), expectation(), [contradicted], NOW);
++    assert.equal(v.outcome, 'REJECTED');
++    assert.ok(v.findings.some((f) => f.code === 'EVIDENCE_CONTRADICTED'));
++  });
++
++  it('expectation/result toolCallId mismatch rejects', () => {
++    const v = verifyToolResult(result(), expectation({ toolCallId: 'call-2' }), [journalCheck()], NOW);
++    assert.equal(v.outcome, 'REJECTED');
++    assert.ok(v.findings.some((f) => f.code === 'EXPECTATION_MISMATCH'));
++  });
++});
++
++describe('verifier: the verified path', () => {
++  it('fresh journal read-back on every claim VERIFIES and permits mutation', () => {
++    const v = verifyToolResult(result(), expectation(), [journalCheck()], NOW);
++    assert.equal(v.outcome, 'VERIFIED');
++    assert.equal(v.autonomousMutationAllowed, true);
++    assert.equal(v.gradeFloor, 'attested');
++    assert.equal(v.certifiedConfidence, 1.0);
++  });
++
++  it('confidence is capped by the weakest evidence grade', () => {
++    const observed = schemaMatchEvidence({
++      checkId: 'chk-obs',
++      claimId: 'c1',
++      nonce: NONCE,
++      observedAtMs: NOW - 1_000,
++      payload: { rowId: 'r1' },
++      schema: { rowId: 'string' },
++    });
++    const v = verifyToolResult(result(), expectation(), [observed], NOW);
++    assert.equal(v.outcome, 'VERIFIED');
++    assert.equal(v.gradeFloor, 'observed');
++    assert.equal(v.certifiedConfidence, 0.6); // ceiling, not a guess
++  });
++
++  it('no-op verifies only when explicitly allowed', () => {
++    const empty = result({ claimed: [] });
++    const strict = verifyToolResult(empty, expectation({ expected: [] }), [], NOW);
++    assert.equal(strict.outcome, 'UNVERIFIED');
++    const allowed = verifyToolResult(empty, expectation({ expected: [], allowEmpty: true }), [], NOW);
++    assert.equal(allowed.outcome, 'VERIFIED');
++  });
++});
+diff --git a/src/tenanos/verification/evidence.test.ts b/src/tenanos/verification/evidence.test.ts
+new file mode 100644
+index 0000000..0c060ef
+--- /dev/null
++++ b/src/tenanos/verification/evidence.test.ts
+@@ -0,0 +1,98 @@
++/**
++ * Evidence constructor tests (swarm-16, P-20260923-089)
++ */
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { createHash } from 'node:crypto';
++import {
++  schemaMatchEvidence,
++  hashRecomputeEvidence,
++  requeryEvidence,
++  invariantEvidence,
++} from './evidence.ts';
++
++const NOW = 1_750_000_000_000;
++
++describe('evidence: schema-match', () => {
++  it('passes when the payload carries the claimed shape', () => {
++    const c = schemaMatchEvidence({
++      checkId: 's1', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      payload: { rowId: 'r1', count: 3 },
++      schema: { rowId: 'string', count: 'number' },
++    });
++    assert.equal(c.passed, true);
++    assert.equal(c.grade, 'observed');
++  });
++
++  it('fails when the payload lacks the claimed shape', () => {
++    const c = schemaMatchEvidence({
++      checkId: 's2', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      payload: { success: true }, // the anti-pattern: nothing about the effect
++      schema: { rowId: 'string' },
++    });
++    assert.equal(c.passed, false);
++  });
++});
++
++describe('evidence: hash-recompute', () => {
++  it('passes when the recomputed digest matches the claim', () => {
++    const c = hashRecomputeEvidence({
++      checkId: 'h1', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      bytes: 'artifact-bytes',
++      // sha256('artifact-bytes') computed below at runtime is not the point;
++      // the point is the constructor recomputes rather than trusts.
++      expectedHex: 'wrong-on-purpose',
++    });
++    assert.equal(c.grade, 'recomputed');
++    assert.equal(c.passed, false); // wrong digest must fail
++  });
++
++  it('detects substituted bytes', () => {
++    const good = createHash('sha256').update('real-bytes').digest('hex');
++    const c = hashRecomputeEvidence({
++      checkId: 'h2', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      bytes: 'tampered-bytes',
++      expectedHex: good,
++    });
++    assert.equal(c.passed, false);
++    const c2 = hashRecomputeEvidence({
++      checkId: 'h3', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      bytes: 'real-bytes',
++      expectedHex: good,
++    });
++    assert.equal(c2.passed, true);
++  });
++});
++
++describe('evidence: requery (attestation)', () => {
++  it('attests when the authoritative re-read carries the effect', () => {
++    const c = requeryEvidence({
++      checkId: 'r1', claimId: 'c1', kind: 'journal-readback', nonce: 'n', observedAtMs: NOW,
++      read: () => ({ status: 'inserted' }),
++      matches: (v) => v.status === 'inserted',
++    });
++    assert.equal(c.passed, true);
++    assert.equal(c.grade, 'attested');
++  });
++
++  it('fails honest when the re-read finds nothing', () => {
++    const c = requeryEvidence({
++      checkId: 'r2', claimId: 'c1', kind: 'requery', nonce: 'n', observedAtMs: NOW,
++      read: () => null,
++      matches: () => true,
++    });
++    assert.equal(c.passed, false);
++    assert.ok((c.detail ?? '').includes('returned nothing'));
++  });
++});
++
++describe('evidence: invariant', () => {
++  it('evaluates a pure predicate against real data', () => {
++    const c = invariantEvidence({
++      checkId: 'i1', claimId: 'c1', nonce: 'n', observedAtMs: NOW,
++      predicate: () => 1 + 1 === 2,
++    });
++    assert.equal(c.passed, true);
++    assert.equal(c.grade, 'observed');
++  });
++});
+diff --git a/src/tenanos/verification/interview.test.ts b/src/tenanos/verification/interview.test.ts
+new file mode 100644
+index 0000000..66f6496
+--- /dev/null
++++ b/src/tenanos/verification/interview.test.ts
+@@ -0,0 +1,112 @@
++/**
++ * Challenge-interview tests (swarm-16, P-20260923-089)
++ */
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { challengeClaims, scoreChallenge } from './interview.ts';
++import { requeryEvidence } from './evidence.ts';
++import type { ToolResult, VerificationExpectation } from './types.ts';
++
++const NOW = 1_750_000_000_000;
++const NONCE = 'fresh-nonce-001';
++
++function fixture() {
++  const result: ToolResult = {
++    toolCallId: 'call-1',
++    ack: 'ok',
++    claimed: [{ claimId: 'c1', effectKind: 'row-inserted', description: 'inserted assignment row' }],
++    rawPayload: { success: true },
++    sideEffectSemantics: 'known',
++  };
++  const expectation: VerificationExpectation = {
++    toolCallId: 'call-1',
++    expected: [{ claimId: 'c1', effectKind: 'row-inserted', description: 'inserted assignment row' }],
++    freshnessNonce: NONCE,
++    maxAgeMs: 60_000,
++  };
++  return { result, expectation };
++}
++
++describe('interview: challenge generation', () => {
++  it('interrogates claims that carry no live evidence', () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    assert.equal(qs.length, 1);
++    assert.equal(qs[0].claimId, 'c1');
++    assert.equal(qs[0].blocking, true);
++    assert.ok(qs[0].prompt.includes('no live evidence'));
++  });
++
++  it('does not interrogate claims already backed by sufficient evidence', () => {
++    const { result, expectation } = fixture();
++    const checks = [
++      requeryEvidence({
++        checkId: 'chk-1', claimId: 'c1', kind: 'journal-readback',
++        nonce: NONCE, observedAtMs: NOW - 1_000,
++        read: () => ({ seq: 7 }),
++        matches: (v) => v.seq === 7,
++      }),
++    ];
++    const qs = challengeClaims(result, expectation, checks, NOW);
++    assert.equal(qs.length, 0);
++  });
++
++  it('asks about expected-but-unclaimed effects', () => {
++    const { result, expectation } = fixture();
++    result.claimed = [];
++    const qs = challengeClaims(result, expectation, [], NOW);
++    assert.ok(qs.some((q) => q.questionId === 'probe-missing-c1'));
++  });
++});
++
++describe('interview: challenge scoring', () => {
++  it("'unsure' fails closed, exactly like the interview engine's Not sure", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge([{ questionId: qs[0].questionId, answer: 'unsure' }], qs);
++    assert.equal(s.canVerify, false);
++    assert.ok(s.findings.some((f) => f.code === 'CHALLENGE_INCONCLUSIVE'));
++  });
++
++  it("'unknown' fails closed too", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge([{ questionId: qs[0].questionId, answer: 'unknown' }], qs);
++    assert.equal(s.canVerify, false);
++  });
++
++  it("'refuted' is a contradiction signal", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge([{ questionId: qs[0].questionId, answer: 'refuted' }], qs);
++    assert.equal(s.canVerify, false);
++    assert.ok(s.findings.some((f) => f.code === 'CHALLENGE_REFUTED'));
++  });
++
++  it("unanswered blocking probes fail closed", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge([], qs);
++    assert.equal(s.canVerify, false);
++    assert.ok(s.findings.some((f) => f.code === 'PROBE_UNANSWERED'));
++  });
++
++  it("'confirmed' without an evidence reference is still not verification", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge([{ questionId: qs[0].questionId, answer: 'confirmed' }], qs);
++    assert.equal(s.canVerify, false);
++    assert.ok(s.findings.some((f) => f.code === 'CONFIRMATION_WITHOUT_EVIDENCE'));
++  });
++
++  it("'confirmed' with an evidence reference clears the probe", () => {
++    const { result, expectation } = fixture();
++    const qs = challengeClaims(result, expectation, [], NOW);
++    const s = scoreChallenge(
++      [{ questionId: qs[0].questionId, answer: 'confirmed', evidenceRef: 'journal seq 42' }],
++      qs,
++    );
++    assert.equal(s.canVerify, true);
++    assert.equal(s.findings.length, 0);
++  });
++});

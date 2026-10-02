@@ -1,0 +1,27 @@
+# PATCH-05 — Attempt Identity (minimal attempt record)
+
+- **AXIOMS CLOSED:** A1 (primary). Supports M4, F1, F2.
+- **FILES:** `ping-runtime/orchestration/mission_runtime.js` (`assign`, `start`, `complete`, `failWithRetry`, `reapExpiredLeases`); `ping-runtime/orchestration/mission_scheduler.js` (timeout path); new migration SQL.
+- **SYMBOLS:** `assign()`, `start()`, `complete()`, `failWithRetry()`, `reapExpiredLeases()`, attempt sweeper.
+- **SCHEMA CHANGE:** `ALTER TABLE ping_missions ADD COLUMN attempt INTEGER NOT NULL DEFAULT 0;` New table `ping_mission_attempts(attempt_id TEXT PRIMARY KEY, mission_id TEXT NOT NULL REFERENCES ping_missions(mission_id), attempt_number INTEGER NOT NULL, worker TEXT, claimed_at TIMESTAMPTZ, started_at TIMESTAMPTZ, finished_at TIMESTAMPTZ, status TEXT NOT NULL, result_event_id TEXT, UNIQUE(mission_id, attempt_number))`; index on `mission_id`.
+- **BEFORE:** No attempt record; `claimed_at`/`started_at` overwritten per claim; `retries` counts failures not claims; watchdog timeout, lease orphan, and failure are indistinguishable; `dispatchResult` discarded so no execution is attributable.
+- **AFTER:** `attempt_id = sha256('mission-attempt:'+mission_id+':'+attempt_number)` (deterministic: retried claim for the same number dedups). `attempt_number` incremented atomically inside the claim UPDATE (`SET attempt=COALESCE(attempt,0)+1 ... RETURNING attempt`); the attempt row is inserted in the same tx with status `claimed`. Transitions: start -> `running`; complete/fail -> terminal + `finished_at` + `result_event_id`; watchdog timeout -> `timed_out`; sweeper marks superseded `running` attempts `orphaned` on re-claim. Six states is the minimum honest set (`timed_out` vs `orphaned` preserves timeout != failure). `MISSION_ASSIGNED` payload enriched with `attempt_number`.
+- **ALGORITHM:** Claim tx: conditional UPDATE (winner-takes-all, O4 preserved) + attempt INSERT. The claim's atomicity is unchanged; the attempt row rides it.
+- **PSEUDODIFF:**
+  - `mission_runtime.js` `assign()`: `UPDATE ping_missions SET status='assigned', attempt=COALESCE(attempt,0)+1, ... WHERE mission_id=$1 AND status='created' RETURNING attempt`; `INSERT INTO ping_mission_attempts ...` in the same tx.
+  - `start()`/`complete()`/`failWithRetry()`: `UPDATE ping_mission_attempts SET status=..., finished_at=NOW(), result_event_id=$x WHERE attempt_id=$y`.
+  - Scheduler timeout path: mark attempt `timed_out`. Reaper: sweeper marks stale `running` attempts `orphaned` when the mission is re-claimed.
+- **FAIL-BEFORE TEST:** Watchdog timeout then retry; assert no durable surface distinguishes the two executions (documents the defect).
+- **PASS-AFTER TEST:** Same scenario; assert attempt N `timed_out` and attempt N+1 `completed` both exist with distinct `attempt_id`s; late events from N attributable to N.
+- **CRASH TEST:** KILL after claim increment before attempt insert (same tx -> atomic); KILL between claim and start -> attempt `claimed` with no `started_at` (honest orphan evidence).
+- **CONCURRENCY TEST:** Two schedulers claim simultaneously -> exactly one winner, sequential unique `attempt_number`s, loser records nothing.
+- **HISTORY TEST:** Historical missions get `attempt=0`, no attempt rows (honestly default-era); no existing row modified.
+- **NAMESPACE TEST:** Attempt rows inherit the mission's namespace via join; no cross-namespace claim possible (claim is per mission row).
+- **SECURITY TEST:** n/a beyond existing claim-owner checks.
+- **DEPENDENCIES:** PATCH-02 (result_event_id binding needs the deterministic completion identity); independent schema from PATCH-01.
+- **MIGRATION:** Additive; no backfill of attempt history (the journal cannot reconstruct it honestly).
+- **ROLLBACK:** Drop table/column; lifecycle methods revert. MISSION_* events remain as the forensic trail.
+- **OBSERVABILITY:** Attempt counts by status; alert on `orphaned` rate spike (indicates lease/reaper churn).
+- **RESIDUAL FAILURE:** The attempt record makes duplicates visible and attributable; it does not prevent them (that is PATCH-06's gate + PATCH-02's identity). Adjudication note: Lane C proposed deleting this table per its falsifier F-S2 ("show the attempt in ping_events first"); Lane D supplied exactly that showing (claimed-but-never-started, timed_out-vs-orphaned, absent finished_at, MISSION_ASSIGNED without logical_id). Per C's own falsifier, the table stands. `ping_effects` stays deleted from spec (no live consequential effects).
+- **COMPLEXITY:** Small (~60 lines + migration).
+- **CONFIDENCE:** High.
