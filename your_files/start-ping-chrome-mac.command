@@ -1,0 +1,1 @@
+../goals/ping-social-outreach-campaign/files/start-ping-chrome-mac.command

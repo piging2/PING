@@ -1,0 +1,1 @@
+../goals/ping-gateway-exterior-agent-integration/files/PHASE4_PIPELINE_COMPLETION_RECORD.md

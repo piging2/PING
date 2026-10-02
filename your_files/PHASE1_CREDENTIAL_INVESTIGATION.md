@@ -1,0 +1,1 @@
+../goals/ping-gateway-exterior-agent-integration/files/PHASE1_CREDENTIAL_INVESTIGATION.md

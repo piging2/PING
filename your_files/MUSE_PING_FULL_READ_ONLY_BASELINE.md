@@ -1,0 +1,1 @@
+../goals/ping-gateway-exterior-agent-integration/files/MUSE_PING_FULL_READ_ONLY_BASELINE.md

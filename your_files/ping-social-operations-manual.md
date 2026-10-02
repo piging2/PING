@@ -1,0 +1,1 @@
+../goals/ping-social-outreach-campaign/files/ping-social-operations-manual.md

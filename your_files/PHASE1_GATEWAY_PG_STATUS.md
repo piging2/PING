@@ -1,0 +1,1 @@
+../goals/ping-gateway-exterior-agent-integration/files/PHASE1_GATEWAY_PG_STATUS.md
