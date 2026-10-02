@@ -1,6 +1,8 @@
 """
 ORCA Model Router: DATA CLASS -> MODEL ELIGIBILITY -> ROUTING
 
+FROZEN 2026-10-02. See ROUTER_FREEZE.md. Do not extend.
+
 Not: TASK -> CHEAPEST MODEL.
 
 Each mission step declares:
