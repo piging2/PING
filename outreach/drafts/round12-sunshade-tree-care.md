@@ -1,0 +1,4 @@
+# Round 12 draft — Sunshade Tree Care LLC (FORM)
+- To: https://www.sunshadetreecare.com/contact (own-site contact/estimate page)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Sunshade is a small locally owned crew out on removals and stump grinding all day, and one phone number catches everything. PING answers every ring instantly, qualifies the tree work, and books the estimate, so storm-season callers reach a live answer instead of voicemail and you stay in control of the schedule. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

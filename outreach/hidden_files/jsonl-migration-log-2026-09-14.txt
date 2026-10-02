@@ -1,0 +1,42 @@
+# JSONL schema migration log, 2026-09-14 (append-only evidence)
+# Operator: subagent (OPEN ITEMS B+C)
+# Source: ~/workspace/your_files/western-co-prospects.jsonl (304 rows before and after)
+# Schema: ~/workspace/outreach/prospect-schema.json (Draft-07, additionalProperties false)
+# Backup: western-co-prospects.jsonl.pre-migration-2026-09-14.bak (sha pre/post recorded in report)
+# Validator: jsonschema.Draft7Validator over all 304 rows, before and after.
+
+BEFORE: 298 valid, 6 invalid.
+AFTER:  304 valid, 0 invalid.
+
+Row 169 | C.S. Landscaping
+  BEFORE: additionalProperties violation: unknown fields 'town'='Fruita', 'confidence_primary'='medium'.
+  EVIDENCE: town == city == 'Fruita' (provable duplicate); 'confidence_primary' is the legacy
+    name for opportunity_confidence (only field with that meaning), value 'medium' already
+    in the enum, opportunity_confidence was empty (unknown).
+  CHANGE: dropped 'town'; moved 'medium' into opportunity_confidence; original legacy keys
+    preserved verbatim in _migration_note.
+
+Row 248 | Crystal Clear Window Washing
+Row 249 | Yampa Valley Window Cleaners
+  BEFORE: missed_call_risk='high (owner/crew on ladders in the field during fall pre-winter rush)' not in enum.
+  EVIDENCE: value is the canonical enum member 'high' with a prose annotation appended.
+  CHANGE: missed_call_risk -> 'high'; full original preserved in _migration_note.
+
+Row 302 | Haining Home Services & Airtech
+Row 303 | Comfort Air Of Grand Junction LLC
+Row 304 | Doubletree Heating Cooling & Fireplaces
+  BEFORE: missed_call_risk='high (...)'; opportunity_primary='missed-call lead capture';
+    opportunity_secondary='estimate follow-up' (302), 'after-hours dispatch triage' (304);
+    website_quality='functional'. Source note: Meta AI tandem e-pass, 2026-09-13.
+  EVIDENCE: 'missed-call lead capture' is a case variant of MISSED_CALL_LEAD_CAPTURE (schema
+    description explicitly sanctions case variants). The parenthetical risk annotations extend
+    canonical 'high'. No canonical equivalent exists for 'estimate follow-up',
+    'after-hours dispatch triage', or 'functional'.
+  CHANGE: missed_call_risk -> 'high'; opportunity_primary -> 'MISSED_CALL_LEAD_CAPTURE';
+    opportunity_secondary -> '' and website_quality -> '' (empty = unknown per known-inferred-unknown
+    rule; originals preserved verbatim in _migration_note). Row 303 opportunity_secondary was
+    already ''.
+
+No other row touched. No prospect facts invented; every value either pre-existed or is the
+schema-defined empty (unknown). Rows previously carrying the three conversion fields as ''
+were not altered.

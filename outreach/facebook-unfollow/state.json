@@ -1,0 +1,42 @@
+{
+  "account": "FACEBOOK:Nolan Geske",
+  "baseline_following": 302,
+  "baseline_page_candidates": 139,
+  "baseline_page_candidates_note": "2026-09-17: authoritative count from Pages dashboard 'All Pages you follow (139)' (facebook.com/pages/?category=liked). The 2026-09-14 figure of 205 came from the old profile /following/ enumeration, which Facebook has since broken (page now renders a 'Recent' pane, no Following tab).",
+  "consecutive_zero_yield": 1,
+  "created": "2026-09-14T17:45:00-06:00",
+  "cumulative_skipped": 27,
+  "cumulative_unfollowed": 12,
+  "cumulative_unfollowed_note": "2026-09-22 correction: log shows 3 unfollows on 2026-09-17 (Memes, AdRoll, Dairy Queen) that state.json never recorded (cumulative was 0); true total is 3 + 1 today = 4.",
+  "last_batch": {
+    "date": "2026-10-01",
+    "attempted": 4,
+    "unfollowed": 0,
+    "skipped": 1,
+    "stopped": "3 consecutive failures; stopping",
+    "pass_class": "TEMPORARY_FAILURE",
+    "note": "No account warning/block/login issue: enumeration healthy (Pages dashboard, 198 candidates, confidence 1), but the Unfollow menu option never appeared on 3 consecutive destinations (same transient quirk seen 2026-09-30), so the worker safety-stopped with zero Facebook actions. Per body step 6, target_per_day stays 10; next run retries. No new verified_not_page merges (notPageUrls empty). Population drift noted: dashboard now shows 198 followed Pages vs the 2026-09-17 baseline of 139. RE-RANDOMIZATION FAILED 2026-10-01 ~11:40 MDT: worker-turn cron.update rejected ('resolve cron chat owner: execution has no durable presentation chat owner', same structural failure as the 4-day streak ended by main-agent intervention). Schedule left as-is: daily 11:35 @user.current; tomorrow's batch fires at 11:35 MDT."
+  },
+  "profile_url": "https://www.facebook.com/nolan.geske/following/",
+  "status": "running",
+  "suspect_not_page_pending_reverify": {
+    "date": "2026-09-30",
+    "reason": "2026-09-25: worker classified these as not-a-Page (no Like button) while destinations rendered as bare '(N) Facebook' titles, i.e. the page never loaded. Same LOW-CONFIDENCE pattern seen 2026-09-23 during the 'suspicious activity' episode. SamsungUS is unambiguously a real Page, so all bare-title classifications are held for re-verification on a healthy run, never merged into verified_not_page. 2026-09-30: added UMMechanicalEngineering + MEGeorgiaTech (both university departments, almost certainly real Pages) from today's 'no Like button' skips.",
+    "urls": [
+      "https://facebook.com/project824nft",
+      "https://facebook.com/ZengoWallet",
+      "https://facebook.com/efultimatebreak",
+      "https://facebook.com/ZacksInvestmentResearch",
+      "https://facebook.com/TheCampaignLabOrg",
+      "https://facebook.com/TracysFlooringandDesign",
+      "https://facebook.com/SamsungUS",
+      "https://facebook.com/UMMechanicalEngineering",
+      "https://facebook.com/MEGeorgiaTech"
+    ]
+  },
+  "target_per_day": 10,
+  "target_per_day_note": "2026-09-23: halved 15 -> 10 (minimum) after second consecutive 'suspicious activity' warning (body step 6; never push through a warning).",
+  "verified_not_page": [
+    "https://facebook.com/61593678238314"
+  ]
+}

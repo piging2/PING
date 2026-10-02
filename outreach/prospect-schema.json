@@ -1,0 +1,250 @@
+{
+"$schema": "http://json-schema.org/draft-07/schema#",
+"additionalProperties": false,
+"description": "Canonical PING Social prospect record. Canonical store: ~/workspace/your_files/western-co-prospects.jsonl (one JSON object per line). Retired: ~/workspace/your_files/western-co-business-owner-list.csv (backup at ~/workspace/goals/ping-social-outreach-campaign/hidden_files/csv-backup-2026-09-11.csv). Field semantics: ~/workspace/outreach/prospect-source-of-truth.md. known -> inferred -> unknown is a hard rule: empty string means unknown, never negative evidence, never guessed.",
+"properties": {
+"_migration_note": {
+"description": "Set only on rows carried over from the retired CSV that do not validate cleanly against this schema. Names the non-conforming fields. The row is kept verbatim; nothing is silently coerced.",
+"type": "string"
+},
+"ai_discoverability": {
+"description": "From observable evidence only. Never claim an unmeasured ranking.",
+"enum": [
+"strong",
+"moderate",
+"weak",
+"unknown",
+""
+],
+"type": "string"
+},
+"booking_mechanism": {
+"description": "As observed on their site, e.g. phone-only, online form. Empty means unknown.",
+"type": "string"
+},
+"business_name": {
+"description": "Business name. Required, never empty.",
+"minLength": 1,
+"type": "string"
+},
+"city": {
+"type": "string"
+},
+"conversion_state": {
+"description": "Lifecycle outcome. Only a real reply, meeting, or customer event with linked evidence may set this; declines set suppression_state instead. Never invented by automation.",
+"enum": [
+"",
+"replied",
+"meeting",
+"customer"
+],
+"type": "string"
+},
+"converted_at": {
+"description": "YYYY-MM-DD of the conversion event. Empty means none.",
+"pattern": "^$|^\\d{4}-\\d{2}-\\d{2}$",
+"type": "string"
+},
+"conversion_evidence": {
+"description": "Link to the evidence for the conversion event (e.g. responses.md section, file path). Empty means none.",
+"type": "string"
+},
+"email": {
+"description": "Contact email genuinely published by the business. Never invented.",
+"type": "string"
+},
+"intel_updated": {
+"description": "YYYY-MM-DD of last enrichment. Empty means never enriched.",
+"pattern": "^$|^\\d{4}-\\d{2}-\\d{2}$",
+"type": "string"
+},
+"last_signal": {
+"description": "Newest meaningful signal, e.g. 2026-09-11 email SENT (round-29 batch).",
+"type": "string"
+},
+"missed_call_risk": {
+"description": "Inferred from signals. Empty means unknown.",
+"enum": [
+"high",
+"medium",
+"low",
+"unknown",
+""
+],
+"type": "string"
+},
+"new_filing_signal": {
+"description": "YYYY-MM-DD the business filed or opened. Empty means none observed.",
+"pattern": "^$|^\\d{4}-\\d{2}-\\d{2}$",
+"type": "string"
+},
+"next_eligible_action": {
+"description": "Free text, e.g. F1 after 2026-09-15, watch, none.",
+"type": "string"
+},
+"notable_reviews": {
+"description": "Short problem-category notes. Never reviewer names.",
+"type": "string"
+},
+"notes": {
+"description": "One-line note: why they fit, stack signals, IG handle, caveats.",
+"type": "string"
+},
+"opportunity_confidence": {
+"description": "Lowercase per spec. Legacy rows may carry case variants; flagged in _migration_note.",
+"enum": [
+"high",
+"medium",
+"low",
+""
+],
+"type": "string"
+},
+"opportunity_evidence": {
+"description": "Observed facts behind the opportunity call. Never invented.",
+"type": "string"
+},
+"opportunity_primary": {
+"description": "The one primary opportunity. Pitch this only.",
+"enum": [
+"NEW_BUSINESS_SETUP",
+"MISSED_CALL_LEAD_CAPTURE",
+"WEBSITE_REVAMP",
+"SEO",
+"AEO_AI_DISCOVERABILITY",
+"SOCIAL_PRESENCE",
+"AUTOMATION",
+"INTEGRATION",
+"UNKNOWN",
+""
+],
+"type": "string"
+},
+"opportunity_secondary": {
+"description": "Secondary opportunity. Mention only if it fits naturally.",
+"enum": [
+"NEW_BUSINESS_SETUP",
+"MISSED_CALL_LEAD_CAPTURE",
+"WEBSITE_REVAMP",
+"SEO",
+"AEO_AI_DISCOVERABILITY",
+"SOCIAL_PRESENCE",
+"AUTOMATION",
+"INTEGRATION",
+"UNKNOWN",
+""
+],
+"type": "string"
+},
+"owner_name": {
+"description": "Owner name if genuinely published. Never invented.",
+"type": "string"
+},
+"phone": {
+"description": "Phone genuinely published by the business.",
+"type": "string"
+},
+"priority_state": {
+"description": "HOT: multiple fresh signals plus strong fit plus legitimate opportunity. WARM: good fit plus meaningful signal. WATCH: interesting but insufficient evidence. SUPPRESS: no, cooldown, contacted too recently, unsuitable. Empty means not yet classified.",
+"enum": [
+"HOT",
+"WARM",
+"WATCH",
+"SUPPRESS",
+""
+],
+"type": "string"
+},
+"region": {
+"description": "\"Western Colorado\" for confirmed western-CO towns, \"Colorado (town unverified)\" when unconfirmed, wider values only per Nolan's expansion calls.",
+"type": "string"
+},
+"revamp_candidate": {
+"description": "yes for old, less active, or non-technical businesses that could use a revamp. Blank means not yet assessed.",
+"enum": [
+"yes",
+"no",
+""
+],
+"type": "string"
+},
+"review_velocity": {
+"description": "Free text, e.g. 3/mo, stale. Empty means unknown.",
+"type": "string"
+},
+"social_presence": {
+"description": "Free text, e.g. ig+fb, fb only. Empty means unknown.",
+"type": "string"
+},
+"source": {
+"description": "How the prospect entered the list, e.g. research, facebook, new-filing.",
+"type": "string"
+},
+"stack_signals": {
+"description": "Short text graded CONFIRMED / STRONG INDICATION / WEAK INDICATION / UNKNOWN.",
+"type": "string"
+},
+"state": {
+"type": "string"
+},
+"suppression_state": {
+"description": "Canonical vocabulary only (see prospect-source-of-truth.md): empty, none, declined YYYY-MM-DD, bounced YYYY-MM-DD, cooldown until YYYY-MM-DD, ladder F1 YYYY-MM-DD / ladder F2 YYYY-MM-DD, queued-draft, opt-out YYYY-MM-DD, franchise YYYY-MM-DD. Never free prose; never the pre-2026-09-13 value in-follow-up-ladder.",
+"type": "string"
+},
+"trade": {
+"description": "Trade, e.g. plumbing, HVAC, roofing.",
+"type": "string"
+},
+"website": {
+"type": "string"
+},
+"website_quality": {
+"description": "Inferred from public observation. Legacy rows may carry older variants (fair, good); those are flagged in _migration_note, not silently coerced.",
+"enum": [
+"strong",
+"moderate",
+"weak",
+"unknown",
+""
+],
+"type": "string"
+}
+},
+"required": [
+"email",
+"business_name",
+"owner_name",
+"phone",
+"website",
+"trade",
+"city",
+"state",
+"region",
+"source",
+"revamp_candidate",
+"notes",
+"intel_updated",
+"website_quality",
+"booking_mechanism",
+"missed_call_risk",
+"social_presence",
+"review_velocity",
+"notable_reviews",
+"new_filing_signal",
+"stack_signals",
+"opportunity_primary",
+"opportunity_secondary",
+"opportunity_evidence",
+"opportunity_confidence",
+"ai_discoverability",
+"priority_state",
+"last_signal",
+"suppression_state",
+"next_eligible_action",
+"conversion_state",
+"converted_at",
+"conversion_evidence"
+],
+"title": "PING Social prospect record",
+"type": "object"
+}

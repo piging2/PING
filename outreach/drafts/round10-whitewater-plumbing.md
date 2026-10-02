@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Whitewater Plumbing & Heating Inc. | Trade: plumbing/heating | Town: Eagle, CO | Route: own-site form at https://www.wwplumbing.net/contact-us | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. Second-home owners call after hours when something breaks, and with nobody answering mid-job those jobs go to whoever picks up. PING answers instantly, books the service call, and follows up so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

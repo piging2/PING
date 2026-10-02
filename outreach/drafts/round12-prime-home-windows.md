@@ -1,0 +1,4 @@
+# Round 12 draft — Prime Home Windows (FORM)
+- To: https://Primehomewindows.com/ (homepage "Get a Free Quote" form)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Prime Home Windows promises same-day quotes by text or email, and that promise breaks the moment the crew is on a jobsite and cannot reply. PING answers every inquiry instantly, qualifies the job, and books the quote, so the same-day promise holds on every call, even from a ladder. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

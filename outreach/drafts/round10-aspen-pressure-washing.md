@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Aspen Pressure Washing | Trade: pressure washing | Town: Basalt, CO | Route: own-site form at https://www.aspenpressurewash.com/blank-4 | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. When both trucks are spraying, the caller who hears voicemail books the next washer on the list. PING answers instantly, books the job, and follows up so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

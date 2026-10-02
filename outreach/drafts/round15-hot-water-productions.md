@@ -1,0 +1,5 @@
+# Round 15 draft — Hot Water Productions (FORM)
+
+- Route: inquiry page https://hotwaterproductions.com/contact/ (general inquiry page; email also published but form preferred)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses answer every call and message so no job slips through the cracks. Hot Water Productions has run nearly 40 years of hot tub, swim spa, and sauna sales and service from Telluride to Grand Junction, with weekly Spa Care Valet routes that live on scheduling discipline. PING captures every inquiry instantly, keeps route exceptions and new requests moving, and follows up so slow responses never cost a valet account. You stay in control of the routes. Open to a 15-minute demo next week? Nolan Geske, PING Social, nolangesk@gmail.com, (970) 589-3309

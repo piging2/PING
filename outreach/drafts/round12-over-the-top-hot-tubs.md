@@ -1,0 +1,4 @@
+# Round 12 draft — Over the Top Hot Tubs and Spas (FORM)
+- To: Contact Us form on https://ottspas.com/ (also calls/texts to Jared)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Over the Top is a one-man operation selling no-contract service to rental owners, so every message that sits unread during a service visit is churn risk. PING answers every inquiry instantly, qualifies the request, and books the visit, so the business keeps running while you keep your hands on the work. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

@@ -1,0 +1,6 @@
+# Round 11 draft — High Mountain Hearth (FORM / EMAIL)
+
+- Route: Email Us / Request Appointment buttons on highmountainhearth.com (underlying hrefs did not render in text fetch; Montrose chimney sweeps)
+- Note: inspect the live page first. If an email address is exposed, send the email version below to it. If a request form exists with honest fields, submit with Name Nolan Geske, email nolangesk@gmail.com, phone (970) 589-3309, business PING Social, message verbatim. If only a phone number exists or the form is customer-wizard-only/blocks honest input, SKIP without asking and log the blocker.
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. You are a family-run shop with CSIA and NFI certified techs, and September through November is your whole year: fall sweep callers who reach your site after hours currently get nothing back. PING answers every inquiry instantly, books the sweep or inspection, and follows up on quotes, so your crew sweeps chimneys while the schedule fills itself. You stay in control of every job. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

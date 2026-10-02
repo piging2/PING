@@ -1,0 +1,4 @@
+# Round 12 draft — G Brothers Garage Doors (FORM)
+- To: https://gbrothersgaragedoors.com/ (homepage schedule-request)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. G Brothers sells 24/7 emergency service for stuck-open and off-track doors, and a caller with a door stuck open at night is in a security situation, not a scheduling one. PING answers instantly, books the dispatch, and follows up on quotes, so the emergency promise holds when the shop is closed. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

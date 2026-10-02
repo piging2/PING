@@ -1,0 +1,4 @@
+# Round 12 draft — ASA Flooring (FORM)
+- To: https://asaflooring.com/contact/ (own-site contact page)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. ASA Flooring fields custom design, repair, install, and refinishing inquiries that all need fast qualification, and they land while the crew is mid-project. PING answers every inquiry instantly, sorts the job type, and books the consult, so no flooring lead waits for the crew to come home before getting a reply. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

@@ -1,0 +1,5 @@
+# Round 15 draft — Specialized Pool & Spa (FORM)
+
+- Route: contact form https://www.specializedpoolspa.com/contact-us (first/last name, email, phone, message; no address or ZIP); email also published (wendillee.spss@gmail.com) but form preferred
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses answer every call and message so no job slips through the cracks. Specialized Pool & Spa has run maintenance, repair, and installs in Eagle since 1997 with a multi-employee team, and juggling crews, customers, and new installations at once is exactly where admin friction eats the day. PING captures every inquiry, answers common questions instantly, and follows up so the schedule fills without anyone stopping a repair to take a call. You stay in control of the operation. Open to a 15-minute demo next week? Nolan Geske, PING Social, nolangesk@gmail.com, (970) 589-3309

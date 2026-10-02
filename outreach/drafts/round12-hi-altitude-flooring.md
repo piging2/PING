@@ -1,0 +1,4 @@
+# Round 12 draft — Hi-Altitude Flooring (FORM)
+- To: https://www.hialtitudeflooring.com/contact/ (own-site inquiry form)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Hi-Altitude Flooring books free in-home estimates for hardwood and epoxy garage floors, and your own site says customer communication is paramount. PING answers every inquiry instantly, books the in-home visit, and chases the estimates that go quiet, so the communication promise holds while your installers are on the job. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

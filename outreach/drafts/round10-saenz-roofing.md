@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Saenz Roofing | Trade: roofing | Town: Grand Junction, CO | Route: own-site form at https://www.saenzroofing.com/contact-us/ (free-text message field) | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. Storm season means hail-damage inquiries pile up while the owner is in the field, and every one that sits is a homeowner who calls the next roofer. PING answers instantly and follows up so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

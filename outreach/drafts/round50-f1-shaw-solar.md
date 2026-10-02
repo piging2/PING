@@ -1,0 +1,5 @@
+To: info@shawsolar.com (own-site-verified contact email; round-74 re-route: john@shawsolar.com not readable on the live own-site render, site publishes only info@shawsolar.com)
+Subject: Quick follow-up: Friday calls
+- Initial: SENT 2026-09-13 (round 46, Gmail-accepted) | Send target: 2026-09-18 UTC batch (ladder day 5 of 4-7 window) | Review check 2026-09-14: clean (4.9/59 Birdeye; one undated 1-star aggregate, intel-only, no trigger) | New intel: public listing shows office closed Fridays (Mon-Thu 8-4:30), weekend inquiries sit unanswered; corroborates intake-sorting angle
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. Quick follow-up on my note about sorting every inquiry. Your listing shows the office closed Fridays while solar, battery, HVAC, and EV charger calls keep coming all weekend. PING qualifies each one instantly and books the right tech. Worth a 15-minute demo? Nolan, PING Social, (970) 589-3309

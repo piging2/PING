@@ -1,0 +1,12 @@
+# Facebook browser blackout
+
+ACTIVE until: 2026-09-11T16:05:00-06:00 (Fri 2026-09-11 16:05 MDT)
+
+Nolan's call 2026-09-10: 24-hour total blackout on Facebook browser logins after 8 consecutive sessions were invalidated within 1-2 minutes by Facebook's risk system (datacenter IP + login velocity).
+
+During blackout:
+- facebook-session-watch: DISABLED at scheduler level (cron.update enabled=false, 2026-09-10 ~18:05 MDT) because workers ignored the file-based blackout flag twice (17:26 and 18:01 runs opened facebook.com anyway; no logins were attempted and no harm done). The STEP 0 flag check remains in the job body as backup.
+- facebook-engagement-pass: DISABLED at scheduler level, same reason and time.
+- One-shot job "facebook-blackout-end" fires Fri 2026-09-11 16:10 MDT to re-enable both jobs automatically.
+- facebook-cli (phone-based auth) is NOT affected: Facebook group prospecting reads continue normally.
+- After the blackout expires, both crons resume their normal rules automatically, starting with the warm-up ramp in facebook-detection-workarounds.md (day 1: single login, 10 likes, 2-3 comments max).

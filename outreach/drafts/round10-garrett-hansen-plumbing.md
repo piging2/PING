@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Garrett Hansen Plumbing | Trade: plumbing | Town: Glenwood Springs, CO | Route: own-site contact form at https://garretthansenplumbing.com/contact-us/ | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. Emergency plumbing callers shop around fast. When your techs are under a sink, the burst-pipe call that hits voicemail becomes someone else's job. PING answers instantly, books the service call, and follows up so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

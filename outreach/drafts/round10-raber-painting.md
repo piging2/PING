@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Raber Painting | Trade: painting/staining | Town: Gunnison, CO | Route: own-site form at https://www.raberpainting.com/contact | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. A tight crew runs this shop, and paint season is short in Gunnison. When the crew is brushing, the inbox goes unwatched and the homeowner moves on. PING answers instantly and follows up so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

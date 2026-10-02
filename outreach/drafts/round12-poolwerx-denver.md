@@ -1,0 +1,4 @@
+# Round 12 draft — Poolwerx Denver (FORM)
+- To: quote form on http://www.poolwerx.com/locations/colorado/poolwerx-denver/ (Casey Lee, owner, per own location page)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Poolwerx Denver runs a mobile tech fleet across two Denver locations, and franchise quote forms only work when a human follows up fast. PING answers every inquiry instantly, qualifies the service request, and books the visit, so quote requests turn into booked routes instead of bouncing to the next pool company. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

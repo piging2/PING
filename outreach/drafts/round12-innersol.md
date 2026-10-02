@@ -1,0 +1,4 @@
+# Round 12 draft — InnerSol (FORM)
+- To: http://www.innersolinc.com/contact-us/ (own-site contact page)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. InnerSol handles solar service and maintenance inquiries that need quick technical triage, and orphaned-system and incentive questions go to whoever answers first. PING answers every inquiry instantly, qualifies the request, and books the visit, so nothing sits in a contact form while your techs are in the field. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

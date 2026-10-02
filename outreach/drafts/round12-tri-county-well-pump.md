@@ -1,0 +1,4 @@
+# Round 12 draft — Tri County Well & Pump Service (FORM)
+- To: "Let's Talk!" request form on tricountywellandpumpservice.com
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Tri County runs a family-owned well and pump operation since 1979, and well inspections tied to closing deadlines plus no-water emergencies do not wait for a callback. PING answers every inquiry instantly, qualifies the urgency, and books the visit, so the family with no water talks to you first, not the next company on the list. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

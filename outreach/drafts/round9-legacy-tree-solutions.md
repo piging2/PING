@@ -1,0 +1,4 @@
+# Round 9 draft
+Prospect: Legacy Tree Solutions | Trade: tree service/arborist | Town: Cortez, CO | Route: own-site form on homepage at http://legacytreesolutions.net/ | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. I help home service businesses capture every call and message so no job slips through the cracks. With Legacy Tree Solutions, the owner is a certified arborist who is up a tree or running a chipper during every job, which means incoming calls go unanswered by definition. PING answers every ring instantly, books the estimate, and follows up so Cortez homeowners never move on to the next arborist on the list. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

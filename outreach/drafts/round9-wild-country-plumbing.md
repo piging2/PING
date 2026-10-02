@@ -1,0 +1,4 @@
+# Round 9 draft
+Prospect: Wild Country Plumbing | Trade: plumbing | Town: Montrose, CO | Route: own-site contact form at http://wildcountryplumbingco.com/contact-us/ | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. I help home service shops capture every call, message, and form fill so no work slips through the cracks. Your contact page funnels visitors straight to the form, and a leak call that waits hours for a callback goes to whoever picks up first. PING answers every inquiry instantly, qualifies the job, and books it on your calendar, so the business you earned with 20-plus years in Montrose never leaks away. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

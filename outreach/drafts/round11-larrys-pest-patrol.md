@@ -1,0 +1,6 @@
+# Round 11 draft — Larry's Pest Patrol (FORM, honesty review required)
+
+- Form: https://larryspestpatrol.com/contact-us/ (Pagosa Springs pest control)
+- Note: pre-task research flagged this form requires address/city/state fields. Submit ONLY if the form can be filled honestly for a B2B message: name Nolan Geske, email nolangesk@gmail.com, phone (970) 589-3309, business PING Social, message verbatim below. If address fields are required with no honest answer, or the form is a customer-only quote flow, SKIP without asking and log the exact blocker. Never invent details.
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. Wasp and seasonal pest calls are urgency-driven, so every caller who waits for a callback just dials the next exterminator in Pagosa Springs. PING answers every call instantly, books the service, and follows up on quotes, while you stay in charge of the route. Less admin drag, more of the jobs you are already generating. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

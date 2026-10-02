@@ -1,0 +1,4 @@
+# Round 12 draft — Foothills Septic Pumping (FORM)
+- To: contact link on foothillssepticpumping.com ("Contact Us Today")
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Foothills Septic runs NAWT-certified inspections tied to real estate closings with hard deadlines, and a missed call delays a home sale. PING answers every inquiry instantly, qualifies the job, and books the inspection, so deadline-driven callers reach a live answer while your crew is in the field. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Above Board Home Services | Trade: handyman | Town: Delta, CO | Route: own-site form at https://aboveboardhomeservice.com/ ("Get in Touch", asks for project details and photos) | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. A solo owner has no intake desk, and repair requests arrive while the ladder is out. Requests that wait a day go cold. PING answers instantly, collects the details, and chases the estimate so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

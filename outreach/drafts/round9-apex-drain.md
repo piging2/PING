@@ -1,0 +1,4 @@
+# Round 9 draft
+Prospect: Apex Drain LLC | Trade: plumbing | Town: Craig, CO | Route: own-site form on homepage at http://www.apexdrainllc.com/ | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. I help home service businesses capture every call and message so no job slips through the cracks. Apex Drain covers plumbing, excavation, septic, and concrete around Craig, and every one of those lines rings while someone is elbow deep in a job. Callers with a backed-up drain do not wait; they dial the next company. PING answers every ring instantly, books the work, and follows up, so the business you already earned stays yours. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

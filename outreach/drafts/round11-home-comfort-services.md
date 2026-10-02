@@ -1,0 +1,6 @@
+# Round 11 draft — Home Comfort Services (FORM, honesty review required)
+
+- Form: https://homecomfortservices.net/contact-us/ (Grand Junction HVAC/plumbing, locally owned since 2016)
+- Note: pre-task research flagged this form requires an address field. Submit ONLY if the form can be filled honestly for a B2B message: name Nolan Geske, email nolangesk@gmail.com, phone (970) 589-3309, business PING Social, message verbatim below. If the address field is required with no honest answer, or the form is a customer-only scheduling flow, SKIP without asking and log the exact blocker. Never invent details.
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. Heating season is about to flood you with no-heat callers, and right now those callers meet a form or voicemail after hours. PING answers every call instantly, books the service appointment, and follows up on estimates so nothing goes cold, while you stay in control of every job. Less interruption, less admin drag, more of the jobs you are already generating. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

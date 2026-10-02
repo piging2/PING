@@ -1,0 +1,4 @@
+# Round 12 draft — Mark Hammer Construction LTD (FORM)
+- To: contact form on homepage https://mhammerconstruction.com/ (Mark Hammer, per own site)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Mark Hammer Construction fields whole-home, kitchen and bath, basement, and tenant-improvement inquiries, and your site trades on a strong client-communication culture. PING answers every inquiry instantly, qualifies the project, and books the consult, so the fast follow-up you promise is there even when the whole team is on site. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

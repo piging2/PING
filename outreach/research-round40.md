@@ -1,0 +1,100 @@
+# Round 40 research — painting + irrigation (Western Colorado, 2026-09-13)
+
+24 candidates staged in jsonl-additions-round40-research.jsonl. Canonical JSONL NOT touched (300-row cap).
+
+- **RJ's Painting** | painting contractor | Montrose | http://rjspainting.com/ | phone (970) 249-2137 | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (medium) | site moderate | revamp no
+  - Evidence: 48 years in business, family-owned, phone-only booking with office hours Mon-Fri 7:00-4:30 only and closed weekends; any call outside hours is lost to voicemail
+  - Stack: GoDaddy Website Builder STRONG INDICATION (irp.cdn-website.com assets) | Booking: phone | Social: unknown
+  - Notes: Long-established Montrose painter with strong local reputation and own-site phone; good fit for missed-call capture pitch. Caveat: mixed review scores unexplored.
+- **AJ Painting & Powerwashing** | painting contractor | Montrose | http://www.montrosepainter.com/ | phone (970) 250-0481 | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (medium) | site weak | revamp no
+  - Evidence: 20+ years experience, open 6am-9pm daily but booking is phone-only on a thin Wix one-pager; September shift to interior work means estimate requests come by phone and after-hours calls have no capture path
+  - Stack: Wix CONFIRMED (static.wixstatic.com images); thin one-page brochure site | Booking: phone | Social: unknown
+  - Notes: Solo-style operator with verified phone and 20+ years; thin site plus phone-only flow is the angle. Caveat: owner tech level unknown so no revamp pitch.
+- **Rocky Top Painting & Construction LLC** | painting contractor | Durango | https://www.rockytoppainting.com | phone (970) 769-0704 | email n/a | WARM | SEO (medium) | site strong | revamp no
+  - Evidence: Established 2004, BBB accredited since 2004, family-owned with named owner, strong professional site; their site shows no online quote or booking flow, so lead capture automation is the honest gap on an otherwise strong operation
+  - Stack: Modern custom site; no booking widget or CRM signals observed, stack UNKNOWN | Booking: phone | Social: unknown
+  - Notes: The strongest Durango painter found; established operator with real online presence. Softer pitch needed since they already invest in marketing. Caveat: lower urgency than weaker peers.
+- **Sonrise Painting & Remodeling** | painting contractor | Grand Junction | https://sonrisepaintingremodeling.com/ | phone n/a | email n/a | WARM | WEBSITE_REVAMP (medium) | site weak | revamp yes
+  - Evidence: Own site is a single image-heavy page where the phone and email contact blocks are graphics with no readable text, so even visitors who want to call cannot easily get the number; small operator (first name only on site) doing painting plus handyman work in Grand Junction
+  - Stack: UNKNOWN; image-heavy one-page site, phone and email blocks rendered as images only, no readable contact text or forms observed | Booking: unknown | Social: unknown
+  - Notes: Best revamp fit in this batch: real painting services but a contact experience that is broken by design. Caveat: could not extract a working phone/email, so outreach needs directory-sourced verification first.
+- **PatchMaster Grand Junction** | painting contractor | Grand Junction | http://patchmaster.com | phone (970) 822-0099 | email mbilger@patchmaster.com | WARM | NEW_BUSINESS_SETUP (high) | site strong | revamp no | NEW FILING 2026-08-31
+  - Evidence: Brand-new locally owned franchise announced 2026-08-31 (13 days ago) covering drywall repair plus interior painting across the Western Slope; new owner-operator is building customer base from zero and September is prime interior season
+  - Stack: Franchise corporate site with online quote form; local operation setup UNKNOWN | Booking: online quote form | Social: unknown
+  - Notes: source=new-filing. Verified new business via franchise press release (EIN Presswire / Colorado Industry Wire); contact published in release. Caveat: franchisee gets corporate marketing support, so pitch the local lead-capture gap, not marketing basics.
+- **Painter's Painting LLC** | painting contractor | Durango | no site | phone n/a | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (high) | site unknown | revamp no
+  - Evidence: A 2-star review documents the exact failure mode: Brad assessed a job in person, promised a quote, then never followed up and ignored texts and voicemail; high rating overall means demand exists but follow-through leaks
+  - Stack: UNKNOWN; no own website found, directory presence only | Booking: unknown | Social: unknown
+  - Notes: Strongest missed-call signal in the batch with a documented ghosting case. Caveat: REFERENCE ONLY, no own site found and no verified channel, so needs a web presence check before outreach.
+- **Martin's Painting** | painting contractor | Montrose | http://www.martinspainting.net | phone (970) 275-9999 | email n/a | WATCH | UNKNOWN (low) | site unknown | revamp no
+  - Evidence: Verified Montrose painter with own domain and published phone; business hours Mon-Fri 8-5 suggest after-hours calls go to voicemail, but site content could not be confirmed
+  - Stack: UNKNOWN; own site exists but failed to load during research | Booking: unknown | Social: unknown
+  - Notes: Thin file: phone is published on their own-domain listing but the site would not load. Caveat: re-verify the site before any outreach.
+- **Southwest Finishes Inc** | painting contractor | Montrose | http://www.southwestfinishesllc.com | phone (970) 240-9286 | email n/a | WATCH | UNKNOWN (low) | site unknown | revamp no
+  - Evidence: Verified Montrose painting business with own domain and published phone; hours Mon-Fri 9-6; site content could not be confirmed
+  - Stack: UNKNOWN; own site exists but failed to load during research | Booking: unknown | Social: unknown
+  - Notes: Thin file like Martin's Painting: domain and phone check out but the site would not load. Caveat: needs site verification before outreach.
+- **AV Painting LLC** | painting contractor | Montrose | https://www.tellurideavpainting.com/ | phone (970) 417-3053 | email n/a | WATCH | UNKNOWN (low) | site unknown | revamp no
+  - Evidence: Verified Montrose/Telluride painting LLC with own domain and published phone; hours Mon-Sat 8-5; site content could not be confirmed
+  - Stack: UNKNOWN; own site failed to load during research | Booking: unknown | Social: unknown
+  - Notes: Third Montrose painter with domain plus phone but an unreachable site. Caveat: re-verify the site before outreach.
+- **Skyline Pro Painting LLC** | painting contractor | Grand Junction | no site | phone n/a | email n/a | WATCH | NEW_BUSINESS_SETUP (low) | site unknown | revamp no
+  - Evidence: Thumbtack shows 1 year in business and 1 employee with a background check badge but no website at all; young solo operator with essentially no online footprint beyond the marketplace
+  - Stack: UNKNOWN; Thumbtack-only presence, no own website found | Booking: unknown | Social: unknown
+  - Notes: Young one-man GJ painting outfit with no website; could be a setup-package fit. Caveat: REFERENCE ONLY, Thumbtack profile only, no verified channel and age is marketplace self-reported.
+- **970 Pro Painting LLC** | painting contractor | Glenwood Springs | no site | phone n/a | email n/a | WATCH | UNKNOWN (low) | site unknown | revamp no
+  - Evidence: BBB A+ accredited and Angi 5.0 across 8 reviews with personalized-service positioning, but no own website surfaced; discoverability rests entirely on marketplace profiles
+  - Stack: UNKNOWN; present on Angi and BBB (A+ rating) but no own website found | Booking: unknown | Social: unknown
+  - Notes: Reputable Glenwood painter (BBB A+) with no website; possible AEO/online-presence fit. Caveat: REFERENCE ONLY, no verified channel.
+- **Gonzales Painting** | painting contractor | Glenwood Springs | no site | phone n/a | email n/a | WATCH | UNKNOWN (low) | site unknown | revamp no
+  - Evidence: 30+ years experience, licensed/bonded/insured, locally owned Glenwood painter with directory presence but no own website surfaced
+  - Stack: UNKNOWN; directory listing only, no own website found | Booking: unknown | Social: unknown
+  - Notes: Veteran local operator with zero web footprint; could be a revamp or presence fit if an owner contact turns up. Caveat: REFERENCE ONLY, no verified channel.
+- **Outpour Irrigation** | irrigation / sprinkler | Grand Junction | https://outpourirrigation.com/ | phone +1-970-683-9101 | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (high) | site strong | revamp no
+  - Evidence: Own site leads with call or text to Robert, a local owner-operated shop; service-request form routed to him for review; seasonal installs, repairs, maintenance, and seasonal checks in Grand Junction; September blowout season ramps call volume
+  - Stack: UNKNOWN; no CMS or booking-widget signals observed | Booking: phone/text plus website service-request form | Social: unknown
+  - Notes: Owner-operated sprinkler shop; direct phone and text booking. Caveat: owner first name only on site.
+- **Irrigation Monkey** | irrigation / sprinkler | Silt | https://www.irrigationmonkey.com/ | phone 970.366.9935 | email dennis@irrigationmonkey.com | WARM | MISSED_CALL_LEAD_CAPTURE (high) | site strong | revamp no
+  - Evidence: WordPress site with detailed contact form; full-service residential and commercial irrigation, lawn care, and lighting from Glenwood Springs to Rifle; phone-driven scheduling; seasonal maintenance, repairs, pumps, and backflow preventers across the Roaring Fork Valley
+  - Stack: WordPress CONFIRMED (own site); booking stack UNKNOWN | Booking: website contact form (name, email, phone, message) plus phone and email | Social: Facebook, X, Pinterest, LinkedIn links on own site
+  - Notes: Family-owned since 2018 per own site; own-site published email is a real contact channel.
+- **Aztec Irrigation LLC** | irrigation / sprinkler | Grand Junction | https://www.aztecirrigation.com/ | phone +1-970-210-8608 | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (medium) | site weak | revamp no
+  - Evidence: Owner-operated Grand Valley shop with 15-plus years on own site; sprinkler design, install, repair, maintenance, and winterization; dated site and two overlapping domains (aztecirrigation.com and aztec-irrigation.com) complicate discoverability
+  - Stack: UNKNOWN; dated site, two overlapping domains observed | Booking: contact form plus phone | Social: unknown
+  - Notes: Owner-operated Grand Valley shop with 15-plus years on own site; 10 percent off first service for new customers.
+- **Copper Creek Landscape** | irrigation / sprinkler | Durango | https://coppercreekponds.com/areas-of-service/durango-co-sprinkler-blowouts/ | phone (505) 801-7444 | email n/a | WARM | MISSED_CALL_LEAD_CAPTURE (medium) | site moderate | revamp no
+  - Evidence: Own Durango page dedicated to sprinkler blowouts, annual and seasonal draining, cleaning, maintenance, and winter preparation; booking is call-driven during blowout season
+  - Stack: UNKNOWN; no CMS or booking-widget signals observed | Booking: call to schedule a consultation plus Get A Quote form | Social: unknown
+  - Notes: Landscape company with explicit sprinkler blowout and winterization service in Durango. Caveat: published phone uses a 505 (New Mexico) area code.
+- **Sprinkler Pros** | irrigation / sprinkler | Cortez | http://www.sprinklerpros.com/ | phone +19705600297 | email n/a | WARM | AEO_AI_DISCOVERABILITY (medium) | site weak | revamp no
+  - Evidence: Irrigation Association Certified Irrigation Contractor and Rain Bird Select Contractor with an extremely thin, dated own site; established in Cortez in 2006 per own site; affordable sprinkler and irrigation systems plus backflow testing and code compliance
+  - Stack: UNKNOWN; extremely thin dated site, no widget signals observed | Booking: phone | Social: unknown
+  - Notes: Irrigation Association Certified Irrigation Contractor and Rain Bird Select Contractor; credentials strong, web presence not. Phone published in own-domain business info.
+- **Steve's Elk River Nursery** | irrigation / sprinkler | Steamboat Springs | https://www.steveselkrivernursery.com/irrigation | phone n/a | email n/a | WATCH | MISSED_CALL_LEAD_CAPTURE (medium) | site moderate | revamp no
+  - Evidence: Own irrigation page offers consultation, design, Hunter installation, service, fall blowouts, and spring startups; phone and email not published in fetched text
+  - Stack: UNKNOWN; no CMS or booking-widget signals observed | Booking: unknown | Social: unknown
+  - Notes: Nursery with Hunter irrigation installation and seasonal blowouts and startups. Caveat: REFERENCE ONLY, phone and email not published in fetched text; broader operation so office coverage may be stronger.
+- **The Grounds Guys of Silt** | irrigation / sprinkler | Silt | https://www.groundsguys.com/locations/colorado/silt/irrigation/ | phone (970) 716-6239 | email n/a | WATCH | AUTOMATION (medium) | site strong | revamp no
+  - Evidence: National franchise local page with strong site and online scheduling; smart sprinkler scheduling, repairs, monthly inspections, and pressure checks; less missed-call pain than solo shops, automation for scheduling and follow-up still plausible
+  - Stack: UNKNOWN; franchise platform site, online scheduling observed but vendor not identified | Booking: phone plus online scheduling and quote form | Social: unknown
+  - Notes: National franchise local page; sprinkler and drip design, install, permits, repairs, and seasonal scheduling.
+- **Evergreen Pump** | irrigation / sprinkler | Delta | https://evergreenpump.com/irrigation-consultant-delta/ | phone (970) 874-1444 | email n/a | WATCH | AUTOMATION (low) | site weak | revamp no
+  - Evidence: Own site names Bryan Cairns as Owner and President; custom pump, irrigation, and sprinkler systems for commercial, industrial, municipal, and agricultural clients across the Western Slope; complex B2B operation with weaker seasonal phone-driven fit
+  - Stack: UNKNOWN; no CMS or booking-widget signals observed | Booking: phone | Social: unknown
+  - Notes: Irrigation and sprinkler consulting plus custom pump work; commercial and municipal focus rather than residential blowout season.
+- **Casey's Sprinkler Service** | irrigation / sprinkler | Grand Junction | no site | phone n/a | email n/a | WATCH | MISSED_CALL_LEAD_CAPTURE (low) | site unknown | revamp no
+  - Evidence: Directory-only evidence so far; no own website found; about 1 Google review per directory
+  - Stack: UNKNOWN; directory-only presence | Booking: unknown | Social: unknown
+  - Notes: Sprinkler service found only in directories. Caveat: REFERENCE ONLY, no own website found and no verified channel.
+- **Majestic Irrigation and Sprinkler Services LLC** | irrigation / sprinkler | Grand Junction | https://majesticirrigationandsprinkler.com | phone n/a | email n/a | WATCH | AEO_AI_DISCOVERABILITY (low) | site unknown | revamp no
+  - Evidence: Own domain exists but failed to load on 2026-09-13; services and contact not verified; third-party pages cannot supply final contact fields
+  - Stack: UNKNOWN; own domain failed to load | Booking: unknown | Social: unknown
+  - Notes: Registered LLC with an own domain that is currently unreachable. Caveat: REFERENCE ONLY, no verified channel; re-verify site before outreach.
+- **Chuck's Sprinkler Service** | irrigation / sprinkler | Grand Junction | no site | phone n/a | email n/a | WATCH | MISSED_CALL_LEAD_CAPTURE (low) | site unknown | revamp no
+  - Evidence: In business since 1962 per Yellow Pages with BBB A+; own website not confirmed
+  - Stack: UNKNOWN; directory-only presence | Booking: unknown | Social: unknown
+  - Notes: Long-running sprinkler shop in the Grand Valley serving Fruita and Grand Junction. Caveat: REFERENCE ONLY, directory-only so far, no verified channel.
+- **Ideal Irrigation** | irrigation / sprinkler | Cortez | no site | phone n/a | email n/a | WATCH | MISSED_CALL_LEAD_CAPTURE (low) | site unknown | revamp no
+  - Evidence: Listed on City of Cortez July 2026 turf-replacement contractor list; no own website found; city-published email and phone are not own-site data
+  - Stack: UNKNOWN; no own website found | Booking: unknown | Social: unknown
+  - Notes: Irrigation contractor in Cortez. Caveat: REFERENCE ONLY, no own website found and no verified channel; city-list appearance is activity evidence, not a verified new filing.

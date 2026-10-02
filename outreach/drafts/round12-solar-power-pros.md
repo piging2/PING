@@ -1,0 +1,5 @@
+# Round 12 draft — Solar Power Pros (FORM)
+- To: https://solarpowerpros.com/contact/ (own-site contact page)
+- Backup email: contact@solarpowerpros.com (site-published)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. Solar Power Pros runs in-house install crews and fields urgent hail repair and detach/reinstall requests that cannot wait for a callback. PING answers every inquiry instantly, qualifies the job, and books the site visit, so storm-driven leads never cool while your installers are on a roof. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

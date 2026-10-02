@@ -1,0 +1,4 @@
+# Round 12 draft — AtticPro Insulation (FORM)
+- To: Free Home Energy Audit form on https://atticproinsulation.com/
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses capture every call and message so no job slips through the cracks. AtticPro runs free energy audits with Xcel rebate paperwork deducted at invoice, which means rebate-driven quote requests pile in fast, and follow-up speed decides who books. PING answers every inquiry instantly, books the audit, and chases the estimates that go quiet, so nothing leaks while your techs are on jobs. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

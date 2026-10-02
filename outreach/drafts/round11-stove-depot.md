@@ -1,0 +1,6 @@
+# Round 11 draft — Stove Depot & Chimney Works (FORM)
+
+- Form: Get a Quote form at https://stovedepotcw.com/contact-page/scenario-page/ (Grand Junction, JS-rendered fields)
+- Fields: Name Nolan Geske, email nolangesk@gmail.com, phone (970) 589-3309, business PING Social, message verbatim below. Email must render as nolangesk@gmail.com before submit. If the form is JS-blocked, customer-only (project/property details required, no honest B2B path), or CAPTCHA-blocked, SKIP without asking and log the blocker.
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. Two showrooms plus sweep service plus annual maintenance plans means fall scheduling load stacks up fast from Mesa to Eagle counties, and quote requests queue behind showroom traffic. PING answers every inquiry instantly, books the appointment, and follows up, so maintenance plans keep renewing while nobody has to watch the inbox. You stay in charge of the schedule. Open to a 15-minute demo next week? Nolan, PING Social, (970) 589-3309

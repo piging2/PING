@@ -1,0 +1,4 @@
+# Round 10 draft
+Prospect: Woodland Handyman | Trade: handyman | Town: Grand Junction, CO | Route: own-site contact form at https://woodlandhandymanllc.com/contact/ | Status target: DRAFTED (form-route, awaiting browser submit task)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service shops make sure every call and message gets answered and booked, even when the whole crew is on a job. Fall is peak booking season: swamp-cooler winterization, holiday punch lists, honey-do lists. Photo-based requests that wait a day go cold. PING answers instantly, collects the details, and chases the estimate so nothing slips. Open to a 15-minute chat next week? Nolan, PING Social, (970) 589-3309

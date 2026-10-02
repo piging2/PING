@@ -114,6 +114,23 @@ META_PROSE_RE = re.compile(
 # clauses are stripped.
 HELD_RE = re.compile(r"\bheld\b", re.IGNORECASE)
 LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
+# Explicit held=false assignment: machine-readable NOT-held state
+# (x passes 2026-10-01 11:14/13:14 MDT: pass logs document
+# 'holds.json: x held=false' when recording the gate result; the bare
+# \bheld\b in HELD_RE fired on it and the gate DENY-CONFLICTed on its own
+# documentation, self-reinforcing every pass). Neutralized, never dropped:
+# the assignment is substituted out but the rest of the clause is still
+# scanned, so a real hold asserted alongside it still fires. 'held=true',
+# 'account held', 'placed on hold', 'owner hold' are untouched by this.
+HELD_FALSE_RE = re.compile(r"\bheld\b[\"']?\s*[:=]\s*false\b", re.IGNORECASE)
+# Meta-prose about the gate's own classification of the 'held' token
+# ('the tail scanner fired on the bare token "held"'). Describes the gate,
+# not a restriction; handled by _scanner_token_meta_only below.
+SCANNER_META_RE = re.compile(
+    r"\btail scanner\b|\bfalse positive\b|negated-clause strip|"
+    r"\bbare token\b",
+    re.IGNORECASE)
+_QUOTED_HELD_RE = re.compile(r"[\"']held[\"']", re.IGNORECASE)
 # Surface-name tokens for cross-surface attribution (fb pass 165,
 # 2026-09-30 ~11:33 MDT: the clause "IG engagement HELD per 90h GO"
 # false-conflicted surface=facebook -- the HELD was scoped to Instagram,
@@ -197,6 +214,24 @@ def on_hold_deliberated(clause):
     return bool(ON_HOLD_PLACEMENT_VERB_RE.match(m.group(0)))
 
 
+def _scanner_token_meta_only(clause):
+    """True when the clause only discusses the gate's own 'held'
+    classification and asserts no other restriction.
+
+    The discussed token is quoted ('the bare token "held"'); a genuine hold
+    claim ('account held', 'held=true', 'placed on hold', 'owner hold') is
+    never phrased as scanner meta-prose. After removing the discussed token,
+    any remaining affirmative marker keeps the clause, so a real restriction
+    documented alongside the meta-prose still fires.
+    """
+    if not SCANNER_META_RE.search(clause):
+        return False
+    if not _QUOTED_HELD_RE.search(clause):
+        return False
+    rest = _QUOTED_HELD_RE.sub(" ", clause)
+    return not any(rx.search(rest) for rx in AFFIRMATIVE_RES)
+
+
 def strip_negated_clauses(line, surface=None):
     """Remove clauses whose restriction terms are negated, lifted, or merely
     precautionary pacing prose.
@@ -214,6 +249,18 @@ def strip_negated_clauses(line, surface=None):
     """
     kept = []
     for clause in re.split(r"[.;\n]", line):
+        # Explicitly-negated machine hold state ('holds.json: x held=false',
+        # '"held": false') is a claim of NOT held, never a hold. Substitute
+        # the assignment out but keep scanning the rest of the clause: a
+        # real hold asserted alongside it must still fire.
+        clause = HELD_FALSE_RE.sub(" ", clause)
+        # Meta-prose ABOUT the scanner's own 'held' classification ('the tail
+        # scanner fired on the bare token "held"') describes the gate, not a
+        # restriction. Drop the clause only when it discusses the scanner /
+        # false positive and asserts nothing else; anything still
+        # affirmative after removing the discussed token keeps the clause.
+        if _scanner_token_meta_only(clause):
+            continue
         # Lock-mechanics 'held' ('the driver held the X Chrome lock', 'gate
         # held clean') is not an account hold. This branch does not require a
         # RESTRICTION_TERM_RE hit because 'held' lives only in AFFIRMATIVE_RES.

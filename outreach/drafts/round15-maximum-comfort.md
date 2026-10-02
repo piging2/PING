@@ -1,0 +1,5 @@
+# Round 15 draft — Maximum Comfort Pool & Spa (FORM)
+
+- Route: contact form https://mcpsvail.com/contact/ (first/last name, nearest location, email, phone, product/reason choice including "Service"; no address or ZIP)
+
+Please read before replying: I am not a customer and this is not a service request. I am not looking to get any project done and I do not want an estimate. This is a business-to-business message from one business to another. I'm Nolan with PING Social. We help home service businesses answer every call and message so no job slips through the cracks. Maximum Comfort runs the largest service fleet in the Vail Valley, and with an explicit emergency-service offering the real test is who captures the urgent call while every tech is on a truck. PING answers instantly, captures the request with the details that matter, and queues it so nothing waits on a callback. You stay in control of the fleet. Open to a 15-minute demo next week? Nolan Geske, PING Social, nolangesk@gmail.com, (970) 589-3309

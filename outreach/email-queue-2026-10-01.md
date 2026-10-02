@@ -1,0 +1,28 @@
+# Email queue — 2026-10-01 UTC cap (10 sends, opens 18:00 MDT 2026-09-30)
+
+Order per standing rules: (1) follow-ups first, (2) new cold emails FIFO oldest-first.
+Detached-run sending: attempt sends in order; verify EVERY acceptance in sent mail before marking SENT (a timed-out CLI receipt is not a failed send). Kill on approval stall; never loop retries.
+Ladder timing anchors to the INITIAL send, never to a follow-up send.
+
+CREATED 2026-09-24 round 140. Rolls in from the 2026-09-30 roll chain (corridor cold FIFO, order preserved). No follow-up drafts are pre-scheduled for this cap; if any follow-up becomes eligible (reply-check before firing), it fronts the queue ahead of cold per standing priority.
+
+## Cold FIFO slots 1-5 — corridor only (fire 10 per the UTC cap; FIFO order preserved)
+1. `drafts/round140-full-palette-painting-email.md` → info@fullpalettepainting.com (Full Palette Painting & Designs, Grand Junction; painting: interior/cabinet refinishing/faux/plaster; family-owned since 2000, serves Mesa County; own-site contact page email; niche-qualification AUTOMATION angle; review delta + chain re-verify at pre-send)
+2. `drafts/round140-specialized-finishes-email.md` → contact@specializedfinishes.com (Specialized Finishes, Grand Junction; residential+commercial painting, wood finishing, furniture refinishing, antique restoration; owner Shawn Turner handles every project personally since 1997; own-site footer email x2; one-craftsman missed-call angle; review delta + chain re-verify at pre-send)
+3. `drafts/round140-tint-shop-co-email.md` → sales@thetintshopco.com (The Tint Shop Co, Grand Junction; window tinting auto/residential/commercial, decorative film, vinyl wraps/graphics, PPF; family-owned, shares shop with Auto Detailing 360 + Ceramic Pro GJ; own-site email; quote-intake missed-call angle; review delta + chain re-verify at pre-send)
+4. `drafts/round140-distinctive-wood-designs-email.md` → DARRIN@DISTINCTIVEWOOD.NET (Distinctive Wood Designs, Montrose; custom cabinetry + commercial millwork; 2210 Industrial Dr; own-site email; WEBSITE_REVAMP primary: sparse 2018-era brochure WP site observed; portfolio asset happy-place-platform.vercel.app cited in draft; review delta + chain re-verify at pre-send)
+5. `drafts/round140-lincoln-woodworks-email.md` → office@lincolnwoodworks.com (Lincoln Woodworks, Palisade; custom cabinetry, kitchens focus, luxury whole-home interiors since 1980; actively hiring Woodworker/Drafter/Finisher; own-site Contact page email + estimates@lincolnwoodworks.com; growth-meets-intake missed-call angle; review delta + chain re-verify at pre-send)
+
+## Slots 6-10 — open
+6. `drafts/round145-leland-plumbing-email.md` → robert@lelandphac.com (Leland Plumbing Heating and Air Conditioning, Ltd., Grand Junction; plumbing/HVAC, owner Robert Baker; family shop, BBB A+; own-site email verified live 2026-09-25 discovery; Gmail in:sent 0 verified 2026-09-25; eligibility gate exit 0 for 2026-09-25; chain re-verify at send time; MISSED_CALL_LEAD_CAPTURE high, furnace-season angle)
+7. `drafts/round55-western-slope-concrete-floors-email.md` → chris@westernslopeconcretefloorsolutions.com (Western Slope Concrete Floor Solutions, Craig; owner-operated two-person epoxy/polyaspartic shop, Chris + wife Shelby; own-site email re-verified live 2026-09-25 round 146; chain INDEPENDENT, no franchise affiliation; MISSED_CALL_LEAD_CAPTURE medium, free-consultation-during-installs angle; disclosure first, no em dashes; chain-gap RESTORATION: written round 55, queued 09-20, rolled to 09-21, dropped by the round-102/124 rebuilds)
+8. `drafts/round55-cleveland-painting-email.md` → pagosapainter@gmail.com (Cleveland Painting Co LLC, Pagosa Springs; small licensed team, painting + epoxy floor coatings; own-site email re-verified live 2026-09-25 round 146; chain INDEPENDENT, no franchise affiliation; Gmail address, cheap-verify before send; MISSED_CALL_LEAD_CAPTURE medium-low, mid-coating missed-call angle; disclosure first, no em dashes; chain-gap RESTORATION: written round 55, queued 09-20, rolled to 09-21, dropped by the round-102/124 rebuilds)
+Slots 9-10 intentionally open; fill FIFO from the next drafting round or from newly eligible follow-ups (follow-ups front the queue per standing priority).
+
+## Slots 9-10 — round-149 drafts (filled 2026-09-26 round 149)
+9. `drafts/round149-smart-living-water-email.md` → smartlivingwatergj@gmail.com (Smart Living Water, Grand Junction; whole-home filtration/softeners/RO, free water test lead magnet; family-owned two brothers; email verbatim on own-site contact page per 09-15 cheap-verify PASS, but contact page HTTP 500 on 2026-09-26 live check — FIRING ROUND MUST RE-VERIFY at pre-send; chain re-verification GO 2026-09-26: "Smart Living Water Purification of the Rockies" (Palm Beach division) is a separate entity at 150 W Main St Suite D with separate brand smartlivinghp.com; 09-21 chain HOLD resolved at outreach time; MISSED_CALL_LEAD_CAPTURE high, voicemail-to-Culligan angle)
+10. `drafts/round149-colorado-commercial-repairs-email.md` → dispatch@cocomrepairs.com (Colorado Commercial Repairs, Grand Junction; commercial-only one-technician 24/7 dispatch, founded 2021; email verbatim twice on own-site contact page; MISSED_CALL_LEAD_CAPTURE high, one-tech-under-a-cooler missed-emergency angle)
+
+Slot plan now closed at 10/10 for 2026-10-01 UTC.
+
+Recipient addresses are in each draft file's To: line. Pre-send: cheap-verify Gmail/Yahoo/Hotmail/odd-domain addresses; never send to a bounced address. BINDING: run the send-eligibility gate per recipient before every send (standing rule).

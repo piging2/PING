@@ -46,6 +46,24 @@ class GateTest(unittest.TestCase):
     def write_authority(self, surfaces):
         with open(self.auth_path, "w", encoding="utf-8") as f:
             json.dump(make_authority(surfaces), f)
+        # The gate reads holds.json FIRST (step 0, fail-closed on missing)
+        # since the 2026-09-30 executable-hold-state change; the fixture
+        # must provide it or every test fail-closes before reaching the
+        # logic under test. HELD status -> held=true; anything else ->
+        # held=false so the AUTHORITY.json status path is what denies.
+        holds = {"holds": {
+            name: {"held": status == "HELD",
+                   "set_by": "test",
+                   "set_at": "2026-09-29T11:06:00Z",
+                   "reason": f"test hold state for {name}",
+                   "ref": "test"}
+            for name, status in surfaces.items()}}
+        self.write_holds(holds)
+
+    def write_holds(self, holds):
+        with open(os.path.join(self.root, "holds.json"), "w",
+                  encoding="utf-8") as f:
+            json.dump(holds, f)
 
     def write_file(self, name, text):
         p = os.path.join(self.root, name)
@@ -185,6 +203,10 @@ class GateTest(unittest.TestCase):
             "authorized": False, "notes": "session revoked", "window": None}
         with open(self.auth_path, "w", encoding="utf-8") as f:
             json.dump(doc, f)
+        self.write_holds({"holds": {"facebook": {
+            "held": False, "set_by": "test",
+            "set_at": "2026-09-29T11:06:00Z",
+            "reason": "test", "ref": "test"}}})
         r = self.run_gate("facebook")
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertIn("AUTHORITY-DENY", r.stdout)
@@ -205,6 +227,10 @@ class GateTest(unittest.TestCase):
             "window": None}
         with open(self.auth_path, "w", encoding="utf-8") as f:
             json.dump(doc, f)
+        self.write_holds({"holds": {"instagram": {
+            "held": False, "set_by": "test",
+            "set_at": "2026-09-29T11:06:00Z",
+            "reason": "test", "ref": "test"}}})
         self.write_file("instagram-engagement.md",
                         "pass 160\n- CLASSIFICATION: OWNER_HOLD. 0 likes.\n"
                         "- OWNER ORDER: INSTAGRAM HELD. Do not request, "
@@ -353,6 +379,31 @@ class GateTest(unittest.TestCase):
                      "temporarily blocked from liking"):
             r = self.gate_verdict_for_log_line("x", line)
             self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+
+
+    def test_held_false_assignment_allows(self):
+        # Regression lock for the 2026-10-01 11:14/13:14 MDT x incident:
+        # pass logs document 'holds.json: x held=false' and discuss the
+        # scanner's own classification of the token; neither is a hold.
+        # The scanner had DENY-CONFLICTed on its own documentation,
+        # self-reinforcing every pass. Real hold assertions, including ones
+        # sharing a clause with held=false or scanner vocabulary, still deny.
+        for line in ("Gate: authority-check.py x exited 0 (AUTHORITY-ALLOW) "
+                     "at run start (holds.json: x held=false, owner "
+                     "unfrozen 2026-10-01 ~05:21 MDT)",
+                     'state: "held": false per holds.json',
+                     "the tail scanner fired on the bare token \"held\" "
+                     "inside prior passes' own gate lines"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+        for line in ("x held=true per owner order",
+                     "held=false but owner hold imposed on x",
+                     "false positive review: the account is on hold"):
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
 
 if __name__ == "__main__":
