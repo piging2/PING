@@ -1,0 +1,5 @@
+Beat: schedule
+Angle: Check Google Calendar for Tuesday September 15 through Sunday September 20: report anything scheduled, flag anything new or changed versus the 'week is wide open' unit from September 13, and note whether any Monument View Coffee Shop meeting has been set.
+
+## Finding 1
+Google Calendar shows nothing scheduled for Tuesday September 15 through Sunday September 20, 2026. A direct read of the primary calendar (nolangesk@gmail.com) for the window 2026-09-15T00:00:00-06:00 to 2026-09-20T23:59:59-06:00 returned zero events, and a freebusy query for the same window returned an empty busy list. The +agenda check for the next 7 days also returned count 0. This matches the September 13 'week is wide open' status: no new events, no changes, no cancellations to report. No meeting with Monument View Coffee Shop owners appears anywhere in the September 15-20 window. Facts are from a successful Google Calendar connector read on 2026-09-14 at 22:38 America/Denver; there is no URL for this finding.

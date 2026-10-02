@@ -1,0 +1,6 @@
+Beat: social
+Angle: Change check on today's 'Western Slope demand check' unit (no new contractor requests since this morning): sweep Western Colorado community Facebook groups for homeowner requests posted since this morning — plumber, HVAC, electrical, roofing, other trades. File only genuinely new demand posts with the ask and town; skip contractor-offer posts and out-of-area items, or report clean if nothing new appeared.
+
+## Finding 1
+Randy Finks posted in the Durango Community Support Facebook group on September 11, 2026 asking for recommendations on companies or individuals who can replace boiler systems. Twelve comments responded with specific local suggestions: Gold Water Plumbing, Michael Harris (described as incredible), Mountain Plumbing with phone number 9709031282, and Summit. Nothing else matching this beat appeared in the sweep: no other Western Colorado homeowner request posts with a confirmed town were found across the Facebook group and Instagram searches covering September 10 through September 12, 2026. Note this post is from yesterday, not this morning, so it is carried with its date.
+- https://www.facebook.com/groups/DurangoCommunitySupport/permalink/4554055738143759/ (published 2026-09-11)

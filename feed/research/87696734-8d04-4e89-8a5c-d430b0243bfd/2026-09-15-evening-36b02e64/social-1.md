@@ -1,0 +1,6 @@
+Beat: social
+Angle: Sweep public Facebook groups, Threads, and Instagram for Western Colorado homeowner requests (plumber, HVAC, electrician needed) and contractor no-show or no-callback complaints posted in the last 24h. The paper already ran 'The reply race', 'The escalation', and 'Paid, then silence' 8-12h ago; file only new posts, not those threads. Stake: direct outreach triggers for Nolan's Western Colorado home-service campaign.
+
+## Finding 1
+Dwayne Lee posted in a Facebook community group on 2026-09-15 at 15:48 UTC (09:48 MDT) asking for recommendations for an affordable plumber, drawing 24 comments and 5 likes. Commenters recommended three Western Slope options: Alex Mantalis at AK Plumbing, HVAC, Electric & Restoration with phone 330-574-1507; Honesty Plumbing or Blaylock with advice to avoid EMS; and MSR Plumbing as reasonable with great work. The post itself states no location, but every recommended company is a Grand Junction-area plumbing/HVAC firm, making this a strong-indication Western Colorado homeowner request. The thread is live now with warm, practical engagement, so it is a fresh outreach-trigger candidate rather than a complaint or a closed thread.
+- https://www.facebook.com/groups/5498725156895662/permalink/27518667664474762/ (published 2026-09-15)

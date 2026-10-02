@@ -1,0 +1,10 @@
+Beat: web
+Angle: Pull Mesa County/Grand Junction building permits, commercial certificates, or business licenses issued Sept 19 to 22 to track contractor demand in Nolan's core PING Social market. Do not re-report the Sept 30 road resurfacing or the $80M 29 Road ballot measure already covered from mesacounty.us; file only fresh activity.
+
+## Finding 1
+Grand Junction's new Community Recreation Center at 2836 Recreation Way holds its free opening weekend September 25-26, 2026, with ribbon-cutting and public use from 5 to 8 p.m. Friday, September 25 and 9 a.m. to 5 p.m. Saturday, September 26, admission waived for the weekend; regular operations begin Monday, September 28 at 5:30 a.m. The facility includes five St. Mary's Pools, a three-court gymnasium, climbing walls, and a fitness area, and KKCO reported the $82 million project had more than 100 construction workers on site, with the 107,000-square-foot building visibly progressing daily. The page itself states no publication date, but the search result listing it showed a last update of about 4 days before the September 21, 2026 reading day, and the project is a major commercial construction completion signal in Nolan's core market. City membership sales are already underway, with adult resident passes at $42 per month.
+- https://95rockfm.com/ixp/507/p/colorado-grand-junction-recreation-center-opens/ (undated)
+
+## Finding 2
+Guardian Storage, which operates 36 self-storage locations in three states, opened a new facility in Grand Junction, Colorado. The site at 640 24 1/2 Road contains six buildings offering 85,000 rentable square feet of climate-controlled and drive-up space. Guardian also manages two Boulder Self Storage facilities in Boulder, Colorado. The item appeared in Inside Self-Storage's September 2026 development roundup (page carries an 8/20/26 update line and the Grand Junction entry under the section posted 9/2/26), making it a recent commercial certificate-of-occupancy-style completion in Nolan's core PING Social market.
+- https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-september-2026 (published 2026-09-02)

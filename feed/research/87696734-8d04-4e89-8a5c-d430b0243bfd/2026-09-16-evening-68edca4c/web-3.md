@@ -1,0 +1,9 @@
+Beat: web
+Angle: Find Western Slope home-service businesses newly filed, opened, or announced in the last 48 hours via Colorado SOS records, chamber announcements, and grand-opening posts for the PING Social prospect pipeline; the paper already covered the PatchMaster Grand Junction franchise opening on Sep 12, so file only businesses surfaced since.
+
+## Finding 1
+Guardian Storage has opened a new self-storage facility in Grand Junction, Colorado, at 640 24 1/2 Road. The site contains six buildings offering 85,000 rentable square feet of climate-controlled and drive-up space. Guardian Storage operates 36 self-storage locations across three states and also manages two Boulder Self Storage facilities in Boulder, Colorado. The item ran in Inside Self-Storage's September 2026 development roundup, published 9/2/26, and has not appeared in the paper before. Storage is adjacent to the home-services prospect set rather than a trade itself, but it is a newly opened consumer-facing service business in Grand Junction and a plausible outreach lead for PING Social.
+- https://www.insideselfstorage.com/self-storage-development/self-storage-development-and-zoning-activity-september-2026 (published 2026-09-02)
+
+## Finding 2
+No newly filed, opened, or announced Western Slope home-service businesses (plumbing, HVAC, electrical, or other trades) surfaced for the last 48 hours. The sweep checked Colorado chamber announcements, local business press including The Business Times and the Grand Junction Daily Sentinel, grand-opening posts, and general web news dated September 14 to 16, 2026. The only recent Western Slope business stories were a Montrose Forest Products sawmill potential closure (WARN notices, not a new business) and older items such as the PatchMaster Grand Junction franchise already covered on September 12. This is a quiet radar period, not a gap in the sweep; the finding is stated from the searches run for this report.

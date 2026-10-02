@@ -1,0 +1,11 @@
+Beat: schedule
+Angle: Google Calendar day-ahead sweep for Nolan: today Saturday Sep 19 through next week, covering open loops, networking events, Monument View Coffee Shop prep, and school-calendar conflicts. Flag only what needs action today or this weekend.
+
+## Finding 1
+Tuesday Sep 22, 5:30 to 7:30 PM: Grand Valley BizMix multi-chamber mixer at 359 Main St, Grand Junction, CO 81501. The event description flags two things that need action before Tuesday: it is a MEMBERS ONLY event (GJ Area Chamber, Palisade Chamber, Western Colorado Latino Chamber, Fruita Chamber, YPN of Mesa County), so attending requires a chamber membership or a guest invite, and $10 registration is for partner-org members; Nolan does not have a confirmed path in yet, so the weekend move is to secure a guest invite or verify membership. Second, one source listed Sep 15 at Hilltop while the chamber calendar now shows Sep 22, so the date itself needs a double check against the chamber calendar before showing up. Facts from the event's own calendar description, read 2026-09-19.
+
+## Finding 2
+Thursday Sep 24, 5:30 to 7:00 PM: Greater Montrose Chamber Business After Hours, hosted with Visiting Angels, at SureStay Plus, 1655 E Main St, Montrose, CO. Networking with cocktails and hors d'oeuvres. Guests are explicitly welcome with non-member tickets available, so unlike Tuesday's mixer there is no membership barrier to resolve. Montrose is roughly an hour from Grand Junction, so plan drive time after the 4:20 PM commute block. Facts from the event's own calendar description, read 2026-09-19; venue and date verified against greatermontrosechamber.com/events/.
+
+## Finding 3
+The calendar read for today Saturday Sep 19 through next Saturday holds nothing for this weekend: no events Sep 19 or 20, and no scheduled date for the in-person conversation with the Monument View Coffee Shop owners. Weekdays run the normal pattern (commute blocks plus teaching hours 7:00 AM to 4:30 PM); no school-calendar conflicts land on the weekend or on either networking evening. The open weekend is therefore the clear window for Monument View prep work, and nothing needs to be moved or cleared to make room. Facts from a successful Google Calendar agenda read covering 2026-09-19 through 2026-09-27, read 2026-09-19.

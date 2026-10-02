@@ -1,0 +1,141 @@
+{
+ "$id": "https://ping.social/schemas/facebook/intent.json",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": true,
+ "description": "Durable intent, persisted BEFORE any external effect. intent_id is deterministic: facebook:<action>:post:<id>:<batch_id>.",
+ "properties": {
+  "account": {
+   "type": "string"
+  },
+  "action": {
+   "enum": [
+    "like",
+    "comment"
+   ]
+  },
+  "actor": {
+   "type": "string"
+  },
+  "batch_id": {
+   "type": "string"
+  },
+  "content": {
+   "description": "Comment text; null for likes.",
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "eligibility": {
+   "description": "Tamper-evident envelope stamped by engagement-guard curate semantics (decision/reasons/evidence/function/ttl_sec/data_sha256/checked_at/evidence_hash).",
+   "properties": {
+    "checked_at": {
+     "format": "date-time",
+     "type": "string"
+    },
+    "data_sha256": {
+     "type": "object"
+    },
+    "decision": {
+     "const": "ELIGIBLE"
+    },
+    "evidence": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "evidence_hash": {
+     "pattern": "^[0-9a-f]{64}$",
+     "type": "string"
+    },
+    "function": {
+     "type": "string"
+    },
+    "reasons": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "ttl_sec": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "decision",
+    "reasons",
+    "evidence",
+    "function",
+    "ttl_sec",
+    "data_sha256",
+    "checked_at",
+    "evidence_hash"
+   ],
+   "type": "object"
+  },
+  "intent_id": {
+   "pattern": "^facebook:(like|comment):post:(\\d+|pfbid[A-Za-z0-9]+):[A-Za-z0-9_.-]+$",
+   "type": "string"
+  },
+  "page": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "platform": {
+   "const": "facebook"
+  },
+  "record_type": {
+   "const": "intent"
+  },
+  "state": {
+   "enum": [
+    "ELIGIBLE",
+    "INTENT_CREATED",
+    "QUEUED",
+    "SCHEDULED",
+    "DISPATCHED",
+    "ATTEMPTING",
+    "UNKNOWN",
+    "VERIFYING",
+    "VERIFIED_SUCCESS",
+    "VERIFIED_NOOP",
+    "SAFE_RETRY",
+    "DEFERRED",
+    "FAILED_RETRYABLE",
+    "FAILED_TERMINAL",
+    "CANCELLED"
+   ]
+  },
+  "target_ref": {
+   "pattern": "^post:(\\d+|pfbid[A-Za-z0-9]+)$",
+   "type": "string"
+  },
+  "ts": {
+   "format": "date-time",
+   "type": "string"
+  },
+  "url": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "record_type",
+  "intent_id",
+  "platform",
+  "action",
+  "target_ref",
+  "batch_id",
+  "state",
+  "eligibility",
+  "actor",
+  "account"
+ ],
+ "title": "Facebook autonomous intent record",
+ "type": "object"
+}

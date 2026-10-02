@@ -1,0 +1,54 @@
+{
+ "$id": "https://ping.social/schemas/facebook/transition.json",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "description": "Persisted state-transition evidence. Every transition carries its evidence; the fold of this stream is the replayable decision history. Replay is decision replay, never mutation replay.",
+ "properties": {
+  "evidence": {
+   "description": "Why this transition was legal at the time: gate outputs, read-back state, lease identity, envelope refs.",
+   "type": "object"
+  },
+  "from_state": {
+   "type": "string"
+  },
+  "intent_id": {
+   "type": "string"
+  },
+  "record_type": {
+   "const": "transition"
+  },
+  "to_state": {
+   "enum": [
+    "ELIGIBLE",
+    "INTENT_CREATED",
+    "QUEUED",
+    "SCHEDULED",
+    "DISPATCHED",
+    "ATTEMPTING",
+    "UNKNOWN",
+    "VERIFYING",
+    "VERIFIED_SUCCESS",
+    "VERIFIED_NOOP",
+    "SAFE_RETRY",
+    "DEFERRED",
+    "FAILED_RETRYABLE",
+    "FAILED_TERMINAL",
+    "CANCELLED"
+   ]
+  },
+  "ts": {
+   "format": "date-time",
+   "type": "string"
+  }
+ },
+ "required": [
+  "record_type",
+  "intent_id",
+  "from_state",
+  "to_state",
+  "evidence",
+  "ts"
+ ],
+ "title": "Facebook transition evidence record",
+ "type": "object"
+}

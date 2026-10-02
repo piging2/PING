@@ -1,0 +1,5 @@
+Beat: schedule
+Angle: Pull Google Calendar Sat Sept 12 through Fri Sept 19, noting teaching blocks and evening/weekend openings. Paper already reported 'A wide-open week ahead,' Monument View coffee meeting still dateless, and mixers Sept 22/24; file only what changed. Stake: Nolan teaches 7-4:30 weekdays, networking fits evenings/weekends; morning lean is what he can book today.
+
+## Finding 1
+The connected Google Calendar (nolangesk@gmail.com, the only calendar on the only linked account) was read successfully this morning, Saturday September 12, 2026, covering midnight Saturday through the end of Friday September 19, and it contains zero events. No teaching blocks are on the calendar, no coffee meeting with Monument View has been scheduled, and no new evening or weekend commitments have landed since the last edition. The wide-open week the paper already reported still holds: Saturday September 12 and Sunday September 13 are entirely clear, and every weekday evening from Monday September 14 through Friday September 19 remains open for booking. The September 22 and September 24 mixers sit outside this window and are unchanged.

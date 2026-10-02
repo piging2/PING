@@ -1,0 +1,2 @@
+Beat: schedule
+Angle: Read Google Calendar for Sept 24-30: evening and weekend business events, deadlines, and any prep due for the Monument View Coffee Shop conversation. Stake: Nolan teaches weekdays 7:00 AM to 4:30 PM and networks evenings and weekends only; flag anything that conflicts with teaching hours or needs same-day prep. Do not re-announce the Sept 24 Montrose Business After Hours already covered; file only new or changed items.

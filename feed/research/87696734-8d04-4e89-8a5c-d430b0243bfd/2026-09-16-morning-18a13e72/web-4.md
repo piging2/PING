@@ -1,0 +1,18 @@
+Beat: web
+Angle: Western Colorado business radar for the last 48 hours: new business filings, grand openings, ownership changes, or expansions in Grand Junction/Mesa County, especially trades and Main Street shops. Already covered: Bob's hardware store, Graff Dairy new owners, Honk-Key Lock GJ opening, PatchMaster GJ franchise; do not re-report. Stake: Nolan targets Western Colorado home-service businesses first for PING Social. File only new names with trade, location, and source.
+
+## Finding 1
+Rescue 1 Plumbing, a Grand Junction plumbing company founded by Jack Thompson, announced on September 9, 2026 that it has expanded into water-efficiency services for residential and commercial properties in Grand Junction and surrounding areas. The new offerings are smart fixture installations, comprehensive water auditing, precision leak detection, and advanced irrigation control systems, including internet-connected systems with automated usage tracking and real-time leak detection monitored through mobile apps. The company says all field technicians are undergoing ongoing training in water-saving mechanisms, smart system integration, and local plumbing code updates, and that it is partnering with commercial enterprises across Mesa County on facility-wide water management. The release lists the company phone as (970) 812-1715 and email as info@rescueoneplumbing.com. The announcement came as a company press release distributed through PressAdvantage.
+- https://lifestyle.loopbiz.com/story/329139/rescue-1-plumbing-expands-services-to-improve-water-efficiency/ (published 2026-09-09)
+
+## Finding 2
+A new downtown Grand Junction restaurant called The Roost has opened in the Alpine Bank building at 225 N. Fifth St., next to the large statue of an eagle, and was in its soft-opening phase serving lunch, with dinner service to come, when The Daily Sentinel's dining column reported it. The column describes the space as light and inviting with easy parking and a large front patio, and notes the owner also runs The Goat restaurant in Carbondale. The column's page states no publication date; its archive path carries a May 13, 2026 edition stamp, so this is a spring opening, not a this-week one.
+- https://grandjunctiondailysentinel-co.newsmemory.com/?publink=03b35b402_13520c5 (undated)
+
+## Finding 3
+Junct'n Square Pizza has new owners and has officially reopened at 626 Rood Ave. in Grand Junction, serving lunch and dinner and staying open until midnight on Fridays and Saturdays, with a Sunday brunch menu planned for the near future. The menu includes Detroit-style deep-dish pizza and antipasto salad, and the reopened restaurant kept its tucked-away private side patio. This is the same Junct'n Square Pizza brand whose former downtown space at 119 N. Seventh St. became Tiki Bird. Reported in The Daily Sentinel's dining column; the page states no publication date and its archive path carries a May 13, 2026 edition stamp.
+- https://grandjunctiondailysentinel-co.newsmemory.com/?publink=03b35b402_13520c5 (undated)
+
+## Finding 4
+Sitto's, the Syrian/Arabic food operation that began as a food truck (the name means Grandma in Syrian Arabic), has a path to a permanent home: after the truck broke down, the chef/owner purchased a space in Cottonwood Mall at 2493 U.S. Highway 6 in Grand Junction, formerly home to the Outlaw Cafe, with construction still underway and the owner hopeful to open by the end of 2026, per The Daily Sentinel's dining column. The column's page states no publication date; its archive path carries a May 13, 2026 edition stamp, so the end-of-2026 target date should be read as the owner's stated hope at that time.
+- https://grandjunctiondailysentinel-co.newsmemory.com/?publink=03b35b402_13520c5 (undated)

@@ -1,0 +1,16 @@
+Beat: social
+Angle: On Facebook, Instagram, and Threads, find what Western Slope trade businesses (HVAC, plumbing, electrical, cleaning, landscaping) posted in the last 48 hours about fall/winter prep, tune-ups, or seasonal offers. This is engagement and content intel for PING Social's own channels, not a homeowner-request sweep; the paper already ran the homeowner-demand check ('All supply, no demand') 11h ago, so do not repeat that question.
+
+## Finding 1
+Platinum Heating & Cooling, a Grand Junction, Colorado HVAC company (@platinumheatingcooling.gj), posted September 15, 2026 with a fall-ready offer sheet tailored to Western Colorado: swamp cooler winterization for $129, a swamp cooler plus boiler bundle for $229, and furnace fall maintenance for $119. Per the platform's summary of the post, the image shows a branded silver Toyota Tacoma work truck parked on a street with red and orange autumn trees, overlaid text reading 'Get your home fall ready,' and the caption explains the seasonal transition in Western Colorado and encourages referrals. This is the most directly reusable local comp for PING Social's channels: a Western Slope shop pairing the region-specific swamp-cooler winterization angle with a bundled boiler offer and a flat furnace maintenance price.
+- https://www.instagram.com/p/DdTw1BGG7UP/ (published 2026-09-15)
+
+## Finding 2
+Monarch Heating & Air Conditioning of Grand Junction (@monarch_gj, website MONARCHGJ.COM on the graphic) posted September 16, 2026 a 'FALL HVAC CHECKLIST' homeowner-tips graphic. Per the platform's summary, the navy-blue graphic with a fall maple-leaf photo strip lists six tasks in the caption: change air filter, schedule furnace tune-up, check vents and registers, clear outdoor equipment, test thermostat, and check carbon monoxide detectors. The format is educational rather than discount-led, which gives PING Social a second local template: checklist carousels that position the shop as the helpful expert before the first cold snap.
+- https://www.instagram.com/p/DdW5Yu7MyiB/ (published 2026-09-16)
+
+## Finding 3
+Across the wider trade feed in the last 48 hours, the dominant fall content playbook is the priced tune-up offer with urgency framing, and the price ladder is visible: Metz Air Control ran a video ad September 16, 2026 pushing a limited-time $47 furnace tune-up with on-screen text 'DON'T CLOWN AROUND & WAIT FOR THE FIRST COLD NIGHT... GET YOUR SYSTEM READY NOW'; Barnhart Heating & Cooling posted September 18, 2026 a 'Fall is coming! IS YOUR FURNACE READY?' graphic scheduling 'Fall Clean & Checks' with a $89 seasonal special and a furnace clean-and-check giveaway naming winners Sarah Weiss and Natalie Anderson; Air Dynamics Heating & Cooling posted September 16, 2026 tiered early-bird pricing of $69 in September, $79 in October, and $89 in November. For PING Social's own channels, the takeaway is that early-bird tiering and giveaway mechanics are the engagement levers working nationally right now, and no Western Slope shop in the sweep was seen using either.
+- https://www.instagram.com/reel/DdWxGvqRW8Z/ (published 2026-09-16)
+- https://www.facebook.com/hvacbarnhart/posts/pfbid0NQTxme7acEheGeZtdyMd7vHu2NZyecUVTif6XxQyhdfHUg46rkCwzncVzEkknRYal (published 2026-09-18)
+- https://www.instagram.com/p/DdWeL0bxjrC/ (published 2026-09-16)

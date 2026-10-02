@@ -1,0 +1,5 @@
+Beat: schedule
+Angle: Check Google Calendar for anything that changed since the paper's 'wide-open week' unit: plans added for the rest of this weekend, whether the Monument View Coffee Shop conversation has gotten a date, and any evening items landing next week. File only what moved; if the week is still wide open, say so in one line.
+
+## Finding 1
+The week is still wide open. A fresh read of Google Calendar (checked Saturday 2026-09-12 at about 2:00 PM MDT) shows no events at all from the rest of this weekend (September 12-13) through the end of next week (September 14-20): nothing was added, and the Monument View Coffee Shop conversation with its owners has not gotten a date. The next items on the calendar are two evening networking events the week after: the Grand Valley BizMix multi-chamber mixer on Tuesday, September 22 at 5:30-7:30 PM MDT at 359 Main St, Grand Junction, CO 81501, and the Montrose Chamber Business After Hours on Thursday, September 24 at 5:30-7:00 PM MDT at SureStay Plus, 1655 E Main St, Montrose, CO. Facts were read directly from the connected calendar; no public link or page to cite.

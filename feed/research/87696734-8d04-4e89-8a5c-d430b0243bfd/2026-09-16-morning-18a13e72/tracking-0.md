@@ -1,0 +1,2 @@
+Beat: tracking
+Angle: Check Gmail for any PING Social prospect replies, follow-up responses, or inbound leads since Tuesday evening's unit 'Evening inbox check: No prospect replies since this morning' (10h ago). Stake: Nolan runs autonomous outreach to Western Colorado home-service businesses and surfaces replies immediately. File only messages that arrived since that check; if none, file nothing.

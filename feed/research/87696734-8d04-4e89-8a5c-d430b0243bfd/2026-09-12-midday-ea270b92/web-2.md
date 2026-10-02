@@ -1,0 +1,20 @@
+Beat: web
+Angle: Build a pre-meeting dossier for Nolan's upcoming in-person conversation with the owners of Monument View Coffee Shop in Grand Junction/Redlands: current website and how weak or strong it is, Google review themes, social presence, and any visible ordering, POS, or booking tech. Grade every tech finding CONFIRMED, STRONG, WEAK, or UNKNOWN per his rule, and hold any revamp recommendation to his bar of only very non-technical owners with weak sites.
+
+## Finding 1
+Their website is monumentviewcoffee.com, a WordPress site (image URLs run through wp-content/uploads) that is actively maintained: uploaded imagery is dated June 2026 and April 2026, and the homepage copy is polished, describing a warm, welcoming Redlands coffee shop with comfortable outdoor seating, free Wi-Fi, and views of the monument. The homepage content shows no menu page, no online ordering button, and no booking or catering form in the extracted copy. Tech grades: WordPress platform CONFIRMED; any native online ordering or reservation tech on their own site UNKNOWN (no evidence either way). Revamp read for Nolan's bar: this is a serviceable, recently updated site, not a weak one, so it does not clear his threshold of proposing a revamp only for very non-technical owners with weak sites.
+- https://monumentviewcoffee.com/ (undated)
+
+## Finding 2
+Monument View Coffee Shop is listed on DoorDash as an American/Cafe merchant with $0 delivery fee, and its DoorDash menu carries priced items including the Almond Joy espresso drink at $6.99, Otto's Scramble at $12.50, Base Camp Biscuits & Gravy (full) at $12.44, and Echo Canyon Parfait at $9.15. Tech grades: third-party delivery ordering CONFIRMED; their in-store POS system UNKNOWN (no public evidence). Note for the meeting: they already accept third-party ordering, so the pitch angle is owning the channel (direct ordering, fees, customer data) rather than getting them online at all.
+- https://www.doordash.com/food-delivery/grand-junction-co-restaurants/brazilian/ (undated)
+
+## Finding 3
+Reviews are a strength. Ratings run 4.6 stars across 120 reviews (Birdeye), 4.6 across 81 reviews (top-rated.online, last updated 13 January 2026), 4.8 across 25 Google reviews per the listing snippet, and 5.0 across 20 Yelp reviews via Roadtrippers. Recurring themes: the owner Debbie (also spelled Debbi) is praised by name for warmth and greeting customers, the breakfast burrito and pumpkin spice latte get specific love, iced drinks come with coffee ice cubes so they do not water down, and reviewers call it cozy, home-like, and a good spot for meetings. One operational flag: their Birdeye profile states it has not been claimed by the business owner, so they are not actively managing at least one review platform. No recent negative reviews surfaced in this sweep.
+- https://www.top-rated.online/cities/Mesa+County/place/p/2678025/Monument+View+Coffee (published 2026-01-13)
+- https://reviews.birdeye.com/monument-village-coffee-shop-149604340665273 (undated)
+- https://maps.roadtrippers.com/us/grand-junction-co/food-drink/monument-view-coffee-shop (undated)
+
+## Finding 4
+Listing hygiene is the soft spot. Hours conflict across directories: the Google listing snippet shows Sunday 8:00 AM to 2:30 PM, Tuesday through Thursday 7:00 AM to 2:00 PM, and Friday 7:00 AM to 4:30 PM, while Birdeye shows Monday through Friday 9:00 AM to 6:00 PM and other directories show Tuesday through Friday 7:00 AM to 2:00 PM. The consistent facts are the address, 2148 Broadway, Grand Junction, CO 81507, in the Redlands, and the phone (970) 245-5550. Social presence is thin: web searches surfaced no dedicated Facebook or Instagram account for the shop, graded WEAK (no evidence of active owned social). For the meeting, the concrete openers are: inconsistent hours across Google and other directories, an unclaimed Birdeye profile, and no visible owned social channel, all against a backdrop of genuinely strong reviews.
+- https://maps.roadtrippers.com/us/grand-junction-co/food-drink/monument-view-coffee-shop (undated)

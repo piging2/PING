@@ -1,0 +1,10 @@
+Beat: social
+Angle: Sweep public posts from last 24h for Western Colorado home-service demand: homeowner asks for plumber/HVAC/electrical, missed-call complaints, high-engagement trade marketing. Do not re-report: 'Still warm', 'The reply race', 'Trade referral threads' (~10h ago). Stake: live PING Social outreach leads. File post, ask, response count.
+
+## Finding 1
+Pro Rooter, a Grand Junction plumbing company posting as @prorootergj (72 followers), published an Instagram reel on September 15, 2026 pushing preventative drain cleaning with the on-screen message 'PLUMBING 101 - DON'T IGNORE A SLOW DRAIN!' The reel shows a stainless steel sink drain draining slowly, carries a '24hr/365' service badge, and lists its service area as Grand Junction, Montrose, Alamosa and the San Luis Valley, with phone number (970) 243-3004 in the caption. This is a direct local competitor marketing after-hours availability, which is exactly the capture window PING Social's pitch targets. The post is trade marketing, not a homeowner ask; it was found in a sweep for Western Colorado home-service demand and no homeowner request posts surfaced in the last 24 hours.
+- https://www.instagram.com/reel/DdUei1vEkhZ/ (published 2026-09-15)
+
+## Finding 2
+Mesa Restoration of Grand Junction (posting as @mesarestoration, 36 followers) published a before-and-after Instagram reel on September 14, 2026 documenting a water-damage remediation job: clean hallway and bedroom shots transition to a bathroom with drying equipment running, then to severe hidden damage with drywall cut away to expose black mold, saturated insulation and rotting structural material. The on-screen caption advises viewers to call a plumber first, then the company, to prevent mold and mitigate loss. Engagement is minimal (1 like, 1 comment). The routing is the signal: a local restoration company publicly directing leak jobs to plumbers first, a cross-trade demand handoff visible in Western Colorado trade marketing this week.
+- https://www.instagram.com/reel/DdRTS1GBUez/ (published 2026-09-14)

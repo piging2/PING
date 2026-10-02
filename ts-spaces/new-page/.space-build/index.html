@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#102732" />
+  <meta name="description" content="PING Social helps Western Colorado home service pros never miss a job with practical AI that answers calls, books jobs, follows up, and works with the tools they already use." />
+  <meta property="og:title" content="PING Social | Never miss a job" />
+  <meta property="og:description" content="AI that answers calls, books jobs, and follows up while you stay focused on the work." />
+  <link rel="icon" href="data:," />
+  <title>PING Social | Practical Systems for Home Service Businesses</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #102732;
+      --ink-2: #183a46;
+      --paper: #f4f2ea;
+      --paper-2: #e9e6dc;
+      --white: #fffdf8;
+      --orange: #e8562a;
+      --yellow: #f4c84a;
+      --blue: #96c9d3;
+      --line: rgba(16, 39, 50, .22);
+      --shadow: 0 20px 50px rgba(16, 39, 50, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Source Sans 3", sans-serif;
+      font-size: 18px;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    a { color: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button, input, textarea { font: inherit; }
+    .skip {
+      position: fixed;
+      left: 12px;
+      top: -80px;
+      z-index: 100;
+      background: var(--yellow);
+      color: var(--ink);
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+    .skip:focus { top: 12px; }
+    .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    .utility {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 13px;
+    }
+    .utility .place { display: flex; align-items: center; gap: 9px; }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 4px rgba(232, 86, 42, .15);
+    }
+    .utility nav { display: flex; gap: 22px; }
+    .utility nav a { text-decoration: none; border-bottom: 1px solid transparent; }
+    .utility nav a:hover, .utility nav a:focus-visible { border-color: currentColor; }
+
+    .hero {
+      position: relative;
+      min-height: 720px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, .65fr);
+      gap: clamp(36px, 7vw, 100px);
+      align-items: center;
+      padding: 74px 0 84px;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -14vw;
+      top: 7%;
+      width: 44vw;
+      height: 86%;
+      z-index: -1;
+      background:
+        linear-gradient(rgba(16, 39, 50, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 39, 50, .08) 1px, transparent 1px),
+        var(--paper-2);
+      background-size: 28px 28px;
+      transform: rotate(-2.5deg);
+      border: 1px solid var(--line);
+    }
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 22px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .kicker::before { content: ""; width: 36px; height: 3px; background: var(--orange); }
+    h1, h2, h3 { margin: 0; font-family: "IBM Plex Sans Condensed", sans-serif; line-height: 1.04; }
+    h1 {
+      max-width: 770px;
+      font-size: clamp(54px, 7.4vw, 98px);
+      letter-spacing: -.045em;
+      text-wrap: balance;
+    }
+    h1 .mark {
+      position: relative;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    h1 .mark::after {
+      content: "";
+      position: absolute;
+      left: 1%; right: -1%; bottom: .02em;
+      height: .13em;
+      background: var(--yellow);
+      z-index: -1;
+      transform: rotate(-1deg);
+    }
+    .hero-copy {
+      max-width: 640px;
+      margin: 28px 0 0;
+      font-size: clamp(20px, 2vw, 25px);
+      line-height: 1.42;
+      color: #244651;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 34px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 12px 19px;
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 700;
+      box-shadow: 5px 5px 0 var(--yellow);
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .button:hover, .button:focus-visible { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--yellow); }
+    .button.secondary { background: transparent; color: var(--ink); box-shadow: none; }
+    .button.secondary:hover, .button.secondary:focus-visible { background: var(--white); }
+    .button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    .field-note {
+      position: relative;
+      padding: 31px 28px 28px;
+      background: var(--white);
+      border: 1px solid var(--ink);
+      box-shadow: var(--shadow);
+      transform: rotate(1.5deg);
+    }
+    .field-note::before {
+      content: "FIELD NOTE";
+      position: absolute;
+      top: -15px;
+      left: 22px;
+      padding: 6px 12px;
+      color: var(--white);
+      background: var(--orange);
+      font: 600 12px/1 "IBM Plex Mono", monospace;
+      letter-spacing: .08em;
+    }
+    .field-note blockquote {
+      margin: 0;
+      font: 600 clamp(26px, 3vw, 39px)/1.12 "IBM Plex Sans Condensed", sans-serif;
+      letter-spacing: -.02em;
+    }
+    .field-note p { margin: 22px 0 0; font-size: 16px; color: #41606a; }
+    .scribble {
+      width: 100%; height: 26px; margin-top: 18px;
+      background: url("data:image/svg+xml,%3Csvg width='280' height='26' viewBox='0 0 280 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 18C51 3 69 25 112 12s73-3 164-5' fill='none' stroke='%23e8562a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+    }
+
+    .signal-band { background: var(--ink); color: var(--white); }
+    .signal-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      min-height: 160px;
+    }
+    .signal {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 28px;
+      border-right: 1px solid rgba(255,255,255,.18);
+    }
+    .signal:last-child { border-right: 0; }
+    .signal strong { color: var(--yellow); font: 600 14px/1.2 "IBM Plex Mono", monospace; }
+    .signal span { margin-top: 9px; font-size: 17px; line-height: 1.35; }
+
+    section { padding: 100px 0; }
+    .section-head {
+      display: grid;
+      grid-template-columns: .65fr 1.35fr;
+      gap: 40px;
+      align-items: start;
+      margin-bottom: 58px;
+    }
+    .section-num { font: 600 14px/1 "IBM Plex Mono", monospace; color: var(--orange); }
+    h2 { font-size: clamp(44px, 6vw, 76px); letter-spacing: -.035em; text-wrap: balance; }
+    .section-intro { max-width: 720px; margin: 21px 0 0; font-size: 21px; color: #34545e; }
+
+    .leaks { border-bottom: 1px solid var(--line); }
+    .leak-list { border-top: 2px solid var(--ink); }
+    .leak {
+      display: grid;
+      grid-template-columns: 56px minmax(190px, .65fr) 32px minmax(220px, 1fr);
+      gap: 24px;
+      align-items: center;
+      padding: 25px 4px;
+      border-bottom: 1px solid var(--line);
+    }
+    .leak:last-child { border-bottom: 0; }
+    .leak-num { font: 500 14px/1 "IBM Plex Mono", monospace; color: var(--orange); }
+    .leak h3 { font-size: 27px; line-height: 1.05; }
+    .leak .arrow { font-size: 25px; color: var(--orange); }
+    .leak p { margin: 0; color: #3f5c65; }
+
+    .work { background: var(--white); }
+    .workflow {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border: 2px solid var(--ink);
+    }
+    .step { position: relative; padding: 34px; min-height: 280px; border-right: 1px solid var(--ink); }
+    .step:last-child { border-right: 0; }
+    .step:nth-child(2) { background: var(--yellow); }
+    .step .step-num { font: 600 13px/1 "IBM Plex Mono", monospace; }
+    .step h3 { margin-top: 64px; font-size: 34px; }
+    .step p { margin: 14px 0 0; color: #274853; }
+    .step svg { position: absolute; right: 24px; top: 24px; width: 44px; height: 44px; fill: none; stroke: var(--ink); stroke-width: 1.6; }
+
+    .services { background: var(--blue); }
+    .service-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+    }
+    .service {
+      position: relative;
+      min-height: 270px;
+      padding: 34px 36px;
+      background: var(--paper);
+    }
+    .service:nth-child(2), .service:nth-child(3) { background: var(--white); }
+    .service-code { font: 600 13px/1 "IBM Plex Mono", monospace; color: var(--orange); }
+    .service h3 { margin: 46px 0 12px; font-size: 34px; }
+    .service p { margin: 0; max-width: 490px; color: #375761; }
+    .service .corner {
+      position: absolute;
+      width: 18px; height: 18px;
+      right: 20px; top: 20px;
+      border-top: 3px solid var(--orange);
+      border-right: 3px solid var(--orange);
+    }
+
+    .human { background: var(--ink); color: var(--white); }
+    .human-layout { display: grid; grid-template-columns: 1.15fr .85fr; gap: 80px; align-items: center; }
+    .human h2 { max-width: 750px; }
+    .human .lead { margin: 28px 0 0; max-width: 700px; font-size: 22px; color: #c7d9dc; }
+    .principles { border-top: 1px solid rgba(255,255,255,.25); }
+    .principle { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.25); }
+    .principle span { color: var(--yellow); font: 500 14px/1.5 "IBM Plex Mono", monospace; }
+    .principle p { margin: 0; font-size: 17px; }
+
+    .fit { padding-bottom: 40px; }
+    .fit-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
+    .trade-line { font: 600 clamp(29px, 4vw, 49px)/1.2 "IBM Plex Sans Condensed", sans-serif; text-wrap: balance; }
+    .fit-list { list-style: none; margin: 26px 0 0; padding: 0; }
+    .fit-list li { position: relative; padding: 13px 0 13px 31px; border-bottom: 1px solid var(--line); }
+    .fit-list li::before { content: "✓"; position: absolute; left: 0; color: var(--orange); font-weight: 800; }
+    .about { padding: 32px 0 100px; }
+    .about-box {
+      display: grid;
+      grid-template-columns: .72fr 1.28fr;
+      gap: 50px;
+      padding: 44px;
+      border-top: 7px solid var(--orange);
+      background: var(--white);
+      box-shadow: 0 12px 40px rgba(16,39,50,.08);
+    }
+    .about-label { font: 600 13px/1.4 "IBM Plex Mono", monospace; color: var(--orange); }
+    .about h3 { font-size: 39px; }
+    .about p { margin: 15px 0 0; color: #35555f; }
+    .proof-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 20px; color: var(--ink); font-weight: 700; text-underline-offset: 4px; }
+
+    .early {
+      position: relative;
+      padding: 88px 0;
+      background: var(--orange);
+      color: #fff;
+      overflow: hidden;
+    }
+    .early::after {
+      content: "EARLY";
+      position: absolute;
+      right: -20px;
+      bottom: -40px;
+      font: 700 clamp(120px, 22vw, 320px)/.8 "IBM Plex Sans Condensed", sans-serif;
+      color: rgba(255,255,255,.08);
+      letter-spacing: -.06em;
+      pointer-events: none;
+    }
+    .early-inner { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+    .early h2 { font-size: clamp(46px, 6vw, 78px); }
+    .early p { margin: 0; max-width: 610px; font-size: 21px; }
+    .early .button { margin-top: 24px; background: var(--white); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+
+    .faq { background: var(--white); }
+    .faq-list { max-width: 860px; margin-left: auto; }
+    details { border-top: 1px solid var(--ink); }
+    details:last-child { border-bottom: 1px solid var(--ink); }
+    summary {
+      position: relative;
+      list-style: none;
+      cursor: pointer;
+      padding: 23px 52px 23px 0;
+      font: 600 24px/1.2 "IBM Plex Sans Condensed", sans-serif;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; position: absolute; right: 2px; top: 18px; font: 400 31px/1 "IBM Plex Mono", monospace; color: var(--orange); }
+    details[open] summary::after { content: "−"; }
+    details p { margin: -4px 0 24px; max-width: 760px; color: #385860; }
+
+    .contact { padding: 96px 0 48px; background: var(--yellow); }
+    .contact-layout { display: grid; grid-template-columns: 1fr .8fr; gap: 70px; align-items: end; }
+    .contact h2 { max-width: 800px; }
+    .contact p { max-width: 650px; font-size: 21px; }
+    .contact-panel { border-left: 3px solid var(--ink); padding-left: 27px; }
+    .contact-panel .small { display: block; margin-bottom: 12px; font: 600 13px/1.3 "IBM Plex Mono", monospace; }
+    .contact-panel a { display: block; width: fit-content; margin: 8px 0; font: 600 clamp(24px, 3vw, 36px)/1.2 "IBM Plex Sans Condensed", sans-serif; text-decoration-thickness: 2px; text-underline-offset: 5px; }
+    .prompt-builder { margin-top: 55px; padding-top: 28px; border-top: 1px solid rgba(16,39,50,.35); }
+    .prompt-builder p { margin: 0 0 16px; font: 600 15px/1.4 "IBM Plex Mono", monospace; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      padding: 9px 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .chip[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+    .contact .button { margin-top: 18px; box-shadow: 5px 5px 0 var(--white); }
+
+    footer { background: var(--yellow); }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 30px;
+      padding: 30px 0;
+      border-top: 1px solid rgba(16,39,50,.35);
+      font: 500 13px/1.5 "IBM Plex Mono", monospace;
+    }
+    .footer-inner p { margin: 0; }
+
+    @media (max-width: 840px) {
+      .wrap { width: min(100% - 30px, 720px); }
+      .utility nav { display: none; }
+      .hero { grid-template-columns: 1fr; min-height: auto; padding: 68px 0 72px; }
+      .hero::after { width: 70vw; right: -28vw; height: 46%; top: 51%; }
+      .field-note { max-width: 540px; transform: rotate(.7deg); }
+      .signal-list { grid-template-columns: 1fr 1fr; }
+      .signal:nth-child(2) { border-right: 0; }
+      .signal:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.18); }
+      .section-head, .human-layout, .fit-layout, .about-box, .early-inner, .contact-layout { grid-template-columns: 1fr; }
+      .section-head { gap: 15px; }
+      .workflow { grid-template-columns: 1fr; }
+      .step { min-height: 220px; border-right: 0; border-bottom: 1px solid var(--ink); }
+      .step:last-child { border-bottom: 0; }
+      .service-grid { grid-template-columns: 1fr; }
+      .human-layout { gap: 50px; }
+      .about-box { gap: 15px; }
+    }
+
+    @media (max-width: 560px) {
+      body { font-size: 17px; }
+      .wrap { width: min(100% - 24px, 520px); }
+      .utility { min-height: 52px; font-size: 12px; }
+      .utility .availability { display: none; }
+      .hero { padding-top: 50px; }
+      .kicker { max-width: 100%; align-items: flex-start; font-size: 12px; line-height: 1.45; }
+      .kicker::before { flex: 0 0 28px; margin-top: .55em; }
+      h1 { font-size: clamp(43px, 13vw, 62px); overflow-wrap: anywhere; }
+      h1 .mark { white-space: normal; }
+      .hero-copy { font-size: 20px; }
+      .actions { display: grid; }
+      .button { width: 100%; }
+      .field-note { padding: 30px 22px 24px; }
+      .signal-list { grid-template-columns: 1fr; }
+      .signal { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.18); min-height: 118px; }
+      .signal:last-child { border-bottom: 0; }
+      section { padding: 74px 0; }
+      h2 { font-size: 45px; }
+      .section-intro { font-size: 19px; }
+      .leak { grid-template-columns: 32px 1fr; gap: 12px 14px; padding: 22px 0; }
+      .leak h3 { font-size: 25px; }
+      .leak .arrow { display: none; }
+      .leak p { grid-column: 2; }
+      .step { padding: 26px; }
+      .step h3 { margin-top: 48px; }
+      .service { min-height: 235px; padding: 28px 24px; }
+      .service h3 { margin-top: 38px; }
+      .fit-layout { gap: 40px; }
+      .about-box { padding: 30px 23px; }
+      .early { padding: 70px 0; }
+      .early-inner { gap: 25px; }
+      .faq-list { margin: 0; }
+      summary { font-size: 22px; }
+      .contact { padding-top: 72px; }
+      .contact-layout { gap: 38px; }
+      .contact-panel { padding-left: 18px; }
+      .prompt-builder { margin-top: 36px; }
+      .footer-inner { display: block; }
+      .footer-inner p + p { margin-top: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is PING Social just an answering service?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. PING Social can set up AI that answers calls, collects job details, handles routine questions, books the right next step, and keeps follow-up moving based on rules the business approves." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does AI replace office staff or skilled workers?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No. PING Social uses AI for repetitive communication, organization, booking, and follow-up. The owner and skilled worker remain in control of judgment, customer relationships, and the work itself." }
+      },
+      {
+        "@type": "Question",
+        "name": "Does PING Social work with existing business software?",
+        "acceptedAnswer": { "@type": "Answer", "text": "PING Social first looks for practical integrations and better handoffs around tools that already work. A tool should be replaced only when it is genuinely getting in the way." }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div class="wrap utility" aria-label="Page navigation">
+    <div class="place"><span class="status-dot" aria-hidden="true"></span><span>Western Colorado first</span></div>
+    <nav aria-label="Main navigation">
+      <a href="#work">How it works</a>
+      <a href="#services">What we fix</a>
+      <a href="#about">About Nolan</a>
+      <a href="#contact">Start a conversation</a>
+    </nav>
+    <div class="availability">Answer. Book. Follow up.</div>
+  </div>
+
+  <main id="main">
+    <header class="wrap hero">
+      <div>
+        <p class="kicker">AI concierge systems for home service pros</p>
+        <h1>Never miss a job because you were <span class="mark">busy doing one.</span></h1>
+        <p class="hero-copy">PING Social helps Western Colorado home service pros answer calls, book jobs, and follow up, even while you are on the tools. Practical AI, plugged into the way you already work.</p>
+        <div class="actions">
+          <a class="button" href="#contact">
+            Tell Nolan what gets missed
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="button secondary" href="tel:+19705893309">Call Nolan: (970) 589-3309</a>
+        </div>
+      </div>
+      <aside class="field-note" aria-label="PING Social principle">
+        <blockquote>The AI can answer the phone. You still know why the furnace sounds like that.</blockquote>
+        <p>Your people keep the judgment. The system keeps calls, job details, bookings, and follow-up from falling through the cracks.</p>
+        <div class="scribble" aria-hidden="true"></div>
+      </aside>
+    </header>
+
+    <div class="signal-band">
+      <div class="wrap signal-list" aria-label="How PING Social handles an opportunity">
+        <div class="signal"><strong>01 / RING</strong><span>A customer calls while you are halfway through a job.</span></div>
+        <div class="signal"><strong>02 / ANSWER</strong><span>Your AI concierge picks up and gets the important details.</span></div>
+        <div class="signal"><strong>03 / BOOK</strong><span>The customer gets a clear next step instead of voicemail.</span></div>
+        <div class="signal"><strong>04 / FOLLOW-UP</strong><span>The lead stays moving without another sticky note.</span></div>
+      </div>
+    </div>
+
+    <section class="leaks" id="work">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="section-num">01 / THE PROBLEM</span>
+          <div>
+            <h2>The phone should not win every time.</h2>
+            <p class="section-intro">Customers do not always call when the truck is parked and your hands are clean. PING gives every real opportunity a reliable path forward, without making you live at your phone.</p>
+          </div>
+        </div>
+        <div class="leak-list">
+          <article class="leak">
+            <span class="leak-num">01</span><h3>Every call gets an answer</h3><span class="arrow" aria-hidden="true">→</span><p>The concierge responds, gathers the right details, and knows when the request needs a real person.</p>
+          </article>
+          <article class="leak">
+            <span class="leak-num">02</span><h3>Qualified jobs get booked</h3><span class="arrow" aria-hidden="true">→</span><p>Customers get a clear next step based on the rules, hours, and service area you set.</p>
+          </article>
+          <article class="leak">
+            <span class="leak-num">03</span><h3>Follow-up keeps moving</h3><span class="arrow" aria-hidden="true">→</span><p>Open estimates and new inquiries get consistent attention without somebody remembering after dinner.</p>
+          </article>
+          <article class="leak">
+            <span class="leak-num">04</span><h3>You keep control</h3><span class="arrow" aria-hidden="true">→</span><p>The system handles the repeatable steps. Your team handles judgment, exceptions, and the actual work.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="work">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="section-num">02 / THE PING PILLARS</span>
+          <div>
+            <h2>Three rules. No magic wand required.</h2>
+          </div>
+        </div>
+        <div class="workflow">
+          <article class="step">
+            <span class="step-num">PILLAR 01</span>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="21" cy="21" r="12"/><path d="m30 30 10 10M14 21h14M21 14v14"/></svg>
+            <h3>CREATE</h3>
+            <p>We create systems that capture every opportunity: calls, job details, bookings, and the follow-up that turns interest into work.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">PILLAR 02</span>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 12h30M9 24h20M9 36h13"/><circle cx="36" cy="28" r="7"/><path d="m41 33 4 4"/></svg>
+            <h3>CONTINUITY</h3>
+            <p>Everything keeps moving while you are on the tools. Fewer dropped balls, fewer mystery voicemails, fewer leads wondering what happened.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">PILLAR 03</span>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m9 26 9 9 21-23"/><path d="M39 24v15H9V9h23"/></svg>
+            <h3>INTEGRATIONS</h3>
+            <p>We plug into what you already use whenever it makes sense. Best practices only, no hype, and no replacing a good tool just to look busy.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="services" id="services">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="section-num">03 / WHAT IT DOES</span>
+          <div>
+            <h2>Useful on Monday morning.</h2>
+            <p class="section-intro">If it does not help you capture work, save time, or serve customers better, it does not belong in the system.</p>
+          </div>
+        </div>
+        <div class="service-grid">
+          <article class="service"><span class="corner" aria-hidden="true"></span><span class="service-code">ANSWER</span><h3>Calls do not go cold</h3><p>Your AI concierge responds when the crew cannot, handles routine questions, and captures the facts your team needs.</p></article>
+          <article class="service"><span class="corner" aria-hidden="true"></span><span class="service-code">BOOK</span><h3>Good-fit work gets a next step</h3><p>Route qualified customers into the right scheduling path using your hours, service area, and business rules.</p></article>
+          <article class="service"><span class="corner" aria-hidden="true"></span><span class="service-code">FOLLOW UP</span><h3>Open loops get closed</h3><p>Keep estimates and inquiries moving with timely, useful follow-up that still sounds like your business.</p></article>
+          <article class="service"><span class="corner" aria-hidden="true"></span><span class="service-code">CONNECT</span><h3>Your tools keep their jobs too</h3><p>Link the systems you already rely on when possible. Replace only what is actually getting in the way.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="human">
+      <div class="wrap human-layout">
+        <div>
+          <p class="kicker">Built for skeptics</p>
+          <h2>You do not need more tech. You need fewer dropped balls.</h2>
+          <p class="lead">A system can answer, organize, book, and follow up. It cannot replace the judgment earned on rooftops, in crawlspaces, behind a service counter, or after years of running the business.</p>
+        </div>
+        <div class="principles">
+          <div class="principle"><span>01</span><p>Your team decides what counts as an emergency, a good lead, and a booked job.</p></div>
+          <div class="principle"><span>02</span><p>The AI handles routine communication, not trade judgment.</p></div>
+          <div class="principle"><span>03</span><p>Every important handoff has a clear owner and a fallback.</p></div>
+          <div class="principle"><span>04</span><p>Best practices over buzzwords. Reliable beats flashy every time.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="fit">
+      <div class="wrap fit-layout">
+        <div>
+          <p class="kicker">A good fit</p>
+          <p class="trade-line">HVAC. Plumbing. Electrical. Roofing. Landscaping. Cleaning. Repair. The businesses that keep Western Colorado working.</p>
+        </div>
+        <div>
+          <h3 style="font-size:34px">This is worth a conversation if...</h3>
+          <ul class="fit-list">
+            <li>The phone rings when nobody can safely stop to answer.</li>
+            <li>Good jobs occasionally disappear into voicemail.</li>
+            <li>Estimates need more consistent follow-up.</li>
+            <li>Your office repeats the same communication every day.</li>
+            <li>You like your current tools, but wish they worked together.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="about" id="about">
+      <div class="wrap about-box">
+        <div class="about-label">ABOUT NOLAN<br />PING SOCIAL</div>
+        <div>
+          <h3>A builder who starts with the way you actually work.</h3>
+          <p>Nolan Geske builds practical AI, custom websites, and backend systems for small businesses. PING Social starts with the shop: how calls arrive, how jobs get booked, what gets repeated, and where a good opportunity can disappear.</p>
+          <p>Then Nolan builds the smallest dependable fix. No mystery box. No twenty-tool overhaul because it looked impressive in a demo.</p>
+          <a class="proof-link" href="https://happy-place-platform.vercel.app/" target="_blank" rel="noopener noreferrer">See a recent custom web build <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="early">
+      <div class="wrap early-inner">
+        <div>
+          <p class="kicker">Early partner program</p>
+          <h2>Help shape something useful.</h2>
+        </div>
+        <div>
+          <p>PING Social is working with a limited number of Western Colorado home service pros to refine these systems around real operations. You bring the real workflow. We build a focused trial around the part that costs the most time or work.</p>
+          <a class="button" href="#contact">Ask Nolan about a focused trial</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="section-num">04 / STRAIGHT ANSWERS</span>
+          <div><h2>Before you ask.</h2></div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>So, is this just an answering service?</summary>
+            <p>No. Answering is one part. The system can collect job details, handle routine questions, route urgent requests, book the right next step, and keep follow-up moving based on rules you approve.</p>
+          </details>
+          <details>
+            <summary>Will it book every caller onto my calendar?</summary>
+            <p>Only if that matches your process. We can qualify by service, location, urgency, or other rules before a booking happens. Your business decides what a good job looks like.</p>
+          </details>
+          <details>
+            <summary>What happens when the AI does not know?</summary>
+            <p>It should not bluff. A good setup knows its limits, captures the information, and hands the situation to the right person.</p>
+          </details>
+          <details>
+            <summary>Do I have to replace the tools I already use?</summary>
+            <p>Not by default. If a tool works, keep it. We look first for a clean integration or a better handoff around it.</p>
+          </details>
+          <details>
+            <summary>Do I need to be a big company?</summary>
+            <p>No. Owner-operated shops often feel every missed call and repeated task more directly. The system should fit the size and pace of the business.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="wrap">
+        <div class="contact-layout">
+          <div>
+            <p class="kicker">One clear next step</p>
+            <h2>Call or message Nolan.</h2>
+            <p>Tell him what happens when a new customer calls and nobody can pick up. That is enough to start.</p>
+          </div>
+          <div class="contact-panel">
+            <span class="small">NOLAN GESKE / PING SOCIAL</span>
+            <a href="tel:+19705893309">(970) 589-3309</a>
+            <a href="mailto:nolangesk@gmail.com">nolangesk@gmail.com</a>
+          </div>
+        </div>
+        <div class="prompt-builder" aria-label="Email topic builder">
+          <p>Pick the closest problem, then message Nolan:</p>
+          <div class="chips" role="group" aria-label="Choose a business problem">
+            <button class="chip" type="button" data-topic="missed calls" aria-pressed="false">Missed calls</button>
+            <button class="chip" type="button" data-topic="booking new jobs" aria-pressed="false">Booking</button>
+            <button class="chip" type="button" data-topic="estimate and lead follow-up" aria-pressed="false">Follow-up</button>
+            <button class="chip" type="button" data-topic="repetitive administrative work" aria-pressed="false">Admin work</button>
+            <button class="chip" type="button" data-topic="systems that do not work together" aria-pressed="false">Integrations</button>
+          </div>
+          <a class="button" id="emailCta" href="mailto:nolangesk@gmail.com?subject=Quick%20conversation%20about%20missed%20jobs">Message Nolan</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <p>PING Social<br />AI that answers, books, and follows up.</p>
+      <p>Western Colorado home service pros.<br />People stay in control.</p>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const chips = [...document.querySelectorAll('.chip')];
+      const cta = document.getElementById('emailCta');
+      const base = 'mailto:nolangesk@gmail.com';
+      let selected = '';
+
+      chips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const wasSelected = chip.getAttribute('aria-pressed') === 'true';
+          chips.forEach((item) => item.setAttribute('aria-pressed', 'false'));
+          if (wasSelected) {
+            selected = '';
+          } else {
+            chip.setAttribute('aria-pressed', 'true');
+            selected = chip.dataset.topic || '';
+          }
+          const subject = selected ? `Quick conversation about ${selected}` : 'Quick conversation about missed jobs';
+          const body = selected
+            ? `Hi Nolan,\n\nThe biggest friction in our business right now is ${selected}. I would be open to a quick conversation about how PING could help.\n\nThanks,`
+            : 'Hi Nolan,\n\nI would be open to a quick conversation about how we handle new calls, bookings, and follow-up.\n\nThanks,';
+          cta.href = `${base}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

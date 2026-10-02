@@ -1,0 +1,2 @@
+Beat: web
+Angle: New-business radar follow-up: query the Colorado SOS dataset for trade businesses filed September 22, 2026 in the Mesa County corridor plus Delta, Montrose, Rifle, and Carbondale. File ONLY names not in this morning's unit (Premia Construction & Services LLC, Redeemed Blasting Service LLC, R. Oyarce Carpentry LLC). This feeds the reader's standing outreach pipeline; the Sept 22 slice is the genuinely new movement.

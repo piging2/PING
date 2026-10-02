@@ -1,0 +1,2 @@
+Beat: schedule
+Angle: Google Calendar week-ahead check Sept 21-27, 2026: teaching blocks (7 AM to 4:30 PM Mon-Fri), evening and weekend networking windows, and any new or changed events. The paper already ran 'WEEK AHEAD: Nothing touches teaching hours this week' from calendar.google.com/calendar/u/0/r/agenda this morning; file ONLY adds, changes, or conflicts since then. Stake: protects Nolan's teaching hours and flags his open business networking slots.

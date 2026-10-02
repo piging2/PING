@@ -1,0 +1,14 @@
+Beat: web
+Angle: What moved in the last 7 days in AI automation built for home-service SMBs: voice agents, missed-call text-back, dispatch, or CRM updates with pricing or launch details. The Sep 22 recheck already compared AI receptionist pricing from guptadeepak.com and michaelheredia.com; do not repeat those pages, file only launches, price changes, or funding not in that roundup.
+
+## Finding 1
+WePro, a Houston-based field service management company, introduced an AI-powered dispatch platform built specifically for home service businesses on September 18, 2026. The AI dispatching engine matches each job to a technician based on skill, availability, and location, and adjusts in real time as new jobs and delays come in. The platform combines job scheduling and dispatch, live technician tracking, automated customer updates, and payments and invoicing tied to job completion in a single dashboard. WePro is targeting cleaning, roofing, HVAC, and other field-based businesses. The release cites manual scheduling as costing 15 hours per week per dispatcher and up to 25 percent extra in vehicle operating expenses. No pricing was disclosed; the call to action is a demo request at wepro.ai.
+- https://www.themoneyaware.com/2026/09/18/wepro-introduces-ai-powered-dispatch-platform-for-home-service-businesses/ (published 2026-09-18)
+
+## Finding 2
+Voiso, an AI-powered contact center platform, launched AI Voice Agents on September 23, 2026, built to answer inbound calls, support outbound campaigns, qualify callers, respond from a business's knowledge base, and route calls to human agents when needed. The agents log into the same queues, follow the same routing rules, and appear in the same reports as human agents, with no second dashboard. The company says one early customer has used an AI receptionist to handle more than 15,000 calls. Pricing is minutes-based starting at $500 per month with no per-seat fees, and businesses adopting before October 31, 2026 get 30 percent off any annual Voiso plan.
+- https://lifestyle.houstonnewstoday.com/story/889675/voiso-launches-ai-voice-agents-for-inbound-and-outbound-conversations/ (published 2026-09-23)
+
+## Finding 3
+A funding tracker updated two days before the reading day puts AI agent startup funding at about $4.84 billion across 49 disclosed rounds in Q3 2026, with the median round at $30 million. Voice AI is in the mix: Smallest.ai closed a $13 million Series A, led by Seligman Ventures with Sierra Ventures and 3one4 Capital participating, to build a real-time voice AI architecture that cuts latency in customer conversations; its total funding now exceeds $21 million. The tracker frames the capital flow as evidence that voice agents remain a funded bet, which shapes what small-business receptionist and call-answering products will ship next.
+- https://gravity.fast/blog/ai-agent-funding-tracker-q3-2026/ (undated)

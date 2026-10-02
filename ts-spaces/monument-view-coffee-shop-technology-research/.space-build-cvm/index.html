@@ -1,0 +1,2316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#163c36" />
+  <link rel="icon" href="data:," />
+  <title>Monument View Coffee Shop Technology Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,650&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #17221f;
+      --forest: #163c36;
+      --forest-2: #245c52;
+      --rust: #b6522e;
+      --rust-dark: #7f341f;
+      --paper: #f6f3ec;
+      --white: #fffdf8;
+      --line: #d8d2c6;
+      --muted: #5d6762;
+      --sand: #e8e0d2;
+      --green-soft: #dcebe4;
+      --amber-soft: #f5e8c9;
+      --red-soft: #f3ddd5;
+      --gray-soft: #e8e7e2;
+      --shadow: 0 16px 40px rgba(28, 42, 37, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(23, 34, 31, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 34, 31, .035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; }
+    button { font: inherit; }
+    .page { min-height: 100vh; }
+
+    .mast {
+      background: var(--forest);
+      color: var(--white);
+      padding: 54px max(24px, calc((100vw - 1180px) / 2)) 46px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mast::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -120px;
+      bottom: -210px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 54px rgba(255,255,255,.035), 0 0 0 108px rgba(255,255,255,.025);
+      pointer-events: none;
+    }
+    .mast-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 48px;
+      align-items: end;
+      position: relative;
+      z-index: 1;
+    }
+    .kicker {
+      display: inline-flex;
+      gap: 9px;
+      align-items: center;
+      color: #cfe3dc;
+      font-weight: 600;
+      font-size: .8rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .kicker::before { content: ""; width: 28px; height: 2px; background: #e89872; }
+    h1, h2, h3 { font-family: "Newsreader", serif; letter-spacing: -.02em; }
+    h1 {
+      margin: 0;
+      max-width: 850px;
+      font-size: clamp(2.55rem, 5.8vw, 5.3rem);
+      line-height: .98;
+      font-weight: 650;
+    }
+    .deck {
+      max-width: 730px;
+      margin: 24px 0 0;
+      color: #d9e5e1;
+      font-size: clamp(1.02rem, 1.7vw, 1.22rem);
+    }
+    .brief-meta {
+      border-top: 1px solid rgba(255,255,255,.28);
+      padding-top: 18px;
+      display: grid;
+      gap: 14px;
+      font-size: .88rem;
+      color: #d6e0dc;
+    }
+    .brief-meta strong { display: block; color: var(--white); font-size: .94rem; }
+
+    .wrap {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+    .snapshot {
+      margin-top: -1px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-top: 0;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .snapshot-item {
+      padding: 24px;
+      min-height: 150px;
+      border-right: 1px solid var(--line);
+    }
+    .snapshot-item:last-child { border-right: 0; }
+    .snapshot-label { color: var(--muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .snapshot-value { margin: 14px 0 5px; font-weight: 700; font-size: 1.05rem; line-height: 1.3; }
+    .snapshot-note { color: var(--muted); font-size: .84rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 235px minmax(0, 1fr);
+      gap: 54px;
+      padding: 64px 0 90px;
+    }
+    .rail { position: relative; }
+    .rail-inner { position: sticky; top: 22px; }
+    .rail-title { font-size: .75rem; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; color: var(--muted); margin-bottom: 12px; }
+    .rail a {
+      display: block;
+      padding: 9px 0;
+      text-decoration: none;
+      color: #39443f;
+      border-bottom: 1px solid rgba(216, 210, 198, .8);
+      font-size: .88rem;
+    }
+    .rail a:hover, .rail a:focus-visible { color: var(--rust-dark); }
+    .rail-note {
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--sand);
+      font-size: .78rem;
+      color: #4f554f;
+      border-top: 3px solid var(--rust);
+    }
+
+    .content { min-width: 0; }
+    section { scroll-margin-top: 22px; margin-bottom: 78px; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+      margin-bottom: 26px;
+    }
+    h2 { margin: 0; font-size: clamp(2rem, 4vw, 3.15rem); line-height: 1.04; color: var(--forest); }
+    .section-head p { margin: 0; color: var(--muted); font-size: .86rem; max-width: 370px; text-align: right; }
+    h3 { margin: 0; font-size: 1.5rem; line-height: 1.15; }
+
+    .thesis {
+      padding: 34px 36px 38px;
+      background: var(--white);
+      border-left: 6px solid var(--rust);
+      box-shadow: 0 12px 30px rgba(28, 42, 37, .07);
+    }
+    .thesis p { margin: 0; font-family: "Newsreader", serif; font-size: clamp(1.55rem, 3vw, 2.4rem); line-height: 1.24; color: var(--forest); }
+    .thesis small { display: block; margin-top: 18px; font-family: "IBM Plex Sans", sans-serif; color: var(--muted); font-size: .83rem; }
+
+    .priority-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .priority {
+      display: grid;
+      grid-template-columns: 48px 1fr minmax(190px, .6fr);
+      gap: 20px;
+      background: var(--white);
+      padding: 24px;
+      align-items: start;
+    }
+    .priority-num { font-family: "Newsreader", serif; color: var(--rust); font-size: 2rem; line-height: 1; }
+    .priority p { margin: 5px 0 0; color: var(--muted); font-size: .9rem; }
+    .priority .ask { color: var(--forest); font-weight: 600; font-size: .88rem; padding-left: 18px; border-left: 2px solid var(--sand); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 64px minmax(0,1fr) 64px minmax(0,1fr);
+      align-items: stretch;
+      gap: 10px;
+    }
+    .flow-node { background: var(--white); border: 1px solid var(--line); padding: 22px; min-height: 168px; }
+    .flow-node h3 { color: var(--forest); }
+    .flow-node p { color: var(--muted); font-size: .86rem; margin: 9px 0 0; }
+    .flow-node .tech { display: inline-block; margin-bottom: 12px; color: var(--rust-dark); font-weight: 700; font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; }
+    .connector { display: grid; place-items: center; color: var(--rust); font-size: 1.8rem; }
+    .flow-foot { margin-top: 15px; color: var(--muted); font-size: .82rem; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+    .filter {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--ink);
+      padding: 9px 13px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .8rem;
+      border-radius: 999px;
+    }
+    .filter:hover, .filter:focus-visible { border-color: var(--forest); }
+    .filter.active { background: var(--forest); color: white; border-color: var(--forest); }
+
+    .matrix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .finding {
+      background: rgba(255,253,248,.92);
+      border: 1px solid var(--line);
+      padding: 22px;
+      min-width: 0;
+      transition: opacity .15s ease;
+    }
+    .finding[hidden] { display: none; }
+    .finding-top { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 14px; }
+    .qnum { flex: 0 0 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--forest); color: white; font-size: .76rem; font-weight: 700; }
+    .finding h3 { font-family: "IBM Plex Sans", sans-serif; font-size: 1rem; letter-spacing: 0; line-height: 1.3; flex: 1; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 13px 45px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-size: .68rem; letter-spacing: .065em; text-transform: uppercase; font-weight: 700; border-radius: 999px; padding: 5px 8px; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .confirmed { background: var(--green-soft); color: #1b5a45; }
+    .strong { background: var(--amber-soft); color: #7a5414; }
+    .weak { background: var(--red-soft); color: #8a3d2b; }
+    .unknown { background: var(--gray-soft); color: #535b58; }
+    .finding-answer { margin: 0 0 13px 45px; font-weight: 700; color: var(--forest); line-height: 1.4; }
+    .evidence { margin: 0 0 0 45px; color: var(--muted); font-size: .86rem; }
+    .cite { color: var(--rust-dark); text-decoration-thickness: 1px; text-underline-offset: 2px; font-weight: 600; }
+    .cite:hover, .cite:focus-visible { color: var(--forest); }
+
+    .board { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+    .board-panel { background: var(--white); border: 1px solid var(--line); padding: 28px; }
+    .board-panel h3 { color: var(--forest); font-size: 1.8rem; margin-bottom: 18px; }
+    .clean-list { margin: 0; padding: 0; list-style: none; }
+    .clean-list li { padding: 12px 0 12px 24px; border-top: 1px solid var(--line); position: relative; color: #35403b; }
+    .clean-list li:first-child { border-top: 0; }
+    .clean-list li::before { content: ""; position: absolute; left: 0; top: 21px; width: 8px; height: 8px; background: var(--rust); transform: rotate(45deg); }
+    .clean-list strong { color: var(--forest); }
+
+    .question-list { counter-reset: ownerq; margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .question-list li {
+      counter-increment: ownerq;
+      background: var(--white);
+      padding: 20px 22px 20px 68px;
+      position: relative;
+      font-weight: 500;
+    }
+    .question-list li::before {
+      content: counter(ownerq, decimal-leading-zero);
+      position: absolute;
+      left: 20px;
+      top: 18px;
+      color: var(--rust);
+      font-family: "Newsreader", serif;
+      font-size: 1.35rem;
+      font-weight: 650;
+    }
+
+    .opps { display: grid; gap: 14px; }
+    .opp {
+      display: grid;
+      grid-template-columns: 190px 1fr 190px;
+      gap: 22px;
+      padding: 22px 0;
+      border-top: 1px solid var(--line);
+      align-items: start;
+    }
+    .opp:first-child { border-top: 0; padding-top: 0; }
+    .opp h3 { color: var(--forest); }
+    .opp p { margin: 0; color: var(--muted); }
+    .opp .validate { color: var(--rust-dark); font-size: .84rem; font-weight: 600; }
+
+    .source-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .source {
+      display: block;
+      padding: 16px 18px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      text-decoration: none;
+    }
+    .source:hover, .source:focus-visible { border-color: var(--forest); }
+    .source strong { color: var(--forest); display: block; margin-bottom: 3px; }
+    .source span { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+    .method-note { margin-top: 18px; padding: 18px; background: var(--sand); color: #4f554f; font-size: .82rem; }
+
+    footer {
+      background: var(--forest);
+      color: #dce7e3;
+      padding: 28px max(24px, calc((100vw - 1180px) / 2));
+      font-size: .8rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    @media (max-width: 980px) {
+      .mast-grid { grid-template-columns: 1fr; gap: 30px; }
+      .brief-meta { grid-template-columns: repeat(3, 1fr); }
+      .snapshot { grid-template-columns: repeat(2, 1fr); }
+      .snapshot-item:nth-child(2) { border-right: 0; }
+      .snapshot-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .layout { grid-template-columns: 1fr; gap: 34px; padding-top: 46px; }
+      .rail-inner { position: static; }
+      .rail nav { display: flex; flex-wrap: wrap; gap: 8px; }
+      .rail a { border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 7px 11px; font-size: .78rem; }
+      .rail-note { display: none; }
+      .priority { grid-template-columns: 42px 1fr; }
+      .priority .ask { grid-column: 2; border-left: 0; padding-left: 0; color: var(--rust-dark); }
+      .flow { grid-template-columns: 1fr; }
+      .connector { transform: rotate(90deg); height: 38px; }
+      .opp { grid-template-columns: 160px 1fr; }
+      .opp .validate { grid-column: 2; }
+    }
+
+    @media (max-width: 700px) {
+      .mast { padding: 38px 22px 34px; }
+      h1 { font-size: clamp(2.45rem, 13vw, 4rem); }
+      .brief-meta { grid-template-columns: 1fr; gap: 10px; }
+      .wrap { width: min(100% - 28px, 1180px); }
+      .snapshot { grid-template-columns: 1fr; margin-top: 14px; }
+      .snapshot-item { border-right: 0; border-bottom: 1px solid var(--line); min-height: auto; padding: 19px; }
+      .snapshot-item:last-child { border-bottom: 0; }
+      .layout { padding: 38px 0 60px; }
+      section { margin-bottom: 58px; }
+      .section-head { display: block; }
+      .section-head p { text-align: left; margin-top: 8px; }
+      .thesis { padding: 26px 22px 28px; }
+      .priority { padding: 20px 17px; grid-template-columns: 34px 1fr; gap: 12px; }
+      .matrix { grid-template-columns: 1fr; }
+      .finding { padding: 18px 16px; }
+      .badges, .finding-answer, .evidence { margin-left: 45px; }
+      .board { grid-template-columns: 1fr; }
+      .board-panel { padding: 22px 19px; }
+      .opp { grid-template-columns: 1fr; gap: 8px; }
+      .opp .validate { grid-column: 1; }
+      .source-list { grid-template-columns: 1fr; }
+      footer { display: block; padding: 24px 20px; }
+      footer span { display: block; margin-top: 6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; }
+    }
+
+    @media print {
+      body { background: white; }
+      .mast { background: white; color: black; padding: 20px 0; }
+      .mast .deck, .mast .kicker, .brief-meta { color: #333; }
+      .wrap { width: 100%; }
+      .rail, .filters { display: none; }
+      .layout { display: block; padding: 20px 0; }
+      .snapshot, .thesis { box-shadow: none; }
+      .matrix { grid-template-columns: 1fr 1fr; }
+      .finding { break-inside: avoid; }
+      footer { background: white; color: #333; padding: 20px 0; }
+    }
+  </style>
+  <style data-hatch-cvm-bundle></style>
+</head>
+<body>
+  <div class="page">
+    <header class="mast">
+      <div class="mast-grid">
+        <div>
+          <div class="kicker">Owner conversation brief</div>
+          <h1>The website exists. The customer journey mostly stops at “call us.”</h1>
+          <p class="deck">Monument View has a simple WordPress presence and a DoorDash listing, but ordering, room reservations, gift cards, and event inquiries are not connected into a clear online flow.</p>
+        </div>
+        <div class="brief-meta" aria-label="Research scope">
+          <div><strong>Monument View Coffee Shop</strong>2148 Broadway, Grand Junction</div>
+          <div><strong>Research snapshot</strong>September 9, 2026</div>
+          <div><strong>Evidence posture</strong>Public sources only, unknowns preserved</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="snapshot" aria-label="Key findings">
+        <article class="snapshot-item">
+          <div class="snapshot-label">Website</div>
+          <div class="snapshot-value">Self-hosted WordPress</div>
+          <div class="snapshot-note">Theme and WordPress markers are directly visible.</div>
+        </article>
+        <article class="snapshot-item">
+          <div class="snapshot-label">Ordering</div>
+          <div class="snapshot-value">No ordering on its own site</div>
+          <div class="snapshot-note">“Online Menu” is informational only.</div>
+        </article>
+        <article class="snapshot-item">
+          <div class="snapshot-label">Delivery</div>
+          <div class="snapshot-value">DoorDash listing found</div>
+          <div class="snapshot-note">Listing is strong evidence. Live orderability is unverified.</div>
+        </article>
+        <article class="snapshot-item">
+          <div class="snapshot-label">Highest-confidence fix</div>
+          <div class="snapshot-value">Repair the www address</div>
+          <div class="snapshot-note">Google points to a subdomain that does not resolve.</div>
+        </article>
+      </div>
+
+      <div class="layout">
+        <aside class="rail" aria-label="On this page">
+          <div class="rail-inner">
+            <div class="rail-title">Field brief</div>
+            <nav>
+              <a href="#readout">Executive readout</a>
+              <a href="#priorities">Conversation priorities</a>
+              <a href="#stack">Public technology map</a>
+              <a href="#evidence">20-question evidence</a>
+              <a href="#summary">Know / suspect / unknown</a>
+              <a href="#questions">Owner questions</a>
+              <a href="#opportunities">PING opportunities</a>
+              <a href="#sources">Sources & limits</a>
+            </nav>
+            <div class="rail-note">The goal is to discover what already works before proposing a replacement. “Unknown” is a useful conversation prompt, not a research failure.</div>
+          </div>
+        </aside>
+
+        <main class="content">
+          <section id="readout">
+            <div class="section-head">
+              <h2>Executive readout</h2>
+              <p>A practical interpretation of the public footprint</p>
+            </div>
+            <div class="thesis">
+              <p>The clearest opportunity is not “more AI.” It is a cleaner path from customer interest to an owner-visible request, especially when the shop is closed.</p>
+              <small>Why this matters: the shop advertises room reservations and small celebrations, yet offers no published booking workflow or website inquiry form. The site also has a broken www path.</small>
+            </div>
+          </section>
+
+          <section id="priorities">
+            <div class="section-head">
+              <h2>Start the conversation here</h2>
+              <p>Three issues worth validating before discussing tools</p>
+            </div>
+            <div class="priority-list">
+              <article class="priority">
+                <div class="priority-num">1</div>
+                <div>
+                  <h3>Fix the front door</h3>
+                  <p>The apex domain works, but www.monumentviewcoffee.com does not. Google Business currently displays the broken www version.</p>
+                </div>
+                <div class="ask">Ask who controls the domain and who updates the WordPress site.</div>
+              </article>
+              <article class="priority">
+                <div class="priority-num">2</div>
+                <div>
+                  <h3>Capture room and event interest</h3>
+                  <p>The shop advertises tables, a room, meetings, game nights, and small celebrations. There is no booking form, inquiry form, or published process.</p>
+                </div>
+                <div class="ask">Ask how many requests arrive, when they arrive, and where they currently go.</div>
+              </article>
+              <article class="priority">
+                <div class="priority-num">3</div>
+                <div>
+                  <h3>Reuse the system they already pay for</h3>
+                  <p>The POS and processor are unknown. Their existing system may already include ordering, loyalty, or gift-card features.</p>
+                </div>
+                <div class="ask">Identify the POS first. Do not recommend a second stack before checking its unused modules.</div>
+              </article>
+            </div>
+          </section>
+
+          <section id="stack">
+            <div class="section-head">
+              <h2>Public technology map</h2>
+              <p>What appears connected, and what does not</p>
+            </div>
+            <div class="flow" aria-label="Technology flow">
+              <div class="flow-node">
+                <span class="tech">Owned channel</span>
+                <h3>WordPress site</h3>
+                <p>Home, static menu, services, and about pages. No cart, prices, booking widget, or contact form.</p>
+              </div>
+              <div class="connector" aria-hidden="true">→</div>
+              <div class="flow-node">
+                <span class="tech">Customer handoff</span>
+                <h3>Phone, email, social</h3>
+                <p>The site publishes a phone number, Outlook email, Facebook page, and Instagram profile. It does not publish a room-booking method.</p>
+              </div>
+              <div class="connector" aria-hidden="true">→</div>
+              <div class="flow-node">
+                <span class="tech">Third-party listing</span>
+                <h3>DoorDash</h3>
+                <p>Indexed category pages show a maintained menu. A live order could not be tested, and no website integration was found.</p>
+              </div>
+            </div>
+            <p class="flow-foot">No public evidence links the website, POS, gift cards, loyalty, room reservations, or delivery into one operational system.</p>
+          </section>
+
+          <section id="evidence">
+            <div class="section-head">
+              <h2>Evidence, question by question</h2>
+              <p>Filter the 20 requested questions by confidence</p>
+            </div>
+            <div class="filters" role="group" aria-label="Filter findings by confidence">
+              <button class="filter active" type="button" data-filter="all">All 20</button>
+              <button class="filter" type="button" data-filter="confirmed">Confirmed</button>
+              <button class="filter" type="button" data-filter="strong">Strong indication</button>
+              <button class="filter" type="button" data-filter="unknown">Unknown</button>
+            </div>
+
+            <div class="matrix" id="findingMatrix">
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">01</span><h3>What POS system do they use?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No POS can be identified from public evidence.</p>
+                <p class="evidence">The website exposes no ordering or payment badge. TripAdvisor confirms card acceptance, but not the processor.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">02</span><h3>Do they offer online ordering?</h3></div>
+                <div class="badges"><span class="badge confirmed">Confirmed</span></div>
+                <p class="finding-answer">Not on their own website.</p>
+                <p class="evidence">The <a class="cite" href="https://monumentviewcoffee.com/menu/" target="_blank" rel="noopener">“Online Menu” page</a> is informational: no prices, cart, order button, or ordering widget.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">03</span><h3>What platform powers online ordering?</h3></div>
+                <div class="badges"><span class="badge confirmed">Confirmed on site</span></div>
+                <p class="finding-answer">None on the website. DoorDash is the only public order channel found.</p>
+                <p class="evidence">No commerce scripts, payment links, or order widgets were visible on the official site.</p>
+              </article>
+
+              <article class="finding" data-status="strong unknown">
+                <div class="finding-top"><span class="qnum">04</span><h3>Are they integrated with DoorDash?</h3></div>
+                <div class="badges"><span class="badge strong">Strong indication</span><span class="badge unknown">Live status unknown</span></div>
+                <p class="finding-answer">Listed with a maintained menu. Current orderability was not verified.</p>
+                <p class="evidence"><a class="cite" href="https://www.doordash.com/food-delivery/grand-junction-co-restaurants/cafe/" target="_blank" rel="noopener">DoorDash category pages</a> show “American • Cafe,” a $0 delivery fee, and priced items. The live DoorDash check returned an error page.</p>
+              </article>
+
+              <article class="finding" data-status="strong">
+                <div class="finding-top"><span class="qnum">05</span><h3>Are they on Uber Eats?</h3></div>
+                <div class="badges"><span class="badge strong">Strong indication</span></div>
+                <p class="finding-answer">They do not appear to be listed for delivery to 81507.</p>
+                <p class="evidence">A live <a class="cite" href="https://www.ubereats.com/search?q=Monument%20View%20Coffee" target="_blank" rel="noopener">Uber Eats search</a> returned 29 stores but not Monument View. This verifies search visibility, not a private merchant relationship.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">06</span><h3>Any other delivery or order platforms?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No public evidence for Grubhub, ChowNow, Toast, or another platform.</p>
+                <p class="evidence">Yelp could not be checked live because of a CAPTCHA. Absence from the sources reviewed is not proof of absence.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">07</span><h3>Payment processor or ordering technology?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No processor or payment platform is publicly identifiable.</p>
+                <p class="evidence">Accepted card brands are visible on TripAdvisor, but card brands do not identify the processor.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">08</span><h3>What platform is the website built on?</h3></div>
+                <div class="badges"><span class="badge confirmed">Confirmed</span></div>
+                <p class="finding-answer">Self-hosted WordPress using the “Coffee Shop: Cafe” theme.</p>
+                <p class="evidence">Exact markers on the <a class="cite" href="https://monumentviewcoffee.com/" target="_blank" rel="noopener">official site</a>: “Powered by WordPress,” theme credit, <code>/wp-includes/</code>, <code>wp-json/oembed/1.0</code>, RSS, and Gutenberg CSS.</p>
+              </article>
+
+              <article class="finding" data-status="unknown confirmed">
+                <div class="finding-top"><span class="qnum">09</span><h3>Who manages or hosts the site?</h3></div>
+                <div class="badges"><span class="badge unknown">Manager unknown</span><span class="badge confirmed">DNS issue confirmed</span></div>
+                <p class="finding-answer">No public host, developer, or manager credit was found.</p>
+                <p class="evidence">The apex domain works over HTTPS. The www subdomain does not resolve, while Google Business displays the non-resolving www address.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">10</span><h3>Do they have loyalty or rewards?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No loyalty program is visible publicly.</p>
+                <p class="evidence">None appears on the website or in the indexed delivery and social content reviewed.</p>
+              </article>
+
+              <article class="finding" data-status="strong unknown">
+                <div class="finding-top"><span class="qnum">11</span><h3>Do they offer gift cards?</h3></div>
+                <div class="badges"><span class="badge strong">Strong indication</span><span class="badge unknown">System unknown</span></div>
+                <p class="finding-answer">Likely in-store only.</p>
+                <p class="evidence">The claimed <a class="cite" href="https://www.tripadvisor.co.nz/Restaurant_Review-g33450-d10445039-Reviews-Monument_Viewcoffee_Shop-Grand_Junction_Colorado.html" target="_blank" rel="noopener">TripAdvisor listing</a> says “Gift Cards Available.” No online purchase link or issuing system appears on the site.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">12</span><h3>Online room reservation or booking system?</h3></div>
+                <div class="badges"><span class="badge confirmed">Confirmed</span></div>
+                <p class="finding-answer">None is published.</p>
+                <p class="evidence">The <a class="cite" href="https://monumentviewcoffee.com/services/" target="_blank" rel="noopener">services page</a> advertises table and room reservations, but contains no booking widget, link, or form.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">13</span><h3>How do customers book the group room?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No booking method is stated.</p>
+                <p class="evidence">Phone, email, Facebook, and Instagram are available, but no source says which channel customers should use for the room. A phone call is plausible, not confirmed.</p>
+              </article>
+
+              <article class="finding" data-status="strong">
+                <div class="finding-top"><span class="qnum">14</span><h3>Events, parties, meetings, or catering?</h3></div>
+                <div class="badges"><span class="badge strong">Strong indication</span></div>
+                <p class="finding-answer">Meetings, game nights, small celebrations, and tea events are supported. Catering is not advertised.</p>
+                <p class="evidence">The services page names the first three. A May 2025 TripAdvisor review describes a Mother’s Day Tea.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed unknown">
+                <div class="finding-top"><span class="qnum">15</span><h3>What contact channels are available?</h3></div>
+                <div class="badges"><span class="badge confirmed">Four channels</span><span class="badge unknown">Messaging status</span></div>
+                <p class="finding-answer">Phone, email, Facebook, and Instagram are published.</p>
+                <p class="evidence">(970) 985-4045, monumentviewcoffee@outlook.com, <a class="cite" href="https://www.facebook.com/profile.php?id=61570211727520" target="_blank" rel="noopener">Facebook</a>, and <a class="cite" href="https://www.instagram.com/monumentviewcoffeeshop/" target="_blank" rel="noopener">Instagram</a>. No website form. Messenger and Google Business messaging availability were not confirmed.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed strong">
+                <div class="finding-top"><span class="qnum">16</span><h3>Hours and after-hours inquiry risk?</h3></div>
+                <div class="badges"><span class="badge confirmed">Hours confirmed</span><span class="badge strong">Structural risk</span></div>
+                <p class="finding-answer">Sun 8–2:30; Tue–Thu 7–2; Fri 7–4:30; closed Mon and Sat.</p>
+                <p class="evidence">Google, TripAdvisor, and <a class="cite" href="https://www.restaurantji.com/co/grand-junction/monument-village-coffeeshop-/" target="_blank" rel="noopener">Restaurantji</a> agree. The narrow hours plus no form or booking flow create a strong structural risk, but no unanswered after-hours messages were observed.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">17</span><h3>Scheduling, payroll, inventory, accounting, CRM, or messaging tools?</h3></div>
+                <div class="badges"><span class="badge unknown">Unknown</span></div>
+                <p class="finding-answer">No internal software can be identified publicly.</p>
+                <p class="evidence">The about page mentions counter service by family and staff, which does not reveal the systems behind the operation.</p>
+              </article>
+
+              <article class="finding" data-status="unknown">
+                <div class="finding-top"><span class="qnum">18</span><h3>Are multiple systems integrated?</h3></div>
+                <div class="badges"><span class="badge unknown">No evidence found</span></div>
+                <p class="finding-answer">No integration can be verified.</p>
+                <p class="evidence">The website menu has no prices while DoorDash does. No shared ordering, reservation, gift-card, loyalty, or CRM layer is visible.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">19</span><h3>Where is manual contact still required?</h3></div>
+                <div class="badges"><span class="badge confirmed">Confirmed gaps</span></div>
+                <p class="finding-answer">Room reservations, event inquiries, website orders, and online gift-card purchases lack a self-serve path.</p>
+                <p class="evidence">The site has no cart, booking flow, gift-card checkout, or contact form. Google also points at the broken www address.</p>
+              </article>
+
+              <article class="finding" data-status="confirmed">
+                <div class="finding-top"><span class="qnum">20</span><h3>What should be investigated first?</h3></div>
+                <div class="badges"><span class="badge confirmed">Evidence-led</span></div>
+                <p class="finding-answer">DNS repair, inquiry capture, POS capabilities, room booking, and gift-card options.</p>
+                <p class="evidence">These priorities follow directly from visible defects and missing paths. The owner’s actual demand and workflow should decide the solution.</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="summary">
+            <div class="section-head">
+              <h2>Know, suspect, unknown</h2>
+              <p>A compact confidence split for the meeting</p>
+            </div>
+            <div class="board">
+              <article class="board-panel">
+                <h3>A. What we know</h3>
+                <ul class="clean-list">
+                  <li><strong>WordPress brochure site:</strong> static menu, services, about, and social links.</li>
+                  <li><strong>No self-serve conversion:</strong> no website ordering, reservation flow, contact form, or online gift-card checkout.</li>
+                  <li><strong>Room demand is invited:</strong> meetings, game nights, and small celebrations are explicitly advertised.</li>
+                  <li><strong>Contact is fragmented:</strong> phone, Outlook email, Facebook, and Instagram.</li>
+                  <li><strong>www is broken:</strong> the subdomain does not resolve even though Google displays it.</li>
+                </ul>
+              </article>
+              <article class="board-panel">
+                <h3>B. What we strongly suspect</h3>
+                <ul class="clean-list">
+                  <li>Gift cards are physical or in-store only.</li>
+                  <li>Room bookings likely happen through a call or message, but no source states the method.</li>
+                  <li>The DoorDash listing is maintained at least intermittently because indexed prices change over time.</li>
+                  <li>The public stack is simple, but simplicity does not prove the back office is low-tech.</li>
+                </ul>
+              </article>
+              <article class="board-panel" style="grid-column: 1 / -1;">
+                <h3>C. What we cannot determine</h3>
+                <ul class="clean-list" style="columns: 2; column-gap: 34px;">
+                  <li>POS and payment processor</li>
+                  <li>DoorDash live order acceptance</li>
+                  <li>Grubhub, ChowNow, Toast, or other delivery use</li>
+                  <li>Loyalty program or gift-card issuer</li>
+                  <li>Scheduling, payroll, inventory, accounting, or CRM software</li>
+                  <li>Website host, registrar, developer, or manager</li>
+                  <li>Google Business messaging status</li>
+                  <li>Facebook and Instagram operating patterns behind login walls</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section id="questions">
+            <div class="section-head">
+              <h2>D. Ask the owner</h2>
+              <p>Prioritized to reveal demand before discussing a solution</p>
+            </div>
+            <ol class="question-list">
+              <li>How do customers currently book the group or back room? How many requests arrive in a normal week, and are any missed after hours?</li>
+              <li>Do you manage the DoorDash listing? Is it accepting orders today, and is the volume worth the effort?</li>
+              <li>What POS and card processor do you use? Does it already offer online ordering, gift cards, or loyalty?</li>
+              <li>Have you considered order-ahead pickup or Uber Eats? What made you decide for or against it?</li>
+              <li>How are gift cards issued today, and would online sales be useful?</li>
+              <li>Do you offer catering or repeat events like the Mother’s Day Tea? How do people inquire and pay?</li>
+              <li>Who built and maintains the WordPress site? Do you know the www address currently fails?</li>
+              <li>What do you use for scheduling, payroll, bookkeeping, or inventory? Is any handoff especially repetitive?</li>
+              <li>Who answers Facebook or Instagram questions when the shop is closed?</li>
+              <li>Would a structured reservation or event inquiry form reduce work, or do you prefer every request to start by phone?</li>
+            </ol>
+          </section>
+
+          <section id="opportunities">
+            <div class="section-head">
+              <h2>E. Potential PING opportunities</h2>
+              <p>Areas to investigate, not predetermined products</p>
+            </div>
+            <div class="opps">
+              <article class="opp">
+                <h3>Website basics</h3>
+                <p>Repair www DNS and update the Google Business website target to the working apex domain.</p>
+                <div class="validate">Validate: domain access and site ownership.</div>
+              </article>
+              <article class="opp">
+                <h3>Inquiry capture</h3>
+                <p>Add a structured path for room, meeting, tea-party, and celebration requests that reaches the owner in the channel they already monitor.</p>
+                <div class="validate">Validate: request volume and desired response method.</div>
+              </article>
+              <article class="opp">
+                <h3>Pickup ordering</h3>
+                <p>Explore order-ahead only after checking whether the existing POS already includes it and whether staffing can support the volume.</p>
+                <div class="validate">Validate: POS, demand, prep capacity, and fees.</div>
+              </article>
+              <article class="opp">
+                <h3>Gift cards</h3>
+                <p>Make gift cards discoverable online if the existing issuer supports remote purchase without adding a disconnected system.</p>
+                <div class="validate">Validate: current issuer and redemption workflow.</div>
+              </article>
+              <article class="opp">
+                <h3>Delivery footprint</h3>
+                <p>Confirm whether DoorDash is active and profitable before adding or consolidating delivery channels.</p>
+                <div class="validate">Validate: live status, margin, staffing, and order mix.</div>
+              </article>
+              <article class="opp">
+                <h3>Customer messaging</h3>
+                <p>Centralize frequently repeated questions only if social and after-hours inquiries create meaningful interruption today.</p>
+                <div class="validate">Validate: message volume, response lag, and owner preference.</div>
+              </article>
+            </div>
+          </section>
+
+          <section id="sources">
+            <div class="section-head">
+              <h2>Sources & research limits</h2>
+              <p>Links preserved exactly from the research record</p>
+            </div>
+            <div class="source-list">
+              <a class="source" href="https://monumentviewcoffee.com/" target="_blank" rel="noopener"><strong>Official website</strong><span>Platform, contact details, navigation, and footer markers</span></a>
+              <a class="source" href="https://monumentviewcoffee.com/menu/" target="_blank" rel="noopener"><strong>Website menu</strong><span>Static menu with no ordering controls</span></a>
+              <a class="source" href="https://monumentviewcoffee.com/services/" target="_blank" rel="noopener"><strong>Services page</strong><span>Room, table, meeting, game-night, and celebration claims</span></a>
+              <a class="source" href="https://monumentviewcoffee.com/about/" target="_blank" rel="noopener"><strong>About page</strong><span>Family-run and counter-service context</span></a>
+              <a class="source" href="https://www.tripadvisor.co.nz/Restaurant_Review-g33450-d10445039-Reviews-Monument_Viewcoffee_Shop-Grand_Junction_Colorado.html" target="_blank" rel="noopener"><strong>TripAdvisor</strong><span>Claimed listing, gift-card attribute, hours, and Mother’s Day Tea review</span></a>
+              <a class="source" href="https://www.doordash.com/food-delivery/grand-junction-co-restaurants/cafe/" target="_blank" rel="noopener"><strong>DoorDash category listing</strong><span>Indexed listing and menu evidence. Live checkout not verified.</span></a>
+              <a class="source" href="https://www.ubereats.com/search?q=Monument%20View%20Coffee" target="_blank" rel="noopener"><strong>Uber Eats search</strong><span>Live 81507 search on September 9, 2026</span></a>
+              <a class="source" href="https://www.instagram.com/monumentviewcoffeeshop/" target="_blank" rel="noopener"><strong>Instagram profile</strong><span>Public profile level only. Post content was login-gated.</span></a>
+              <a class="source" href="https://www.facebook.com/profile.php?id=61570211727520" target="_blank" rel="noopener"><strong>Facebook page</strong><span>Page existence verified. Public post content was login-gated.</span></a>
+              <a class="source" href="https://www.restaurantji.com/co/grand-junction/monument-village-coffeeshop-/" target="_blank" rel="noopener"><strong>Restaurantji</strong><span>Hours corroboration</span></a>
+              <a class="source" href="https://maps.roadtrippers.com/us/grand-junction-co/food-drink/monument-view-coffee-shop" target="_blank" rel="noopener"><strong>Roadtrippers</strong><span>Hours corroboration</span></a>
+            </div>
+            <div class="method-note"><strong>Limits:</strong> DoorDash returned an error during a live check, Yelp was blocked by a CAPTCHA, and Facebook and Instagram post content required login. The research distinguishes being listed on a platform from proven current operational use. No claim here should be read as access to the shop’s private systems.</div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <footer>
+      <strong>Public technology footprint, prepared for an owner conversation</strong>
+      <span>Snapshot date: September 9, 2026</span>
+    </footer>
+  </div>
+
+  
+<script data-hatch-cvm-bundle>(() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  function __accessProp(key) {
+    return this[key];
+  }
+  var __toCommonJS = (from) => {
+    var entry = (__moduleCache ??= new WeakMap).get(from), desc;
+    if (entry)
+      return entry;
+    entry = __defProp({}, "__esModule", { value: true });
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (var key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(entry, key))
+          __defProp(entry, key, {
+            get: __accessProp.bind(from, key),
+            enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+          });
+    }
+    __moduleCache.set(from, entry);
+    return entry;
+  };
+  var __moduleCache;
+
+  // src/prelude.ts
+  var exports_prelude = {};
+
+  // src/tunnel-url.ts
+  var B64_CHUNK = 32768;
+  function computeSelfBaseDir(selfHref) {
+    if (!selfHref)
+      return "";
+    let h = selfHref;
+    const hash = h.indexOf("#");
+    if (hash >= 0)
+      h = h.slice(0, hash);
+    const q = h.indexOf("?");
+    if (q >= 0)
+      h = h.slice(0, q);
+    const slash = h.lastIndexOf("/");
+    return slash >= 0 ? h.slice(0, slash + 1) : "";
+  }
+  function isSelfOriginUrl(u, selfBaseDir, selfHref, objectUrls) {
+    if (!selfBaseDir || !u.startsWith(selfBaseDir))
+      return false;
+    if (u === selfHref)
+      return false;
+    return !objectUrls.has(u);
+  }
+  function isExternalUrl(u, selfBaseDir, selfHref, objectUrls) {
+    if (!u)
+      return false;
+    if (u.startsWith("#"))
+      return true;
+    if (isSelfOriginUrl(u, selfBaseDir, selfHref, objectUrls))
+      return false;
+    if (u.startsWith("data:") || u.startsWith("blob:"))
+      return true;
+    if (u.startsWith("about:") || u.startsWith("javascript:"))
+      return true;
+    if (u.startsWith("//"))
+      return true;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) {
+      return true;
+    }
+    return false;
+  }
+  function normalizeToRelPath(u, selfBaseDir) {
+    let s = u;
+    if (selfBaseDir && s.startsWith(selfBaseDir)) {
+      s = s.slice(selfBaseDir.length);
+    }
+    s = s.replace(/^\.\//, "");
+    s = s.replace(/^\/+/, "");
+    return s;
+  }
+  function blobInner(base, NativeURL) {
+    if (base == null)
+      return null;
+    const s = typeof base === "string" ? base : base instanceof NativeURL ? base.href : String(base);
+    return s.startsWith("blob:") ? s.slice("blob:".length) : null;
+  }
+  var OPAQUE_BLOB_ORIGIN = "https://hatch-cvm-opaque.invalid";
+  function isAbsoluteUrlString(s, NativeURL) {
+    try {
+      new NativeURL(s);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function resolveAgainstBlobBase(u, base, NativeURL) {
+    const inner = blobInner(base, NativeURL);
+    if (inner === null)
+      return null;
+    if (isAbsoluteUrlString(inner, NativeURL)) {
+      return new NativeURL("blob:" + new NativeURL(u, inner).href);
+    }
+    const slash = inner.indexOf("/");
+    const token = slash >= 0 ? inner.slice(0, slash) : inner;
+    const path = slash >= 0 ? inner.slice(slash) : "/";
+    const resolved = new NativeURL(u, OPAQUE_BLOB_ORIGIN + path);
+    return new NativeURL("blob:" + token + resolved.pathname + resolved.search + resolved.hash);
+  }
+  function resolveTunnelUrl(url, base, selfHref, NativeURL) {
+    const u = url == null ? "" : typeof url === "string" ? url : url instanceof NativeURL ? url.href : String(url);
+    const uAbsolute = /^[a-z][a-z0-9+.-]*:/i.test(u) || u.startsWith("//");
+    if (base !== undefined && base !== null && !uAbsolute) {
+      const viaBlob = resolveAgainstBlobBase(u, base, NativeURL);
+      if (viaBlob !== null)
+        return viaBlob;
+      return new NativeURL(u, base);
+    }
+    if (!uAbsolute && selfHref) {
+      const viaBlob = resolveAgainstBlobBase(u, selfHref, NativeURL);
+      if (viaBlob !== null)
+        return viaBlob;
+    }
+    return base === undefined ? new NativeURL(u) : new NativeURL(u, base);
+  }
+  function bytesToBase64(bytes) {
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    let s = "";
+    for (let i = 0;i < u8.length; i += B64_CHUNK) {
+      s += String.fromCharCode.apply(null, Array.from(u8.subarray(i, i + B64_CHUNK)));
+    }
+    return btoa(s);
+  }
+  function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0;i < bin.length; i++)
+      out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function importMetaUrl(selfHref, selfBaseDir) {
+    return selfBaseDir ? `${selfBaseDir}assets/cvm-bundle.js` : selfHref;
+  }
+
+  // src/download-links.ts
+  function installDownloadLinks(fetchAsset, isExternalUrl, revokeDelayMs) {
+    document.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const anchor = event.composedPath().find((node) => node instanceof HTMLAnchorElement);
+      if (!anchor?.hasAttribute("download"))
+        return;
+      const href = anchor.getAttribute("href");
+      if (!href || isExternalUrl(href))
+        return;
+      event.preventDefault();
+      const filename = anchor.download || resourceFilename(href);
+      (async () => {
+        const response = await fetchAsset(href);
+        if (!response.ok) {
+          throw new Error(`Artifact download failed: HTTP ${response.status}`);
+        }
+        const url = URL.createObjectURL(await response.blob());
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.hidden = true;
+        document.body.appendChild(link);
+        try {
+          link.click();
+        } finally {
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), revokeDelayMs);
+        }
+      })().catch((error) => reportError(error));
+    });
+  }
+  function resourceFilename(href) {
+    const path = new URL(href, document.baseURI).pathname;
+    const name = path.slice(path.lastIndexOf("/") + 1);
+    try {
+      return decodeURIComponent(name);
+    } catch {
+      return name;
+    }
+  }
+
+  // src/fragment-links.ts
+  function installFragmentLinks() {
+    if (!location.href.startsWith("blob:null/"))
+      return;
+    const NativeURL = URL;
+    const pushState = history.pushState.bind(history);
+    const replaceState = history.replaceState.bind(history);
+    window.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const anchor = event.composedPath().find((node) => node instanceof HTMLAnchorElement);
+      if (!anchor || anchor.hasAttribute("download"))
+        return;
+      const targetName = anchor.getAttribute("target") ?? document.querySelector("base[target]")?.getAttribute("target") ?? "";
+      if (targetName !== "" && targetName.toLowerCase() !== "_self")
+        return;
+      const href = anchor.getAttribute("href");
+      if (!href?.startsWith("#"))
+        return;
+      const oldURL = location.href;
+      const nextURL = new NativeURL(href, oldURL);
+      event.preventDefault();
+      const changed = nextURL.href !== oldURL;
+      if (changed) {
+        pushState(null, "", nextURL.href);
+      } else {
+        replaceState(null, "", nextURL.href);
+      }
+      window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+      const target = fragmentTarget(nextURL.hash);
+      if (target) {
+        target.scrollIntoView();
+        if (target !== document.documentElement && (target instanceof HTMLElement || target instanceof SVGElement)) {
+          const hadTabIndex = target.hasAttribute("tabindex");
+          if (!hadTabIndex)
+            target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
+          if (!hadTabIndex)
+            target.removeAttribute("tabindex");
+        }
+      }
+      if (changed) {
+        queueMicrotask(() => window.dispatchEvent(new HashChangeEvent("hashchange", {
+          oldURL,
+          newURL: nextURL.href
+        })));
+      }
+    });
+  }
+  function fragmentTarget(hash) {
+    const bytes = hash.slice(1).replace(/%([0-9a-f]{2})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
+    const fragment = new TextDecoder().decode(Uint8Array.from(bytes, (byte) => byte.charCodeAt(0)));
+    if (fragment === "")
+      return document.documentElement;
+    const idTarget = document.getElementById(fragment);
+    if (idTarget)
+      return idTarget;
+    const namedTarget = Array.from(document.getElementsByName(fragment)).find((node) => node instanceof HTMLAnchorElement);
+    return namedTarget ?? (fragment.toLowerCase() === "top" ? document.documentElement : null);
+  }
+
+  // src/prelude.ts
+  (function installTunnel() {
+    installFragmentLinks();
+    let port = null;
+    let portReadyResolve = null;
+    const portReady = new Promise((res) => {
+      portReadyResolve = res;
+    });
+    const pending = new Map;
+    const openWs = new Map;
+    function newId() {
+      return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+    }
+    function bytesToB64(bytes) {
+      return bytesToBase64(bytes);
+    }
+    function b64ToBytes(b64) {
+      return base64ToBytes(b64);
+    }
+    async function httpReq(method, path, body, headers) {
+      const p = port ?? await portReady;
+      const id = newId();
+      const headerArr = [];
+      if (headers) {
+        const h = new Headers(headers);
+        h.forEach((v, k) => headerArr.push([k, v]));
+      }
+      let bodyB64 = "";
+      if (body != null && body !== "") {
+        let bytes;
+        if (typeof body === "string") {
+          bytes = new TextEncoder().encode(body);
+        } else if (body instanceof ArrayBuffer) {
+          bytes = new Uint8Array(body);
+        } else if (body instanceof Uint8Array) {
+          bytes = body;
+        } else if (body instanceof Blob) {
+          bytes = new Uint8Array(await body.arrayBuffer());
+        } else if (body instanceof FormData) {
+          const boundary = "----HatchBoundary" + Math.random().toString(36).slice(2);
+          let s = "";
+          for (const [k, v] of body.entries()) {
+            s += `--${boundary}\r
+Content-Disposition: form-data; name="${k}"`;
+            if (v instanceof File) {
+              s += `; filename="${v.name}"\r
+Content-Type: ${v.type || "application/octet-stream"}\r
+\r
+`;
+              const fb = new Uint8Array(await v.arrayBuffer());
+              s += new TextDecoder("latin1").decode(fb);
+            } else {
+              s += `\r
+\r
+${v}`;
+            }
+            s += `\r
+`;
+          }
+          s += `--${boundary}--\r
+`;
+          bytes = new TextEncoder().encode(s);
+          headerArr.push([
+            "content-type",
+            `multipart/form-data; boundary=${boundary}`
+          ]);
+        } else {
+          bytes = new TextEncoder().encode(String(body));
+        }
+        bodyB64 = bytesToB64(bytes);
+      }
+      return new Promise((resolve, reject) => {
+        pending.set(id, {
+          resolve: (msg) => {
+            if (msg.error) {
+              reject(new Error(msg.error.message ?? "tunnel error"));
+              return;
+            }
+            resolve({
+              status: msg.status,
+              headers: msg.headers,
+              bytes: msg.bodyB64 ? b64ToBytes(msg.bodyB64) : new Uint8Array(0)
+            });
+          },
+          reject
+        });
+        p.postMessage({
+          type: "http.req",
+          id,
+          method,
+          path,
+          headers: headerArr,
+          bodyB64
+        });
+      });
+    }
+    async function tunnelFetch(input, init) {
+      let urlStr;
+      let method = init?.method ?? "GET";
+      let headers = init?.headers;
+      let body = init?.body;
+      if (input instanceof Request) {
+        urlStr = input.url;
+        method = init?.method ?? input.method;
+        headers = init?.headers ?? input.headers;
+        if (body == null && input.body) {
+          body = await input.arrayBuffer();
+        }
+      } else {
+        urlStr = String(input);
+      }
+      if (isExternalUrl2(urlStr)) {
+        return originalFetch(input, init);
+      }
+      const relPath = normalizeToRelPath2(urlStr);
+      const r = await httpReq(method, relPath, body ?? null, headers);
+      const respHeaders = new Headers;
+      for (const [k, v] of r.headers ?? [])
+        respHeaders.set(k, v);
+      return new Response(r.bytes, {
+        status: r.status,
+        headers: respHeaders
+      });
+    }
+
+    class TunnelWebSocket extends EventTarget {
+      readyState = 0;
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      CONNECTING = 0;
+      OPEN = 1;
+      CLOSING = 2;
+      CLOSED = 3;
+      url;
+      binaryType = "blob";
+      bufferedAmount = 0;
+      protocol = "";
+      extensions = "";
+      onopen = null;
+      onmessage = null;
+      onclose = null;
+      onerror = null;
+      _id;
+      constructor(urlIn, _protocols) {
+        super();
+        const urlStr = String(urlIn);
+        this.url = urlStr;
+        this._id = newId();
+        openWs.set(this._id, this);
+        const path = normalizeToRelPath2(urlStr);
+        (async () => {
+          const p = port ?? await portReady;
+          p.postMessage({ type: "ws.open", id: this._id, path });
+        })();
+      }
+      _handle(msg) {
+        if (msg.type === "ws.opened") {
+          this.readyState = 1;
+          const ev = new Event("open");
+          this.onopen?.(ev);
+          this.dispatchEvent(ev);
+        } else if (msg.type === "ws.message") {
+          const bytes = msg.dataB64 ? b64ToBytes(msg.dataB64) : new Uint8Array(0);
+          let data;
+          if (msg.binary) {
+            data = this.binaryType === "arraybuffer" ? bytes.buffer : new Blob([bytes]);
+          } else {
+            data = new TextDecoder().decode(bytes);
+          }
+          const ev = new MessageEvent("message", { data });
+          this.onmessage?.(ev);
+          this.dispatchEvent(ev);
+        } else if (msg.type === "ws.closed") {
+          this.readyState = 3;
+          const ev = new CloseEvent("close", {
+            code: msg.code ?? 1000,
+            reason: msg.reason ?? ""
+          });
+          this.onclose?.(ev);
+          this.dispatchEvent(ev);
+          openWs.delete(this._id);
+        } else if (msg.type === "ws.error") {
+          const ev = new Event("error");
+          this.onerror?.(ev);
+          this.dispatchEvent(ev);
+        }
+      }
+      send(data) {
+        (async () => {
+          const p = port ?? await portReady;
+          let bytes;
+          let binary = false;
+          if (typeof data === "string") {
+            bytes = new TextEncoder().encode(data);
+          } else if (data instanceof Blob) {
+            bytes = new Uint8Array(await data.arrayBuffer());
+            binary = true;
+          } else if (data instanceof ArrayBuffer) {
+            bytes = new Uint8Array(data);
+            binary = true;
+          } else if (ArrayBuffer.isView(data)) {
+            bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+            binary = true;
+          } else {
+            bytes = new TextEncoder().encode(String(data));
+          }
+          p.postMessage({
+            type: "ws.send",
+            id: this._id,
+            dataB64: bytesToB64(bytes),
+            binary
+          });
+        })();
+      }
+      close(code, reason) {
+        (async () => {
+          const p = port ?? await portReady;
+          p.postMessage({ type: "ws.close", id: this._id, code, reason });
+        })();
+      }
+      addEventListener(type, listener, options) {
+        super.addEventListener(type, listener, options);
+      }
+    }
+
+    class TunnelXHR extends EventTarget {
+      static UNSENT = 0;
+      static OPENED = 1;
+      static HEADERS_RECEIVED = 2;
+      static LOADING = 3;
+      static DONE = 4;
+      UNSENT = 0;
+      OPENED = 1;
+      HEADERS_RECEIVED = 2;
+      LOADING = 3;
+      DONE = 4;
+      readyState = 0;
+      status = 0;
+      statusText = "";
+      responseText = "";
+      response = null;
+      responseType = "";
+      responseURL = "";
+      withCredentials = false;
+      timeout = 0;
+      upload = new EventTarget;
+      onreadystatechange = null;
+      onload = null;
+      onerror = null;
+      onloadend = null;
+      onabort = null;
+      onprogress = null;
+      ontimeout = null;
+      _method = "GET";
+      _url = "";
+      _reqHeaders = [];
+      _respHeaders = [];
+      _aborted = false;
+      open(method, url) {
+        this._method = method;
+        this._url = url;
+        this.readyState = 1;
+        this.onreadystatechange?.();
+      }
+      setRequestHeader(name, value) {
+        this._reqHeaders.push([name, value]);
+      }
+      getAllResponseHeaders() {
+        return this._respHeaders.map(([k, v]) => `${k}: ${v}`).join(`\r
+`);
+      }
+      getResponseHeader(name) {
+        const lc = name.toLowerCase();
+        const hit = this._respHeaders.find(([k]) => k.toLowerCase() === lc);
+        return hit ? hit[1] : null;
+      }
+      abort() {
+        this._aborted = true;
+        this.readyState = 0;
+      }
+      send(body) {
+        if (isExternalUrl2(this._url)) {
+          const real = new originalXHR;
+          real.open(this._method, this._url);
+          for (const [k, v] of this._reqHeaders)
+            real.setRequestHeader(k, v);
+          real.onload = () => {
+            this.status = real.status;
+            this.responseText = real.responseText;
+            this.response = real.response;
+            this.readyState = 4;
+            this.onreadystatechange?.();
+            this.onload?.();
+            this.onloadend?.();
+            this.dispatchEvent(new Event("load"));
+          };
+          real.onerror = () => {
+            this.onerror?.();
+            this.dispatchEvent(new Event("error"));
+          };
+          real.send(body);
+          return;
+        }
+        const relPath = normalizeToRelPath2(this._url);
+        httpReq(this._method, relPath, body ?? null, this._reqHeaders).then((r) => {
+          if (this._aborted)
+            return;
+          this.status = r.status;
+          this._respHeaders = r.headers ?? [];
+          this.responseText = new TextDecoder().decode(r.bytes);
+          if (this.responseType === "arraybuffer") {
+            this.response = r.bytes.buffer;
+          } else if (this.responseType === "blob") {
+            this.response = new Blob([r.bytes]);
+          } else if (this.responseType === "json") {
+            try {
+              this.response = JSON.parse(this.responseText);
+            } catch {
+              this.response = null;
+            }
+          } else {
+            this.response = this.responseText;
+          }
+          this.readyState = 4;
+          this.onreadystatechange?.();
+          this.onload?.();
+          this.onloadend?.();
+          this.dispatchEvent(new Event("load"));
+        }, () => {
+          if (this._aborted)
+            return;
+          this.onerror?.();
+          this.dispatchEvent(new Event("error"));
+        });
+      }
+    }
+
+    class TunnelEventSource extends EventTarget {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSED = 2;
+      readyState = 0;
+      url;
+      withCredentials = false;
+      onopen = null;
+      onmessage = null;
+      onerror = null;
+      constructor(url) {
+        super();
+        this.url = String(url);
+        (async () => {
+          try {
+            const relPath = normalizeToRelPath2(this.url);
+            const r = await httpReq("GET", relPath, null, [
+              ["accept", "text/event-stream"]
+            ]);
+            this.readyState = 1;
+            this.onopen?.(new Event("open"));
+            const text = new TextDecoder().decode(r.bytes);
+            for (const block of text.split(/\n\n/)) {
+              const data = block.split(`
+`).filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join(`
+`);
+              if (data) {
+                const ev = new MessageEvent("message", { data });
+                this.onmessage?.(ev);
+                this.dispatchEvent(ev);
+              }
+            }
+            this.readyState = 2;
+          } catch {
+            this.onerror?.(new Event("error"));
+          }
+        })();
+      }
+      close() {
+        this.readyState = 2;
+      }
+    }
+    const SELF_HREF = (() => {
+      try {
+        return globalThis.location?.href ?? "";
+      } catch {
+        return "";
+      }
+    })();
+    const SELF_BASE_DIR = computeSelfBaseDir(SELF_HREF);
+    const objectUrls = new Set;
+    function isSelfOriginUrl2(u) {
+      return isSelfOriginUrl(u, SELF_BASE_DIR, SELF_HREF, objectUrls);
+    }
+    function isExternalUrl2(u) {
+      return isExternalUrl(u, SELF_BASE_DIR, SELF_HREF, objectUrls);
+    }
+    function normalizeToRelPath2(u) {
+      return normalizeToRelPath(u, SELF_BASE_DIR);
+    }
+    const URL_ATTRS = new Set([
+      "src",
+      "srcset",
+      "href",
+      "poster",
+      "action",
+      "formaction",
+      "data",
+      "background",
+      "cite",
+      "longdesc",
+      "usemap",
+      "manifest"
+    ]);
+    const URL_STYLE_PROPS = new Set([
+      "background",
+      "backgroundImage",
+      "background-image",
+      "borderImage",
+      "border-image",
+      "borderImageSource",
+      "border-image-source",
+      "listStyle",
+      "list-style",
+      "listStyleImage",
+      "list-style-image",
+      "cursor",
+      "mask",
+      "maskImage",
+      "mask-image",
+      "webkitMask",
+      "-webkit-mask",
+      "webkitMaskImage",
+      "-webkit-mask-image",
+      "content",
+      "src"
+    ]);
+    const __BLOB_CACHE_MAX = 256;
+    const __BLOB_REVOKE_DELAY_MS = 30000;
+    const blobCache = new Map;
+    const blobStats = {
+      created: 0,
+      revoked: 0,
+      hits: 0,
+      misses: 0,
+      inFlightRevokes: 0
+    };
+    function __evictIfOverCap() {
+      while (blobCache.size > __BLOB_CACHE_MAX) {
+        const oldestKey = blobCache.keys().next().value;
+        if (oldestKey === undefined)
+          break;
+        const ent = blobCache.get(oldestKey);
+        blobCache.delete(oldestKey);
+        blobStats.inFlightRevokes++;
+        const t = setTimeout(() => {
+          ent.url.then((u) => {
+            if (typeof u === "string" && u.startsWith("blob:")) {
+              try {
+                URL.revokeObjectURL(u);
+                blobStats.revoked++;
+              } catch {}
+            }
+          }).finally(() => {
+            blobStats.inFlightRevokes--;
+          });
+        }, __BLOB_REVOKE_DELAY_MS);
+        ent.pendingRevoke = t;
+      }
+    }
+    function resolveToBlobUrl(rel) {
+      if (isExternalUrl2(rel))
+        return Promise.resolve(rel);
+      const hashIdx = rel.indexOf("#");
+      const pathPart = hashIdx >= 0 ? rel.slice(0, hashIdx) : rel;
+      const frag = hashIdx >= 0 ? rel.slice(hashIdx) : "";
+      const key = normalizeToRelPath2(pathPart);
+      let ent = blobCache.get(key);
+      if (ent) {
+        if (ent.pendingRevoke != null) {
+          clearTimeout(ent.pendingRevoke);
+          ent.pendingRevoke = undefined;
+          blobStats.inFlightRevokes--;
+        }
+        blobCache.delete(key);
+        blobCache.set(key, ent);
+        blobStats.hits++;
+      } else {
+        blobStats.misses++;
+        const url = httpReq("GET", key, null).then((r) => {
+          const ctHeader = r.headers.find(([k]) => k.toLowerCase() === "content-type");
+          const ct = ctHeader?.[1] ?? "application/octet-stream";
+          const blob = new Blob([r.bytes], { type: ct });
+          blobStats.created++;
+          return URL.createObjectURL(blob);
+        });
+        ent = { url };
+        blobCache.set(key, ent);
+        __evictIfOverCap();
+      }
+      return frag ? ent.url.then((b) => b + frag) : ent.url;
+    }
+    const HATCH_PIXEL_PREFIX = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    const HATCH_FRAG = "#hatch=";
+    function isHatchPlaceholder(url) {
+      return url.indexOf(HATCH_PIXEL_PREFIX + HATCH_FRAG) === 0;
+    }
+    function unwrapHatchPlaceholder(url) {
+      if (!isHatchPlaceholder(url))
+        return null;
+      return decodeURIComponent(url.slice((HATCH_PIXEL_PREFIX + HATCH_FRAG).length));
+    }
+    async function rewriteCssTextAsync(text) {
+      const re = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+      const tasks = [];
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        tasks.push({ match: m[0], index: m.index, url: m[2].trim() });
+      }
+      if (tasks.length === 0)
+        return text;
+      const resolved = await Promise.all(tasks.map(async (t) => {
+        if (t.url.startsWith("blob:"))
+          return t.url;
+        const unwrapped = unwrapHatchPlaceholder(t.url);
+        if (unwrapped != null) {
+          try {
+            return await resolveToBlobUrl(unwrapped);
+          } catch {
+            return t.url;
+          }
+        }
+        if (isExternalUrl2(t.url))
+          return t.url;
+        try {
+          return await resolveToBlobUrl(t.url);
+        } catch {
+          return t.url;
+        }
+      }));
+      let out = "";
+      let last = 0;
+      tasks.forEach((t, i) => {
+        out += text.slice(last, t.index);
+        out += `url("${resolved[i]}")`;
+        last = t.index + t.match.length;
+      });
+      out += text.slice(last);
+      return out;
+    }
+    function rewriteCssText(text) {
+      return rewriteCssTextAsync(text);
+    }
+    const mediaSourceLoads = new WeakMap;
+    window.addEventListener("error", (event) => {
+      const source = event.target;
+      if (!event.isTrusted || !(source instanceof HTMLSourceElement) || !(source.parentElement instanceof HTMLMediaElement) || source.hasAttribute("src"))
+        return;
+      const state = mediaSourceLoads.get(source);
+      if (state === "pending" || state === undefined && source.hasAttribute("data-hatch-src")) {
+        event.stopImmediatePropagation();
+      }
+    }, true);
+    function isElement(el) {
+      if (el instanceof Element)
+        return true;
+      const ownerWindow = el?.ownerDocument?.defaultView;
+      return ownerWindow != null && el instanceof ownerWindow.Element;
+    }
+    function setAttr(el, name, value, ...rest) {
+      if (!isElement(el)) {
+        return el.setAttribute(name, value, ...rest);
+      }
+      name = String(name);
+      if (value == null) {
+        if (name.toLowerCase() === "src" && el instanceof HTMLSourceElement) {
+          mediaSourceLoads.set(el, "settled");
+        }
+        try {
+          el.removeAttribute(name);
+        } catch {}
+        return;
+      }
+      const v = String(value);
+      const lcName = name.toLowerCase();
+      const tag = el.tagName?.toUpperCase();
+      if ((tag === "A" || tag === "BASE" || tag === "AREA") && lcName === "href") {
+        el.setAttribute(name, v);
+        return;
+      }
+      if (!URL_ATTRS.has(lcName) && lcName !== "style" && lcName !== "srcset") {
+        el.setAttribute(name, v);
+        return;
+      }
+      if (lcName === "srcset") {
+        const parts = v.split(",").map((s) => s.trim()).filter(Boolean);
+        Promise.all(parts.map(async (p) => {
+          const segs = p.split(/\s+/);
+          const url = segs[0];
+          const rest = segs.slice(1).join(" ");
+          if (isExternalUrl2(url))
+            return p;
+          const resolved = await resolveToBlobUrl(url);
+          return rest ? `${resolved} ${rest}` : resolved;
+        })).then((rebuilt) => {
+          try {
+            el.setAttribute("srcset", rebuilt.join(", "));
+          } catch {}
+        });
+        return;
+      }
+      if (URL_ATTRS.has(lcName)) {
+        const isMediaSource = tag === "SOURCE" && lcName === "src";
+        if (isExternalUrl2(v)) {
+          if (isMediaSource)
+            mediaSourceLoads.set(el, "settled");
+          el.setAttribute(name, v);
+          return;
+        }
+        if (isMediaSource)
+          mediaSourceLoads.set(el, "pending");
+        if (tag === "IMG" || tag === "VIDEO" && lcName === "poster") {
+          el.setAttribute(name, TRANSPARENT_PIXEL);
+        }
+        resolveToBlobUrl(v).then((blobUrl) => {
+          if (isMediaSource)
+            mediaSourceLoads.set(el, "settled");
+          try {
+            el.setAttribute(name, blobUrl);
+            if (isMediaSource) {
+              const media = el.parentElement;
+              if (media instanceof HTMLMediaElement && media.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+                const nextSibling = el.nextSibling;
+                el.remove();
+                media.insertBefore(el, nextSibling);
+              }
+            }
+          } catch {}
+        }, () => {
+          if (isMediaSource) {
+            mediaSourceLoads.set(el, "settled");
+            el.dispatchEvent(new Event("error"));
+          }
+        });
+        return;
+      }
+      if (lcName === "style") {
+        setStyleAttr(el, v);
+        return;
+      }
+      el.setAttribute(name, v);
+    }
+    function setAttrNS(el, ns, name, value, ...rest) {
+      if (!isElement(el)) {
+        return el.setAttributeNS(ns, name, value, ...rest);
+      }
+      name = String(name);
+      if (value == null) {
+        try {
+          el.removeAttributeNS(ns ?? null, name);
+        } catch {}
+        return;
+      }
+      const v = String(value);
+      const lcName = name.split(":").pop().toLowerCase();
+      if (lcName === "href" && URL_ATTRS.has("href")) {
+        if (isExternalUrl2(v)) {
+          el.setAttributeNS(ns ?? null, name, v);
+          return;
+        }
+        resolveToBlobUrl(v).then((blobUrl) => {
+          try {
+            el.setAttributeNS(ns ?? null, name, blobUrl);
+          } catch {}
+        }, () => {});
+        return;
+      }
+      try {
+        el.setAttributeNS(ns ?? null, name, v);
+      } catch {}
+    }
+    function setUrlProp(el, name, value) {
+      if (isElement(el)) {
+        setAttr(el, name.toLowerCase(), value);
+      } else {
+        el[name] = value;
+      }
+      return value;
+    }
+    const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    const HTML_TAG_ATTRS = {
+      img: ["src", "srcset", "poster"],
+      image: ["href"],
+      video: ["src", "poster"],
+      audio: ["src"],
+      source: ["src", "srcset"],
+      script: ["src"],
+      link: ["href"],
+      iframe: ["src"],
+      embed: ["src"],
+      object: ["data"],
+      track: ["src"],
+      input: ["src"],
+      form: ["action"],
+      button: ["formaction"],
+      use: ["href"]
+    };
+    function rewriteHtmlString(html) {
+      return html.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/g, (m, tag, attrs) => {
+        const lc = String(tag).toLowerCase();
+        const candidates = HTML_TAG_ATTRS[lc];
+        if (!candidates)
+          return m;
+        let out = attrs;
+        for (const a of candidates) {
+          const re = new RegExp(`\\b${a}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+          const matched = out.match(re);
+          if (!matched)
+            continue;
+          const value = matched[2] ?? matched[3] ?? matched[4] ?? "";
+          if (isExternalUrl2(value))
+            continue;
+          out = out.replace(re, `data-hatch-${a}="${value.replace(/"/g, "&quot;")}"`);
+        }
+        const styleRe = /\bstyle\s*=\s*("([^"]*)"|'([^']*)')/i;
+        const sm = out.match(styleRe);
+        if (sm) {
+          const value = sm[2] ?? sm[3] ?? "";
+          if (value.includes("url(")) {
+            out = out.replace(styleRe, `data-hatch-style="${value.replace(/"/g, "&quot;")}"`);
+          }
+        }
+        return `<${tag}${out}>`;
+      });
+    }
+    const HTML_URL_ATTRS_BY_TAG = {
+      IMG: ["src", "srcset", "poster"],
+      IMAGE: ["href"],
+      VIDEO: ["src", "poster"],
+      AUDIO: ["src"],
+      SOURCE: ["src", "srcset"],
+      SCRIPT: ["src"],
+      LINK: ["href"],
+      IFRAME: ["src"],
+      EMBED: ["src"],
+      OBJECT: ["data"],
+      TRACK: ["src"],
+      INPUT: ["src"],
+      FORM: ["action"],
+      BUTTON: ["formaction"],
+      USE: ["href", "xlink:href"]
+    };
+    function rewriteSubtreeForTunnel(root) {
+      if (!root)
+        return;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      let n = walker.currentNode;
+      if (root.nodeType === 1)
+        processOne(root);
+      while (n = walker.nextNode()) {
+        processOne(n);
+      }
+    }
+    function processOne(el) {
+      const tag = (el.tagName ?? "").toUpperCase();
+      const attrs = HTML_URL_ATTRS_BY_TAG[tag];
+      if (attrs) {
+        for (const a of attrs) {
+          const v = el.getAttribute(a);
+          if (v == null)
+            continue;
+          if (isExternalUrl2(v))
+            continue;
+          el.setAttribute("data-hatch-" + a, v);
+          el.removeAttribute(a);
+        }
+      }
+      const style = el.getAttribute("style");
+      if (style && style.includes("url(")) {
+        el.setAttribute("data-hatch-style", style);
+        el.removeAttribute("style");
+      }
+    }
+    function parseAndCleanHtml(html) {
+      const tpl = document.createElement("template");
+      tpl.innerHTML = html;
+      rewriteSubtreeForTunnel(tpl.content);
+      return tpl.content;
+    }
+    function setInnerHTML(el, html, which = "innerHTML") {
+      const s = html == null ? "" : String(html);
+      if (which === "innerHTML" && typeof el.tagName === "string" && el.tagName.toUpperCase() === "TEMPLATE") {
+        try {
+          el.innerHTML = s;
+        } catch {}
+        return;
+      }
+      if (which === "outerHTML") {
+        const frag = parseAndCleanHtml(s);
+        const wrap = document.createElement("div");
+        wrap.appendChild(frag);
+        try {
+          el.outerHTML = wrap.innerHTML;
+        } catch {}
+        queueMicrotask(() => processDataHatchAttrs(document.body));
+        return;
+      }
+      const frag = parseAndCleanHtml(s);
+      try {
+        while (el.firstChild)
+          el.removeChild(el.firstChild);
+        el.appendChild(frag);
+      } catch {}
+      queueMicrotask(() => processDataHatchAttrs(el));
+    }
+    function insertAdjacentHTMLT(el, position, html) {
+      const s = html == null ? "" : String(html);
+      const frag = parseAndCleanHtml(s);
+      const wrap = document.createElement("template");
+      wrap.content.appendChild(frag);
+      try {
+        el.insertAdjacentHTML(position, wrap.innerHTML);
+      } catch {}
+      queueMicrotask(() => processDataHatchAttrs(document.body));
+    }
+    function processDataHatchAttrs(root) {
+      const SELECTORS = "[data-hatch-src], [data-hatch-href], [data-hatch-srcset], [data-hatch-poster], [data-hatch-action], [data-hatch-data], [data-hatch-style]";
+      root.querySelectorAll(SELECTORS).forEach((el) => {
+        const attrs = el.getAttributeNames();
+        for (const a of attrs) {
+          if (!a.startsWith("data-hatch-"))
+            continue;
+          const real = a.slice("data-hatch-".length);
+          const value = el.getAttribute(a) ?? "";
+          el.removeAttribute(a);
+          if (real === "style")
+            setStyleAttr(el, value);
+          else
+            setAttr(el, real, value);
+        }
+      });
+    }
+    const styleProxyCache = new WeakMap;
+    function getStyle(el) {
+      if (el == null)
+        return el;
+      let real;
+      try {
+        real = el.style;
+      } catch {
+        return;
+      }
+      if (real == null || typeof real !== "object" && typeof real !== "function") {
+        return real;
+      }
+      let proxy = styleProxyCache.get(real);
+      if (proxy)
+        return proxy;
+      proxy = new Proxy(real, {
+        get(target, prop, _receiver) {
+          const v = Reflect.get(target, prop, target);
+          if (typeof v === "function")
+            return v.bind(target);
+          return v;
+        },
+        set(target, prop, value) {
+          if (typeof prop === "string") {
+            setStyle(el, prop, value);
+            return true;
+          }
+          return Reflect.set(target, prop, value, target);
+        }
+      });
+      styleProxyCache.set(real, proxy);
+      return proxy;
+    }
+    function setStyle(el, propName, value) {
+      const v = value == null ? "" : String(value);
+      if (propName.startsWith("--")) {
+        rewriteCssText(v).then((rewritten) => {
+          try {
+            el.style.setProperty(propName, rewritten);
+          } catch {}
+        });
+        return;
+      }
+      if (URL_STYLE_PROPS.has(propName) && v.includes("url(")) {
+        rewriteCssText(v).then((rewritten) => {
+          try {
+            el.style[propName] = rewritten;
+          } catch {}
+        });
+        return;
+      }
+      try {
+        el.style[propName] = v;
+      } catch {}
+    }
+    function setStyleAttr(el, attrValue) {
+      if (!attrValue.includes("url(")) {
+        el.setAttribute("style", attrValue);
+        return;
+      }
+      rewriteCssText(attrValue).then((rewritten) => {
+        try {
+          el.setAttribute("style", rewritten);
+        } catch {}
+      });
+    }
+    function setStyleText(styleEl, text) {
+      if (!(styleEl instanceof HTMLStyleElement)) {
+        try {
+          styleEl.textContent = text;
+        } catch {}
+        return;
+      }
+      if (!text.includes("url(")) {
+        styleEl.textContent = text;
+        return;
+      }
+      rewriteCssText(text).then((rewritten) => {
+        try {
+          styleEl.textContent = rewritten;
+        } catch {}
+      });
+    }
+    function tunnelImage(_w, _h) {
+      const img = new originalImage;
+      const desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+      if (desc?.set) {
+        const origSet = desc.set;
+        const origGet = desc.get;
+        Object.defineProperty(img, "src", {
+          configurable: true,
+          get() {
+            return origGet.call(img);
+          },
+          set(v) {
+            if (v == null)
+              return origSet.call(img, "");
+            const s = String(v);
+            if (isExternalUrl2(s))
+              return origSet.call(img, s);
+            resolveToBlobUrl(s).then((b) => origSet.call(img, b), () => origSet.call(img, s));
+          }
+        });
+      }
+      return img;
+    }
+    function tunnelSendBeacon(url, data) {
+      tunnelFetch(url, { method: "POST", body: data, keepalive: true }).catch(() => {});
+      return true;
+    }
+    function tunnelWorker(_url) {
+      throw new Error("[__tunnel] new Worker() is not supported in Muse web artifacts.");
+    }
+    function tunnelImport(spec) {
+      throw new Error("[__tunnel] dynamic import() of '" + String(spec) + "' is not supported in Muse web artifacts.");
+    }
+    function installCssObserver() {
+      try {
+        const proto = window.CSSStyleSheet?.prototype;
+        if (proto) {
+          const origInsertRule = proto.insertRule;
+          proto.insertRule = function(rule, index) {
+            if (typeof rule === "string" && rule.includes("url(")) {
+              const idx = origInsertRule.call(this, rule, index);
+              rewriteCssText(rule).then((rewritten) => {
+                if (rewritten !== rule) {
+                  try {
+                    this.deleteRule(idx);
+                    origInsertRule.call(this, rewritten, idx);
+                  } catch {}
+                }
+              });
+              return idx;
+            }
+            return origInsertRule.call(this, rule, index);
+          };
+          const origReplace = proto.replace;
+          if (origReplace) {
+            proto.replace = function(text) {
+              if (typeof text === "string" && text.includes("url(")) {
+                return rewriteCssText(text).then((rewritten) => origReplace.call(this, rewritten));
+              }
+              return origReplace.call(this, text);
+            };
+          }
+          const origReplaceSync = proto.replaceSync;
+          if (origReplaceSync) {
+            proto.replaceSync = function(text) {
+              if (typeof text === "string" && text.includes("url(")) {
+                const ret = origReplaceSync.call(this, text);
+                rewriteCssText(text).then((rewritten) => {
+                  try {
+                    origReplaceSync.call(this, rewritten);
+                  } catch {}
+                });
+                return ret;
+              }
+              return origReplaceSync.call(this, text);
+            };
+          }
+        }
+      } catch (e) {}
+      function sweepSheet(sheet) {
+        try {
+          const rules = sheet.cssRules;
+          for (let i = 0;i < rules.length; i++) {
+            const rule = rules[i];
+            const txt = rule.cssText;
+            if (txt && (txt.includes(HATCH_FRAG) || txt.includes("url(") && !/url\(\s*["']?(blob:|https?:|data:image\/gif;base64,R0)/.test(txt))) {
+              rewriteCssText(txt).then((rewritten) => {
+                if (rewritten !== txt) {
+                  try {
+                    sheet.deleteRule(i);
+                    sheet.insertRule(rewritten, i);
+                  } catch {}
+                }
+              });
+            }
+          }
+        } catch {}
+      }
+      function sweepAll() {
+        for (const sheet of Array.from(document.styleSheets)) {
+          sweepSheet(sheet);
+        }
+      }
+      const mo = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of Array.from(m.addedNodes)) {
+            if (node instanceof HTMLStyleElement) {
+              const txt = node.textContent ?? "";
+              if (txt.includes("url(")) {
+                rewriteCssText(txt).then((rewritten) => {
+                  if (rewritten !== txt) {
+                    try {
+                      node.textContent = rewritten;
+                    } catch {}
+                  }
+                });
+              }
+            } else if (node instanceof HTMLLinkElement && node.rel === "stylesheet") {
+              node.addEventListener("load", () => sweepSheet(node.sheet), { once: true });
+            }
+          }
+        }
+      });
+      mo.observe(document, { subtree: true, childList: true });
+      Promise.resolve().then(sweepAll);
+      setTimeout(sweepAll, 0);
+      setTimeout(sweepAll, 50);
+      setTimeout(sweepAll, 250);
+    }
+    function rewriteAuthoredHtml() {
+      const SELECTORS = "[data-hatch-src], [data-hatch-href], [data-hatch-srcset]";
+      document.querySelectorAll(SELECTORS).forEach((el) => {
+        const src = el.getAttribute("data-hatch-src");
+        const href = el.getAttribute("data-hatch-href");
+        const srcset = el.getAttribute("data-hatch-srcset");
+        if (src)
+          setAttr(el, "src", src);
+        if (href)
+          setAttr(el, "href", href);
+        if (srcset)
+          setAttr(el, "srcset", srcset);
+      });
+    }
+    let historyUrlWarned = false;
+    function warnHistoryUrlDropped(method, url) {
+      if (url === undefined || url === null)
+        return;
+      if (historyUrlWarned)
+        return;
+      historyUrlWarned = true;
+      try {
+        console.warn("[__tunnel] history." + method + "() was called with a URL; the URL was ignored. A Muse web artifact " + "renders in an opaque origin with no navigable URL of its own, so " + "the browser rejects any URL change. State kept in the URL will not " + "persist or survive a reload — keep it in component state, or in " + "the artifact's database through a server action.");
+      } catch {}
+    }
+    const originalFetch = globalThis.fetch?.bind(globalThis) ?? (() => {
+      throw new Error("no native fetch");
+    });
+    const originalXHR = globalThis.XMLHttpRequest;
+    const originalImage = globalThis.Image;
+    const tunnel = {
+      fetch: tunnelFetch,
+      XHR: TunnelXHR,
+      WebSocket: TunnelWebSocket,
+      EventSource: TunnelEventSource,
+      Image: tunnelImage,
+      Worker: tunnelWorker,
+      import: tunnelImport,
+      sendBeacon: tunnelSendBeacon,
+      setAttr,
+      setAttrNS,
+      setUrlProp,
+      setStyle,
+      getStyle,
+      setStyleAttr,
+      setStyleText,
+      setInnerHTML,
+      insertAdjacentHTML: insertAdjacentHTMLT,
+      rewriteCssText,
+      resolveToBlobUrl,
+      processDataHatchAttrs,
+      rewriteHtmlString,
+      _resolveUrlString: (v) => v,
+      _resolveCssValue: (v) => v,
+      _resolveCssText: (v) => v,
+      _resolveStyleProp: (v) => v,
+      _importMeta: {
+        get url() {
+          return importMetaUrl(SELF_HREF, SELF_BASE_DIR);
+        }
+      },
+      _state: {
+        get port() {
+          return port;
+        },
+        get inFlight() {
+          return pending.size;
+        },
+        get blobCacheSize() {
+          return blobCache.size;
+        },
+        get blobStats() {
+          return { ...blobStats };
+        }
+      }
+    };
+    globalThis.__tunnel = tunnel;
+    window.__tunnel = tunnel;
+    try {
+      globalThis.fetch = tunnelFetch;
+      window.fetch = tunnelFetch;
+      globalThis.XMLHttpRequest = TunnelXHR;
+      window.XMLHttpRequest = TunnelXHR;
+      globalThis.WebSocket = TunnelWebSocket;
+      window.WebSocket = TunnelWebSocket;
+      globalThis.EventSource = TunnelEventSource;
+      window.EventSource = TunnelEventSource;
+      const nav = globalThis.navigator;
+      if (nav && typeof nav.sendBeacon === "function") {
+        nav.sendBeacon = (url, data) => tunnelSendBeacon(url, data);
+      }
+      const NativeURL = globalThis.URL;
+      const TunnelURL = function(url, base) {
+        return resolveTunnelUrl(url, base, SELF_HREF, NativeURL);
+      };
+      TunnelURL.prototype = NativeURL.prototype;
+      for (const k of Object.getOwnPropertyNames(NativeURL)) {
+        if (k === "prototype" || k === "length" || k === "name")
+          continue;
+        try {
+          TunnelURL[k] = NativeURL[k];
+        } catch {}
+      }
+      globalThis.URL = TunnelURL;
+      window.URL = TunnelURL;
+    } catch {}
+    try {
+      const hist = globalThis.history;
+      if (hist && typeof hist.pushState === "function" && typeof hist.replaceState === "function") {
+        const nativePushState = hist.pushState.bind(hist);
+        const nativeReplaceState = hist.replaceState.bind(hist);
+        hist.pushState = function(state, title, url) {
+          warnHistoryUrlDropped("pushState", url);
+          return nativePushState(state, title ?? "");
+        };
+        hist.replaceState = function(state, title, url) {
+          warnHistoryUrlDropped("replaceState", url);
+          return nativeReplaceState(state, title ?? "");
+        };
+      }
+    } catch {}
+    try {
+      const nativeCreateObjectURL = URL.createObjectURL.bind(URL);
+      const nativeRevokeObjectURL = URL.revokeObjectURL.bind(URL);
+      URL.createObjectURL = function(obj) {
+        const created = nativeCreateObjectURL(obj);
+        try {
+          objectUrls.add(created);
+        } catch {}
+        return created;
+      };
+      URL.revokeObjectURL = function(objectUrl) {
+        try {
+          objectUrls.delete(objectUrl);
+        } catch {}
+        nativeRevokeObjectURL(objectUrl);
+      };
+    } catch {}
+    const announceEpoch = Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+    let announceTimer = null;
+    function announce() {
+      try {
+        window.parent.postMessage({ type: "bundle:ready", epoch: announceEpoch }, "*");
+      } catch {}
+    }
+    function startAnnouncing() {
+      announce();
+      announceTimer = setInterval(() => {
+        if (port != null) {
+          if (announceTimer != null)
+            clearInterval(announceTimer);
+          announceTimer = null;
+          return;
+        }
+        announce();
+      }, 120);
+    }
+    function onParentMessage(ev) {
+      const data = ev.data;
+      if (!data || typeof data !== "object")
+        return;
+      if (data.type === "bundle:init-port" && ev.ports && ev.ports[0]) {
+        if (port != null)
+          return;
+        if (announceTimer != null) {
+          clearInterval(announceTimer);
+          announceTimer = null;
+        }
+        port = ev.ports[0];
+        port.onmessage = (pe) => {
+          const msg = pe.data;
+          if (!msg || typeof msg !== "object")
+            return;
+          if (msg.type === "http.res") {
+            const ent = pending.get(msg.id);
+            if (ent) {
+              pending.delete(msg.id);
+              ent.resolve(msg);
+            }
+          } else if (msg.type === "ws.opened" || msg.type === "ws.message" || msg.type === "ws.closed" || msg.type === "ws.error") {
+            openWs.get(msg.id)?._handle(msg);
+          }
+        };
+        port.start?.();
+        portReadyResolve?.(port);
+        installCssObserver();
+        rewriteAuthoredHtml();
+        try {
+          window.parent.postMessage({ type: "bundle:port-attached" }, "*");
+        } catch {}
+      }
+    }
+    window.addEventListener("message", onParentMessage);
+    installDownloadLinks(tunnelFetch, isExternalUrl2, __BLOB_REVOKE_DELAY_MS);
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      startAnnouncing();
+    } else {
+      document.addEventListener("DOMContentLoaded", startAnnouncing);
+    }
+  })();
+})();
+
+;
+const filters = document.querySelectorAll('.filter');
+const findings = document.querySelectorAll('.finding');
+filters.forEach(button => {
+  button.addEventListener('click', () => {
+    const value = button.dataset.filter;
+    filters.forEach(item => item.classList.toggle('active', item === button));
+    findings.forEach(card => {
+      const statuses = card.dataset.status.split(' ');
+      card.hidden = value !== 'all' && !statuses.includes(value);
+    });
+    const visible = [...findings].filter(card => !card.hidden).length;
+    __tunnel.setAttr(document.getElementById('findingMatrix'), 'aria-label', `${visible} findings shown`);
+  });
+});</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+Beat: schedule
+Angle: Change check on Friday's 'A wide-open week ahead' unit: read Google Calendar for Sun Sep 13 through Sat Sep 19 and report only what changed — new, moved, or deleted events. Nolan teaches 7:00 AM–4:30 PM weekdays and networks weekday evenings and weekends, so close with the still-open evening and weekend windows worth protecting for business.
+
+## Finding 1
+No change on the calendar since Friday's 'A wide-open week ahead' unit. A direct read of Nolan's primary Google Calendar (nolangesk@gmail.com) for Sun Sep 13 00:00 through Sat Sep 19 23:59 MDT returned zero events: no new events were added, none moved, none deleted, none cancelled. The week is still completely open. Because Nolan teaches 7:00 AM to 4:30 PM Monday through Friday and reserves weekday evenings and weekends for business networking, the windows worth protecting for PING Social outreach work are: Mon Sep 14 through Fri Sep 18 evenings from about 4:30 PM onward, all day Sat Sep 19, and all day Sun Sep 13. Nothing on the calendar competes with any of them. The calendar read succeeded against the connected account; the empty result is a confirmed empty week, not a failed read.

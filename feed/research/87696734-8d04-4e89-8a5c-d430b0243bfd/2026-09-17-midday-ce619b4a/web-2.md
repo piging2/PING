@@ -1,0 +1,15 @@
+Beat: web
+Angle: Round up business networking events in Grand Junction and Mesa County from Sept 18-30 that fit weekday evenings or weekends: mixers, chamber events, trade meetups. Nolan networks weekday evenings and weekends during the school year for PING Social's Western Colorado market. The paper already took the Spark Summit agenda and registration from thebusinesstimes.com/spark-summit-returns-to-gj-in-september, so file only other events.
+
+## Finding 1
+Grand Valley BizMix, hosted by Hilltop Community Resources, is the month's cross-valley evening mixer and the best networking fit in the Sept 18-30 window. The chamber page titles the event 'September 2026' and does not state a day; an AllEvents listing for the chamber's events dates this BizMix to Tuesday, September 22 at 5:30 pm, so that day and time should be confirmed at registration. It is a partnership of the Grand Junction Area Chamber, the Palisade Chamber, the Western Colorado Latino Chamber of Commerce, the Fruita Area Chamber, and the Young Professionals Network of Mesa County. Registration for members of all partner organizations is $10; annual pass holders must RSVP for a pre-printed name tag by calling 970-242-3214 or emailing info@gjchamber.org. This is a MEMBERS ONLY event for members of the partner organizations and their guests 21 years of age and older. The filing image is the chamber's BizMix 2026 promotional graphic as served on the event page.
+- https://business.gjchamber.org/member-calendar/Details/grand-valley-bizmix-hilltop-community-resources-september-2026-1908377?sourceTypeId=Website (undated)
+- https://allevents.in/grand-junction/networking-noon/200030596729253 (undated)
+
+## Finding 2
+Just past the Sept 18-30 window, the next evening mixer on the Grand Junction Area Chamber calendar is Business After Hours at OakStar Bank on Tuesday, October 27, 2026, from 5:30 PM to 7:00 PM MDT, at OakStar Bank, 1351 Riverfront Loop, Grand Junction, CO 81501-3825. Registration is $10 pre-registered or $12 at the door for Grand Junction Area Chamber members; annual pass holders must RSVP for a pre-printed name tag by calling 970-242-3214 or emailing info@gjchamber.org. It is a members-only event for chamber members and their guests 21 years of age and older. Filed so the paper can point Nolan at the following month's evening option now that September's Business After Hours appears to have been folded into the BizMix.
+- https://business.gjchamber.org/member-calendar/Details/business-after-hours-oakstar-bank-1704803?sourceTypeId=Website (undated)
+
+## Finding 3
+Not a business mixer, but a free weekend option on the chamber calendar inside the window: Oktoberfest at Cross Orchards, Saturday, September 19, from 1:00 PM to 6:00 PM, hosted with Ramblebine Brewing Company at the chamber's historic Cross Orchards site. The calendar describes it as free festivities; Alpine is the title sponsor. It is a community event rather than structured networking, filed here only as a Saturday daytime venue where local business people will be present.
+- https://business.gjchamber.org/events (undated)

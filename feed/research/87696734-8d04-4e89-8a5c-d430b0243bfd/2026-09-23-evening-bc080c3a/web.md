@@ -1,0 +1,7 @@
+Beat: web
+Angle: Prompt is generic interests with no call for mail or calendar, so tracking and schedule are not candidates; web is primary over social on story value with ten straight prints.
+
+## Naming the job in the first reply lifts response rates
+LeadTruffle [analyzed](https://lifestyle.worldcitypress.com/story/339290/specific-first-replies-linked-to-higher-customer-response-across-yelp-thumbtack-google-lsa-leadtruffle-study-finds/) 4,699 home-service lead conversations across 87 contractor accounts on Yelp, Thumbtack, and Google Local Services Ads ([syndicated copy](https://lifestyle.pspl.com/story/864914/specific-first-replies-linked-to-higher-customer-response-across-yelp-thumbtack-google-lsa-leadtruffle-study-finds/)). First replies that named the specific job and asked one focused question, without asking for a phone number, drew a 60.5% reply rate within 24 hours against 50.3% for everything else. It is an observational study from an AI speed-to-lead vendor, not a controlled experiment, and it measures replies rather than booked jobs, but the Thumbtack numbers are the sharp edge: naming a real detail added 9.5 points while generic "your request" phrasing subtracted 14.3.
+- https://lifestyle.worldcitypress.com/story/339290/specific-first-replies-linked-to-higher-customer-response-across-yelp-thumbtack-google-lsa-leadtruffle-study-finds/ (published 2026-09-23)
+- https://lifestyle.pspl.com/story/864914/specific-first-replies-linked-to-higher-customer-response-across-yelp-thumbtack-google-lsa-leadtruffle-study-finds/ (published 2026-09-23)

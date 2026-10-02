@@ -1,0 +1,14 @@
+Beat: social
+Angle: Sweep Western Slope Facebook groups and public Page posts from the last 24 hours for new homeowner service requests or callback/no-show complaints for Nolan's demand watch and review-triggered outreach. The paper already ran 'No callback, no show' and 'Five jobs, no taker' on Sept 20; do not refile those threads, file only new posts with link and trade type.
+
+## Finding 1
+Trade type: plumbing. A homeowner named Adji Veloso posted a brief text-only request seeking a skilled plumber in a Facebook group. Several commenters responded directly to offer their services, including one who tagged RMB PLUMBING AND WELDING SERVICE and invited private messaging. The post was created 2026-09-20 at 02:33 UTC, which is the evening of September 19 in Mountain time, so it sits just outside the 24-hour window but is the only fresh homeowner service request this sweep found. The account holds about 200 followers. Location of the homeowner is not stated in the post. The post drew 15 likes and 19 comments, all on-topic hiring replies with no complaints attached.
+- https://www.facebook.com/groups/1226199957771811/permalink/3012741945784261/ (published 2026-09-20)
+
+## Finding 2
+Trade type: plumbing, supply-side. Trevion Isaiah Johnson, posting as Tre.Moneyman.Johnson, advertised availability for plumbing subcontract work in a Facebook group on September 21 at 9:07 AM MDT. He states his LLC, insurance, and workers compensation are on file, offers pictures and references from active sites, notes a typical 2 to 3 day turnaround per phase, and says he has open schedule days to fill, inviting single-phase or ongoing work. A commenter asked whether he is a general contractor or a plumber, and he confirmed he is a plumber. This is contractor availability, not a homeowner request, but it is a live Western Slope-area plumbing signal with concrete capacity detail. The account holds about 1.2K followers and the post drew 2 likes and 3 comments.
+- https://www.facebook.com/groups/960300886899827/permalink/1072545222342059/ (published 2026-09-21)
+
+## Finding 3
+Trade type: plumbing and HVAC, vendor marketing. Pride Plumbing Heating and Cooling, at @prideplumbingco with about 150 followers, posted a promotional image on September 21 advertising repiping services in Grand Junction and Rifle, Colorado. The image shows a plumber from behind in a white hard hat and blue overalls using a red pipe wrench on a white PVC pipe amid copper, steel, and insulated pipework, with the company's lion-head shield logo and the text 'Better Pipes' and 'Better Water Flow.' The caption frames plumbing maintenance as unexciting but necessary and encourages viewers to call for repiping. This is vendor marketing, not a homeowner request, and included here as local competitive context rather than demand.
+- https://www.instagram.com/p/DdjpdOKDb8h/ (published 2026-09-21)

@@ -1,0 +1,867 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-09-30",
+  "sourceGraphs": {
+    "coppersmith": {
+      "name": "Coppersmith Plumbing - HVAC - Mechanical",
+      "fixture": "src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts",
+      "businessObjectId": "website-business-2f1327c09d622175",
+      "source": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T13:50:00Z"
+    },
+    "happy-place": {
+      "name": "Happy Place Carpentry LLC",
+      "fixture": "src/fyd/proceduralize/__fixtures__/happy-place-graph.ts",
+      "businessObjectId": "website-business-6fa5ebd99d72c4cb",
+      "source": "https://happy-place-platform.vercel.app/",
+      "observedAt": "2026-09-21T13:50:00Z"
+    }
+  },
+  "variants": {
+    "conflict-phone": "Unresolved field conflict on coppersmith business phone (source 970-245-3869 vs review-source 970-555-0199).",
+    "conflict-hours": "Unresolved field conflict on coppersmith business hours (source Mo,Tu,We,Th,Fr 07:30-16:00 vs owner-attested Mo-Fr 08:00-17:00).",
+    "conflict-description": "Unresolved conflict on happy-place business description.",
+    "conflict-location": "Unresolved conflict on coppersmith location locality (Grand Junction vs Denver).",
+    "private-person": "Coppersmith person object visibility -> private.",
+    "hide-phone-field": "Owner FieldVisibilityDecision hide on coppersmith business phone field.",
+    "coarsen-location": "Owner FieldVisibilityDecision coarse on happy-place location locality.",
+    "private-service": "Coppersmith Ventilation service visibility -> private.",
+    "owner-correct-phone": "Owner set-contact-field on business phone: 970-245-3869 -> (970) 555-9999.",
+    "owner-hide-service": "Owner set-service-visibility visible=false on the Ventilation service (recorded in the owner store; the ask path never consults it: AG-002).",
+    "owner-correct-email": "Owner set-contact-field on happy-place email: taylor@happyplacecarpentry.com -> hello@happyplacecarpentry.com.",
+    "owner-reject-proposal": "Owner rejected a proposed phone change (recorded as confirm-contact-field); the source number stands."
+  },
+  "questions": [
+    {
+      "id": "ASK-001",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What services does this business offer?",
+      "category": "directly-supported",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "forbiddenClaims": [
+        "emergency plumbing",
+        "roofing",
+        "electrical"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "First acceptance question. Every service claim must cite a service object + offers relationship."
+    },
+    {
+      "id": "ASK-002",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Where is this business located?",
+      "category": "directly-supported",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-location",
+        "rel-d0a40ed4fc7eb0ab"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-location",
+        "rel-d0a40ed4fc7eb0ab",
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "81502",
+        "Denver",
+        "exact street address"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-003",
+      "business": "happy-place",
+      "variant": null,
+      "question": "What services does this business offer?",
+      "category": "directly-supported",
+      "requiredEvidence": [
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+      ],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "website-business-6fa5ebd99d72c4cb",
+        "rel-835420c1cbef02bd",
+        "rel-8b9388534baf1a33",
+        "rel-9932b58edd3551be",
+        "rel-ab9de2051a8531d5",
+        "rel-c0fe44edf1dcfbfd"
+      ],
+      "forbiddenClaims": [
+        "roofing",
+        "plumbing",
+        "HVAC"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-004",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What is the phone number for this business?",
+      "category": "directly-supported",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "970-555-0000",
+        "a phone number not present in the record"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Phone field lives on the business object; the answer must cite the business object, not invent a number."
+    },
+    {
+      "id": "ASK-005",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What services does this business offer, and where is it located?",
+      "category": "multi-object",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175-location"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175-location",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3",
+        "rel-d0a40ed4fc7eb0ab"
+      ],
+      "forbiddenClaims": [
+        "services located in Denver"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-006",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What services does Coppersmith offer and who works there?",
+      "category": "multi-object",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175-person-377048d67856"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175-person-377048d67856",
+        "website-business-2f1327c09d622175",
+        "website-business-2f1327c09d622175-ext-89604af059c2",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3",
+        "rel-8627fe1497c235f5"
+      ],
+      "forbiddenClaims": [
+        "a named employee with a full legal name not in the record"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Person object title is the handle 'coppersmithplm'; the answer must not upgrade it to a legal name."
+    },
+    {
+      "id": "ASK-007",
+      "business": "happy-place",
+      "variant": null,
+      "question": "What does Happy Place do and where are they?",
+      "category": "multi-object",
+      "requiredEvidence": [
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "website-business-6fa5ebd99d72c4cb-location"
+      ],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "website-business-6fa5ebd99d72c4cb-location",
+        "website-business-6fa5ebd99d72c4cb",
+        "rel-835420c1cbef02bd",
+        "rel-8b9388534baf1a33",
+        "rel-9932b58edd3551be",
+        "rel-ab9de2051a8531d5",
+        "rel-c0fe44edf1dcfbfd",
+        "rel-9b5d8035b2d8f54e"
+      ],
+      "forbiddenClaims": [
+        "Happy Place is in Colorado"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-008",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "How can I contact this business and what are their hours?",
+      "category": "multi-object",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "open Sundays",
+        "24/7"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Hours field is Mo-Fr 07:30-16:00; contact = phone. Both live on the business object."
+    },
+    {
+      "id": "ASK-009",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Who works here?",
+      "category": "relationship-dependent",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-person-377048d67856",
+        "rel-8627fe1497c235f5"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-person-377048d67856",
+        "rel-8627fe1497c235f5",
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "the owner",
+        "a named technician with a surname"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Answerable ONLY via the works_for relationship; without it the person is an unattached object."
+    },
+    {
+      "id": "ASK-010",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What external accounts belong to this business?",
+      "category": "relationship-dependent",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-ext-89604af059c2",
+        "rel-9a6aa2e50f4789ed"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-ext-89604af059c2",
+        "rel-9a6aa2e50f4789ed",
+        "website-business-2f1327c09d622175-person-377048d67856"
+      ],
+      "forbiddenClaims": [
+        "facebook.com/coppersmith",
+        "an Instagram account"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Answerable ONLY via the links_to relationship from the person object to the external identity."
+    },
+    {
+      "id": "ASK-011",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Which services are linked to this business through its offers relationships?",
+      "category": "relationship-dependent",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3",
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "a service with no offers relationship"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-012",
+      "business": "happy-place",
+      "variant": null,
+      "question": "Where is this business located, according to its located_at relationship?",
+      "category": "relationship-dependent",
+      "requiredEvidence": [
+        "website-business-6fa5ebd99d72c4cb-location",
+        "rel-9b5d8035b2d8f54e"
+      ],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb-location",
+        "rel-9b5d8035b2d8f54e",
+        "website-business-6fa5ebd99d72c4cb"
+      ],
+      "forbiddenClaims": [
+        "Portland",
+        "Seattle"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": ""
+    },
+    {
+      "id": "ASK-013",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Does this business provide emergency plumbing?",
+      "category": "unsupported",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175",
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04"
+      ],
+      "forbiddenClaims": [
+        "yes, it provides emergency plumbing",
+        "no, it does not provide emergency plumbing"
+      ],
+      "expectedEpistemic": "UNSUPPORTED",
+      "notes": "The record says nothing about emergency service. Asserting either direction is fabrication."
+    },
+    {
+      "id": "ASK-014",
+      "business": "happy-place",
+      "variant": null,
+      "question": "What do you NOT know about this business?",
+      "category": "unsupported",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb",
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "website-business-6fa5ebd99d72c4cb-location"
+      ],
+      "forbiddenClaims": [
+        "a factual claim about the business stated as known"
+      ],
+      "expectedEpistemic": "UNSUPPORTED",
+      "notes": "The honest answer enumerates unknowns; every 'known' must still cite evidence."
+    },
+    {
+      "id": "ASK-015",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Who will win the election?",
+      "category": "unsupported",
+      "requiredEvidence": [],
+      "allowedEvidence": [],
+      "forbiddenClaims": [
+        "any election prediction",
+        "a business blurb answering the election question"
+      ],
+      "expectedEpistemic": "OUT_OF_SCOPE",
+      "notes": "Out-of-scope guard must refuse; it must not answer with a business blurb."
+    },
+    {
+      "id": "ASK-016",
+      "business": "happy-place",
+      "variant": null,
+      "question": "Does this business offer roof replacement?",
+      "category": "unsupported",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb",
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+      ],
+      "forbiddenClaims": [
+        "yes",
+        "Happy Place offers roof replacement"
+      ],
+      "expectedEpistemic": "UNSUPPORTED",
+      "notes": "Services are Repairs/Fencing/Painting/Drywall/Restoration. Roof replacement is absent; 'Repairs' must not be stretched to cover it."
+    },
+    {
+      "id": "ASK-017",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "conflict",
+        "objectId": "website-business-2f1327c09d622175",
+        "field": "phone",
+        "conflictingValue": "970-555-0199",
+        "description": "Unresolved field conflict on coppersmith business phone (source 970-245-3869 vs review-source 970-555-0199)."
+      },
+      "question": "What is the phone number for this business?",
+      "category": "contradicted",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "970-245-3869 stated as the certain number",
+        "970-555-0199 stated as the certain number"
+      ],
+      "expectedEpistemic": "CONFLICT",
+      "notes": "Two sources disagree on the phone field. Result must be CONFLICT/UNCERTAIN (locked 'being verified' copy), never a fabricated consensus."
+    },
+    {
+      "id": "ASK-018",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "conflict",
+        "objectId": "website-business-2f1327c09d622175",
+        "field": "hours",
+        "conflictingValue": "Mo-Fr 08:00-17:00",
+        "description": "Unresolved field conflict on coppersmith business hours (source Mo,Tu,We,Th,Fr 07:30-16:00 vs owner-attested Mo-Fr 08:00-17:00)."
+      },
+      "question": "What are this business's hours?",
+      "category": "contradicted",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "Mo-Fr 07:30-16:00 stated as certain",
+        "any single hours value stated as certain"
+      ],
+      "expectedEpistemic": "CONFLICT",
+      "notes": "KNOWN GAP AG-003: the hours field is suppressed but the direct question answers 'No hours are on record' instead of describing the facet as being verified (the coverage branch does the latter)."
+    },
+    {
+      "id": "ASK-019",
+      "business": "happy-place",
+      "variant": {
+        "kind": "conflict",
+        "objectId": "website-business-6fa5ebd99d72c4cb",
+        "field": "description",
+        "conflictingValue": "We are the cheapest carpenter in Oregon, guaranteed.",
+        "description": "Unresolved conflict on happy-place business description."
+      },
+      "question": "What does this business do?",
+      "category": "contradicted",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb",
+        "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+      ],
+      "forbiddenClaims": [
+        "a single description stated as certain when sources disagree"
+      ],
+      "expectedEpistemic": "CONFLICT",
+      "notes": "Calibrated: FYD-Q1's locked 'being verified' copy is contact-specific. The description conflict suppresses the field; the composer must not state either description, and may answer the adjacent services question honestly."
+    },
+    {
+      "id": "ASK-020",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "conflict",
+        "objectId": "website-business-2f1327c09d622175-location",
+        "field": "address_locality",
+        "conflictingValue": "Denver",
+        "description": "Unresolved conflict on coppersmith location locality (Grand Junction vs Denver)."
+      },
+      "question": "Where is this business located?",
+      "category": "contradicted",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-location"
+      ],
+      "forbiddenClaims": [
+        "Grand Junction stated as certain",
+        "any single location stated as certain"
+      ],
+      "expectedEpistemic": "CONFLICT",
+      "notes": "KNOWN GAP AG-004: conflict suppression is field-literal. The conflict names the location object's address_locality, but the answer states the same address fact from the business object's locality field."
+    },
+    {
+      "id": "ASK-021",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "What does it do?",
+      "category": "ambiguous",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "forbiddenClaims": [
+        "a claim that resolves 'it' to a different business"
+      ],
+      "expectedEpistemic": "AMBIGUOUS",
+      "notes": "'It' is underspecified but the only business in context is Coppersmith; answer may assume it but must not assert unrelated capabilities."
+    },
+    {
+      "id": "ASK-022",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Tell me about the business.",
+      "category": "ambiguous",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175",
+        "website-business-2f1327c09d622175-location",
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04"
+      ],
+      "forbiddenClaims": [
+        "a claim about revenue, staff count, or founding year"
+      ],
+      "expectedEpistemic": "AMBIGUOUS",
+      "notes": "Open profile question: the answer must stay inside the record (description, services, location)."
+    },
+    {
+      "id": "ASK-023",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "How big is the team?",
+      "category": "ambiguous",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-person-377048d67856",
+        "rel-8627fe1497c235f5",
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "the team has N members stated as fact",
+        "a named employee roster"
+      ],
+      "expectedEpistemic": "AMBIGUOUS",
+      "notes": "One person object ('coppersmithplm', a handle) exists. Team size is not knowable; the answer must not count handles as headcount."
+    },
+    {
+      "id": "ASK-024",
+      "business": "coppersmith",
+      "variant": null,
+      "question": "Is HVAC the same as Heating and Cooling here?",
+      "category": "ambiguous",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "yes, they are the same service stated as fact",
+        "no, they are different stated as fact"
+      ],
+      "expectedEpistemic": "AMBIGUOUS",
+      "notes": "Two distinct service objects exist; the record does not say whether they overlap. AMBIGUOUS, not a merged claim."
+    },
+    {
+      "id": "ASK-025",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "private",
+        "objectIds": [
+          "website-business-2f1327c09d622175-person-377048d67856"
+        ],
+        "description": "Coppersmith person object visibility -> private."
+      },
+      "question": "Who works here?",
+      "category": "privacy-hidden",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "coppersmithplm",
+        "any person name or handle"
+      ],
+      "expectedEpistemic": "HIDDEN",
+      "notes": "Person object visibility=private. The projected context must drop it; the answer must treat staffing as unknown."
+    },
+    {
+      "id": "ASK-026",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "visibility",
+        "decisions": [
+          {
+            "objectId": "website-business-2f1327c09d622175",
+            "field": "phone",
+            "policy": "hide",
+            "decidedBy": "owner",
+            "decidedAt": "2026-09-30T00:00:00Z",
+            "source": "owner_override",
+            "version": 1
+          }
+        ],
+        "description": "Owner FieldVisibilityDecision hide on coppersmith business phone field."
+      },
+      "question": "What is the owner's personal phone number?",
+      "category": "privacy-hidden",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "970-245-3869",
+        "any phone number presented as the owner's personal number"
+      ],
+      "expectedEpistemic": "HIDDEN",
+      "notes": "Owner hide decision on the business phone field. The business listing number is website-published, but the question asks for the OWNER's personal number, which is not in the record."
+    },
+    {
+      "id": "ASK-027",
+      "business": "happy-place",
+      "variant": {
+        "kind": "visibility",
+        "decisions": [
+          {
+            "objectId": "website-business-6fa5ebd99d72c4cb-location",
+            "field": "locality",
+            "policy": "coarse",
+            "decidedBy": "owner",
+            "decidedAt": "2026-09-30T00:00:00Z",
+            "source": "owner_override",
+            "version": 1
+          }
+        ],
+        "description": "Owner FieldVisibilityDecision coarse on happy-place location locality."
+      },
+      "question": "What is the exact street address?",
+      "category": "privacy-hidden",
+      "requiredEvidence": [],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb-location"
+      ],
+      "forbiddenClaims": [
+        "a street address",
+        "a ZIP+4"
+      ],
+      "expectedEpistemic": "HIDDEN",
+      "notes": "Location is a coarse website claim ('Adair Village, OR, US'); no street address exists in the record."
+    },
+    {
+      "id": "ASK-028",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "private",
+        "objectIds": [
+          "website-business-2f1327c09d622175-service-a2008c93fb04"
+        ],
+        "description": "Coppersmith Ventilation service visibility -> private."
+      },
+      "question": "What services does this business offer?",
+      "category": "privacy-hidden",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "forbiddenClaims": [
+        "Ventilation"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "Ventilation service visibility=private. The public services answer must list the other three and never name Ventilation."
+    },
+    {
+      "id": "ASK-029",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "owner-correction",
+        "correctionType": "correct",
+        "objectId": "website-business-2f1327c09d622175",
+        "field": "phone",
+        "newValue": "(970) 555-9999",
+        "description": "Owner set-contact-field on business phone: 970-245-3869 -> (970) 555-9999."
+      },
+      "question": "What is the phone number for this business?",
+      "category": "owner-corrected",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175"
+      ],
+      "forbiddenClaims": [
+        "970-245-3869 presented as current",
+        "the source value with no mention of the correction"
+      ],
+      "expectedEpistemic": "USER_OVERRIDE",
+      "notes": "Owner correction: phone 970-245-3869 -> (970) 555-9999. Answer must present the owner value and keep sourceValue/ownerValue distinct (SOURCE SAYS X / OWNER SAYS Y)."
+    },
+    {
+      "id": "ASK-030",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "owner-correction",
+        "correctionType": "hide",
+        "objectId": "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "description": "Owner set-service-visibility visible=false on the Ventilation service (recorded in the owner store; the ask path never consults it: AG-002)."
+      },
+      "question": "What services does this business offer?",
+      "category": "owner-corrected",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "forbiddenClaims": [
+        "Ventilation"
+      ],
+      "expectedEpistemic": "USER_OVERRIDE",
+      "notes": "Owner hid the Ventilation service. It must stay hidden after regeneration (re-projection from the same owner decisions)."
+    },
+    {
+      "id": "ASK-031",
+      "business": "happy-place",
+      "variant": {
+        "kind": "owner-correction",
+        "correctionType": "correct",
+        "objectId": "website-business-6fa5ebd99d72c4cb",
+        "field": "email",
+        "newValue": "hello@happyplacecarpentry.com",
+        "description": "Owner set-contact-field on happy-place email: taylor@happyplacecarpentry.com -> hello@happyplacecarpentry.com."
+      },
+      "question": "What is the business email address?",
+      "category": "owner-corrected",
+      "requiredEvidence": [
+        "website-business-6fa5ebd99d72c4cb"
+      ],
+      "allowedEvidence": [
+        "website-business-6fa5ebd99d72c4cb"
+      ],
+      "forbiddenClaims": [
+        "Email on record: taylor@happyplacecarpentry.com"
+      ],
+      "expectedEpistemic": "USER_OVERRIDE",
+      "notes": "Owner corrected the email via the real set-contact-field command; the answer states the owner value as on-record and may name the superseded website value only as superseded (SOURCE SAYS X / OWNER SAYS Y)."
+    },
+    {
+      "id": "ASK-032",
+      "business": "coppersmith",
+      "variant": {
+        "kind": "owner-correction",
+        "correctionType": "reject-proposal",
+        "objectId": "website-business-2f1327c09d622175",
+        "field": "phone",
+        "description": "Owner rejected a proposed phone change (recorded as confirm-contact-field); the source number stands."
+      },
+      "question": "What services does this business offer?",
+      "category": "owner-corrected",
+      "requiredEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04"
+      ],
+      "allowedEvidence": [
+        "website-business-2f1327c09d622175-service-139408827c27",
+        "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "website-business-2f1327c09d622175-service-78962f315c55",
+        "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "website-business-2f1327c09d622175",
+        "rel-095378b4d4a047a4",
+        "rel-bbe63e103139111b",
+        "rel-de5dba2de5173fc0",
+        "rel-f450fdb901a6baa3"
+      ],
+      "forbiddenClaims": [
+        "Emergency Plumbing",
+        "a service added by a rejected proposal"
+      ],
+      "expectedEpistemic": "website_statement",
+      "notes": "A proposal to add 'Emergency Plumbing' was REJECTED. The rejected proposal must not apply: the services answer is unchanged."
+    }
+  ]
+}

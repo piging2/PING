@@ -1,0 +1,11 @@
+Beat: schedule
+Angle: Read Google Calendar for Thu Sep 17 through Sun Sep 20 plus Wed Sep 23, flagging conflicts with school hours (7:00 AM to 4:30 PM) and evening/weekend networking availability; the paper already noted Spark Summit and the Monument View conversation are not on the calendar, so report only what is now booked or still missing.
+
+## Finding 1
+Every target day is completely empty on the calendar. A Google Calendar read on the evening of Wednesday, September 16 found zero events on Thursday September 17, Friday September 18, Saturday September 19, Sunday September 20, and Wednesday September 23, checked across every visible calendar and confirmed with direct event reads of the account's primary calendar for both windows. That means no bookings conflict with school hours (7:00 AM to 4:30 PM) on the three weekdays, and every evening slot plus the entire September 19-20 weekend is open for networking. The facts come from the Google Calendar agenda and event-list reads described here, which stated no URLs.
+
+## Finding 2
+Spark Summit and the Monument View coffee shop conversation are still not on the calendar. The same 8-day agenda sweep that returned the calendar's full upcoming contents, September 16 through September 24, shows neither event booked on any day, so both remain missing as the paper previously noted. The facts come from the Google Calendar agenda read on the evening of Wednesday, September 16, which stated no URLs.
+
+## Finding 3
+The calendar's only upcoming bookings sit just outside the window, on the evenings of Tuesday September 22 and Thursday September 24. 'Networking: Grand Valley BizMix (multi-chamber mixer)' runs Tuesday September 22 from 5:30 PM to 7:30 PM MDT, and 'Networking: Business After Hours (Montrose Chamber)' runs Thursday September 24 from 5:30 PM to 7:00 PM MDT. Both are evening networking events that fall outside school hours and outside the September 17-20 and September 23 window, so they leave the target days untouched and show the calendar is actively used to track networking while those days stay open. The facts come from the Google Calendar agenda read on the evening of Wednesday, September 16, which stated no URLs; the local times were converted from the UTC times the agenda stated.

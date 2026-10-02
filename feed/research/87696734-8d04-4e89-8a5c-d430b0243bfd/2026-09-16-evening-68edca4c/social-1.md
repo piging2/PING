@@ -1,0 +1,6 @@
+Beat: social
+Angle: Sweep Facebook groups, Threads, and Instagram for Western Colorado homeowner requests for plumbers, HVAC, electricians, or handymen posted since this morning's sweeps for the PING Social pipeline; the paper already ran 'Front Range ask' and 'Still warm' today, so file only new requests with town, trade, and link.
+
+## Finding 1
+A Facebook group post by Tigg Mar, published September 15, 2026, asks on behalf of a friend for a certified professional plumber, stressing three priorities: affordability, reliability in showing up, and completing the work; the tone is casual and slightly humorous. The platform's retrieved summary does not state a town, so this request cannot be confirmed as Western Colorado from the material in hand. The account is small (49 followers) and unverified, so this is a thin source: a pipeline lead to verify, not a confirmed Western Slope opportunity. Three sweeps across Facebook groups, Threads, and Instagram covering September 14 through 16 found no new Western Colorado homeowner requests for plumbers, HVAC, electricians, or handymen dated September 16; the rest of the window was provider promos and one Front Range homeowner request in Fort Collins that the paper already covered today.
+- https://www.facebook.com/groups/4366359360313610/permalink/4681326288816914/ (published 2026-09-15)

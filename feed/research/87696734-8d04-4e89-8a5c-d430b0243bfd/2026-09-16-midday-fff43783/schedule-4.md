@@ -1,0 +1,13 @@
+Beat: schedule
+Angle: Check Google Calendar for changes since yesterday's 'wide open through Sunday' unit and map Wed Sep 16 through Wed Sep 23. Nolan teaches 7 to 4:30 weekdays and networks evenings and weekends; flag evening or weekend prep windows for the Sep 23 Spark Summit at CMU and the Monument View conversation.
+
+## Finding 1
+Nolan's calendar still reads wide open from Wed Sep 16 through Sun Sep 20, exactly as yesterday's unit reported, and a successful fresh read of Google Calendar for Sep 16 through Sep 23 shows only one event in the whole stretch: the multi-chamber networking mixer on Tue Sep 22 from 5:30 to 7:30 PM MDT at 359 Main St, Grand Junction, CO 81501, which has not been touched since it was created on Sep 10 (no calendar changes since yesterday). With weekday teaching occupying 7 AM to 4:30 PM, every evening from Wed Sep 16 through Mon Sep 21 is free and both Sat Sep 19 and Sun Sep 20 are completely clear, so there are six uninterrupted evening windows plus an entirely open weekend to prep for the Wed Sep 23 Spark Summit at CMU and the Monument View conversation; only Tue Sep 22 evening is spoken for.
+- https://business.gjchamber.org/member-calendar/Details/grand-valley-bizmix-hilltop-community-resources-september-2026-1908377 (undated)
+
+## Finding 2
+The one booked evening in the window is 'Networking: Grand Valley BizMix (multi-chamber mixer)' on Tue Sep 22, 5:30 to 7:30 PM MDT, at 359 Main St, Grand Junction, CO 81501. The calendar item's own description says it is a $10 registration event for partner-org members and members-only (GJ Area Chamber, Palisade Chamber, Western Colorado Latino Chamber, Fruita Chamber, YPN of Mesa County), meaning Nolan needs chamber membership or a guest invite to attend. The description also notes one source once listed Sep 15 but the chamber calendar now shows Sep 22, verified at the chamber calendar URL cited here, so it is worth a quick confirmation before going. The event was created Sep 10 and has not been updated since.
+- https://business.gjchamber.org/member-calendar/Details/grand-valley-bizmix-hilltop-community-resources-september-2026-1908377 (undated)
+
+## Finding 3
+Neither the Wed Sep 23 Spark Summit at CMU nor the Monument View coffee shop conversation appears anywhere on the calendar, per the successful read covering all of Wed Sep 16 through the end of Wed Sep 23. Wed Sep 23 itself is completely clear, so the Spark Summit day has no conflicts, but it is not yet scheduled as a calendar item, and the Monument View conversation has no date or time on the books at all. If either is firm, adding it now would let the open prep windows around it be used deliberately rather than left as accidental slack.

@@ -1,0 +1,1882 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Lightpanda Research</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f5f1;
+      --paper: #ffffff;
+      --paper-2: #e9ece6;
+      --ink: #131816;
+      --muted: #53605a;
+      --line: #cfd5ce;
+      --accent: #d94a20;
+      --accent-soft: #fee7df;
+      --green: #16785b;
+      --green-soft: #dcefe7;
+      --amber: #9a6200;
+      --amber-soft: #f8ebcb;
+      --code: #111815;
+      --code-ink: #e8f0eb;
+      --shadow: 0 18px 45px rgba(25, 35, 30, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101412;
+        --paper: #171c19;
+        --paper-2: #202722;
+        --ink: #f1f5f2;
+        --muted: #aab6af;
+        --line: #354039;
+        --accent: #ff7045;
+        --accent-soft: #49261c;
+        --green: #63d0aa;
+        --green-soft: #19372d;
+        --amber: #efb64a;
+        --amber-soft: #3d3016;
+        --code: #090c0b;
+        --code-ink: #e8f0eb;
+        --shadow: 0 22px 52px rgba(0, 0, 0, .24);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      line-height: 1.55;
+    }
+    a { color: inherit; }
+    button { font: inherit; }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    .hero {
+      padding: 72px 0 40px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr);
+      gap: 56px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow, .section-tag, .metric-label, .status, .tiny {
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: .72rem;
+      font-weight: 600;
+    }
+    .eyebrow { color: var(--accent); margin: 0 0 18px; }
+    h1 { font-size: clamp(2.65rem, 7vw, 6.6rem); line-height: .92; letter-spacing: -.06em; margin: 0; max-width: 820px; }
+    .hero-copy { font-size: clamp(1.08rem, 2vw, 1.32rem); color: var(--muted); max-width: 720px; margin: 26px 0 0; }
+    .decision {
+      background: var(--paper);
+      padding: 28px;
+      border-top: 5px solid var(--accent);
+      box-shadow: var(--shadow);
+    }
+    .decision .status { color: var(--accent); }
+    .decision h2 { font-size: 1.55rem; line-height: 1.15; margin: 12px 0 12px; letter-spacing: -.025em; }
+    .decision p { margin: 0; color: var(--muted); }
+    .proof-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); margin: 28px 0 0; border: 1px solid var(--line); }
+    .proof { background: var(--paper); padding: 22px; min-width: 0; }
+    .proof strong { display: block; font-size: 1.55rem; margin: 4px 0 2px; }
+    .proof span:last-child { color: var(--muted); font-size: .9rem; }
+    .caveat { color: var(--amber); }
+    section { padding: 68px 0; border-bottom: 1px solid var(--line); }
+    .section-head { display: grid; grid-template-columns: .6fr 1.4fr; gap: 30px; align-items: start; margin-bottom: 32px; }
+    .section-tag { color: var(--accent); }
+    .section-head h2 { font-size: clamp(2rem, 4vw, 3.35rem); line-height: 1.02; letter-spacing: -.045em; margin: 0; max-width: 760px; }
+    .section-head p { grid-column: 2; color: var(--muted); max-width: 760px; margin: -12px 0 0; }
+    .route-grid { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 22px; }
+    .route-controls { display: grid; gap: 8px; align-content: start; }
+    .route-btn {
+      width: 100%; text-align: left; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+      padding: 16px 18px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    }
+    .route-btn:hover, .route-btn:focus-visible { border-color: var(--accent); outline: none; }
+    .route-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+    .route-btn .num { font-family: "IBM Plex Mono", monospace; font-size: .75rem; opacity: .75; }
+    .route-panel { background: var(--paper); padding: 30px; border: 1px solid var(--line); min-height: 340px; }
+    .route-top { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+    .route-panel h3 { font-size: clamp(1.6rem, 3vw, 2.45rem); line-height: 1.05; letter-spacing: -.035em; margin: 10px 0; }
+    .route-panel > p { color: var(--muted); max-width: 760px; }
+    .lane { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 28px; }
+    .lane-step { padding: 15px; background: var(--paper-2); min-height: 120px; position: relative; }
+    .lane-step.active { background: var(--green-soft); outline: 2px solid var(--green); }
+    .lane-step.active::before { content: "route here"; position: absolute; top: 10px; right: 10px; font-family: "IBM Plex Mono", monospace; font-size: .6rem; color: var(--green); text-transform: uppercase; }
+    .lane-step strong { display: block; margin-top: 25px; }
+    .lane-step small { display: block; color: var(--muted); margin-top: 5px; }
+    .codeband { background: var(--code); color: var(--code-ink); padding: 26px 28px; margin-top: 22px; overflow-wrap: anywhere; }
+    .codeband code { font-family: "IBM Plex Mono", monospace; font-size: .84rem; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card { background: var(--paper); border: 1px solid var(--line); padding: 24px; min-width: 0; }
+    .card .status { display: inline-block; padding: 5px 8px; background: var(--paper-2); color: var(--muted); }
+    .card h3 { font-size: 1.35rem; margin: 18px 0 8px; letter-spacing: -.025em; }
+    .card p { margin: 0 0 18px; color: var(--muted); }
+    .card dl { display: grid; grid-template-columns: 88px 1fr; gap: 10px 12px; margin: 0; font-size: .88rem; }
+    .card dt { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+    .card dd { margin: 0; }
+    .card a { text-underline-offset: 3px; color: var(--accent); }
+    .reality { display: grid; grid-template-columns: 1.1fr .9fr; gap: 22px; }
+    .callout { background: var(--paper); padding: 30px; border: 1px solid var(--line); }
+    .callout h3 { font-size: 1.8rem; margin: 8px 0 12px; letter-spacing: -.035em; }
+    .callout p { color: var(--muted); }
+    .callout ul { padding-left: 20px; margin: 22px 0 0; }
+    .callout li + li { margin-top: 10px; }
+    .risk-list { display: grid; gap: 10px; }
+    .risk { display: grid; grid-template-columns: 115px 1fr; gap: 16px; background: var(--paper); padding: 16px 18px; border: 1px solid var(--line); }
+    .risk strong { font-family: "IBM Plex Mono", monospace; font-size: .75rem; color: var(--amber); text-transform: uppercase; }
+    .risk span { color: var(--muted); }
+    .pilot { display: grid; grid-template-columns: .8fr 1.2fr; gap: 24px; }
+    .pilot-main { background: var(--accent); color: white; padding: 34px; }
+    .pilot-main h3 { font-size: 2rem; line-height: 1.05; margin: 8px 0 16px; letter-spacing: -.035em; }
+    .pilot-main p { color: rgba(255,255,255,.82); }
+    .pilot-main ol { padding-left: 20px; }
+    .pilot-main li + li { margin-top: 12px; }
+    .pilot-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .pilot-metric { background: var(--paper); padding: 22px; border: 1px solid var(--line); }
+    .pilot-metric strong { display: block; font-size: 1.12rem; margin: 10px 0 5px; }
+    .pilot-metric span:last-child { color: var(--muted); font-size: .9rem; }
+    .checklist { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 24px; }
+    .check { background: var(--paper); padding: 16px 18px; display: grid; grid-template-columns: 26px 1fr; gap: 10px; }
+    .check::before { content: "✓"; color: var(--green); font-weight: 700; }
+    .sources { columns: 2; column-gap: 40px; padding-left: 20px; }
+    .sources li { break-inside: avoid; margin: 0 0 12px; color: var(--muted); }
+    .sources a { text-underline-offset: 3px; }
+    footer { padding: 28px 0 56px; color: var(--muted); font-size: .85rem; display: flex; justify-content: space-between; gap: 20px; }
+    @media (max-width: 820px) {
+      .hero, .section-head, .route-grid, .reality, .pilot { grid-template-columns: 1fr; }
+      .section-head p { grid-column: 1; margin: 0; }
+      .proof-strip { grid-template-columns: repeat(2, 1fr); }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .lane { grid-template-columns: 1fr 1fr; }
+      .route-controls { grid-template-columns: 1fr 1fr; }
+      .sources { columns: 1; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      .hero { padding-top: 44px; gap: 30px; }
+      .proof-strip, .cards, .pilot-metrics, .route-controls, .lane { grid-template-columns: 1fr; }
+      section { padding: 52px 0; }
+      .route-panel, .callout, .pilot-main { padding: 22px; }
+      .route-top { display: block; }
+      .risk { grid-template-columns: 1fr; gap: 4px; }
+      footer { display: block; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+  <style data-hatch-cvm-bundle></style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Research snapshot · 15 Sep 2026</p>
+        <h1>Use the panda as a scout, not the whole army.</h1>
+        <p class="hero-copy">Lightpanda can take high-volume, public, read-only work off the expensive Chromium queue. It should not inherit logged-in sessions, social actions, checkout, CAPTCHA handling, or visual verification.</p>
+      </div>
+      <aside class="decision" aria-label="Recommendation">
+        <span class="status">Recommendation</span>
+        <h2>Pilot one sweep behind an automatic fallback.</h2>
+        <p>Keep Chromium as the authority for high-fidelity and authenticated work. Measure how much public research Lightpanda can reliably absorb.</p>
+      </aside>
+    </header>
+
+    <div class="proof-strip" aria-label="Research highlights">
+      <div class="proof"><span class="metric-label">Status</span><strong>Beta</strong><span>Project says errors and crashes remain possible.</span></div>
+      <div class="proof"><span class="metric-label">Interface</span><strong>CDP</strong><span>Existing Puppeteer/Playwright code can target its WebSocket endpoint.</span></div>
+      <div class="proof"><span class="metric-label">Vendor claim</span><strong>9× / 16×</strong><span>Faster / less memory on the project's 100-page benchmark.</span></div>
+      <div class="proof"><span class="metric-label">License</span><strong class="caveat">AGPL-3.0</strong><span>Network use and modifications deserve legal review.</span></div>
+    </div>
+
+    <section id="router">
+      <div class="section-head">
+        <div class="section-tag">01 / routing</div>
+        <h2>Choose the cheapest browser that can tell the truth.</h2>
+        <p>Click a workload to see the recommended execution tier. The rule is fidelity first, then cost.</p>
+      </div>
+      <div class="route-grid">
+        <div class="route-controls" role="group" aria-label="Workload selector">
+          <button class="route-btn" aria-pressed="true" data-route="public"><span>Public research sweep</span><span class="num">01</span></button>
+          <button class="route-btn" aria-pressed="false" data-route="discovery"><span>Bulk link discovery</span><span class="num">02</span></button>
+          <button class="route-btn" aria-pressed="false" data-route="social"><span>Logged-in social action</span><span class="num">03</span></button>
+          <button class="route-btn" aria-pressed="false" data-route="visual"><span>Visual QA / screenshot</span><span class="num">04</span></button>
+          <button class="route-btn" aria-pressed="false" data-route="protected"><span>Bot-protected target</span><span class="num">05</span></button>
+        </div>
+        <div class="route-panel" aria-live="polite">
+          <div class="route-top"><div><span class="status" id="routeStatus">Best fit</span><h3 id="routeTitle">Lightpanda first, Chromium fallback</h3></div></div>
+          <p id="routeReason">Public pages, many URLs, no login, and text extraction are Lightpanda's strongest fit. Escalate on missing content, runtime errors, or challenge pages.</p>
+          <div class="lane" aria-label="Browser escalation ladder">
+            <div class="lane-step"><span class="tiny">Tier 0</span><strong>HTTP parser</strong><small>No JavaScript</small></div>
+            <div class="lane-step active" data-tier="lp"><span class="tiny">Tier 1</span><strong>Lightpanda</strong><small>JS-lite, text-first</small></div>
+            <div class="lane-step" data-tier="chrome"><span class="tiny">Tier 2</span><strong>Chromium</strong><small>Full fidelity + sessions</small></div>
+            <div class="lane-step" data-tier="managed"><span class="tiny">Tier 3</span><strong>Managed hard-target browser</strong><small>Anti-bot / observability</small></div>
+          </div>
+          <div class="codeband"><code id="routeCode">public + read_only + text_output → lightpanda → fallback_on(error | missing_content | challenge)</code></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div class="section-tag">02 / landscape</div>
+        <h2>Lightpanda is a middle tier, not a universal replacement.</h2>
+        <p>The strongest stack combines zero-browser crawling, a lightweight JS tier, full Chromium, and a managed option only for genuinely hard targets.</p>
+      </div>
+      <div class="cards">
+        <article class="card"><span class="status">JS-lite browser</span><h3>Lightpanda</h3><p>Purpose-built in Zig for machine-driven browsing, with V8 and partial Web APIs but no layout engine.</p><dl><dt>Best at</dt><dd>Public text extraction at high concurrency</dd><dt>Tradeoff</dt><dd>Beta stability and partial site compatibility</dd><dt>Source</dt><dd><a href="https://github.com/lightpanda-io/browser" target="_blank" rel="noopener">Official repository ↗</a></dd></dl></article>
+        <article class="card"><span class="status">No-browser crawler</span><h3>Crawlee</h3><p>Mature crawl orchestration with HTTP/DOM parsers, queues, retries, autoscaling, and browser escalation.</p><dl><dt>Best at</dt><dd>Discovery, queues, datasets, polite crawling</dd><dt>Tradeoff</dt><dd>Cheerio mode cannot execute JavaScript</dd><dt>Source</dt><dd><a href="https://github.com/api-evangelist/crawlee" target="_blank" rel="noopener">Project mirror ↗</a></dd></dl></article>
+        <article class="card"><span class="status">Full-fidelity local</span><h3>Chrome Headless Shell</h3><p>A slimmer official Chromium binary for automation that retains web-platform fidelity and real rendering.</p><dl><dt>Best at</dt><dd>Visual output and complex sites</dd><dt>Tradeoff</dt><dd>Still carries Chromium's resource cost</dd><dt>Source</dt><dd><a href="https://github.com/koenhagen/puppeteer" target="_blank" rel="noopener">Puppeteer reference ↗</a></dd></dl></article>
+        <article class="card"><span class="status">Self-hosted agent API</span><h3>Steel.dev</h3><p>Apache-licensed, agent-native browser service with session persistence and CAPTCHA tooling.</p><dl><dt>Best at</dt><dd>Persistent agent sessions under your control</dd><dt>Tradeoff</dt><dd>Still Chromium underneath</dd><dt>Source</dt><dd><a href="https://medium.com/@alexanie/which-cloud-browser-to-choose-testmu-ai-vs-steel-dev-5c00ac12aadb" target="_blank" rel="noopener">Comparison source ↗</a></dd></dl></article>
+        <article class="card"><span class="status">Managed Chrome fleet</span><h3>Browserless</h3><p>Connect over CDP to managed or self-hosted Chromium with production fleet operations handled for you.</p><dl><dt>Best at</dt><dd>Production Chrome without owning orchestration</dd><dt>Tradeoff</dt><dd>Per-session cost and Chromium footprint</dd><dt>Source</dt><dd><a href="https://medium.com/@kevinmenesesgonzalez/best-5-browser-automation-api-for-ai-agents-in-2026-38d179210293" target="_blank" rel="noopener">Roundup source ↗</a></dd></dl></article>
+        <article class="card"><span class="status">Extraction API</span><h3>Firecrawl</h3><p>Single API that returns structured Markdown/JSON and can add a browser when JavaScript is needed.</p><dl><dt>Best at</dt><dd>Low-integration content extraction</dd><dt>Tradeoff</dt><dd>Less browser control; API cost at scale</dd><dt>Source</dt><dd><a href="https://dev.to/apify/firecrawl-vs-apify-2025-guide-for-ai-and-data-teams-42e3" target="_blank" rel="noopener">Comparison source ↗</a></dd></dl></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div class="section-tag">03 / reality check</div>
+        <h2>The savings are plausible. The edge cases are where trust leaks.</h2>
+        <p>Vendor benchmarks are directional. The pilot should measure content fidelity and fallback rate before it measures speed.</p>
+      </div>
+      <div class="reality">
+        <div class="callout">
+          <span class="status">What it supports</span>
+          <h3>Enough browser to execute, not enough browser to render.</h3>
+          <p>Lightpanda exposes CDP and WebDriver BiDi, runs V8, parses HTML, supports DOM APIs, XHR/Fetch, cookies, click and form input, headers, proxies, and network interception.</p>
+          <ul>
+            <li>One-shot Markdown/HTML dumps are ideal for agent ingestion.</li>
+            <li>A CDP endpoint means existing automation can often swap targets.</li>
+            <li><code>--obey-robots</code> and per-domain throttles fit research sweeps.</li>
+          </ul>
+        </div>
+        <div class="risk-list">
+          <div class="risk"><strong>Partial APIs</strong><span>Modern SPAs, service workers, IndexedDB, canvas, and WebGL can fail or misbehave.</span></div>
+          <div class="risk"><strong>No stealth</strong><span>Challenge pages and bot protections are escalation signals, not something to work around.</span></div>
+          <div class="risk"><strong>Session risk</strong><span>Keep authenticated social and identity-sensitive work in the existing Chromium profile.</span></div>
+          <div class="risk"><strong>Telemetry</strong><span>It is on by default. Disable it for internal operations with the documented environment flag.</span></div>
+          <div class="risk"><strong>License</strong><span>AGPL-3.0 needs a one-time legal check, especially before serving a modified build over a network.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div class="section-tag">04 / pilot</div>
+        <h2>Start with one boring sweep and make the routing prove itself.</h2>
+        <p>The best first test is a scheduled public-page monitor that already creates pressure on the leased Chromium queue.</p>
+      </div>
+      <div class="pilot">
+        <div class="pilot-main">
+          <span class="status">Two-week pilot</span>
+          <h3>Public review and business-page monitoring</h3>
+          <ol>
+            <li>Pin a tested Lightpanda build. Do not float on <code>nightly</code>.</li>
+            <li>Fetch in Lightpanda first, storing URL, timestamp, status, tool version, and content digest.</li>
+            <li>Escalate failures, missing-content checks, or challenge signals to Chromium.</li>
+            <li>Spot-check extracted facts against Chromium before expanding scope.</li>
+          </ol>
+        </div>
+        <div>
+          <div class="pilot-metrics">
+            <div class="pilot-metric"><span class="metric-label">Primary gate</span><strong>Fallback rate</strong><span>Target suggested by the report: under roughly 20% before expanding.</span></div>
+            <div class="pilot-metric"><span class="metric-label">Truth gate</span><strong>Content fidelity</strong><span>Compare critical fields against Chromium samples.</span></div>
+            <div class="pilot-metric"><span class="metric-label">Leverage</span><strong>Queue relief</strong><span>How many tasks no longer wait on the leased browser?</span></div>
+            <div class="pilot-metric"><span class="metric-label">Efficiency</span><strong>Pages / CPU / RAM</strong><span>Measure on the real workload, not vendor benchmarks.</span></div>
+          </div>
+          <div class="checklist" aria-label="Pilot guardrails">
+            <div class="check">Bind CDP to loopback or an internal network only.</div>
+            <div class="check">Disable telemetry and suppress core dumps on shared hosts.</div>
+            <div class="check">Never copy cookies from the leased profile into the pool.</div>
+            <div class="check">Honor robots directives, Retry-After, site terms, and domain limits.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div class="section-tag">05 / sources</div>
+        <h2>What this recommendation rests on.</h2>
+        <p>Research was completed 15 September 2026. Performance numbers are explicitly treated as vendor claims. Pricing conflicts were omitted rather than guessed.</p>
+      </div>
+      <ol class="sources">
+        <li><a href="https://github.com/lightpanda-io/browser" target="_blank" rel="noopener">Lightpanda official repository</a> — status, features, deployment, telemetry, benchmark claims.</li>
+        <li><a href="https://lightpanda.io/blog/posts/lightpanda-raises-preseed" target="_blank" rel="noopener">Lightpanda pre-seed announcement</a> — funding and investor context.</li>
+        <li><a href="https://hub.docker.com/r/lightpanda/browser/" target="_blank" rel="noopener">Official Docker image</a> — container deployment.</li>
+        <li><a href="https://linuxiac.com/lightpanda-promises-a-faster-lightweight-alternative-to-headless-chrome/" target="_blank" rel="noopener">Linuxiac coverage</a> — beta status, AGPL, compatibility caveats.</li>
+        <li><a href="https://news.ycombinator.com/item?id=42817439" target="_blank" rel="noopener">Launch discussion</a> — founder and architecture context.</li>
+        <li><a href="https://dev.to/raknaos/handing-real-logins-to-headless-ai-agents-building-the-lightpanda-session-bridge-17je" target="_blank" rel="noopener">Community session bridge</a> — evidence of login-flow friction.</li>
+        <li><a href="https://medium.com/tech-stackups/agent-experience-for-browser-automation-platforms-browserless-vs-browserbase-vs-anchor-0a640807837a" target="_blank" rel="noopener">Managed-browser comparison</a>.</li>
+        <li><a href="https://scored.tools/downloads/best-ai-browser-automation-tools-2026.pdf" target="_blank" rel="noopener">Agent browser tools report</a> — secondary comparison source.</li>
+      </ol>
+    </section>
+  </main>
+  <footer class="shell"><span>Snapshot, not live data.</span><span>Built for operational decision-making, not browser fandom.</span></footer>
+
+  
+<script data-hatch-cvm-bundle>(() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  function __accessProp(key) {
+    return this[key];
+  }
+  var __toCommonJS = (from) => {
+    var entry = (__moduleCache ??= new WeakMap).get(from), desc;
+    if (entry)
+      return entry;
+    entry = __defProp({}, "__esModule", { value: true });
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (var key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(entry, key))
+          __defProp(entry, key, {
+            get: __accessProp.bind(from, key),
+            enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+          });
+    }
+    __moduleCache.set(from, entry);
+    return entry;
+  };
+  var __moduleCache;
+
+  // src/prelude.ts
+  var exports_prelude = {};
+
+  // src/tunnel-url.ts
+  var B64_CHUNK = 32768;
+  function computeSelfBaseDir(selfHref) {
+    if (!selfHref)
+      return "";
+    let h = selfHref;
+    const hash = h.indexOf("#");
+    if (hash >= 0)
+      h = h.slice(0, hash);
+    const q = h.indexOf("?");
+    if (q >= 0)
+      h = h.slice(0, q);
+    const slash = h.lastIndexOf("/");
+    return slash >= 0 ? h.slice(0, slash + 1) : "";
+  }
+  function isSelfOriginUrl(u, selfBaseDir, selfHref, objectUrls) {
+    if (!selfBaseDir || !u.startsWith(selfBaseDir))
+      return false;
+    if (u === selfHref)
+      return false;
+    return !objectUrls.has(u);
+  }
+  function isExternalUrl(u, selfBaseDir, selfHref, objectUrls) {
+    if (!u)
+      return false;
+    if (u.startsWith("#"))
+      return true;
+    if (isSelfOriginUrl(u, selfBaseDir, selfHref, objectUrls))
+      return false;
+    if (u.startsWith("data:") || u.startsWith("blob:"))
+      return true;
+    if (u.startsWith("about:") || u.startsWith("javascript:"))
+      return true;
+    if (u.startsWith("//"))
+      return true;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) {
+      return true;
+    }
+    return false;
+  }
+  function normalizeToRelPath(u, selfBaseDir) {
+    let s = u;
+    if (selfBaseDir && s.startsWith(selfBaseDir)) {
+      s = s.slice(selfBaseDir.length);
+    }
+    s = s.replace(/^\.\//, "");
+    s = s.replace(/^\/+/, "");
+    return s;
+  }
+  function blobInner(base, NativeURL) {
+    if (base == null)
+      return null;
+    const s = typeof base === "string" ? base : base instanceof NativeURL ? base.href : String(base);
+    return s.startsWith("blob:") ? s.slice("blob:".length) : null;
+  }
+  var OPAQUE_BLOB_ORIGIN = "https://hatch-cvm-opaque.invalid";
+  function isAbsoluteUrlString(s, NativeURL) {
+    try {
+      new NativeURL(s);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function resolveAgainstBlobBase(u, base, NativeURL) {
+    const inner = blobInner(base, NativeURL);
+    if (inner === null)
+      return null;
+    if (isAbsoluteUrlString(inner, NativeURL)) {
+      return new NativeURL("blob:" + new NativeURL(u, inner).href);
+    }
+    const slash = inner.indexOf("/");
+    const token = slash >= 0 ? inner.slice(0, slash) : inner;
+    const path = slash >= 0 ? inner.slice(slash) : "/";
+    const resolved = new NativeURL(u, OPAQUE_BLOB_ORIGIN + path);
+    return new NativeURL("blob:" + token + resolved.pathname + resolved.search + resolved.hash);
+  }
+  function resolveTunnelUrl(url, base, selfHref, NativeURL) {
+    const u = url == null ? "" : typeof url === "string" ? url : url instanceof NativeURL ? url.href : String(url);
+    const uAbsolute = /^[a-z][a-z0-9+.-]*:/i.test(u) || u.startsWith("//");
+    if (base !== undefined && base !== null && !uAbsolute) {
+      const viaBlob = resolveAgainstBlobBase(u, base, NativeURL);
+      if (viaBlob !== null)
+        return viaBlob;
+      return new NativeURL(u, base);
+    }
+    if (!uAbsolute && selfHref) {
+      const viaBlob = resolveAgainstBlobBase(u, selfHref, NativeURL);
+      if (viaBlob !== null)
+        return viaBlob;
+    }
+    return base === undefined ? new NativeURL(u) : new NativeURL(u, base);
+  }
+  function bytesToBase64(bytes) {
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    let s = "";
+    for (let i = 0;i < u8.length; i += B64_CHUNK) {
+      s += String.fromCharCode.apply(null, Array.from(u8.subarray(i, i + B64_CHUNK)));
+    }
+    return btoa(s);
+  }
+  function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0;i < bin.length; i++)
+      out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function importMetaUrl(selfHref, selfBaseDir) {
+    return selfBaseDir ? `${selfBaseDir}assets/cvm-bundle.js` : selfHref;
+  }
+
+  // src/download-links.ts
+  function installDownloadLinks(fetchAsset, isExternalUrl, revokeDelayMs) {
+    document.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const anchor = event.composedPath().find((node) => node instanceof HTMLAnchorElement);
+      if (!anchor?.hasAttribute("download"))
+        return;
+      const href = anchor.getAttribute("href");
+      if (!href || isExternalUrl(href))
+        return;
+      event.preventDefault();
+      const filename = anchor.download || resourceFilename(href);
+      (async () => {
+        const response = await fetchAsset(href);
+        if (!response.ok) {
+          throw new Error(`Artifact download failed: HTTP ${response.status}`);
+        }
+        const url = URL.createObjectURL(await response.blob());
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.hidden = true;
+        document.body.appendChild(link);
+        try {
+          link.click();
+        } finally {
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), revokeDelayMs);
+        }
+      })().catch((error) => reportError(error));
+    });
+  }
+  function resourceFilename(href) {
+    const path = new URL(href, document.baseURI).pathname;
+    const name = path.slice(path.lastIndexOf("/") + 1);
+    try {
+      return decodeURIComponent(name);
+    } catch {
+      return name;
+    }
+  }
+
+  // src/fragment-links.ts
+  function installFragmentLinks() {
+    if (!location.href.startsWith("blob:null/"))
+      return;
+    const NativeURL = URL;
+    const pushState = history.pushState.bind(history);
+    const replaceState = history.replaceState.bind(history);
+    window.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const anchor = event.composedPath().find((node) => node instanceof HTMLAnchorElement);
+      if (!anchor || anchor.hasAttribute("download"))
+        return;
+      const targetName = anchor.getAttribute("target") ?? document.querySelector("base[target]")?.getAttribute("target") ?? "";
+      if (targetName !== "" && targetName.toLowerCase() !== "_self")
+        return;
+      const href = anchor.getAttribute("href");
+      if (!href?.startsWith("#"))
+        return;
+      const oldURL = location.href;
+      const nextURL = new NativeURL(href, oldURL);
+      event.preventDefault();
+      const changed = nextURL.href !== oldURL;
+      if (changed) {
+        pushState(null, "", nextURL.href);
+      } else {
+        replaceState(null, "", nextURL.href);
+      }
+      window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+      const target = fragmentTarget(nextURL.hash);
+      if (target) {
+        target.scrollIntoView();
+        if (target !== document.documentElement && (target instanceof HTMLElement || target instanceof SVGElement)) {
+          const hadTabIndex = target.hasAttribute("tabindex");
+          if (!hadTabIndex)
+            target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
+          if (!hadTabIndex)
+            target.removeAttribute("tabindex");
+        }
+      }
+      if (changed) {
+        queueMicrotask(() => window.dispatchEvent(new HashChangeEvent("hashchange", {
+          oldURL,
+          newURL: nextURL.href
+        })));
+      }
+    });
+  }
+  function fragmentTarget(hash) {
+    const bytes = hash.slice(1).replace(/%([0-9a-f]{2})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
+    const fragment = new TextDecoder().decode(Uint8Array.from(bytes, (byte) => byte.charCodeAt(0)));
+    if (fragment === "")
+      return document.documentElement;
+    const idTarget = document.getElementById(fragment);
+    if (idTarget)
+      return idTarget;
+    const namedTarget = Array.from(document.getElementsByName(fragment)).find((node) => node instanceof HTMLAnchorElement);
+    return namedTarget ?? (fragment.toLowerCase() === "top" ? document.documentElement : null);
+  }
+
+  // src/prelude.ts
+  (function installTunnel() {
+    installFragmentLinks();
+    let port = null;
+    let portReadyResolve = null;
+    const portReady = new Promise((res) => {
+      portReadyResolve = res;
+    });
+    const pending = new Map;
+    const openWs = new Map;
+    function newId() {
+      return Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+    }
+    function bytesToB64(bytes) {
+      return bytesToBase64(bytes);
+    }
+    function b64ToBytes(b64) {
+      return base64ToBytes(b64);
+    }
+    async function httpReq(method, path, body, headers) {
+      const p = port ?? await portReady;
+      const id = newId();
+      const headerArr = [];
+      if (headers) {
+        const h = new Headers(headers);
+        h.forEach((v, k) => headerArr.push([k, v]));
+      }
+      let bodyB64 = "";
+      if (body != null && body !== "") {
+        let bytes;
+        if (typeof body === "string") {
+          bytes = new TextEncoder().encode(body);
+        } else if (body instanceof ArrayBuffer) {
+          bytes = new Uint8Array(body);
+        } else if (body instanceof Uint8Array) {
+          bytes = body;
+        } else if (body instanceof Blob) {
+          bytes = new Uint8Array(await body.arrayBuffer());
+        } else if (body instanceof FormData) {
+          const boundary = "----HatchBoundary" + Math.random().toString(36).slice(2);
+          let s = "";
+          for (const [k, v] of body.entries()) {
+            s += `--${boundary}\r
+Content-Disposition: form-data; name="${k}"`;
+            if (v instanceof File) {
+              s += `; filename="${v.name}"\r
+Content-Type: ${v.type || "application/octet-stream"}\r
+\r
+`;
+              const fb = new Uint8Array(await v.arrayBuffer());
+              s += new TextDecoder("latin1").decode(fb);
+            } else {
+              s += `\r
+\r
+${v}`;
+            }
+            s += `\r
+`;
+          }
+          s += `--${boundary}--\r
+`;
+          bytes = new TextEncoder().encode(s);
+          headerArr.push([
+            "content-type",
+            `multipart/form-data; boundary=${boundary}`
+          ]);
+        } else {
+          bytes = new TextEncoder().encode(String(body));
+        }
+        bodyB64 = bytesToB64(bytes);
+      }
+      return new Promise((resolve, reject) => {
+        pending.set(id, {
+          resolve: (msg) => {
+            if (msg.error) {
+              reject(new Error(msg.error.message ?? "tunnel error"));
+              return;
+            }
+            resolve({
+              status: msg.status,
+              headers: msg.headers,
+              bytes: msg.bodyB64 ? b64ToBytes(msg.bodyB64) : new Uint8Array(0)
+            });
+          },
+          reject
+        });
+        p.postMessage({
+          type: "http.req",
+          id,
+          method,
+          path,
+          headers: headerArr,
+          bodyB64
+        });
+      });
+    }
+    async function tunnelFetch(input, init) {
+      let urlStr;
+      let method = init?.method ?? "GET";
+      let headers = init?.headers;
+      let body = init?.body;
+      if (input instanceof Request) {
+        urlStr = input.url;
+        method = init?.method ?? input.method;
+        headers = init?.headers ?? input.headers;
+        if (body == null && input.body) {
+          body = await input.arrayBuffer();
+        }
+      } else {
+        urlStr = String(input);
+      }
+      if (isExternalUrl2(urlStr)) {
+        return originalFetch(input, init);
+      }
+      const relPath = normalizeToRelPath2(urlStr);
+      const r = await httpReq(method, relPath, body ?? null, headers);
+      const respHeaders = new Headers;
+      for (const [k, v] of r.headers ?? [])
+        respHeaders.set(k, v);
+      return new Response(r.bytes, {
+        status: r.status,
+        headers: respHeaders
+      });
+    }
+
+    class TunnelWebSocket extends EventTarget {
+      readyState = 0;
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      CONNECTING = 0;
+      OPEN = 1;
+      CLOSING = 2;
+      CLOSED = 3;
+      url;
+      binaryType = "blob";
+      bufferedAmount = 0;
+      protocol = "";
+      extensions = "";
+      onopen = null;
+      onmessage = null;
+      onclose = null;
+      onerror = null;
+      _id;
+      constructor(urlIn, _protocols) {
+        super();
+        const urlStr = String(urlIn);
+        this.url = urlStr;
+        this._id = newId();
+        openWs.set(this._id, this);
+        const path = normalizeToRelPath2(urlStr);
+        (async () => {
+          const p = port ?? await portReady;
+          p.postMessage({ type: "ws.open", id: this._id, path });
+        })();
+      }
+      _handle(msg) {
+        if (msg.type === "ws.opened") {
+          this.readyState = 1;
+          const ev = new Event("open");
+          this.onopen?.(ev);
+          this.dispatchEvent(ev);
+        } else if (msg.type === "ws.message") {
+          const bytes = msg.dataB64 ? b64ToBytes(msg.dataB64) : new Uint8Array(0);
+          let data;
+          if (msg.binary) {
+            data = this.binaryType === "arraybuffer" ? bytes.buffer : new Blob([bytes]);
+          } else {
+            data = new TextDecoder().decode(bytes);
+          }
+          const ev = new MessageEvent("message", { data });
+          this.onmessage?.(ev);
+          this.dispatchEvent(ev);
+        } else if (msg.type === "ws.closed") {
+          this.readyState = 3;
+          const ev = new CloseEvent("close", {
+            code: msg.code ?? 1000,
+            reason: msg.reason ?? ""
+          });
+          this.onclose?.(ev);
+          this.dispatchEvent(ev);
+          openWs.delete(this._id);
+        } else if (msg.type === "ws.error") {
+          const ev = new Event("error");
+          this.onerror?.(ev);
+          this.dispatchEvent(ev);
+        }
+      }
+      send(data) {
+        (async () => {
+          const p = port ?? await portReady;
+          let bytes;
+          let binary = false;
+          if (typeof data === "string") {
+            bytes = new TextEncoder().encode(data);
+          } else if (data instanceof Blob) {
+            bytes = new Uint8Array(await data.arrayBuffer());
+            binary = true;
+          } else if (data instanceof ArrayBuffer) {
+            bytes = new Uint8Array(data);
+            binary = true;
+          } else if (ArrayBuffer.isView(data)) {
+            bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+            binary = true;
+          } else {
+            bytes = new TextEncoder().encode(String(data));
+          }
+          p.postMessage({
+            type: "ws.send",
+            id: this._id,
+            dataB64: bytesToB64(bytes),
+            binary
+          });
+        })();
+      }
+      close(code, reason) {
+        (async () => {
+          const p = port ?? await portReady;
+          p.postMessage({ type: "ws.close", id: this._id, code, reason });
+        })();
+      }
+      addEventListener(type, listener, options) {
+        super.addEventListener(type, listener, options);
+      }
+    }
+
+    class TunnelXHR extends EventTarget {
+      static UNSENT = 0;
+      static OPENED = 1;
+      static HEADERS_RECEIVED = 2;
+      static LOADING = 3;
+      static DONE = 4;
+      UNSENT = 0;
+      OPENED = 1;
+      HEADERS_RECEIVED = 2;
+      LOADING = 3;
+      DONE = 4;
+      readyState = 0;
+      status = 0;
+      statusText = "";
+      responseText = "";
+      response = null;
+      responseType = "";
+      responseURL = "";
+      withCredentials = false;
+      timeout = 0;
+      upload = new EventTarget;
+      onreadystatechange = null;
+      onload = null;
+      onerror = null;
+      onloadend = null;
+      onabort = null;
+      onprogress = null;
+      ontimeout = null;
+      _method = "GET";
+      _url = "";
+      _reqHeaders = [];
+      _respHeaders = [];
+      _aborted = false;
+      open(method, url) {
+        this._method = method;
+        this._url = url;
+        this.readyState = 1;
+        this.onreadystatechange?.();
+      }
+      setRequestHeader(name, value) {
+        this._reqHeaders.push([name, value]);
+      }
+      getAllResponseHeaders() {
+        return this._respHeaders.map(([k, v]) => `${k}: ${v}`).join(`\r
+`);
+      }
+      getResponseHeader(name) {
+        const lc = name.toLowerCase();
+        const hit = this._respHeaders.find(([k]) => k.toLowerCase() === lc);
+        return hit ? hit[1] : null;
+      }
+      abort() {
+        this._aborted = true;
+        this.readyState = 0;
+      }
+      send(body) {
+        if (isExternalUrl2(this._url)) {
+          const real = new originalXHR;
+          real.open(this._method, this._url);
+          for (const [k, v] of this._reqHeaders)
+            real.setRequestHeader(k, v);
+          real.onload = () => {
+            this.status = real.status;
+            this.responseText = real.responseText;
+            this.response = real.response;
+            this.readyState = 4;
+            this.onreadystatechange?.();
+            this.onload?.();
+            this.onloadend?.();
+            this.dispatchEvent(new Event("load"));
+          };
+          real.onerror = () => {
+            this.onerror?.();
+            this.dispatchEvent(new Event("error"));
+          };
+          real.send(body);
+          return;
+        }
+        const relPath = normalizeToRelPath2(this._url);
+        httpReq(this._method, relPath, body ?? null, this._reqHeaders).then((r) => {
+          if (this._aborted)
+            return;
+          this.status = r.status;
+          this._respHeaders = r.headers ?? [];
+          this.responseText = new TextDecoder().decode(r.bytes);
+          if (this.responseType === "arraybuffer") {
+            this.response = r.bytes.buffer;
+          } else if (this.responseType === "blob") {
+            this.response = new Blob([r.bytes]);
+          } else if (this.responseType === "json") {
+            try {
+              this.response = JSON.parse(this.responseText);
+            } catch {
+              this.response = null;
+            }
+          } else {
+            this.response = this.responseText;
+          }
+          this.readyState = 4;
+          this.onreadystatechange?.();
+          this.onload?.();
+          this.onloadend?.();
+          this.dispatchEvent(new Event("load"));
+        }, () => {
+          if (this._aborted)
+            return;
+          this.onerror?.();
+          this.dispatchEvent(new Event("error"));
+        });
+      }
+    }
+
+    class TunnelEventSource extends EventTarget {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSED = 2;
+      readyState = 0;
+      url;
+      withCredentials = false;
+      onopen = null;
+      onmessage = null;
+      onerror = null;
+      constructor(url) {
+        super();
+        this.url = String(url);
+        (async () => {
+          try {
+            const relPath = normalizeToRelPath2(this.url);
+            const r = await httpReq("GET", relPath, null, [
+              ["accept", "text/event-stream"]
+            ]);
+            this.readyState = 1;
+            this.onopen?.(new Event("open"));
+            const text = new TextDecoder().decode(r.bytes);
+            for (const block of text.split(/\n\n/)) {
+              const data = block.split(`
+`).filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join(`
+`);
+              if (data) {
+                const ev = new MessageEvent("message", { data });
+                this.onmessage?.(ev);
+                this.dispatchEvent(ev);
+              }
+            }
+            this.readyState = 2;
+          } catch {
+            this.onerror?.(new Event("error"));
+          }
+        })();
+      }
+      close() {
+        this.readyState = 2;
+      }
+    }
+    const SELF_HREF = (() => {
+      try {
+        return globalThis.location?.href ?? "";
+      } catch {
+        return "";
+      }
+    })();
+    const SELF_BASE_DIR = computeSelfBaseDir(SELF_HREF);
+    const objectUrls = new Set;
+    function isSelfOriginUrl2(u) {
+      return isSelfOriginUrl(u, SELF_BASE_DIR, SELF_HREF, objectUrls);
+    }
+    function isExternalUrl2(u) {
+      return isExternalUrl(u, SELF_BASE_DIR, SELF_HREF, objectUrls);
+    }
+    function normalizeToRelPath2(u) {
+      return normalizeToRelPath(u, SELF_BASE_DIR);
+    }
+    const URL_ATTRS = new Set([
+      "src",
+      "srcset",
+      "href",
+      "poster",
+      "action",
+      "formaction",
+      "data",
+      "background",
+      "cite",
+      "longdesc",
+      "usemap",
+      "manifest"
+    ]);
+    const URL_STYLE_PROPS = new Set([
+      "background",
+      "backgroundImage",
+      "background-image",
+      "borderImage",
+      "border-image",
+      "borderImageSource",
+      "border-image-source",
+      "listStyle",
+      "list-style",
+      "listStyleImage",
+      "list-style-image",
+      "cursor",
+      "mask",
+      "maskImage",
+      "mask-image",
+      "webkitMask",
+      "-webkit-mask",
+      "webkitMaskImage",
+      "-webkit-mask-image",
+      "content",
+      "src"
+    ]);
+    const __BLOB_CACHE_MAX = 256;
+    const __BLOB_REVOKE_DELAY_MS = 30000;
+    const blobCache = new Map;
+    const blobStats = {
+      created: 0,
+      revoked: 0,
+      hits: 0,
+      misses: 0,
+      inFlightRevokes: 0
+    };
+    function __evictIfOverCap() {
+      while (blobCache.size > __BLOB_CACHE_MAX) {
+        const oldestKey = blobCache.keys().next().value;
+        if (oldestKey === undefined)
+          break;
+        const ent = blobCache.get(oldestKey);
+        blobCache.delete(oldestKey);
+        blobStats.inFlightRevokes++;
+        const t = setTimeout(() => {
+          ent.url.then((u) => {
+            if (typeof u === "string" && u.startsWith("blob:")) {
+              try {
+                URL.revokeObjectURL(u);
+                blobStats.revoked++;
+              } catch {}
+            }
+          }).finally(() => {
+            blobStats.inFlightRevokes--;
+          });
+        }, __BLOB_REVOKE_DELAY_MS);
+        ent.pendingRevoke = t;
+      }
+    }
+    function resolveToBlobUrl(rel) {
+      if (isExternalUrl2(rel))
+        return Promise.resolve(rel);
+      const hashIdx = rel.indexOf("#");
+      const pathPart = hashIdx >= 0 ? rel.slice(0, hashIdx) : rel;
+      const frag = hashIdx >= 0 ? rel.slice(hashIdx) : "";
+      const key = normalizeToRelPath2(pathPart);
+      let ent = blobCache.get(key);
+      if (ent) {
+        if (ent.pendingRevoke != null) {
+          clearTimeout(ent.pendingRevoke);
+          ent.pendingRevoke = undefined;
+          blobStats.inFlightRevokes--;
+        }
+        blobCache.delete(key);
+        blobCache.set(key, ent);
+        blobStats.hits++;
+      } else {
+        blobStats.misses++;
+        const url = httpReq("GET", key, null).then((r) => {
+          const ctHeader = r.headers.find(([k]) => k.toLowerCase() === "content-type");
+          const ct = ctHeader?.[1] ?? "application/octet-stream";
+          const blob = new Blob([r.bytes], { type: ct });
+          blobStats.created++;
+          return URL.createObjectURL(blob);
+        });
+        ent = { url };
+        blobCache.set(key, ent);
+        __evictIfOverCap();
+      }
+      return frag ? ent.url.then((b) => b + frag) : ent.url;
+    }
+    const HATCH_PIXEL_PREFIX = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    const HATCH_FRAG = "#hatch=";
+    function isHatchPlaceholder(url) {
+      return url.indexOf(HATCH_PIXEL_PREFIX + HATCH_FRAG) === 0;
+    }
+    function unwrapHatchPlaceholder(url) {
+      if (!isHatchPlaceholder(url))
+        return null;
+      return decodeURIComponent(url.slice((HATCH_PIXEL_PREFIX + HATCH_FRAG).length));
+    }
+    async function rewriteCssTextAsync(text) {
+      const re = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+      const tasks = [];
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        tasks.push({ match: m[0], index: m.index, url: m[2].trim() });
+      }
+      if (tasks.length === 0)
+        return text;
+      const resolved = await Promise.all(tasks.map(async (t) => {
+        if (t.url.startsWith("blob:"))
+          return t.url;
+        const unwrapped = unwrapHatchPlaceholder(t.url);
+        if (unwrapped != null) {
+          try {
+            return await resolveToBlobUrl(unwrapped);
+          } catch {
+            return t.url;
+          }
+        }
+        if (isExternalUrl2(t.url))
+          return t.url;
+        try {
+          return await resolveToBlobUrl(t.url);
+        } catch {
+          return t.url;
+        }
+      }));
+      let out = "";
+      let last = 0;
+      tasks.forEach((t, i) => {
+        out += text.slice(last, t.index);
+        out += `url("${resolved[i]}")`;
+        last = t.index + t.match.length;
+      });
+      out += text.slice(last);
+      return out;
+    }
+    function rewriteCssText(text) {
+      return rewriteCssTextAsync(text);
+    }
+    const mediaSourceLoads = new WeakMap;
+    window.addEventListener("error", (event) => {
+      const source = event.target;
+      if (!event.isTrusted || !(source instanceof HTMLSourceElement) || !(source.parentElement instanceof HTMLMediaElement) || source.hasAttribute("src"))
+        return;
+      const state = mediaSourceLoads.get(source);
+      if (state === "pending" || state === undefined && source.hasAttribute("data-hatch-src")) {
+        event.stopImmediatePropagation();
+      }
+    }, true);
+    function isElement(el) {
+      if (el instanceof Element)
+        return true;
+      const ownerWindow = el?.ownerDocument?.defaultView;
+      return ownerWindow != null && el instanceof ownerWindow.Element;
+    }
+    function setAttr(el, name, value, ...rest) {
+      if (!isElement(el)) {
+        return el.setAttribute(name, value, ...rest);
+      }
+      name = String(name);
+      if (value == null) {
+        if (name.toLowerCase() === "src" && el instanceof HTMLSourceElement) {
+          mediaSourceLoads.set(el, "settled");
+        }
+        try {
+          el.removeAttribute(name);
+        } catch {}
+        return;
+      }
+      const v = String(value);
+      const lcName = name.toLowerCase();
+      const tag = el.tagName?.toUpperCase();
+      if ((tag === "A" || tag === "BASE" || tag === "AREA") && lcName === "href") {
+        el.setAttribute(name, v);
+        return;
+      }
+      if (!URL_ATTRS.has(lcName) && lcName !== "style" && lcName !== "srcset") {
+        el.setAttribute(name, v);
+        return;
+      }
+      if (lcName === "srcset") {
+        const parts = v.split(",").map((s) => s.trim()).filter(Boolean);
+        Promise.all(parts.map(async (p) => {
+          const segs = p.split(/\s+/);
+          const url = segs[0];
+          const rest = segs.slice(1).join(" ");
+          if (isExternalUrl2(url))
+            return p;
+          const resolved = await resolveToBlobUrl(url);
+          return rest ? `${resolved} ${rest}` : resolved;
+        })).then((rebuilt) => {
+          try {
+            el.setAttribute("srcset", rebuilt.join(", "));
+          } catch {}
+        });
+        return;
+      }
+      if (URL_ATTRS.has(lcName)) {
+        const isMediaSource = tag === "SOURCE" && lcName === "src";
+        if (isExternalUrl2(v)) {
+          if (isMediaSource)
+            mediaSourceLoads.set(el, "settled");
+          el.setAttribute(name, v);
+          return;
+        }
+        if (isMediaSource)
+          mediaSourceLoads.set(el, "pending");
+        if (tag === "IMG" || tag === "VIDEO" && lcName === "poster") {
+          el.setAttribute(name, TRANSPARENT_PIXEL);
+        }
+        resolveToBlobUrl(v).then((blobUrl) => {
+          if (isMediaSource)
+            mediaSourceLoads.set(el, "settled");
+          try {
+            el.setAttribute(name, blobUrl);
+            if (isMediaSource) {
+              const media = el.parentElement;
+              if (media instanceof HTMLMediaElement && media.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+                const nextSibling = el.nextSibling;
+                el.remove();
+                media.insertBefore(el, nextSibling);
+              }
+            }
+          } catch {}
+        }, () => {
+          if (isMediaSource) {
+            mediaSourceLoads.set(el, "settled");
+            el.dispatchEvent(new Event("error"));
+          }
+        });
+        return;
+      }
+      if (lcName === "style") {
+        setStyleAttr(el, v);
+        return;
+      }
+      el.setAttribute(name, v);
+    }
+    function setAttrNS(el, ns, name, value, ...rest) {
+      if (!isElement(el)) {
+        return el.setAttributeNS(ns, name, value, ...rest);
+      }
+      name = String(name);
+      if (value == null) {
+        try {
+          el.removeAttributeNS(ns ?? null, name);
+        } catch {}
+        return;
+      }
+      const v = String(value);
+      const lcName = name.split(":").pop().toLowerCase();
+      if (lcName === "href" && URL_ATTRS.has("href")) {
+        if (isExternalUrl2(v)) {
+          el.setAttributeNS(ns ?? null, name, v);
+          return;
+        }
+        resolveToBlobUrl(v).then((blobUrl) => {
+          try {
+            el.setAttributeNS(ns ?? null, name, blobUrl);
+          } catch {}
+        }, () => {});
+        return;
+      }
+      try {
+        el.setAttributeNS(ns ?? null, name, v);
+      } catch {}
+    }
+    function setUrlProp(el, name, value) {
+      if (isElement(el)) {
+        setAttr(el, name.toLowerCase(), value);
+      } else {
+        el[name] = value;
+      }
+      return value;
+    }
+    const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    const HTML_TAG_ATTRS = {
+      img: ["src", "srcset", "poster"],
+      image: ["href"],
+      video: ["src", "poster"],
+      audio: ["src"],
+      source: ["src", "srcset"],
+      script: ["src"],
+      link: ["href"],
+      iframe: ["src"],
+      embed: ["src"],
+      object: ["data"],
+      track: ["src"],
+      input: ["src"],
+      form: ["action"],
+      button: ["formaction"],
+      use: ["href"]
+    };
+    function rewriteHtmlString(html) {
+      return html.replace(/<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/g, (m, tag, attrs) => {
+        const lc = String(tag).toLowerCase();
+        const candidates = HTML_TAG_ATTRS[lc];
+        if (!candidates)
+          return m;
+        let out = attrs;
+        for (const a of candidates) {
+          const re = new RegExp(`\\b${a}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+          const matched = out.match(re);
+          if (!matched)
+            continue;
+          const value = matched[2] ?? matched[3] ?? matched[4] ?? "";
+          if (isExternalUrl2(value))
+            continue;
+          out = out.replace(re, `data-hatch-${a}="${value.replace(/"/g, "&quot;")}"`);
+        }
+        const styleRe = /\bstyle\s*=\s*("([^"]*)"|'([^']*)')/i;
+        const sm = out.match(styleRe);
+        if (sm) {
+          const value = sm[2] ?? sm[3] ?? "";
+          if (value.includes("url(")) {
+            out = out.replace(styleRe, `data-hatch-style="${value.replace(/"/g, "&quot;")}"`);
+          }
+        }
+        return `<${tag}${out}>`;
+      });
+    }
+    const HTML_URL_ATTRS_BY_TAG = {
+      IMG: ["src", "srcset", "poster"],
+      IMAGE: ["href"],
+      VIDEO: ["src", "poster"],
+      AUDIO: ["src"],
+      SOURCE: ["src", "srcset"],
+      SCRIPT: ["src"],
+      LINK: ["href"],
+      IFRAME: ["src"],
+      EMBED: ["src"],
+      OBJECT: ["data"],
+      TRACK: ["src"],
+      INPUT: ["src"],
+      FORM: ["action"],
+      BUTTON: ["formaction"],
+      USE: ["href", "xlink:href"]
+    };
+    function rewriteSubtreeForTunnel(root) {
+      if (!root)
+        return;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      let n = walker.currentNode;
+      if (root.nodeType === 1)
+        processOne(root);
+      while (n = walker.nextNode()) {
+        processOne(n);
+      }
+    }
+    function processOne(el) {
+      const tag = (el.tagName ?? "").toUpperCase();
+      const attrs = HTML_URL_ATTRS_BY_TAG[tag];
+      if (attrs) {
+        for (const a of attrs) {
+          const v = el.getAttribute(a);
+          if (v == null)
+            continue;
+          if (isExternalUrl2(v))
+            continue;
+          el.setAttribute("data-hatch-" + a, v);
+          el.removeAttribute(a);
+        }
+      }
+      const style = el.getAttribute("style");
+      if (style && style.includes("url(")) {
+        el.setAttribute("data-hatch-style", style);
+        el.removeAttribute("style");
+      }
+    }
+    function parseAndCleanHtml(html) {
+      const tpl = document.createElement("template");
+      tpl.innerHTML = html;
+      rewriteSubtreeForTunnel(tpl.content);
+      return tpl.content;
+    }
+    function setInnerHTML(el, html, which = "innerHTML") {
+      const s = html == null ? "" : String(html);
+      if (which === "innerHTML" && typeof el.tagName === "string" && el.tagName.toUpperCase() === "TEMPLATE") {
+        try {
+          el.innerHTML = s;
+        } catch {}
+        return;
+      }
+      if (which === "outerHTML") {
+        const frag = parseAndCleanHtml(s);
+        const wrap = document.createElement("div");
+        wrap.appendChild(frag);
+        try {
+          el.outerHTML = wrap.innerHTML;
+        } catch {}
+        queueMicrotask(() => processDataHatchAttrs(document.body));
+        return;
+      }
+      const frag = parseAndCleanHtml(s);
+      try {
+        while (el.firstChild)
+          el.removeChild(el.firstChild);
+        el.appendChild(frag);
+      } catch {}
+      queueMicrotask(() => processDataHatchAttrs(el));
+    }
+    function insertAdjacentHTMLT(el, position, html) {
+      const s = html == null ? "" : String(html);
+      const frag = parseAndCleanHtml(s);
+      const wrap = document.createElement("template");
+      wrap.content.appendChild(frag);
+      try {
+        el.insertAdjacentHTML(position, wrap.innerHTML);
+      } catch {}
+      queueMicrotask(() => processDataHatchAttrs(document.body));
+    }
+    function processDataHatchAttrs(root) {
+      const SELECTORS = "[data-hatch-src], [data-hatch-href], [data-hatch-srcset], [data-hatch-poster], [data-hatch-action], [data-hatch-data], [data-hatch-style]";
+      root.querySelectorAll(SELECTORS).forEach((el) => {
+        const attrs = el.getAttributeNames();
+        for (const a of attrs) {
+          if (!a.startsWith("data-hatch-"))
+            continue;
+          const real = a.slice("data-hatch-".length);
+          const value = el.getAttribute(a) ?? "";
+          el.removeAttribute(a);
+          if (real === "style")
+            setStyleAttr(el, value);
+          else
+            setAttr(el, real, value);
+        }
+      });
+    }
+    const styleProxyCache = new WeakMap;
+    function getStyle(el) {
+      if (el == null)
+        return el;
+      let real;
+      try {
+        real = el.style;
+      } catch {
+        return;
+      }
+      if (real == null || typeof real !== "object" && typeof real !== "function") {
+        return real;
+      }
+      let proxy = styleProxyCache.get(real);
+      if (proxy)
+        return proxy;
+      proxy = new Proxy(real, {
+        get(target, prop, _receiver) {
+          const v = Reflect.get(target, prop, target);
+          if (typeof v === "function")
+            return v.bind(target);
+          return v;
+        },
+        set(target, prop, value) {
+          if (typeof prop === "string") {
+            setStyle(el, prop, value);
+            return true;
+          }
+          return Reflect.set(target, prop, value, target);
+        }
+      });
+      styleProxyCache.set(real, proxy);
+      return proxy;
+    }
+    function setStyle(el, propName, value) {
+      const v = value == null ? "" : String(value);
+      if (propName.startsWith("--")) {
+        rewriteCssText(v).then((rewritten) => {
+          try {
+            el.style.setProperty(propName, rewritten);
+          } catch {}
+        });
+        return;
+      }
+      if (URL_STYLE_PROPS.has(propName) && v.includes("url(")) {
+        rewriteCssText(v).then((rewritten) => {
+          try {
+            el.style[propName] = rewritten;
+          } catch {}
+        });
+        return;
+      }
+      try {
+        el.style[propName] = v;
+      } catch {}
+    }
+    function setStyleAttr(el, attrValue) {
+      if (!attrValue.includes("url(")) {
+        el.setAttribute("style", attrValue);
+        return;
+      }
+      rewriteCssText(attrValue).then((rewritten) => {
+        try {
+          el.setAttribute("style", rewritten);
+        } catch {}
+      });
+    }
+    function setStyleText(styleEl, text) {
+      if (!(styleEl instanceof HTMLStyleElement)) {
+        try {
+          styleEl.textContent = text;
+        } catch {}
+        return;
+      }
+      if (!text.includes("url(")) {
+        styleEl.textContent = text;
+        return;
+      }
+      rewriteCssText(text).then((rewritten) => {
+        try {
+          styleEl.textContent = rewritten;
+        } catch {}
+      });
+    }
+    function tunnelImage(_w, _h) {
+      const img = new originalImage;
+      const desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+      if (desc?.set) {
+        const origSet = desc.set;
+        const origGet = desc.get;
+        Object.defineProperty(img, "src", {
+          configurable: true,
+          get() {
+            return origGet.call(img);
+          },
+          set(v) {
+            if (v == null)
+              return origSet.call(img, "");
+            const s = String(v);
+            if (isExternalUrl2(s))
+              return origSet.call(img, s);
+            resolveToBlobUrl(s).then((b) => origSet.call(img, b), () => origSet.call(img, s));
+          }
+        });
+      }
+      return img;
+    }
+    function tunnelSendBeacon(url, data) {
+      tunnelFetch(url, { method: "POST", body: data, keepalive: true }).catch(() => {});
+      return true;
+    }
+    function tunnelWorker(_url) {
+      throw new Error("[__tunnel] new Worker() is not supported in Muse web artifacts.");
+    }
+    function tunnelImport(spec) {
+      throw new Error("[__tunnel] dynamic import() of '" + String(spec) + "' is not supported in Muse web artifacts.");
+    }
+    function installCssObserver() {
+      try {
+        const proto = window.CSSStyleSheet?.prototype;
+        if (proto) {
+          const origInsertRule = proto.insertRule;
+          proto.insertRule = function(rule, index) {
+            if (typeof rule === "string" && rule.includes("url(")) {
+              const idx = origInsertRule.call(this, rule, index);
+              rewriteCssText(rule).then((rewritten) => {
+                if (rewritten !== rule) {
+                  try {
+                    this.deleteRule(idx);
+                    origInsertRule.call(this, rewritten, idx);
+                  } catch {}
+                }
+              });
+              return idx;
+            }
+            return origInsertRule.call(this, rule, index);
+          };
+          const origReplace = proto.replace;
+          if (origReplace) {
+            proto.replace = function(text) {
+              if (typeof text === "string" && text.includes("url(")) {
+                return rewriteCssText(text).then((rewritten) => origReplace.call(this, rewritten));
+              }
+              return origReplace.call(this, text);
+            };
+          }
+          const origReplaceSync = proto.replaceSync;
+          if (origReplaceSync) {
+            proto.replaceSync = function(text) {
+              if (typeof text === "string" && text.includes("url(")) {
+                const ret = origReplaceSync.call(this, text);
+                rewriteCssText(text).then((rewritten) => {
+                  try {
+                    origReplaceSync.call(this, rewritten);
+                  } catch {}
+                });
+                return ret;
+              }
+              return origReplaceSync.call(this, text);
+            };
+          }
+        }
+      } catch (e) {}
+      function sweepSheet(sheet) {
+        try {
+          const rules = sheet.cssRules;
+          for (let i = 0;i < rules.length; i++) {
+            const rule = rules[i];
+            const txt = rule.cssText;
+            if (txt && (txt.includes(HATCH_FRAG) || txt.includes("url(") && !/url\(\s*["']?(blob:|https?:|data:image\/gif;base64,R0)/.test(txt))) {
+              rewriteCssText(txt).then((rewritten) => {
+                if (rewritten !== txt) {
+                  try {
+                    sheet.deleteRule(i);
+                    sheet.insertRule(rewritten, i);
+                  } catch {}
+                }
+              });
+            }
+          }
+        } catch {}
+      }
+      function sweepAll() {
+        for (const sheet of Array.from(document.styleSheets)) {
+          sweepSheet(sheet);
+        }
+      }
+      const mo = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of Array.from(m.addedNodes)) {
+            if (node instanceof HTMLStyleElement) {
+              const txt = node.textContent ?? "";
+              if (txt.includes("url(")) {
+                rewriteCssText(txt).then((rewritten) => {
+                  if (rewritten !== txt) {
+                    try {
+                      node.textContent = rewritten;
+                    } catch {}
+                  }
+                });
+              }
+            } else if (node instanceof HTMLLinkElement && node.rel === "stylesheet") {
+              node.addEventListener("load", () => sweepSheet(node.sheet), { once: true });
+            }
+          }
+        }
+      });
+      mo.observe(document, { subtree: true, childList: true });
+      Promise.resolve().then(sweepAll);
+      setTimeout(sweepAll, 0);
+      setTimeout(sweepAll, 50);
+      setTimeout(sweepAll, 250);
+    }
+    function rewriteAuthoredHtml() {
+      const SELECTORS = "[data-hatch-src], [data-hatch-href], [data-hatch-srcset]";
+      document.querySelectorAll(SELECTORS).forEach((el) => {
+        const src = el.getAttribute("data-hatch-src");
+        const href = el.getAttribute("data-hatch-href");
+        const srcset = el.getAttribute("data-hatch-srcset");
+        if (src)
+          setAttr(el, "src", src);
+        if (href)
+          setAttr(el, "href", href);
+        if (srcset)
+          setAttr(el, "srcset", srcset);
+      });
+    }
+    let historyUrlWarned = false;
+    function warnHistoryUrlDropped(method, url) {
+      if (url === undefined || url === null)
+        return;
+      if (historyUrlWarned)
+        return;
+      historyUrlWarned = true;
+      try {
+        console.warn("[__tunnel] history." + method + "() was called with a URL; the URL was ignored. A Muse web artifact " + "renders in an opaque origin with no navigable URL of its own, so " + "the browser rejects any URL change. State kept in the URL will not " + "persist or survive a reload — keep it in component state, or in " + "the artifact's database through a server action.");
+      } catch {}
+    }
+    const originalFetch = globalThis.fetch?.bind(globalThis) ?? (() => {
+      throw new Error("no native fetch");
+    });
+    const originalXHR = globalThis.XMLHttpRequest;
+    const originalImage = globalThis.Image;
+    const tunnel = {
+      fetch: tunnelFetch,
+      XHR: TunnelXHR,
+      WebSocket: TunnelWebSocket,
+      EventSource: TunnelEventSource,
+      Image: tunnelImage,
+      Worker: tunnelWorker,
+      import: tunnelImport,
+      sendBeacon: tunnelSendBeacon,
+      setAttr,
+      setAttrNS,
+      setUrlProp,
+      setStyle,
+      getStyle,
+      setStyleAttr,
+      setStyleText,
+      setInnerHTML,
+      insertAdjacentHTML: insertAdjacentHTMLT,
+      rewriteCssText,
+      resolveToBlobUrl,
+      processDataHatchAttrs,
+      rewriteHtmlString,
+      _resolveUrlString: (v) => v,
+      _resolveCssValue: (v) => v,
+      _resolveCssText: (v) => v,
+      _resolveStyleProp: (v) => v,
+      _importMeta: {
+        get url() {
+          return importMetaUrl(SELF_HREF, SELF_BASE_DIR);
+        }
+      },
+      _state: {
+        get port() {
+          return port;
+        },
+        get inFlight() {
+          return pending.size;
+        },
+        get blobCacheSize() {
+          return blobCache.size;
+        },
+        get blobStats() {
+          return { ...blobStats };
+        }
+      }
+    };
+    globalThis.__tunnel = tunnel;
+    window.__tunnel = tunnel;
+    try {
+      globalThis.fetch = tunnelFetch;
+      window.fetch = tunnelFetch;
+      globalThis.XMLHttpRequest = TunnelXHR;
+      window.XMLHttpRequest = TunnelXHR;
+      globalThis.WebSocket = TunnelWebSocket;
+      window.WebSocket = TunnelWebSocket;
+      globalThis.EventSource = TunnelEventSource;
+      window.EventSource = TunnelEventSource;
+      const nav = globalThis.navigator;
+      if (nav && typeof nav.sendBeacon === "function") {
+        nav.sendBeacon = (url, data) => tunnelSendBeacon(url, data);
+      }
+      const NativeURL = globalThis.URL;
+      const TunnelURL = function(url, base) {
+        return resolveTunnelUrl(url, base, SELF_HREF, NativeURL);
+      };
+      TunnelURL.prototype = NativeURL.prototype;
+      for (const k of Object.getOwnPropertyNames(NativeURL)) {
+        if (k === "prototype" || k === "length" || k === "name")
+          continue;
+        try {
+          TunnelURL[k] = NativeURL[k];
+        } catch {}
+      }
+      globalThis.URL = TunnelURL;
+      window.URL = TunnelURL;
+    } catch {}
+    try {
+      const hist = globalThis.history;
+      if (hist && typeof hist.pushState === "function" && typeof hist.replaceState === "function") {
+        const nativePushState = hist.pushState.bind(hist);
+        const nativeReplaceState = hist.replaceState.bind(hist);
+        hist.pushState = function(state, title, url) {
+          warnHistoryUrlDropped("pushState", url);
+          return nativePushState(state, title ?? "");
+        };
+        hist.replaceState = function(state, title, url) {
+          warnHistoryUrlDropped("replaceState", url);
+          return nativeReplaceState(state, title ?? "");
+        };
+      }
+    } catch {}
+    try {
+      const nativeCreateObjectURL = URL.createObjectURL.bind(URL);
+      const nativeRevokeObjectURL = URL.revokeObjectURL.bind(URL);
+      URL.createObjectURL = function(obj) {
+        const created = nativeCreateObjectURL(obj);
+        try {
+          objectUrls.add(created);
+        } catch {}
+        return created;
+      };
+      URL.revokeObjectURL = function(objectUrl) {
+        try {
+          objectUrls.delete(objectUrl);
+        } catch {}
+        nativeRevokeObjectURL(objectUrl);
+      };
+    } catch {}
+    const announceEpoch = Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+    let announceTimer = null;
+    function announce() {
+      try {
+        window.parent.postMessage({ type: "bundle:ready", epoch: announceEpoch }, "*");
+      } catch {}
+    }
+    function startAnnouncing() {
+      announce();
+      announceTimer = setInterval(() => {
+        if (port != null) {
+          if (announceTimer != null)
+            clearInterval(announceTimer);
+          announceTimer = null;
+          return;
+        }
+        announce();
+      }, 120);
+    }
+    function onParentMessage(ev) {
+      const data = ev.data;
+      if (!data || typeof data !== "object")
+        return;
+      if (data.type === "bundle:init-port" && ev.ports && ev.ports[0]) {
+        if (port != null)
+          return;
+        if (announceTimer != null) {
+          clearInterval(announceTimer);
+          announceTimer = null;
+        }
+        port = ev.ports[0];
+        port.onmessage = (pe) => {
+          const msg = pe.data;
+          if (!msg || typeof msg !== "object")
+            return;
+          if (msg.type === "http.res") {
+            const ent = pending.get(msg.id);
+            if (ent) {
+              pending.delete(msg.id);
+              ent.resolve(msg);
+            }
+          } else if (msg.type === "ws.opened" || msg.type === "ws.message" || msg.type === "ws.closed" || msg.type === "ws.error") {
+            openWs.get(msg.id)?._handle(msg);
+          }
+        };
+        port.start?.();
+        portReadyResolve?.(port);
+        installCssObserver();
+        rewriteAuthoredHtml();
+        try {
+          window.parent.postMessage({ type: "bundle:port-attached" }, "*");
+        } catch {}
+      }
+    }
+    window.addEventListener("message", onParentMessage);
+    installDownloadLinks(tunnelFetch, isExternalUrl2, __BLOB_REVOKE_DELAY_MS);
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+      startAnnouncing();
+    } else {
+      document.addEventListener("DOMContentLoaded", startAnnouncing);
+    }
+  })();
+})();
+
+;
+const routes = {
+  public: {
+    status: 'Best fit',
+    title: 'Lightpanda first, Chromium fallback',
+    reason: 'Public pages, many URLs, no login, and text extraction are Lightpanda’s strongest fit. Escalate on missing content, runtime errors, or challenge pages.',
+    tiers: ['lp'],
+    code: 'public + read_only + text_output → lightpanda → fallback_on(error | missing_content | challenge)'
+  },
+  discovery: {
+    status: 'Cheapest path',
+    title: 'HTTP parser first, then Lightpanda',
+    reason: 'Sitemaps, lists, and static directories often need no browser at all. Use Lightpanda only when JavaScript is necessary.',
+    tiers: ['http', 'lp'],
+    code: 'url_inventory → http_parser → if_js_required(lightpanda) → chromium_only_if_fidelity_fails'
+  },
+  social: {
+    status: 'Keep existing path',
+    title: 'Leased Chromium only',
+    reason: 'Authenticated Facebook, Instagram, and other account work depend on stable session state and browser fidelity. Do not bridge those cookies into the lightweight pool.',
+    tiers: ['chrome'],
+    code: 'authenticated + consequential_action → existing_chromium_profile → evidence_log'
+  },
+  visual: {
+    status: 'Render required',
+    title: 'Chrome Headless Shell or full Chromium',
+    reason: 'Screenshots, PDFs, layout checks, and visual QA require a real rendering engine. Lightpanda omits layout by design.',
+    tiers: ['chrome'],
+    code: 'visual_output_required → chrome_headless_shell | chromium'
+  },
+  protected: {
+    status: 'Fail closed',
+    title: 'Escalate, do not evade',
+    reason: 'Lightpanda has no stealth layer. Treat CAPTCHA or bot protection as a blocked lightweight run and use an authorized managed browser only when the task permits it.',
+    tiers: ['managed'],
+    code: 'challenge_detected → BLOCK_LIGHTWEIGHT → authorized_managed_browser_or_stop'
+  }
+};
+const buttons = document.querySelectorAll('.route-btn');
+const steps = document.querySelectorAll('.lane-step');
+function setRoute(key) {
+  const route = routes[key];
+  buttons.forEach(b => __tunnel.setAttr(b, 'aria-pressed', String(b.dataset.route === key)));
+  steps.forEach((s, i) => {
+    const id = ['http', 'lp', 'chrome', 'managed'][i];
+    s.classList.toggle('active', route.tiers.includes(id));
+  });
+  document.getElementById('routeStatus').textContent = route.status;
+  document.getElementById('routeTitle').textContent = route.title;
+  document.getElementById('routeReason').textContent = route.reason;
+  document.getElementById('routeCode').textContent = route.code;
+}
+buttons.forEach(b => b.addEventListener('click', () => setRoute(b.dataset.route)));</script>
+</body>
+</html>
