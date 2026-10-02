@@ -20,7 +20,7 @@
       "note": "canonical ping-runtime lineage; read-only; pre-existing dirty build artifacts untouched"
     }
   },
-  "entry_count": 112,
+  "entry_count": 125,
   "sha_filled": 61,
   "entries": [
     {
@@ -3311,6 +3311,383 @@
       "new_fyd_loc": 0,
       "dependencies_added": [],
       "bundle_runtime_cost": "zero-dep, ~141 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/customize/owner-command-compiler.ts",
+      "SOURCE_SHA": "sha256:9874f6a8dcb2744455c5bd7f726ad9e7b17b06b747b81970f5cefd11290a540f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Owner intent vocabulary + section/object target resolution semantics (plain-English parsing stays upstream; the LLM plans)",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [
+        "./intent",
+        "./types",
+        "../components/renderer",
+        "../owner-mode/facts",
+        "../sitespec/types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "packages/proposals/src/compiler.ts",
+        "packages/proposals/src/proposal.ts"
+      ],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/compiler.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Harvest the intent vocabulary and section/object resolution order; name matching deliberately tightened (candidate-contains-target only) so the compiler never guesses. Plain-English parsing stays upstream (the LLM plans); software validates.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 243,
+      "harvested_loc": 443,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~443 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/customize/owner-proposal.ts",
+      "SOURCE_SHA": "sha256:65b15b1b1d40081b984b7e9a782a62bb064c2d619a79d097a9ec3357f8150c66",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proposal lifecycle: deterministic id, approval gate, canonical transition, append-only journal",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [
+        "./types",
+        "./approval",
+        "../owner-mode/corrections"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "packages/proposals/src/proposal.ts"
+      ],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/proposal.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Adapt the proposal/approval/transition lifecycle to SiteSpec-typed patches: approval is a real gate (explicit, tamper-checked, no auto-approve), apply is idempotent, transitions append to the journal, absolute presentation overrides derived.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 855,
+      "harvested_loc": 272,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~272 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/site-patch.ts",
+      "SOURCE_SHA": "sha256:4b57b5a4d593640edda45606e64bc27d935ae5f4044fefb758a4121529c871ae",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Typed site_patch operation vocabulary (reorder, visibility, component option)",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [
+        "./types",
+        "../components/renderer",
+        "../sitespec/types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "packages/proposals/src/compiler.ts"
+      ],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/compiler.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Site_patch ops re-expressed as SiteSpecPatchOps against the piging2 SiteSpec (presentation.* override surface); every op validated mechanically: real path, before-matches-current, schema-valid after.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 349,
+      "harvested_loc": 443,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~443 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Thin adapter over the canonical owner assertion algebra (applyCorrections, assertCorrection, chainHeads); derives changedObjectIds and surfaces hiddenFactIds",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/assertions.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Converged 2026-10-02 when packages/owner landed: the provisional shape was retired, this module delegates to the single assertion authority (no fork).",
+      "proof_ids": [
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 99,
+      "adapter_loc": 0,
+      "new_fyd_loc": 99,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~99 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proposal/kernel type contracts: PlannedIntent, SiteSpecPatchOp, PatchProposal, SpecTransition, overrides, regeneration I/O",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts",
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/types.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Typed surface for both proofs; OwnerAssertion types re-exported from packages/owner.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 279,
+      "adapter_loc": 0,
+      "new_fyd_loc": 279,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~279 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "applyPatch: mechanical application of validated patch ops; validatePatch rejects unknown paths, before-mismatches, and schema-invalid afters",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/apply.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "The validator is the software side of 'LLM plans, software validates': no filesystem, no guessing.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 0,
+      "harvested_loc": 69,
+      "adapter_loc": 0,
+      "new_fyd_loc": 69,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~69 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "deepClone preserving undefined keys (JSON round-trip drops them while the digest canonicalizer emits null)",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts",
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/clone.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Proven necessary by a failing stale-proposal check on provenance.eventSequences.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 23,
+      "adapter_loc": 0,
+      "new_fyd_loc": 23,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~23 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "regenerate: evidence diff -> affected paths -> partial re-generation -> assertions -> overrides",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/regenerate.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Affected paths via bound-set comparison across old/new graphs through the real query seam; changeless observation is a byte-identical no-op.",
+      "proof_ids": [
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 199,
+      "adapter_loc": 0,
+      "new_fyd_loc": 199,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~199 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Package barrel: proof-7 lifecycle + proof-8 regeneration exports",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts",
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/src/index.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Single import surface for the proposals kernel.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 16,
+      "adapter_loc": 0,
+      "new_fyd_loc": 16,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~16 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Coppersmith fixture builders: emergency-services variant, proof-7 proposal state",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/test/helpers.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Shared fixtures for the proof-7 suite.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 0,
+      "harvested_loc": 52,
+      "adapter_loc": 0,
+      "new_fyd_loc": 52,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~52 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proof 7 suite: propose/approve/apply lifecycle, gate refusals, tamper/stale refusals, deterministic re-render",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/proposals-proof7.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/test/proposals-proof7.test.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "12 tests on the Coppersmith spec: 'Move emergency plumbing to the top' end to end.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 0,
+      "harvested_loc": 249,
+      "adapter_loc": 0,
+      "new_fyd_loc": 249,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~249 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proof 8 suite: evidence diff, correction survival, override survival, no-op digest stability, conflicts, chain heads",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/proposals/test/regenerate-proof8.test.ts"
+      ],
+      "TARGET_PATH": "packages/proposals/test/regenerate-proof8.test.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "6 tests: description change identified and reflected while the owner phone correction survives; Proof-7 section order survives regeneration.",
+      "proof_ids": [
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 276,
+      "adapter_loc": 0,
+      "new_fyd_loc": 276,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~276 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Package notes: layout, harvest verdicts, decisions",
+      "AUTHORITY_OWNER": "proposal-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/proposals/README.md",
+      "ACTION": "NEW",
+      "RATIONALE": "Documents the planner-upstream decision, the real-gate approval, and the owner-algebra convergence.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 0,
+      "harvested_loc": 85,
+      "adapter_loc": 0,
+      "new_fyd_loc": 85,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~85 LOC"
     }
   ],
   "v2_changes": [
