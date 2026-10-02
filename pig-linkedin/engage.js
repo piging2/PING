@@ -6,8 +6,14 @@
 // restarts, so this script never launches or closes it.
 // Phase 1 scope: likes and comments ONLY. Connection requests and DMs are
 // deliberately unsupported by this worker (see linkedin-automation-plan doc).
+// 2026-10-02: Nolan binding order ~14:19 MDT reactivates LinkedIn; params
+// revised ~14:22 MDT: 100 connection invites per WEEK (weekly counter, ~14/day
+// pace) + 15 likes per pass every 2h. Connection support added below
+// (doConnect). DMs remain unsupported.
 // Usage: node engage.js <job.json>
-// job.json: { "actions": [ {type:"like"|"comment", url, text?} ], "minDelaySec": 90, "maxDelaySec": 240 }
+// job.json: { "actions": [ {type:"like"|"comment"|"connect", url, text?} ], "minDelaySec": 90, "maxDelaySec": 240 }
+//   - "connect": url must be a LinkedIn profile URL (/in/<slug>). text, if
+//     present, is sent as the invitation note; otherwise sent without a note.
 // Writes <job.json>.result.json and prints a one-line summary. Never prints credentials.
 const fs = require('fs');
 const { chromium } = require('playwright-core');
@@ -132,6 +138,98 @@ async function doComment(page, url, text) {
   return { ok: posted, note: posted ? 'comment text visible' : 'comment text not found after submit' };
 }
 
+// Weekly invitation limit language. Hitting this is NOT an account
+// restriction; the pass must stop sending invites gracefully (no abort).
+const LIMIT_RE = /weekly invitation limit|you've reached.*invitation|invitation.*limit reached/i;
+
+async function doConnect(page, url, noteText) {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await sleep(rand(6000, 10000)); // connections are the highest-risk action: go slow
+  const pre = await page.evaluate(() => document.body.innerText.slice(0, 5000));
+  if (BLOCK_RE.test(pre)) return { ok: false, blocked: true, note: 'restriction/checkpoint language on profile page' };
+  if (LIMIT_RE.test(pre)) return { ok: false, limit: true, note: 'weekly invitation limit reached; stopping invites for this pass' };
+  const state = await page.evaluate(() => {
+    const body = document.body.innerText;
+    const btns = Array.from(document.querySelectorAll('button'));
+    const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const label = b => ((b.getAttribute('aria-label') || '') + ' ' + (b.innerText || '')).trim();
+    // Already connected / invite pending?
+    const pending = btns.find(b => vis(b) && /invitation pending|^pending$/i.test(label(b)));
+    if (pending) return { kind: 'pending' };
+    const msg = btns.find(b => vis(b) && /^message$/i.test((b.innerText || '').trim()));
+    const connectBtn = btns.find(b => vis(b) && /invite .* to connect/i.test(b.getAttribute('aria-label') || ''));
+    if (msg && !connectBtn) return { kind: 'connected' }; // Message present, no Connect: 1st-degree
+    if (connectBtn) return { kind: 'connect' };
+    // Fallback: a bare "Connect" text button (some locales/layouts).
+    const bare = btns.find(b => vis(b) && /^connect$/i.test((b.innerText || '').trim()));
+    if (bare) return { kind: 'connect' };
+    return { kind: 'none', body: body.slice(0, 500) };
+  });
+  if (state.kind === 'pending') return { ok: true, note: 'invitation already pending' };
+  if (state.kind === 'connected') return { ok: true, note: 'already connected (1st-degree)' };
+  if (state.kind !== 'connect') return { ok: false, note: 'connect button not found; not clicking blindly' };
+  const clicked = await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll('button'));
+    const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const t = btns.find(b => vis(b) && /invite .* to connect/i.test(b.getAttribute('aria-label') || ''))
+           || btns.find(b => vis(b) && /^connect$/i.test((b.innerText || '').trim()));
+    if (!t) return false;
+    t.scrollIntoView({ block: 'center' });
+    t.click();
+    return true;
+  });
+  if (!clicked) return { ok: false, note: 'connect button vanished before click' };
+  await sleep(rand(2500, 4000));
+  // Invitation modal: either send directly or add a note first.
+  const modal = await page.evaluate((withNote) => {
+    const dlg = document.querySelector('div[role="dialog"]');
+    if (!dlg) return { open: false };
+    const btns = Array.from(dlg.querySelectorAll('button'));
+    const byText = t => btns.find(b => new RegExp('^' + t + '$', 'i').test((b.innerText || '').trim()));
+    if (withNote) {
+      const addNote = byText('Add a note');
+      if (addNote) { addNote.click(); return { open: true, noteClicked: true }; }
+    }
+    return { open: true, noteClicked: false };
+  }, !!noteText);
+  if (!modal.open) {
+    // No modal: LinkedIn sometimes sends immediately. Verify pending state.
+    await sleep(3000);
+    const nowPending = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      return btns.some(b => vis(b) && /invitation pending|^pending$/i.test(((b.getAttribute('aria-label') || '') + ' ' + (b.innerText || '')).trim()));
+    });
+    return { ok: nowPending, note: nowPending ? 'invite sent (no modal), now pending' : 'no modal appeared and no pending state; invite uncertain' };
+  }
+  if (modal.noteClicked) {
+    await sleep(rand(1500, 2500));
+    const noteBox = await page.$('div[role="dialog"] textarea, div[role="dialog"] div[contenteditable="true"]');
+    if (!noteBox) return { ok: false, note: 'note field not found after Add a note; aborting invite' };
+    const tag = await noteBox.evaluate(e => e.tagName.toLowerCase());
+    if (tag === 'textarea') await noteBox.fill(noteText.slice(0, 300));
+    else { await noteBox.click(); await page.keyboard.type(noteText.slice(0, 300), { delay: rand(60, 140) }); }
+    await sleep(rand(1500, 2500));
+  }
+  const sent = await page.evaluate(() => {
+    const dlg = document.querySelector('div[role="dialog"]');
+    if (!dlg) return { sent: false, note: 'modal closed before send' };
+    const btns = Array.from(dlg.querySelectorAll('button'));
+    const send = btns.find(b => /^send$/i.test((b.innerText || '').trim()) && !b.disabled)
+              || btns.find(b => /send invitation/i.test(b.getAttribute('aria-label') || '') && !b.disabled);
+    if (!send) return { sent: false, note: 'send button not clickable in modal' };
+    send.click();
+    return { sent: true };
+  });
+  if (!sent.sent) return { ok: false, note: sent.note || 'send failed' };
+  await sleep(5000);
+  const post = await page.evaluate(() => document.body.innerText.slice(0, 8000));
+  if (BLOCK_RE.test(post)) return { ok: false, blocked: true, note: 'restriction language after invite send' };
+  if (LIMIT_RE.test(post)) return { ok: false, limit: true, note: 'weekly invitation limit hit on send' };
+  const confirmed = /invitation.*sent|your invitation|pending/i.test(post);
+  return { ok: confirmed, note: confirmed ? 'invitation sent (confirmation observed)' : 'send clicked, no confirmation observed' };
+}
+
 (async () => {
   const jobFile = process.argv[2];
   if (!jobFile) { console.error('usage: node engage.js <job.json>'); process.exit(2); }
@@ -151,8 +249,7 @@ async function doComment(page, url, text) {
     const contexts = browser.contexts();
     const ctx = contexts.find(c => c.pages().length) || contexts[0];
     const page = await ctx.newPage();
-    const ls = await loginState(page);
-    if (ls.blocked) {
+    const ls = await loginState(page);    if (ls.blocked) {
       const out = { ok: false, logged_in: false, blocked: true, note: 'LinkedIn restriction/checkpoint detected at login check; HALTING. Nolan must review the account before any further automation.', results: [] };
       fs.writeFileSync(jobFile + '.result.json', JSON.stringify(out, null, 2));
       console.log('RESULT blocked');
@@ -174,8 +271,14 @@ async function doComment(page, url, text) {
       try {
         const r = a.type === 'like' ? await doLike(page, a.url)
                 : a.type === 'comment' ? await doComment(page, a.url, a.text)
-                : { ok: false, note: 'unknown action type (phase 1 supports like/comment only)' };
+                : a.type === 'connect' ? await doConnect(page, a.url, a.text)
+                : { ok: false, note: 'unknown action type (supports like/comment/connect)' };
         results.push({ type: a.type, url: a.url, ...r });
+        if (r.limit) {
+          // Weekly invite limit: stop this pass gracefully. Not a restriction.
+          results.push({ type: 'limit', ok: false, note: 'weekly invitation limit reached; pass stopped, no further invites attempted' });
+          break;
+        }
         if (r.blocked) {
           aborted = true;
           results.push({ type: 'abort', ok: false, note: 'restriction/checkpoint signal; pass halted, no further actions attempted' });
