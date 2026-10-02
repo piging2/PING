@@ -41,6 +41,7 @@ import type {
 } from "./types";
 import { projectGraphForViewer } from "./viewer";
 import { citeFact } from "./cite";
+import { claimClassFor } from "./classify";
 
 const SERVICE_SCHEMA = "ping.social.service@1";
 const OFFERS_PREDICATE = "offers";
@@ -188,9 +189,16 @@ export function askFyd(input: AskInput): AskAnswer {
       label: `${target.title} offers ${svc.title}`,
       detail: citation ? citation.detail : "Site record",
     });
+    // The claim epistemic class comes from the service object claimKind
+    // through the same mapping citeFact uses: an INFERRED service must
+    // never be emitted as a DIRECT fact claim.
+    const svcClaimKind =
+      typeof svc.fields?.["claimKind"] === "string"
+        ? (svc.fields["claimKind"] as string)
+        : undefined;
     claims.push({
       claim: `${target.title} offers ${svc.title}.`,
-      classification: "DIRECT",
+      classification: claimClassFor(svcClaimKind),
       evidenceRefIds: [svc.id, relId],
     });
     listed.push(`${svc.title} [${i + 1}]`);
@@ -215,10 +223,15 @@ export function askFyd(input: AskInput): AskAnswer {
       `. ${firstCitation.basis}.`
     : "recorded in the site evidence.";
 
+  // If any listed service is an inference rather than a website statement,
+  // say so plainly: inferred entries are labeled, not verified.
+  const anyInferred = claims.some((c) => c.classification === "INFERRED");
   const answer =
     `${target.title} offers ${services.length} services: ${listed.join(", ")}.\n\n` +
     `How FYD knows: each marker above points to a service record ${sourceLine} ` +
-    `These are the website's own statements; FYD has not independently verified them.`;
+    (anyInferred
+      ? `Some entries are FYD's labeled inferences from site data, not the website's own statements; FYD has not independently verified them.`
+      : `These are the website's own statements; FYD has not independently verified them.`);
 
   return {
     ok: true,
