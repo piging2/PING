@@ -200,6 +200,14 @@ function transitionFor(
 export interface ApplyOptions {
   /** Injectable clock; tests pin it. */
   appliedAt?: () => string;
+  /**
+   * The current object graph, when the host tracks one. Supplied, the
+   * patch is re-validated against it at effect time, so object ids the
+   * patch references (featuredIds / objectOrder / hiddenObjectIds) that
+   * vanished after the preview are refused instead of applied dangling.
+   * Absent, graph drift is invisible to the package (legacy behavior).
+   */
+  graph?: import("../../sitespec/src/types").ObjectGraph;
 }
 
 /**
@@ -265,7 +273,11 @@ export function applyProposal(
         "Stale proposal: it was drafted against a different spec version (beforeDigest mismatch). Re-draft against the current spec.",
     };
   }
-  const violations = validatePatch(state.spec, proposal.patch);
+  // Re-validate against the live graph when the host supplies one:
+  // object ids the patch references may have vanished after the owner
+  // reviewed the preview (proposal TOCTOU). A dangling reference is
+  // never applied.
+  const violations = validatePatch(state.spec, proposal.patch, opts.graph);
   if (violations.length > 0) {
     return {
       ok: false,
