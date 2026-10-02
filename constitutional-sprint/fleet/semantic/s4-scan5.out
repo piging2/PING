@@ -1,0 +1,265 @@
+=== compose.yaml worker services (full) ===
+      - prod
+
+  # ============================================
+  # WORKER LAYER
+  # ============================================
+
+  # Digestion Worker - RSS/Article Processing
+  digestion-worker:
+    build:
+      context: ./brainos/rss
+      dockerfile: Dockerfile
+    container_name: ping-digestion-worker
+    restart: unless-stopped
+    env_file:
+      - ./brainos/rss/.env
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+    volumes:
+      - ./brainos/rss/knowledge:/app/knowledge
+      - ./brainos/rss/knowledge.db:/app/knowledge.db
+    networks:
+      - ping_internal
+    depends_on:
+      - ollama
+      - postgres
+    profiles:
+      - dev
+
+  # Newsletter Worker - Yahoo Mail Processing
+  newsletter-worker:
+    build:
+      context: ./brainos/newsletter
+      dockerfile: Dockerfile
+    container_name: ping-newsletter-worker
+    restart: unless-stopped
+    env_file:
+      - ./brainos/newsletter/.env
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+    volumes:
+      - ./brainos/newsletter/knowledge:/app/knowledge
+      - ./brainos/newsletter/newsletters.db:/app/newsletters.db
+      - ./brainos/newsletter/digests:/app/digests
+    networks:
+      - ping_internal
+    depends_on:
+      - ollama
+      - postgres
+    profiles:
+      - dev
+
+  # Projection Worker - Vector Projection
+  projection-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.projection
+    container_name: ping-projection-worker
+    restart: unless-stopped
+    env_file:
+      - .env.base
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+    networks:
+      - ping_internal
+    depends_on:
+      - qdrant
+      - postgres
+    profiles:
+      - dev
+
+  # Witness Worker - Witness Computation
+  witness-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.witness
+    container_name: ping-witness-worker
+    restart: unless-stopped
+    env_file:
+      - .env.base
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+    networks:
+      - ping_internal
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+
+  # Replay Worker - Event Replay
+  replay-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.replay
+    container_name: ping-replay-worker
+    restart: unless-stopped
+    env_file:
+      - .env.base
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ping_runtime}
+    networks:
+      - ping_internal
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+
+  # Worker Runtime - Constitutional Pipeline Driver
+  worker-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker-runtime
+    container_name: ping-worker-runtime
+    restart: unless-stopped
+    env_file:
+      - .env.base
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      POLL_INTERVAL: "5.0"
+      MAX_RETRIES: "3"
+      WORKER_NAME: worker_runtime
+    networks:
+      - ping_internal
+    depends_on:
+      gateway:
+        condition: service_started
+    profiles:
+      - dev
+      - prod
+
+  # ============================================
+  # UI LAYER
+  # ============================================
+
+=== docker ps: worker containers actually running? ===
+brain-postgres|postgres:15-alpine|Up 33 hours
+brain-qdrant|qdrant/qdrant:latest|Up 33 hours
+cosyvoice-tts|qwen3-tts-docker-cosyvoice-tts|Up 33 hours
+ollama|ollama/ollama|Up 33 hours
+open-webui|ghcr.io/open-webui/open-webui:main|Up 33 hours (healthy)
+ping-gateway|ping-gateway:devin-boundary2|Up 33 hours
+ping-gauntlet-pg|postgres:17-alpine|Up 39 minutes
+ping-postgres|postgres:15-alpine|Up 33 hours
+ping-qdrant|qdrant/qdrant:latest|Up 33 hours (unhealthy)
+ping-rc-gateway|ping-gateway:rc-4d522a6b|Up 33 hours
+ping-rc-postgres|postgres:16|Up 33 hours
+ping-redis|redis:alpine|Up 33 hours (healthy)
+ping-test-pg|postgres:17-alpine|Up 33 hours
+ping-vault|hashicorp/vault:latest|Up 33 hours (unhealthy)
+swarm02-pg|postgres:16|Up 36 minutes
+=== all containers incl stopped, worker-named ===
+
+=== Dockerfile.worker-runtime ===
+FROM python:3-alpine
+
+WORKDIR /app
+
+# Copy worker runtime and kernel
+COPY workers/ /app/workers/
+COPY kernel/ /app/kernel/
+
+# Worker runtime polls gateway via HTTP — no direct DB connections
+ENV GATEWAY_URL=http://gateway:8080
+ENV POLL_INTERVAL=5.0
+ENV MAX_RETRIES=3
+ENV WORKER_NAME=worker_runtime
+
+CMD ["python3", "-u", "/app/workers/worker_runtime.py"]
+=== other Dockerfiles at root ===
+/home/nolan/ping/Dockerfile.worker-runtime
+
+=== gateway/test_dormant_worker_gate.js head ===
+/**
+ * Dormant Worker Gate Tests
+ *
+ * Proves that workers with empty eventTypes are truly dormant — they never
+ * process dispatched events. Before this fix, WorkerRuntime treated
+ * `eventTypes.length === 0` as a catch-all (match everything), causing
+ * dormant workers to silently process ALL dispatched events. This created
+ * massive duplicate emissions (12,791 events instead of 247) and inflated
+ * mission/worker counts.
+ *
+ *   DWG-1: Worker with empty eventTypes receives zero dispatches.
+ *   DWG-2: Worker with empty eventTypes does not appear in worker stats.
+ *   DWG-3: Mixed registration — active + dormant — no cross-contamination.
+ *   DWG-4: registerCanonicalWorkers skips dormant workers entirely.
+ *   DWG-5: No duplicate CLASSIFICATION/RECOMMENDATION from dual-fan-out.
+ *
+ * Run: node test_dormant_worker_gate.js
+ */
+
+const assert = require('assert');
+
+// ─── Test runner ──────────────────────────────────────────────────────
+let passed = 0, failed = 0;
+const tests = [];
+function test(name, fn) { tests.push({ name, fn }); }
+
+async function run() {
+  console.log('=== Dormant Worker Gate Tests ===\n');
+  for (const { name, fn } of tests) {
+    try {
+      await fn();
+      console.log(`✓ ${name}`);
+      passed++;
+    } catch (err) {
+      console.log(`✗ ${name}`);
+      console.log(`  ${err.message}`);
+      failed++;
+    }
+  }
+  console.log(`\n=== Summary ===`);
+  console.log(`Passed: ${passed}`);
+  console.log(`Failed: ${failed}`);
+  console.log(`Total: ${passed + failed}`);
+  process.exit(failed > 0 ? 1 : 0);
+}
+
+// ─── Mock EventRuntime ────────────────────────────────────────────────
+
+function spyEventRuntime() {
+  const calls = [];
+  return {
+    _calls: calls,
+    emit: async (eventType, source, payload, options = {}) => {
+      const id = `evt_${eventType}_${calls.length}`;
+      calls.push({ eventType, source, payload, options, eventId: id });
+      return { status: 'ok', eventId: id };
+    },
+    on: () => {},
+  };
+}
+
+// ─── Mock Pool ────────────────────────────────────────────────────────
+
+class MockPool {
+  constructor() {
+    this._queryLog = [];
+  }
+  async query(sql, params) {
+    this._queryLog

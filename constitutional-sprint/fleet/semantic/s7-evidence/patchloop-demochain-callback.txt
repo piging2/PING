@@ -1,0 +1,673 @@
+     1	/**
+     2	 * Owner patch loop helpers for POST /api/fyd/objects/[objectId]/overrides.
+     3	 *
+     4	 * The loop: typed owner request -> proposal -> preview (before/after +
+     5	 * evidence/capability impact) -> bound approval -> apply -> revert.
+     6	 *
+     7	 * Digest binding (STALE PROPOSAL): the propose stage returns
+     8	 * baseStateDigest = sha256 over the canonicalized CURRENT owner state
+     9	 * projection (the event-log projection, stable across reads) and
+    10	 * patchDigest = sha256 over the canonicalized typed command. The approve
+    11	 * stage recomputes the state digest against the live log; a mismatch means
+    12	 * the state moved since the proposal was drafted and the approval is
+    13	 * refused with 409 stale_proposal. Nothing is written on refusal.
+    14	 *
+    15	 * The approval record binds tenant + actor + base digest + patch digest +
+    16	 * approval metadata + result digest, and is returned with every approve
+    17	 * response alongside the chain audit trail.
+    18	 *
+    19	 * G4: every mutation requires a server-side TenantContext (derived from
+    20	 * the trusted route path: the object id IS the site id) and an
+    21	 * ActorContext. The actor on this route is always the seeded demo actor:
+    22	 * DEMO OWNER CONTEXT is labeled on every response, never presented as a
+    23	 * verified owner identity.
+    24	 */
+    25	import { createHash } from "node:crypto";
+    26	import { canonicalize } from "@/lib/ping/ask-composer";
+    27	import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+    28	import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
+    29	import { readOverrides } from "@/fyd/object/owner-store";
+    30	import { readOwnerEvents } from "@/fyd/object/owner-events";
+    31	import type { OwnerCommand } from "@/fyd/object/types";
+    32	import { loadObjectView } from "@/fyd/object/view";
+    33	
+    34	/** sha256 hex over the canonicalized value. Deterministic across reads. */
+    35	export function digestOf(value: unknown): string {
+    36	  return createHash("sha256").update(canonicalize(value), "utf8").digest("hex");
+    37	}
+    38	
+    39	/**
+    40	 * Digest of the owner state the proposal was computed against: the
+    41	 * event-log projection for this object. Stable across reads when nothing
+    42	 * is written (updatedAt tracks the last event, not read time).
+    43	 */
+    44	export function ownerStateDigest(objectId: string): string {
+    45	  return digestOf(readOverrides(objectId));
+    46	}
+    47	
+    48	/** Digest of the typed command the owner is asked to approve. */
+    49	export function patchDigestOf(command: OwnerCommand): string {
+    50	  return digestOf(command);
+    51	}
+    52	
+    53	/**
+    54	 * The acting owner identity, future-neutral. The demo implementation
+    55	 * (OwnerActorContext, below) pins demoOwnerContext: true; a future
+    56	 * PING-backed implementation satisfies this base with a verified owner
+    57	 * identity and no demo marker. Demo honesty is preserved structurally:
+    58	 * every DEMO response and approval still carries the literal
+    59	 * demoOwnerContext: true stamp, so demo authorization can never be
+    60	 * mistaken for production authorization.
+    61	 */
+    62	export interface OwnerActor {
+    63	  actorId: string;
+    64	  label: string;
+    65	  /** Human-readable statement of what this context is and is not. */
+    66	  disclosure: string;
+    67	}
+    68	
+    69	/**
+    70	 * The acting owner identity on this route. DEMO SCAFFOLDING: always the
+    71	 * seeded demo actor, never a verified owner. Authentication alone never
+    72	 * grants mutation; the capability verdict (resolved separately by the
+    73	 * demo chain) is the only gate to the apply step.
+    74	 */
+    75	export interface OwnerActorContext extends OwnerActor {
+    76	  /** Always true on this route. Rendered on every demo-owner affordance. */
+    77	  demoOwnerContext: true;
+    78	}
+    79	
+    80	export function demoActorContext(actorId: string, label: string): OwnerActorContext {
+    81	  return {
+    82	    actorId,
+    83	    label,
+    84	    demoOwnerContext: true,
+    85	    disclosure:
+    86	      "DEMO OWNER CONTEXT: '" +
+    87	      label +
+    88	      "' is a seeded demo actor, not a verified owner identity. " +
+    89	      "No identity was verified. Nothing decided here may back a production " +
+    90	      "authorization decision.",
+    91	  };
+    92	}
+    93	
+    94	/** Before/after + impact preview for one typed command. Never writes. */
+    95	export interface PatchPreview {
+    96	  before: string;
+    97	  after: string;
+    98	  evidenceImpact: string;
+    99	  capabilityImpact: string;
+   100	}
+   101	
+   102	function serviceName(names: Map<string, string>, id: string): string {
+   103	  return names.get(id) ?? id;
+   104	}
+   105	
+   106	/** The service order the site shows now: owner order first, then derived ids. */
+   107	function currentOrder(objectId: string, ids: string[]): string[] {
+   108	  const known = new Set(ids);
+   109	  const owner = readOverrides(objectId).serviceOrder.filter((id) => known.has(id));
+   110	  const order = [...owner];
+   111	  for (const id of ids) if (!order.includes(id)) order.push(id);
+   112	  return order;
+   113	}
+   114	
+   115	/** What the order would be after applying a move-service command. */
+   116	function movedOrder(order: string[], id: string, to: "up" | "down" | "first" | "last"): string[] {
+   117	  const next = order.filter((x) => x !== id);
+   118	  if (to === "first") next.unshift(id);
+   119	  else if (to === "last") next.push(id);
+   120	  else {
+   121	    const idx = order.indexOf(id);
+   122	    const at = to === "up" ? Math.max(0, idx - 1) : Math.min(next.length, idx + 1);
+   123	    next.splice(at, 0, id);
+   124	  }
+   125	  return next;
+   126	}
+   127	
+   128	function sourceFieldValue(objectId: string, field: "phone" | "email" | "website"): string | null {
+   129	  try {
+   130	    const graph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+   131	    const business = findBusinessObject(graph);
+   132	    if (!business) return null;
+   133	    return rawFieldValue(business, field);
+   134	  } catch {
+   135	    return null;
+   136	  }
+   137	}
+   138	
+   139	/**
+   140	 * Build the before/after + impact preview for a typed command. Pure read:
+   141	 * interprets the command against the CURRENT state and describes the
+   142	 * transition the approval would authorize. Returns null when the command
+   143	 * cannot be previewed (the approve stage still validates independently).
+   144	 */
+   145	export function buildPatchPreview(
+   146	  objectId: string,
+   147	  command: OwnerCommand,
+   148	  serviceIds: string[],
+   149	  serviceNames: Map<string, string>,
+   150	  capabilityImpact: string,
+   151	): PatchPreview | null {
+   152	  const overrides = readOverrides(objectId);
+   153	  switch (command.type) {
+   154	    case "set-contact-field": {
+   155	      const existing = overrides.fieldCorrections[command.field];
+   156	      const before = existing ? existing.ownerValue : (sourceFieldValue(objectId, command.field) ?? "(not on record)");
+   157	      return {
+   158	        before: command.field + ": " + before,
+   159	        after: command.field + ": " + command.value,
+   160	        evidenceImpact:
+   161	          "Appends one owner.corrected-fact event (owner attestation) to this object's log. " +
+   162	          "Ask FYD will cite the new value as an 'Owner-set value' from 'Owner correction'; " +
+   163	          "the site's current value (" + before + ") stays recorded as what the source says. " +
+   164	          "The /build page shows the owner value with a correction note.",
+   165	        capabilityImpact,
+   166	      };
+   167	    }
+   168	    case "revert-contact-field": {
+   169	      const existing = overrides.fieldCorrections[command.field];
+   170	      if (!existing) return null;
+   171	      const source = sourceFieldValue(objectId, command.field) ?? "(not on record)";
+   172	      return {
+   173	        before: command.field + ": " + existing.ownerValue + " (owner correction)",
+   174	        after: command.field + ": " + source + " (site's value shown again)",
+   175	        evidenceImpact:
+   176	          "Appends one owner.restored-fact event. The correction event stays in the log; " +
+   177	          "the site's value is shown again on /build and in Ask FYD answers.",
+   178	        capabilityImpact,
+   179	      };
+   180	    }
+   181	    case "move-service": {
+   182	      const order = currentOrder(objectId, serviceIds);
+   183	      if (!order.includes(command.id)) return null;
+   184	      const after = movedOrder(order, command.id, command.to);
+   185	      const nameOf = (id: string) => serviceName(serviceNames, id);
+   186	      return {
+   187	        before: "Services order: " + order.map(nameOf).join(" > "),
+   188	        after: "Services order: " + after.map(nameOf).join(" > "),
+   189	        evidenceImpact:
+   190	          "Appends one owner.corrected-fact event for services:order (owner attestation). " +
+   191	          "The ObjectView service list re-projects from the log. " +
+   192	          "Note: the /build page planner currently consumes owner field corrections, not service order.",
+   193	        capabilityImpact,
+   194	      };
+   195	    }
+   196	    case "set-service-visibility": {
+   197	      if (!serviceIds.includes(command.id)) return null;
+   198	      const hidden = overrides.hiddenServices.includes(command.id);
+   199	      return {
+   200	        before: serviceName(serviceNames, command.id) + ": " + (hidden ? "hidden" : "visible"),
+   201	        after: serviceName(serviceNames, command.id) + ": " + (command.visible ? "visible" : "hidden"),
+   202	        evidenceImpact:
+   203	          "Appends one owner.hid-fact / owner.corrected-fact event (owner attestation). " +
+   204	          "The ObjectView re-projects from the log. " +
+   205	          "Note: the /build page planner currently consumes owner field corrections, not service visibility.",
+   206	        capabilityImpact,
+   207	      };
+   208	    }
+   209	    case "add-service": {
+   210	      const order = currentOrder(objectId, serviceIds);
+   211	      return {
+   212	        before: order.length + " services: " + order.map((id) => serviceName(serviceNames, id)).join(", "),
+   213	        after: order.length + 1 + " services: " + [...order.map((id) => serviceName(serviceNames, id)), command.name].join(", "),
+   214	        evidenceImpact:
+   215	          "Appends one owner.added-fact event (owner attestation). " +
+   216	          "The ObjectView re-projects from the log.",
+   217	        capabilityImpact,
+   218	      };
+   219	    }
+   220	    case "set-address-visibility": {
+   221	      return {
+   222	        before: "address visibility: " + overrides.addressVisibility,
+   223	        after: "address visibility: " + command.visibility,
+   224	        evidenceImpact:
+   225	          "Appends one owner event (owner attestation) for contact:address visibility. " +
+   226	          "The ObjectView re-projects from the log.",
+   227	        capabilityImpact,
+   228	      };
+   229	    }
+   230	    case "confirm-contact-field": {
+   231	      const correction = overrides.fieldCorrections[command.field];
+   232	      const effective = correction
+   233	        ? correction.ownerValue
+   234	        : sourceFieldValue(objectId, command.field);
+   235	      if (effective === null) return null;
+   236	      return {
+   237	        before: command.field + ": " + effective,
+   238	        after: command.field + ": " + effective + " (owner confirms correct)",
+   239	        evidenceImpact:
+   240	          "Appends one owner.confirmed-fact event (owner attestation) " +
+   241	          "recording that the owner asserts the current " +
+   242	          command.field +
+   243	          " is correct, with actor and timestamp. Nothing is rewritten: the " +
+   244	          "source record is unchanged, and the confirmation keeps the " +
+   245	          "source's value at confirmation time so later source drift can be " +
+   246	          "detected (sourceDrifted).",
+   247	        capabilityImpact,
+   248	      };
+   249	    }
+   250	    default:
+   251	      return null;
+   252	  }
+   253	}
+   254	
+   255	/** The id of the most recently appended event for this object, or null. */
+   256	export function lastEventId(objectId: string): string | null {
+   257	  const events = readOwnerEvents(objectId);
+   258	  return events.length > 0 ? events[events.length - 1].id : null;
+   259	}
+   260	
+   261	/**
+   262	 * The bound approval record: tenant + actor + base digests + patch digest +
+   263	 * approval metadata + result digest. Returned with every approve response
+   264	 * and describing exactly what was authorized and what resulted.
+   265	 *
+   266	 * The approval binds TWO base digests: baseStateDigest (the owner overlay
+   267	 * journal the approval reviewed) and baseViewDigest (the composed ObjectView
+   268	 * the /build surface renders). The view digest is the current build-state
+   269	 * equivalent of the requested base SiteSpec/state digest: it is the canonical
+   270	 * hash of the composed ObjectView, so a source refresh that moves the
+   271	 * rendered build under an unchanged owner journal still invalidates the
+   272	 * approval. Either digest moving makes the proposal STALE.
+   273	 */
+   274	export interface BoundApproval {
+   275	  tenantId: string;
+   276	  actor: OwnerActor;
+   277	  baseStateDigest: string;
+   278	  baseViewDigest: string;
+   279	  patchDigest: string;
+   280	  approvedAt: string;
+   281	  eventId: string | null;
+   282	  resultDigest: string;
+   283	  /**
+   284	   * Present (literal true) on demo-stamped approvals, absent on future
+   285	   * production approvals. Optional so a PING-backed stamper can satisfy
+   286	   * this record without claiming demo status.
+   287	   */
+   288	  demoOwnerContext?: true;
+   289	}
+   290	
+   291	/**
+   292	 * Canonical digest of the composed ObjectView for an object: the current
+   293	 * build state the owner approval is bound to. Unknown objects hash a
+   294	 * stable missing marker so the digest is always well defined.
+   295	 */
+   296	export function buildViewDigest(objectId: string): string {
+   297	  const view = loadObjectView(objectId);
+   298	  return digestOf(view ?? { objectId, missing: true });
+   299	}
+   300	
+   301	/**
+   302	 * The DEMO approval stamper: always stamps demoOwnerContext: true, so a
+   303	 * demo approval can never be mistaken for a production authorization. A
+   304	 * future PING-backed implementation provides its own stamper (no demo
+   305	 * marker) against the same BoundApproval record shape.
+   306	 */
+   307	export function buildBoundApproval(args: {
+   308	  tenantId: string;
+   309	  actor: OwnerActor;
+   310	  baseStateDigest: string;
+   311	  baseViewDigest: string;
+   312	  patchDigest: string;
+   313	  eventId: string | null;
+   314	  resultDigest: string;
+   315	}): BoundApproval {
+   316	  return {
+   317	    tenantId: args.tenantId,
+   318	    actor: args.actor,
+   319	    baseStateDigest: args.baseStateDigest,
+   320	    baseViewDigest: args.baseViewDigest,
+   321	    patchDigest: args.patchDigest,
+   322	    approvedAt: new Date().toISOString(),
+   323	    eventId: args.eventId,
+   324	    resultDigest: args.resultDigest,
+   325	    demoOwnerContext: true,
+   326	  };
+   327	}
+===FILE: src/app/api/fyd/objects/[objectId]/overrides/patch-loop.ts
+     1	/**
+     2	 * H3 lane: the SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP ->
+     3	 * CAPABILITY chain for owner fact corrections. DEMO SCAFFOLDING.
+     4	 *
+     5	 * The chain, in order, with nothing hidden:
+     6	 *
+     7	 *   1. SESSION: the practice identity cookie (getPracticeIdentityId).
+     8	 *      Recorded for audit only.
+     9	 *   2. PING IDENTITY: the dev identity id behind the session. A dev
+    10	 *      identity, never a verified real-world identity.
+    11	 *   3. CONTROL RELATIONSHIP: the demo mapping (resolveDemoRelationship)
+    12	 *      treats the SEEDED DEMO ACTOR as controller. This mapping is the
+    13	 *      demo: it is keyed on the seeded actor id, NOT on the session
+    14	 *      identity. Authentication alone NEVER grants mutation; a session
+    15	 *      identity by itself authorizes nothing.
+    16	 *   4. CAPABILITY: evaluateCapability(actor, relationship,
+    17	 *      "owner.correct-fact"). Deny is the default; the allow fires only
+    18	 *      for the controller relationship under the demo mapping.
+    19	 *   5. PROPOSE/APPLY RULE: enforced by the caller (the overrides route's
+    20	 *      propose/approve two-step). The caller must check verdict.allowed
+    21	 *      BEFORE applying; approve appends the event, and the read model
+    22	 *      re-projects from the log (EVENT -> PROJECTION).
+    23	 *
+    24	 * THIS IS NOT AUTHENTICATION. See ./gate.ts. Nothing here may back a
+    25	 * production authorization decision. Production owner auth must be built
+    26	 * as a separate, reviewed mechanism; these demo verdicts must not be
+    27	 * reused, wrapped, or "upgraded".
+    28	 *
+    29	 * SERVER ONLY: reads the session cookie via next/headers.
+    30	 */
+    31	
+    32	import { getPracticeIdentityId } from "@/lib/ping/session";
+    33	import {
+    34	  DEMO_OWNER_ACTOR,
+    35	  evaluateCapability,
+    36	  resolveDemoRelationship,
+    37	  type CapabilityVerdict,
+    38	  type DemoActor,
+    39	  type OwnerRelationship,
+    40	} from "./capability";
+    41	
+    42	export interface OwnerCorrectionChain {
+    43	  /** The practice session's identity id, or null when no session. */
+    44	  sessionIdentityId: string | null;
+    45	  /**
+    46	   * What the session identity does and does not mean. Informational;
+    47	   * the verdict below never derives from it.
+    48	   */
+    49	  pingIdentityNote: string;
+    50	  /** Always the seeded demo actor in this lane. A label, not an identity. */
+    51	  actor: DemoActor;
+    52	  relationship: OwnerRelationship;
+    53	  verdict: CapabilityVerdict;
+    54	  /** Always true: marks this chain as demo scaffolding in audit trails. */
+    55	  demoScaffolding: true;
+    56	  auditNote: string;
+    57	}
+    58	
+    59	/**
+    60	 * Resolve the full chain for an owner.correct-fact attempt on one object.
+    61	 * Pure evaluation: performs no mutation and writes nothing.
+    62	 */
+    63	export async function resolveOwnerCorrectionChain(
+    64	  objectId: string,
+    65	): Promise<OwnerCorrectionChain> {
+    66	  let sessionIdentityId: string | null = null;
+    67	  try {
+    68	    sessionIdentityId = await getPracticeIdentityId();
+    69	  } catch {
+    70	    sessionIdentityId = null;
+    71	  }
+    72	
+    73	  // The demo shortcut, stated plainly: whichever dev identity (if any)
+    74	  // sits behind the session, the actor recorded on events is the seeded
+    75	  // demo actor. The session identity grants nothing; the allow/deny comes
+    76	  // from the demo relationship mapping plus the capability rule.
+    77	  const actor = DEMO_OWNER_ACTOR;
+    78	  const relationship = resolveDemoRelationship(objectId, actor);
+    79	  const verdict = evaluateCapability(actor, relationship, "owner.correct-fact");
+    80	
+    81	  return {
+    82	    sessionIdentityId,
+    83	    pingIdentityNote:
+    84	      "demo scaffolding: the practice session identity is recorded for " +
+    85	      "audit only. It is a dev identity, never a verified owner, and it " +
+    86	      "grants nothing by itself; authentication alone never authorizes a " +
+    87	      "mutation. The verdict below derives from the demo relationship " +
+    88	      "mapping plus the capability rule.",
+    89	    actor,
+    90	    relationship,
+    91	    verdict,
+    92	    demoScaffolding: true,
+    93	    auditNote:
+    94	      "DEMO SCAFFOLDING: the seeded demo actor '" +
+    95	      actor.id +
+    96	      "' is treated as controller of '" +
+    97	      objectId +
+    98	      "' by a hard-coded demo mapping. No identity was verified. Nothing " +
+    99	      "in this chain may back a production authorization decision.",
+   100	  };
+   101	}
+   102	
+   103	/** JSON-safe audit view of a resolved chain, for route responses/logs. */
+   104	export function chainAuditView(chain: OwnerCorrectionChain): {
+   105	  demoScaffolding: true;
+   106	  sessionIdentityId: string | null;
+   107	  actor: { id: string; label: string };
+   108	  relationship: { kind: OwnerRelationship["kind"]; basis: string };
+   109	  verdict: { capability: string; allowed: boolean; reason: string };
+   110	  auditNote: string;
+   111	} {
+   112	  return {
+   113	    demoScaffolding: true,
+   114	    sessionIdentityId: chain.sessionIdentityId,
+   115	    actor: { id: chain.actor.id, label: chain.actor.label },
+   116	    relationship: {
+   117	      kind: chain.relationship.kind,
+   118	      basis: chain.relationship.basis,
+   119	    },
+   120	    verdict: {
+   121	      capability: chain.verdict.capability,
+   122	      allowed: chain.verdict.allowed,
+   123	      reason: chain.verdict.reason,
+   124	    },
+   125	    auditNote: chain.auditNote,
+   126	  };
+   127	}
+===FILE: src/fyd/owner-mode/demo-chain.ts
+     1	/**
+     2	 * Google OIDC start/callback flows with injected dependencies.
+     3	 *
+     4	 * Route handlers stay thin: they build an AuthConfig from the real env
+     5	 * and call these functions. Tests inject a MockOidcProvider, an
+     6	 * in-memory store, and fixed secrets, so the full binding contract is
+     7	 * proven without network or provider-console credentials.
+     8	 */
+     9	
+    10	import {
+    11	  buildAuthorizationUrl,
+    12	  codeChallengeFor,
+    13	  exchangeCodeForTokens,
+    14	  newCodeVerifier,
+    15	  newNonce,
+    16	  newState,
+    17	  verifyGoogleIdToken,
+    18	  type FetchImpl,
+    19	  type GoogleOidcConfig,
+    20	  type VerifiedAccount,
+    21	} from "./provider";
+    22	import {
+    23	  IdentityBindingError,
+    24	  linkProviderAccount,
+    25	  providerAccountId,
+    26	  signInOrSignUp,
+    27	  type IdentityBindingStore,
+    28	  type SignInResult,
+    29	} from "./principal";
+    30	import {
+    31	  clearOAuthStateCookie,
+    32	  createOAuthStateValue,
+    33	  createSessionValue,
+    34	  readOAuthStateValue,
+    35	  serializeOAuthStateCookie,
+    36	  serializeSessionCookie,
+    37	  type OAuthState,
+    38	  type SessionConfig,
+    39	} from "./session";
+    40	import { appendAuthAudit } from "./audit";
+    41	import { isAllowedRedirectUri, notConfiguredMessage, type AuthConfig } from "./config";
+    42	
+    43	export class AuthFlowError extends Error {
+    44	  readonly code: string;
+    45	  readonly status: number;
+    46	  constructor(code: string, message: string, status: number) {
+    47	    super(message);
+    48	    this.name = "AuthFlowError";
+    49	    this.code = code;
+    50	    this.status = status;
+    51	  }
+    52	}
+    53	
+    54	function requireReady(config: AuthConfig): void {
+    55	  if (!config.ready) {
+    56	    throw new AuthFlowError(
+    57	      "AUTH_NOT_CONFIGURED",
+    58	      "Google sign-in is not configured yet. Install provider-console credentials to enable it.",
+    59	      503
+    60	    );
+    61	  }
+    62	}
+    63	
+    64	export interface StartDeps {
+    65	  config: AuthConfig;
+    66	}
+    67	
+    68	export interface StartResult {
+    69	  redirectUrl: string;
+    70	  stateCookie: string;
+    71	}
+    72	
+    73	/**
+    74	 * Begin a Google sign-in (or, when linkIdentityId is set, a link flow for
+    75	 * an already-authenticated identity).
+    76	 */
+    77	export function beginGoogleStart(
+    78	  deps: StartDeps,
+    79	  opts: { linkIdentityId?: string } = {}
+    80	): StartResult {
+    81	  requireReady(deps.config);
+    82	  const { google, session } = deps.config;
+    83	  const state = newState();
+    84	  const nonce = newNonce();
+    85	  const codeVerifier = newCodeVerifier();
+    86	  const oauthState: OAuthState = {
+    87	    state,
+    88	    nonce,
+    89	    codeVerifier,
+    90	    redirectUri: google.redirectUri,
+    91	    createdAt: Date.now(),
+    92	  };
+    93	  if (opts.linkIdentityId) oauthState.linkIdentityId = opts.linkIdentityId;
+    94	  const redirectUrl = buildAuthorizationUrl(google, {
+    95	    state,
+    96	    nonce,
+    97	    codeChallenge: codeChallengeFor(codeVerifier),
+    98	  });
+    99	  return {
+   100	    redirectUrl,
+   101	    stateCookie: serializeOAuthStateCookie(createOAuthStateValue(oauthState, session.secret), session),
+   102	  };
+   103	}
+   104	
+   105	export interface CallbackDeps {
+   106	  config: AuthConfig;
+   107	  store: IdentityBindingStore;
+   108	  fetchImpl?: FetchImpl;
+   109	  nowIso?: string;
+   110	}
+   111	
+   112	export interface CallbackResult {
+   113	  identityId: string;
+   114	  created: boolean;
+   115	  emailCollision: boolean;
+   116	  linked: boolean;
+   117	  sessionCookie: string;
+   118	  clearStateCookie: string;
+   119	}
+   120	
+   121	/**
+   122	 * Complete the Google callback: verify state, strict redirect allowlist,
+   123	 * exchange the code, verify the ID token server-side, then bind.
+   124	 * Provider tokens are discarded after verification.
+   125	 */
+   126	export async function completeGoogleCallback(
+   127	  deps: CallbackDeps,
+   128	  params: { code: string | null; state: string | null; stateCookie: string | null | undefined }
+   129	): Promise<CallbackResult> {
+   130	  requireReady(deps.config);
+   131	  const { google, session } = deps.config;
+   132	  const fetchImpl = deps.fetchImpl ?? fetch;
+   133	  const nowIso = deps.nowIso ?? new Date().toISOString();
+   134	
+   135	  const oauthState = readOAuthStateValue(params.stateCookie, session.secret);
+   136	  if (!oauthState) throw new AuthFlowError("BAD_STATE", "OAuth state missing, expired, or tampered", 400);
+   137	  if (!params.state || params.state !== oauthState.state) {
+   138	    throw new AuthFlowError("STATE_MISMATCH", "OAuth state mismatch", 400);
+   139	  }
+   140	  if (!isAllowedRedirectUri(google, oauthState.redirectUri)) {
+   141	    throw new AuthFlowError("REDIRECT_NOT_ALLOWED", "Redirect URI is not allowlisted", 400);
+   142	  }
+   143	  if (!params.code) throw new AuthFlowError("MISSING_CODE", "Authorization code missing", 400);
+   144	
+   145	  let tokens;
+   146	  try {
+   147	    tokens = await exchangeCodeForTokens(
+   148	      google,
+   149	      { code: params.code, codeVerifier: oauthState.codeVerifier, redirectUri: google.redirectUri },
+   150	      fetchImpl
+   151	    );
+   152	  } catch (err) {
+   153	    throw new AuthFlowError("EXCHANGE_FAILED", "Could not exchange the authorization code", 502);
+   154	  }
+   155	  let verified: VerifiedAccount;
+   156	  try {
+   157	    verified = await verifyGoogleIdToken(
+   158	      google,
+   159	      tokens.idToken,
+   160	      { expectedNonce: oauthState.nonce },
+   161	      fetchImpl
+   162	    );
+   163	  } catch (err) {
+   164	    throw new AuthFlowError("ID_TOKEN_INVALID", "Google identity could not be verified", 401);
+   165	  }
+   166	  // Provider tokens are intentionally dropped here: they never enter
+   167	  // binding records, audit logs, journal payloads, or generated pages.
+   168	  tokens = null;
+   169	
+   170	  const linkingTo = oauthState.linkIdentityId;
+   171	  let result: { identityId: string; created: boolean; emailCollision: boolean; linked: boolean };
+   172	  if (linkingTo) {
+   173	    try {
+   174	      const link = linkProviderAccount(
+   175	        deps.store,
+   176	        linkingTo,
+   177	        verified,
+   178	        { proofOfAuthentication: verified },
+   179	        nowIso
+   180	      );
+   181	      result = { identityId: link.identityId, created: false, emailCollision: false, linked: !link.alreadyLinked };
+   182	    } catch (err) {
+   183	      if (err instanceof IdentityBindingError && err.code === "ACCOUNT_BOUND_ELSEWHERE") {
+   184	        throw new AuthFlowError("ACCOUNT_BOUND_ELSEWHERE", "This Google account is linked to a different identity", 409);
+   185	      }
+   186	      throw err;
+   187	    }
+   188	    appendAuthAudit("link", {
+   189	      identityId: linkingTo,
+   190	      provider: verified.provider,
+   191	      providerAccountId: providerAccountId(verified.provider, verified.issuer, verified.subject),
+   192	      at: nowIso,
+   193	    });
+   194	  } else {
+   195	    const signIn: SignInResult = signInOrSignUp(deps.store, verified, nowIso);
+   196	    result = { identityId: signIn.identityId, created: signIn.created, emailCollision: signIn.emailCollision, linked: false };
+   197	    appendAuthAudit(signIn.created ? "sign_up" : "sign_in", {
+   198	      identityId: signIn.identityId,
+   199	      provider: verified.provider,
+   200	      providerAccountId: providerAccountId(verified.provider, verified.issuer, verified.subject),
+   201	      note: signIn.emailCollision ? "email collision: separate identity, no merge" : undefined,
+   202	      at: nowIso,
+   203	    });
+   204	  }
+   205	
+   206	  return {
+   207	    identityId: result.identityId,
+   208	    created: result.created,
+   209	    emailCollision: result.emailCollision,
+   210	    linked: result.linked,
+   211	    sessionCookie: serializeSessionCookie(createSessionValue(result.identityId, session.secret), session),
+   212	    clearStateCookie: clearOAuthStateCookie(session),
+   213	  };
+   214	}
+   215	
+   216	export { notConfiguredMessage };
+===FILE: src/fyd/identity/callback-flow.ts

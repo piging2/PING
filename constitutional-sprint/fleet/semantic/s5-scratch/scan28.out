@@ -1,0 +1,93 @@
+=== base_worker.js ===
+88 ping-runtime/agents/base_worker.js
+/**
+ * Base Worker
+ * 
+ * Constitutional Base Worker - Minimal abstraction
+ * 
+ * Workers are thin.
+ * Business logic stays inside Authorities.
+ * 
+ * All workers must:
+ * - Extend BaseWorker
+ * - Implement process(job) method
+ * - Use Authorities for business logic
+ * - Use TransactionBoundary for state changes
+ * 
+ * Architectural Rules:
+ * - Do NOT put business logic inside workers
+ * - Do NOT access PostgreSQL directly except through Ports
+ * - Do NOT publish events outside TransactionBoundary
+ * - Do NOT bypass Outbox
+ * - Do NOT create worker-specific schemas
+ * 
+ * Execution is handled by WorkerExecutor.
+ * Metrics are handled by WorkerPool or MetricsAuthority.
+ * Health is handled by HealthAuthority.
+ * Witnesses are handled by WitnessAuthority.
+ */
+
+class BaseWorker {
+  constructor(workerId, workerType, dependencies = {}) {
+    this._workerId = workerId;
+    this._workerType = workerType;
+    this._dependencies = dependencies;
+    
+    // Dependencies that workers may need
+    this._transactionBoundary = dependencies.transactionBoundary;
+    this._queuePort = dependencies.queuePort;
+    this._eventBus = dependencies.eventBus;
+    this._repository = dependencies.repository;
+    this._outbox = dependencies.outbox;
+  }
+
+  /**
+   * Process job - MUST be implemented by subclass
+   * @param {Object} job - Job to process
+   * @returns {Promise<Object>} Job result
+   */
+  async process(job) {
+    throw new Error('BaseWorker.process() must be implemented by subclass');
+  }
+
+  /**
+   * Get worker ID
+   * @returns {string} Worker ID
+   */
+  getWorkerId() {
+    return this._workerId;
+  }
+
+  /**
+   * Get worker type
+   * @returns {string} Worker type
+   */
+  getWorkerType() {
+    return this._workerType;
+  }
+
+  /**
+   * Validate job payload - centralized validation for all workers
+   * @param {Object} job - Job to validate
+   * @throws {Error} If validation fails
+   */
+  _validateJob(job) {
+    if (!job) {
+      throw new Error('Job is null or undefined');
+    }
+    if (!job.job_id) {
+      throw new Error('Job missing job_id');
+    }
+    if (!job.job_type) {
+      throw new Error('Job missing job_type');
+    }
+    if (!job.payload) {
+      throw new Error('Job missing payload');
+    }
+  }
+}
+
+module.exports = { BaseWorker };
+=== automatic_mission_generator importers ===
+=== mission.activity.js live? ===
+gateway/activities/index.js:15:const { executeMissionActivity } = require('./mission.activity');

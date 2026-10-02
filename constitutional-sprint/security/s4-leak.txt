@@ -1,0 +1,67 @@
+===== 7: logging that may leak secrets/PII =====
+src/components/visual-slot.tsx:198:        console.log('[VS_FORENSIC] REFRESH_SLOTS_ACCEPTED', { id });
+src/components/visual-slot.tsx:207:          console.log('[VS_FORENSIC] REFRESH_REGISTER_SENT', { slotId: id, targetOrigin });
+src/lib/infrastructure/auth-manager.ts:249:  console.log(`  Has Refresh Token: ${status.hasRefreshToken ? '✅' : '❌'}`);
+src/lib/infrastructure/auth-manager.ts:252:    console.log(`  Missing Credentials:`);
+src/lib/blob-storage.ts:52:    console.warn('[BLOB_STORAGE] KV credentials not configured, returning null client');
+src/lib/kit-adapter.ts:114:        console.error("KIT_WEBHOOK_SECRET not set");
+src/lib/effective-project-gallery.ts:204:    console.log('[EFFECTIVE_GALLERY] KV_CREDENTIALS', {
+src/lib/assignment-store.ts:164:  console.log('[CREDENTIAL_INVESTIGATION]', {
+src/lib/assignment-store.ts:1004:    console.error('[ASSIGNMENT_QUARANTINE] AUTHORIZATION_DENIED: POST-GATE POISON DETECTED', {
+src/lib/assignment-store.ts:1019:    console.error('[ASSIGNMENT_QUARANTINE] AUTHORIZATION_DENIED: CHRONOLOGY INCONCLUSIVE', {
+src/lib/dataset-snapshots.ts:62:      console.warn('[DATASET_SNAPSHOT] KV credentials not configured');
+src/lib/__tests__/atomic-promotion.test.ts:44:    console.warn('Skipping atomic promotion test: KV credentials not configured');
+src/lib/__tests__/deployment-transaction-bulk.test.ts:49:    console.warn('Skipping bulk assignment test: KV credentials not configured (non-CI environment)');
+src/fyd/refresh/run-t2.ts:40:    console.error("usage: run-t2.ts <htmlFile> <snapshotDir>");
+src/fyd/refresh/run-t2.ts:103:  console.log(JSON.stringify(report, null, 2));
+===== 7b: request-body/header logging (any) =====
+===== 4: API routes inventory (raw-object exposure review targets) =====
+src/app/api/diagnostics/sharp/route.ts
+src/app/api/fyd/ask/[siteId]/route.ts
+src/app/api/fyd/ask/route.ts
+src/app/api/fyd/auth/google/callback/route.ts
+src/app/api/fyd/auth/google/start/route.ts
+src/app/api/fyd/auth/link/google/callback/route.ts
+src/app/api/fyd/auth/link/google/start/route.ts
+src/app/api/fyd/auth/session/route.ts
+src/app/api/fyd/auth/signout/route.ts
+src/app/api/fyd/auth/unlink/route.ts
+src/app/api/fyd/circle/route.ts
+src/app/api/fyd/claims/[resourceId]/claim/route.ts
+src/app/api/fyd/claims/[resourceId]/release/route.ts
+src/app/api/fyd/claims/[resourceId]/route.ts
+src/app/api/fyd/claims/[resourceId]/verify/route.ts
+src/app/api/fyd/claims/identity/route.ts
+src/app/api/fyd/claims/verification-methods/route.ts
+src/app/api/fyd/customize/route.ts
+src/app/api/fyd/follow/route.ts
+src/app/api/fyd/like/route.ts
+src/app/api/fyd/media/route.ts
+src/app/api/fyd/objects/[objectId]/overrides/route.ts
+src/app/api/fyd/objects/[objectId]/route.ts
+src/app/api/fyd/onboarding/preview/route.ts
+src/app/api/fyd/projection/route.ts
+src/app/api/fyd/social/feed/route.ts
+src/app/api/fyd/social/follow/route.ts
+src/app/api/fyd/social/identity/route.ts
+src/app/api/fyd/social/post/route.ts
+src/app/api/fyd/social/state/route.ts
+src/app/api/health/authority/route.ts
+src/app/api/health/route.ts
+src/app/api/kit/webhook/route.ts
+src/app/api/newsletter/subscribe/route.ts
+src/app/api/ping/actions/route.ts
+src/app/api/ping/ask/route.ts
+src/app/api/ping/circle/route.ts
+src/app/api/ping/feed/route.ts
+src/app/api/ping/node/route.ts
+src/app/api/ping/object/route.ts
+src/app/api/ping/proposal/route.ts
+src/app/api/practice/bio/route.ts
+src/app/api/practice/feed/route.ts
+src/app/api/practice/follow/route.ts
+src/app/api/practice/identities/route.ts
+src/app/api/practice/like/route.ts
+src/app/api/practice/profile/route.ts
+src/app/api/practice/session/route.ts
+src/app/api/resources/download/route.ts

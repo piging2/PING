@@ -1,0 +1,54 @@
+### reader gateway URL default (ping-object-reader.ts ~240-280)
+    const raw = process.env.PING_GATEWAY_BASE_URL;
+    if (!raw || !raw.trim()) throw new GatewayNotConfiguredError();
+    return raw.trim().replace(/\/+$/, "");
+  }
+
+  private async gw(path: string, init?: RequestInit): Promise<Response> {
+    const base = this.base();
+    try {
+      return await fetch(`${base}${path}`, {
+        ...init,
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      });
+    } catch (err) {
+      throw new GatewayUnreachableError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  /**
+   * FYD journal gateway base. Server-side only, like PING_GATEWAY_BASE_URL.
+   * The FYD overlay events live in the FYD demo journal, a separate
+   * deployment from the main PING gateway, so they get their own base URL.
+   */
+  private fydJournalBase(): string {
+    const raw = process.env.FYD_JOURNAL_GATEWAY_URL;
+    return (raw && raw.trim() ? raw.trim() : "http://127.0.0.1:18199").replace(/\/+$/, "");
+  }
+
+  private async gwFyd(path: string): Promise<Response> {
+    const url = `${this.fydJournalBase()}${path}`;
+    try {
+      return await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+    } catch (err) {
+      throw new GatewayUnreachableError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
+    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
+    const res = await this.gwFyd(`/events/${encodeURIComponent("FYD_SITE_OVERLAY")}`);
+    if (res.status === 404) {
+      throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+    }
+    if (!res.ok) {
+      throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
+    }
+### social config gateway URL
+5: * resolves where the PING gateway lives and where FYD's dev signing keys are
+7: * from the gateway at request time.
+15:    process.env.FYD_PING_GATEWAY_BASE_URL || process.env.PING_GATEWAY_BASE_URL;
+17:  // Sprint demo default: repo-booted PING gateway on the Pig (see h2-proof).
+### any .env for served site? (names only)
+-rw-r--r-- 1 nolan nolan 5286 Sep 20 19:37 /home/nolan/projects/ping/.env.example

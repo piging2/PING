@@ -1,0 +1,101 @@
+########## middleware.ts ##########
+     1	/**
+     2	 * Minimal middleware: expose the request pathname to server components.
+     3	 *
+     4	 * The root layout reads `x-pathname` to decide whether to render the PING
+     5	 * marketing chrome. Object routes (/o/*) belong visually to the object, so
+     6	 * they render without the PING header and footer.
+     7	 */
+     8	
+     9	import { NextRequest, NextResponse } from "next/server";
+    10	
+    11	export function middleware(request: NextRequest) {
+    12	  const headers = new Headers(request.headers);
+    13	  headers.set("x-pathname", request.nextUrl.pathname);
+    14	  return NextResponse.next({ request: { headers } });
+    15	}
+    16	
+    17	export const config = {
+    18	  matcher: ["/((?!_next/static|_next/image|favicon.ico|brand|fyd-media).*)"],
+    19	};
+########## fyd/ask route (full) ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { handleAskRequest } from "./ask-pipeline";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * POST /api/fyd/ask (legacy flat route).
+     9	 *
+    10	 * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+    11	 *
+    12	 * Body: { siteId: string, objectId?: string, question: string, mode?: "visitor" | "owner" }
+    13	 *
+    14	 * - mode "visitor" (default): anonymous, public objects only, no grants.
+    15	 * - mode "owner": accepted for a future authenticated lane; until that lane
+    16	 *   exists it is treated as visitor-safe and grants nothing.
+    17	 *
+    18	 * The subject tenant is constructed server-side into a TenantContext from
+    19	 * the validated body siteId (G3 hardening: previously no tenant context
+    20	 * existed on this route). New callers should prefer the trusted-path route
+    21	 * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
+    22	 * and any body-supplied tenant identity is refused on mismatch.
+    23	 *
+    24	 * Response: { ok: true, answer, answerClass, refusal, citations,
+    25	 *   unknowns, suggestedActions, proposal, tenantId }
+    26	 *   unknowns is string[]; suggestedActions is the available-actions list
+    27	 *   ([] when none); proposal is a draft AskProposal or null.
+    28	 *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+    29	 *   Every citation carries claimClass ("supported" | "derived").
+    30	 * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /
+    31	 * invalid_tenant, 503 projection unavailable (answer unknown), 500 bundle
+    32	 * invalid or unexpected internal failure. Every failure is structured JSON
+    33	 * naming the failure kind; the answer is unknown in every failure case
+    34	 * (answerUnknown: true), never an empty body.
+    35	 */
+    36	export async function POST(request: NextRequest): Promise<NextResponse> {
+    37	  return handleAskRequest(null, request);
+    38	}
+########## fyd/ask/[siteId] route (full) ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { handleAskRequest } from "../ask-pipeline";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * POST /api/fyd/ask/[siteId] (trusted-path route; G3).
+     9	 *
+    10	 * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+    11	 * The tenant is derived from the route path param, never from the request
+    12	 * body or URL query: a TenantContext is constructed server-side via
+    13	 * requireTenantContext (which also enforces the DNS-safe slug pattern).
+    14	 *
+    15	 * Body: { question: string, objectId?: string, mode?: "visitor" | "owner" }
+    16	 *   objectId selects the target object inside the route tenant public graph
+    17	 *   (unknown ids fail closed as 404 unknown_object).
+    18	 *
+    19	 * Any body-supplied tenant identity (siteId / tenantId / tenant keys) that
+    20	 * disagrees with the route tenant is REFUSED with 400 tenant_mismatch: the
+    21	 * request is served for the route tenant or refused, never for the
+    22	 * body-claimed tenant. A matching claim is harmless and ignored.
+    23	 *
+    24	 * - mode "visitor" (default): anonymous, public objects only, no grants.
+    25	 * - mode "owner": accepted for a future authenticated lane; until that lane
+    26	 *   exists it is treated as visitor-safe and grants nothing.
+    27	 *
+    28	 * Response: { ok: true, answer, answerClass, refusal, citations,
+    29	 *   unknowns, suggestedActions, proposal, tenantId }
+    30	 *   unknowns is string[]; suggestedActions is the available-actions list
+    31	 *   ([] when none); proposal is a draft AskProposal or null.
+    32	 *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+    33	 *   Every citation carries claimClass ("supported" | "derived").
+    34	 */
+    35	export async function POST(
+    36	  request: NextRequest,
+    37	  { params }: { params: Promise<{ siteId: string }> },
+    38	): Promise<NextResponse> {
+    39	  const { siteId } = await params;
+    40	  return handleAskRequest(siteId, request);
+    41	}

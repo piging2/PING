@@ -1,0 +1,25 @@
+     *
+     * @param type - Type prefix
+     * @param context - Context data
+     * @returns Deterministic ID string
+     */
+    static generateId(type, context) {
+        const canonicalContext = JSON.stringify(hash_authority_1.HashAuthority.canonicalizeObject(context));
+        const canonicalId = this.generateDeterministicId(type, canonicalContext);
+        // Format: type_hash16 for compatibility with existing ID format (underscore separator, not colon)
+        return `${type}_${canonicalId.hash.substring(0, 16)}`;
+    }
+    /**
+     * Compatibility method: generate deterministic ID from namespace and context
+     * Returns CanonicalID object (new API)
+     *
+     * @param namespace - Namespace
+     * @param context - Context string
+     * @returns Canonical ID
+     */
+    static generate_deterministic_id(namespace, context) {
+        return this.generateDeterministicId(namespace, context);
+    }
+}
+exports.IdentityAuthority = IdentityAuthority;
+IdentityAuthority.CONSTITUTIONAL_VERSION = '1.0.0';

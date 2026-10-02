@@ -1,0 +1,51 @@
+### environ readability for next-server 3100
+-r-------- 1 nolan nolan 0 Sep 23 19:40 /proc/87920/environ
+46
+0
+### social config.ts full head
+/**
+ * FYD social backend config. SERVER ONLY.
+ *
+ * FYD consumes PING's existing social operations over HTTP; this module only
+ * resolves where the PING gateway lives and where FYD's dev signing keys are
+ * kept. No social state is configured here; every number FYD renders is read
+ * from the gateway at request time.
+ *
+ * Defaults are sprint-demo conveniences for the Pig dev server. They are
+ * overridden by environment in any other deployment. They are config, not
+ * fake state: no follower counts, follow states, or activity are defaulted.
+ */
+export function fydGatewayBaseUrl(): string {
+  const fromEnv =
+    process.env.FYD_PING_GATEWAY_BASE_URL || process.env.PING_GATEWAY_BASE_URL;
+  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  // Sprint demo default: repo-booted PING gateway on the Pig (see h2-proof).
+  return "http://127.0.0.1:18199";
+}
+
+export function fydDevKeyDir(): string {
+  return process.env.FYD_DEV_KEY_DIR || "/home/nolan/.fyd-dev-keys";
+}
+### ask pipeline: what happens when journal overlay fetch fails?
+8: *       -> fixture base graph (rebuildable projection input)
+18: * Freshness: the graph is rebuilt from fixture + journal on every call.
+28: * - fixture objects keep their original provenance (procedural-fixture),
+55:import { HAPPY_PLACE_GRAPH } from "@/fyd/proceduralize/__fixtures__/happy-place-graph";
+56:import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
+78:  /** sha256 of the canonicalized fixture base graph (pre-overlay). */
+98: * Pinned tenant registry: fixture base graph + the base digest the dump
+99: * recorded. The digest pins the base the ask lane serves: if the fixture
+154: * Read the tenant graph through the authorized seam: pinned fixture base
+170:  // Deep-clone the pinned fixture: overlay application mutates, and the
+171:  // module-level fixture must never be polluted across reads.
+178:      `fixture base digest mismatch for "${siteId}" (expected ${pin.baseDigest.slice(0, 12)}..., got ${baseDigest.slice(0, 12)}...)`,
+186:  } catch (err) {
+### anything on 18199 (double-check)
+nothing listening on 18199
+### .env.local in served checkout?
+no .env.local
+### parent of next-server 3100 (how launched)
+  PID  PPID COMMAND
+87920 87919 next-server (v15.5.24)
+  PID COMMAND
+87919 sh -c next start -p 3100

@@ -1,0 +1,1372 @@
+     1	/**
+     2	 * PingObjectReader: the server-side BFF adapter between the PING website
+     3	 * and the PING gateway (Lane D).
+     4	 *
+     5	 * SERVER ONLY. Never import from a client component.
+     6	 *
+     7	 * Contract:
+     8	 * - All PING data flows through PING_GATEWAY_BASE_URL (env). No Oracle
+     9	 *   hostname, IP, or tunnel assumption is hardcoded anywhere.
+    10	 * - Reads use the existing gateway event query route as a temporary source.
+    11	 *   The UI never sees raw journal shapes; this adapter selects and
+    12	 *   sanitizes public Circle fields only.
+    13	 * - Writes submit signed canonical envelopes to the gateway ingest path.
+    14	 *   Dev signing happens server-side via dev-signer; private keys never
+    15	 *   reach the browser.
+    16	 * - When the gateway is not configured, unreachable, or has not yet
+    17	 *   exposed the needed path (Lane A dependency), every method throws a
+    18	 *   typed error with a machine-readable code. Nothing is faked.
+    19	 *
+    20	 * Event vocabulary used (registered gateway types):
+    21	 *   OBJECT_CREATED, OBJECT_UPDATED, RELATIONSHIP_CREATED
+    22	 * Profile schema:  ping.social.profile@1
+    23	 * Post schema:     ping.social.post@1
+    24	 * Relationship predicates (canonical): follows, likes.
+    25	 * Revocation is status: "inactive" on the same predicate. Follower and
+    26	 * like counts stay projections computed from events, never canonical truth.
+    27	 */
+    28	
+    29	import type {
+    30	  CreateIdentityInput,
+    31	  PingIdentitySummary,
+    32	  PingPost,
+    33	  PublicCircleProjection,
+    34	} from "./types";
+    35	import type {
+    36	  AskAnswer,
+    37	  AskProposal,
+    38	  CapabilityPlan,
+    39	  DiscoveryFeedItem,
+    40	  IntelligentCircleData,
+    41	  NodePayload,
+    42	  PingObject,
+    43	  PingRelationship,
+    44	} from "./types";
+    45	import { planActions as planActionsPure } from "./action-planner";
+    46	import { grantsForViewer, isSiteCapableSchema } from "./grants";
+    47	import { buildAskContext, composeAnswer, verifyProposalDigest } from "./ask-composer";
+    48	import { compareRanked, rankScore } from "./feed-rank";
+    49	import { getWebsiteObjects, getWebsiteRelationships } from "./website-objects";
+    50	import {
+    51	  DevKeyDirNotConfiguredError,
+    52	  DevKeyNotFoundError,
+    53	  canonicalizeJson,
+    54	  generateDevKeypair,
+    55	  signAsIdentity,
+    56	  storeDevKeypair,
+    57	} from "./dev-signer";
+    58	
+    59	// ---------------------------------------------------------------------------
+    60	// Typed errors: every failure mode the UI must render as an ERROR state.
+    61	// ---------------------------------------------------------------------------
+    62	
+    63	export class PingReaderError extends Error {
+    64	  code: string;
+    65	  status: number;
+    66	  constructor(code: string, message: string, status = 502) {
+    67	    super(message);
+    68	    this.name = "PingReaderError";
+    69	    this.code = code;
+    70	    this.status = status;
+    71	  }
+    72	}
+    73	
+    74	export class GatewayNotConfiguredError extends PingReaderError {
+    75	  constructor() {
+    76	    super(
+    77	      "GATEWAY_NOT_CONFIGURED",
+    78	      "PING_GATEWAY_BASE_URL is not set. Set it to the gateway base URL " +
+    79	        "(for local dev, the SSH-forwarded local port) and retry.",
+    80	      503,
+    81	    );
+    82	  }
+    83	}
+    84	
+    85	export class GatewayUnreachableError extends PingReaderError {
+    86	  constructor(detail: string) {
+    87	    super("GATEWAY_UNREACHABLE", `PING gateway unreachable: ${detail}`, 502);
+    88	  }
+    89	}
+    90	
+    91	export class GatewayNotReadyError extends PingReaderError {
+    92	  constructor(detail: string) {
+    93	    super(
+    94	      "GATEWAY_NOT_READY",
+    95	      `Gateway path not ready: ${detail}. The runtime read/write path has not landed yet.`,
+    96	      502,
+    97	    );
+    98	  }
+    99	}
+   100	
+   101	export class IdentityNotFoundError extends PingReaderError {
+   102	  constructor(identityId: string) {
+   103	    super("IDENTITY_NOT_FOUND", `No PING identity found for "${identityId}".`, 404);
+   104	  }
+   105	}
+   106	
+   107	export class ObjectNotFoundError extends PingReaderError {
+   108	  constructor(objectId: string) {
+   109	    super("OBJECT_NOT_FOUND", `No PING object found for "${objectId}".`, 404);
+   110	  }
+   111	}
+   112	
+   113	export class BadRequestError extends PingReaderError {
+   114	  constructor(message: string) {
+   115	    super("BAD_REQUEST", message, 400);
+   116	  }
+   117	}
+   118	
+   119	export class SigningNotAvailableError extends PingReaderError {
+   120	  constructor(detail: string) {
+   121	    super("SIGNING_NOT_AVAILABLE", `Cannot sign practice action: ${detail}`, 500);
+   122	  }
+   123	}
+   124	
+   125	// ---------------------------------------------------------------------------
+   126	// Adapter interface: the contract the practice UI is built against.
+   127	// ---------------------------------------------------------------------------
+   128	
+   129	export interface PingObjectReader {
+   130	  listIdentities(viewerId?: string | null): Promise<PingIdentitySummary[]>;
+   131	  getProfile(identityId: string, viewerId?: string | null): Promise<PublicCircleProjection>;
+   132	  getFeed(identityId: string, viewerId?: string | null): Promise<PingPost[]>;
+   133	  createIdentity(input: CreateIdentityInput): Promise<PingIdentitySummary>;
+   134	  follow(subjectId: string, targetId: string): Promise<{ relationshipId: string }>;
+   135	  unfollow(subjectId: string, targetId: string): Promise<void>;
+   136	  like(subjectId: string, objectId: string): Promise<void>;
+   137	  unlike(subjectId: string, objectId: string): Promise<void>;
+   138	  updateBio(identityId: string, bio: string): Promise<void>;
+   139	
+   140	  // -- Lane A: object substrate reads (same BFF authority) -----------------
+   141	  getObject(objectId: string, viewerId?: string | null): Promise<PingObject>;
+   142	  listObjects(viewerId?: string | null, opts?: { schema?: string; limit?: number }): Promise<PingObject[]>;
+   143	  getRelationships(filter?: { subject?: string; predicate?: string; object?: string }): Promise<PingRelationship[]>;
+   144	  getCircleCard(identityId: string, viewerId?: string | null): Promise<IntelligentCircleData>;
+   145	  getDiscoveryFeed(
+   146	    viewerId?: string | null,
+   147	    limit?: number,
+   148	  ): Promise<{ items: DiscoveryFeedItem[]; gatewayAvailable: boolean }>;
+   149	  planActions(viewerId: string | null, objectId: string): Promise<CapabilityPlan>;
+   150	  getNode(objectId: string, viewerId?: string | null): Promise<NodePayload>;
+   151	  ask(question: string, viewerId: string | null, targetObjectId?: string | null): Promise<AskAnswer>;
+   152	  submitProposal(viewerId: string, proposal: AskProposal): Promise<{ eventId: string }>;
+   153	  /**
+   154	   * FYD tenant overlay events (FYD_SITE_OVERLAY) for one site, journal
+   155	   * order, sanitized to { eventId, timestamp, ops }. The siteId filter is
+   156	   * enforced inside the reader: a call can never observe another tenant's
+   157	   * overlays. No event envelopes, signatures, cursors, or raw journal
+   158	   * material cross the reader boundary.
+   159	   */
+   160	  queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]>;
+   161	}
+   162	
+   163	/**
+   164	 * One sanitized FYD site overlay journal record. Only the tenant-scoped op
+   165	 * payloads cross the PingObjectReader boundary; op semantics are validated
+   166	 * in the FYD layer (src/fyd/data/fyd-tenant-graph.ts).
+   167	 */
+   168	export interface FydJournalOverlay {
+   169	  eventId: string;
+   170	  timestamp: string;
+   171	  ops: unknown[];
+   172	}
+   173	
+   174	// ---------------------------------------------------------------------------
+   175	// Gateway-backed implementation.
+   176	// ---------------------------------------------------------------------------
+   177	
+   178	const PROFILE_SCHEMA = "ping.social.profile@1";
+   179	const POST_SCHEMA = "ping.social.post@1";
+   180	
+   181	type JsonRecord = Record<string, unknown>;
+   182	
+   183	function asRecord(v: unknown): JsonRecord | null {
+   184	  return typeof v === "object" && v !== null && !Array.isArray(v) ? (v as JsonRecord) : null;
+   185	}
+   186	
+   187	function str(v: unknown): string {
+   188	  return typeof v === "string" ? v : "";
+   189	}
+   190	
+   191	function eventPayload(ev: JsonRecord): JsonRecord {
+   192	  // The live gateway returns raw ping_events rows: { event_id, timestamp,
+   193	  // event_data }. event_data is the journal payload shape (see
+   194	  // tools/fyd-site-projection/dump.py); the other keys cover normalized
+   195	  // envelope shapes.
+   196	  return (
+   197	    asRecord(ev.payload) ??
+   198	    asRecord(ev.data) ??
+   199	    asRecord(ev.event_data) ??
+   200	    asRecord(ev.body) ??
+   201	    {}
+   202	  );
+   203	}
+   204	
+   205	function eventId(ev: JsonRecord): string {
+   206	  return str(ev.id) || str(ev.eventId) || str(ev.event_id);
+   207	}
+   208	
+   209	function eventTime(ev: JsonRecord): string {
+   210	  const t = str(ev.createdAt) || str(ev.created_at) || str(ev.acceptedAt) || str(ev.timestamp) || str(ev.producedAt);
+   211	  return t || new Date(0).toISOString();
+   212	}
+   213	
+   214	function isFacebookLinkedClaim(p: JsonRecord): boolean {
+   215	  const claims = p.claims;
+   216	  if (!Array.isArray(claims)) return false;
+   217	  return claims.some((c) => {
+   218	    const r = asRecord(c);
+   219	    return (
+   220	      !!r &&
+   221	      str(r.provider).toLowerCase() === "facebook" &&
+   222	      (str(r.claimType) === "account_link" || str(r.claim_type) === "account_link") &&
+   223	      (str(r.status) === "connected" || r.verified === true)
+   224	    );
+   225	  });
+   226	}
+   227	
+   228	interface FollowEdge {
+   229	  subject: string;
+   230	  target: string;
+   231	}
+   232	
+   233	interface LikeEdge {
+   234	  subject: string;
+   235	  object: string;
+   236	}
+   237	
+   238	class GatewayPingObjectReader implements PingObjectReader {
+   239	  private base(): string {
+   240	    const raw = process.env.PING_GATEWAY_BASE_URL;
+   241	    if (!raw || !raw.trim()) throw new GatewayNotConfiguredError();
+   242	    return raw.trim().replace(/\/+$/, "");
+   243	  }
+   244	
+   245	  private async gw(path: string, init?: RequestInit): Promise<Response> {
+   246	    const base = this.base();
+   247	    try {
+   248	      return await fetch(`${base}${path}`, {
+   249	        ...init,
+   250	        cache: "no-store",
+   251	        signal: AbortSignal.timeout(10000),
+   252	      });
+   253	    } catch (err) {
+   254	      throw new GatewayUnreachableError(err instanceof Error ? err.message : String(err));
+   255	    }
+   256	  }
+   257	
+   258	  /**
+   259	   * FYD journal gateway base. Server-side only, like PING_GATEWAY_BASE_URL.
+   260	   * The FYD overlay events live in the FYD demo journal, a separate
+   261	   * deployment from the main PING gateway, so they get their own base URL.
+   262	   */
+   263	  private fydJournalBase(): string {
+   264	    const raw = process.env.FYD_JOURNAL_GATEWAY_URL;
+   265	    return (raw && raw.trim() ? raw.trim() : "http://127.0.0.1:18199").replace(/\/+$/, "");
+   266	  }
+   267	
+   268	  private async gwFyd(path: string): Promise<Response> {
+   269	    const url = `${this.fydJournalBase()}${path}`;
+   270	    try {
+   271	      return await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+   272	    } catch (err) {
+   273	      throw new GatewayUnreachableError(err instanceof Error ? err.message : String(err));
+   274	    }
+   275	  }
+   276	
+   277	  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
+   278	    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
+   279	    const res = await this.gwFyd(`/events/${encodeURIComponent("FYD_SITE_OVERLAY")}`);
+   280	    if (res.status === 404) {
+   281	      throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+   282	    }
+   283	    if (!res.ok) {
+   284	      throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
+   285	    }
+   286	    const data: unknown = await res.json().catch(() => null);
+   287	    const rec = asRecord(data);
+   288	    const list = Array.isArray(data) ? data : rec?.events ?? rec?.items ?? rec?.data;
+   289	    if (!Array.isArray(list)) {
+   290	      throw new GatewayNotReadyError("unexpected shape from /events/FYD_SITE_OVERLAY");
+   291	    }
+   292	    const out: FydJournalOverlay[] = [];
+   293	    for (const raw of list) {
+   294	      const ev = asRecord(raw);
+   295	      if (!ev) continue;
+   296	      const p = eventPayload(ev);
+   297	      // Tenant scoping at the authority: only this site's overlays cross.
+   298	      if (str(p.siteId) !== siteId) continue;
+   299	      const ops = Array.isArray(p.ops) ? p.ops : null;
+   300	      if (!ops) {
+   301	        throw new PingReaderError(
+   302	          "FYD_OVERLAY_MALFORMED",
+   303	          `overlay ${eventId(ev) || "?"}: ops is not a list`,
+   304	        );
+   305	      }
+   306	      const eid = eventId(ev);
+   307	      if (!eid) continue;
+   308	      out.push({ eventId: eid, timestamp: eventTime(ev), ops });
+   309	    }
+   310	    out.sort((a, b) =>
+   311	      a.timestamp === b.timestamp
+   312	        ? (a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0)
+   313	        : a.timestamp < b.timestamp
+   314	          ? -1
+   315	          : 1,
+   316	    );
+   317	    return out;
+   318	  }
+   319	
+   320	  /** Temporary read source: the existing gateway event query route. */
+   321	  private async queryEvents(type: string): Promise<JsonRecord[]> {
+   322	    const res = await this.gw(`/events/${encodeURIComponent(type)}`);
+   323	    if (res.status === 404) {
+   324	      throw new GatewayNotReadyError(`event query route /events/${type} is not exposed`);
+   325	    }
+   326	    if (!res.ok) {
+   327	      throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
+   328	    }
+   329	    const data: unknown = await res.json().catch(() => null);
+   330	    const rec = asRecord(data);
+   331	    const list = Array.isArray(data) ? data : rec?.events ?? rec?.items ?? rec?.data;
+   332	    if (!Array.isArray(list)) {
+   333	      throw new GatewayNotReadyError(`unexpected shape from /events/${type}`);
+   334	    }
+   335	    return list.map(asRecord).filter((r): r is JsonRecord => r !== null);
+   336	  }
+   337	
+   338	  /**
+   339	   * Submit a signed canonical envelope to the gateway ingest path.
+   340	   * The gateway governs, validates, and persists; the website never writes
+   341	   * to the journal directly.
+   342	   */
+   343	  private async submitSignedEvent(
+   344	    identityId: string,
+   345	    type: "OBJECT_CREATED" | "OBJECT_UPDATED" | "RELATIONSHIP_CREATED",
+   346	    payload: JsonRecord,
+   347	  ): Promise<string> {
+   348	    const metadata: JsonRecord = {
+   349	      patch: "7B",
+   350	      source: "ping-website-practice",
+   351	      producedAt: new Date().toISOString(),
+   352	    };
+   353	    const canonicalBytes = canonicalizeJson({ type, payload, metadata });
+   354	    let proof: JsonRecord;
+   355	    try {
+   356	      const sig = signAsIdentity(identityId, canonicalBytes);
+   357	      proof = {
+   358	        algorithm: "ed25519",
+   359	        publicKey: sig.publicPem,
+   360	        keyFingerprint: sig.fingerprint,
+   361	        signature: sig.signature,
+   362	        signedBytes: "canonical-json(type,payload,metadata)",
+   363	      };
+   364	    } catch (err) {
+   365	      if (err instanceof DevKeyDirNotConfiguredError || err instanceof DevKeyNotFoundError) {
+   366	        throw new SigningNotAvailableError(err.message);
+   367	      }
+   368	      throw err;
+   369	    }
+   370	    const res = await this.gw("/events", {
+   371	      method: "POST",
+   372	      headers: { "Content-Type": "application/json" },
+   373	      body: JSON.stringify({ type, payload, proof, metadata }),
+   374	    });
+   375	    if (res.status === 404 || res.status === 405) {
+   376	      throw new GatewayNotReadyError("canonical event ingest (POST /events) is not exposed");
+   377	    }
+   378	    if (!res.ok) {
+   379	      const text = await res.text().catch(() => "");
+   380	      throw new PingReaderError(
+   381	        "GATEWAY_REJECTED_WRITE",
+   382	        `Gateway rejected the signed event (HTTP ${res.status}): ${text.slice(0, 300)}`,
+   383	        502,
+   384	      );
+   385	    }
+   386	    const data: unknown = await res.json().catch(() => null);
+   387	    const rec = asRecord(data);
+   388	    return str(rec?.id) || str(rec?.eventId) || "";
+   389	  }
+   390	
+   391	  // -- relationship projections (computed from events on every read) --------
+   392	
+   393	  private async followEdges(): Promise<FollowEdge[]> {
+   394	    const events = await this.queryEvents("RELATIONSHIP_CREATED");
+   395	    const edges: FollowEdge[] = [];
+   396	    for (const ev of events) {
+   397	      const p = eventPayload(ev);
+   398	      if (str(p.predicate) !== "follows") continue;
+   399	      const subject = str(p.subject) || str(p.subjectId);
+   400	      const target = str(p.object) || str(p.target) || str(p.targetId);
+   401	      // Canonical revocation: status "inactive" on the same predicate.
+   402	      const revoked = str(p.status) === "inactive";
+   403	      if (subject && target) edges.push({ subject, target: revoked ? `!${target}` : target });
+   404	    }
+   405	    return edges;
+   406	  }
+   407	
+   408	  private netFollows(edges: FollowEdge[]): Map<string, Set<string>> {
+   409	    // subject -> set of currently followed targets (inactive status revokes)
+   410	    const net = new Map<string, Set<string>>();
+   411	    for (const e of edges) {
+   412	      let set = net.get(e.subject);
+   413	      if (!set) {
+   414	        set = new Set();
+   415	        net.set(e.subject, set);
+   416	      }
+   417	      if (e.target.startsWith("!")) set.delete(e.target.slice(1));
+   418	      else set.add(e.target);
+   419	    }
+   420	    return net;
+   421	  }
+   422	
+   423	  private async likeEdges(): Promise<LikeEdge[]> {
+   424	    const events = await this.queryEvents("RELATIONSHIP_CREATED");
+   425	    const edges: LikeEdge[] = [];
+   426	    for (const ev of events) {
+   427	      const p = eventPayload(ev);
+   428	      if (str(p.predicate) !== "likes") continue;
+   429	      const subject = str(p.subject) || str(p.subjectId);
+   430	      const object = str(p.object) || str(p.objectId) || str(p.target);
+   431	      // Canonical revocation: status "inactive" on the same predicate.
+   432	      const revoked = str(p.status) === "inactive";
+   433	      if (subject && object) edges.push({ subject, object: revoked ? `!${object}` : object });
+   434	    }
+   435	    return edges;
+   436	  }
+   437	
+   438	  private netLikes(edges: LikeEdge[]): Map<string, Set<string>> {
+   439	    const net = new Map<string, Set<string>>();
+   440	    for (const e of edges) {
+   441	      let set = net.get(e.subject);
+   442	      if (!set) {
+   443	        set = new Set();
+   444	        net.set(e.subject, set);
+   445	      }
+   446	      if (e.object.startsWith("!")) set.delete(e.object.slice(1));
+   447	      else set.add(e.object);
+   448	    }
+   449	    return net;
+   450	  }
+   451	
+   452	  private async profileEvents(): Promise<JsonRecord[]> {
+   453	    const events = await this.queryEvents("OBJECT_CREATED");
+   454	    return events.filter((ev) => {
+   455	      const p = eventPayload(ev);
+   456	      return p.schema === PROFILE_SCHEMA && (p.visibility === undefined || p.visibility === "public");
+   457	    });
+   458	  }
+   459	
+   460	  private profileUpdates(): Promise<JsonRecord[]> {
+   461	    return this.queryEvents("OBJECT_UPDATED").catch(() => []);
+   462	  }
+   463	
+   464	  private toSummary(ev: JsonRecord, follows: Map<string, Set<string>>, viewerId?: string | null): PingIdentitySummary | null {
+   465	    const p = eventPayload(ev);
+   466	    const identityId = str(p.identityId) || str(p.controller);
+   467	    const displayName = str(p.displayName) || str(p.name);
+   468	    const handle = str(p.handle);
+   469	    if (!identityId || !displayName || !handle) return null;
+   470	    let followerCount = 0;
+   471	    for (const [, targets] of follows) if (targets.has(identityId)) followerCount += 1;
+   472	    const followingCount = follows.get(identityId)?.size ?? 0;
+   473	    return {
+   474	      id: identityId,
+   475	      displayName,
+   476	      handle,
+   477	      verified: p.verified === true,
+   478	      facebookConnected: isFacebookLinkedClaim(p),
+   479	      followerCount,
+   480	      followingCount,
+   481	      followedByViewer: viewerId ? (follows.get(viewerId)?.has(identityId) ?? false) : undefined,
+   482	    };
+   483	  }
+   484	
+   485	  async listIdentities(viewerId?: string | null): Promise<PingIdentitySummary[]> {
+   486	    const [profiles, follows] = await Promise.all([this.profileEvents(), this.followEdges().then((e) => this.netFollows(e))]);
+   487	    // Latest profile event per identity wins.
+   488	    const latest = new Map<string, JsonRecord>();
+   489	    for (const ev of profiles) {
+   490	      const id = str(eventPayload(ev).identityId) || str(eventPayload(ev).controller);
+   491	      if (!id) continue;
+   492	      const prev = latest.get(id);
+   493	      if (!prev || eventTime(ev) >= eventTime(prev)) latest.set(id, ev);
+   494	    }
+   495	    const out: PingIdentitySummary[] = [];
+   496	    for (const ev of latest.values()) {
+   497	      const s = this.toSummary(ev, follows, viewerId);
+   498	      if (s) out.push(s);
+   499	    }
+   500	    out.sort((a, b) => a.displayName.localeCompare(b.displayName));
+   501	    return out;
+   502	  }
+   503	
+   504	  async getProfile(identityId: string, viewerId?: string | null): Promise<PublicCircleProjection> {
+   505	    const [profiles, updates, follows] = await Promise.all([
+   506	      this.profileEvents(),
+   507	      this.profileUpdates(),
+   508	      this.followEdges().then((e) => this.netFollows(e)),
+   509	    ]);
+   510	    const mine = profiles.filter((ev) => {
+   511	      const p = eventPayload(ev);
+   512	      return str(p.identityId) === identityId || str(p.controller) === identityId;
+   513	    });
+   514	    if (mine.length === 0) throw new IdentityNotFoundError(identityId);
+   515	    mine.sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1));
+   516	    const latest = mine[0];
+   517	    const p = eventPayload(latest);
+   518	    // Apply OBJECT_UPDATED bio changes on top of the created profile.
+   519	    let bio = str(p.bio);
+   520	    let updatedAt = eventTime(latest);
+   521	    for (const u of updates) {
+   522	      const up = eventPayload(u);
+   523	      if (str(up.objectId) === eventId(latest) || str(up.object_id) === eventId(latest)) {
+   524	        const changes = asRecord(up.changes) ?? asRecord(up.patch) ?? {};
+   525	        if (typeof changes.bio === "string") bio = changes.bio;
+   526	        if (eventTime(u) > updatedAt) updatedAt = eventTime(u);
+   527	      }
+   528	    }
+   529	    const summary = this.toSummary(latest, follows, viewerId);
+   530	    if (!summary) throw new IdentityNotFoundError(identityId);
+   531	    return {
+   532	      identity: summary,
+   533	      bio,
+   534	      objectId: eventId(latest),
+   535	      updatedAt,
+   536	      viewerFollowing: viewerId ? (follows.get(viewerId)?.has(identityId) ?? false) : false,
+   537	    };
+   538	  }
+   539	
+   540	  async getFeed(identityId: string, viewerId?: string | null): Promise<PingPost[]> {
+   541	    const [events, follows, likes] = await Promise.all([
+   542	      this.queryEvents("OBJECT_CREATED"),
+   543	      this.followEdges().then((e) => this.netFollows(e)),
+   544	      this.likeEdges().then((e) => this.netLikes(e)),
+   545	    ]);
+   546	    const visible = new Set<string>([identityId, ...(follows.get(identityId) ?? [])]);
+   547	    const likeCounts = new Map<string, number>();
+   548	    const likedByViewer = new Set<string>();
+   549	    const likeNet = likes;
+   550	    for (const [subject, objects] of likeNet) {
+   551	      for (const o of objects) {
+   552	        likeCounts.set(o, (likeCounts.get(o) ?? 0) + 1);
+   553	        if (subject === viewerId) likedByViewer.add(o);
+   554	      }
+   555	    }
+   556	    const posts: PingPost[] = [];
+   557	    for (const ev of events) {
+   558	      const p = eventPayload(ev);
+   559	      if (p.schema !== POST_SCHEMA) continue;
+   560	      if (p.visibility !== undefined && p.visibility !== "public") continue;
+   561	      const authorId = str(p.authorId) || str(p.identityId) || str(p.controller);
+   562	      if (!authorId || !visible.has(authorId)) continue;
+   563	      const id = eventId(ev) || str(p.objectId);
+   564	      if (!id) continue;
+   565	      posts.push({
+   566	        id,
+   567	        authorId,
+   568	        authorDisplayName: str(p.authorDisplayName) || str(p.displayName),
+   569	        authorHandle: str(p.authorHandle) || str(p.handle),
+   570	        text: str(p.text) || str(p.body),
+   571	        createdAt: eventTime(ev),
+   572	        likeCount: likeCounts.get(id) ?? 0,
+   573	        likedByViewer: likedByViewer.has(id),
+   574	        replyTo: str(p.replyTo) || str(p.reply_to) || null,
+   575	      });
+   576	    }
+   577	    // Deterministic order: newest first, object id breaks ties.
+   578	    posts.sort((a, b) => (a.createdAt === b.createdAt ? (a.id < b.id ? 1 : -1) : a.createdAt < b.createdAt ? 1 : -1));
+   579	    return posts;
+   580	  }
+   581	
+   582	  async createIdentity(input: CreateIdentityInput): Promise<PingIdentitySummary> {
+   583	    const displayName = input.displayName.trim();
+   584	    const handle = input.handle.trim().toLowerCase();
+   585	    const bio = input.bio.trim();
+   586	    if (!displayName) throw new BadRequestError("Display name is required.");
+   587	    if (!/^[a-z0-9_]{2,24}$/.test(handle)) {
+   588	      throw new BadRequestError("Handle must be 2-24 chars: lowercase letters, digits, underscore.");
+   589	    }
+   590	    if (bio.length > 280) throw new BadRequestError("Bio must be 280 characters or fewer.");
+   591	    // The canonical identity id is minted by the PING runtime (IdentityAuthority
+   592	    // owns identity). The website generates the dev keypair and submits the
+   593	    // public key; the gateway returns the canonical identity id.
+   594	    let keypair;
+   595	    try {
+   596	      keypair = generateDevKeypair();
+   597	    } catch {
+   598	      throw new SigningNotAvailableError("could not generate an Ed25519 keypair");
+   599	    }
+   600	    const res = await this.gw("/identities", {
+   601	      method: "POST",
+   602	      headers: { "Content-Type": "application/json" },
+   603	      body: JSON.stringify({ displayName, handle, bio, publicKey: keypair.publicPem, algorithm: "ed25519" }),
+   604	    });
+   605	    if (res.status === 404 || res.status === 405) {
+   606	      throw new GatewayNotReadyError("canonical identity creation (POST /identities) is not exposed");
+   607	    }
+   608	    if (!res.ok) {
+   609	      throw new PingReaderError("GATEWAY_REJECTED_WRITE", `Gateway rejected identity creation (HTTP ${res.status}).`, 502);
+   610	    }
+   611	    const data: unknown = await res.json().catch(() => null);
+   612	    const rec = asRecord(data);
+   613	    const identityId = str(rec?.identityId) || str(rec?.id);
+   614	    if (!identityId) throw new GatewayNotReadyError("identity creation returned no canonical identity id");
+   615	    try {
+   616	      storeDevKeypair(identityId, keypair);
+   617	    } catch (err) {
+   618	      if (err instanceof DevKeyDirNotConfiguredError) {
+   619	        throw new SigningNotAvailableError(err.message);
+   620	      }
+   621	      throw err;
+   622	    }
+   623	    // Register the public profile through the governed canonical event path.
+   624	    await this.submitSignedEvent(identityId, "OBJECT_CREATED", {
+   625	      schema: PROFILE_SCHEMA,
+   626	      identityId,
+   627	      displayName,
+   628	      handle,
+   629	      bio,
+   630	      visibility: "public",
+   631	      verified: false,
+   632	    });
+   633	    return {
+   634	      id: identityId,
+   635	      displayName,
+   636	      handle,
+   637	      verified: false,
+   638	      facebookConnected: false,
+   639	      followerCount: 0,
+   640	      followingCount: 0,
+   641	      followedByViewer: false,
+   642	    };
+   643	  }
+   644	
+   645	  async follow(subjectId: string, targetId: string): Promise<{ relationshipId: string }> {
+   646	    if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
+   647	    if (subjectId === targetId) throw new BadRequestError("An identity cannot follow itself.");
+   648	    const relationshipId = await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
+   649	      subject: subjectId,
+   650	      predicate: "follows",
+   651	      object: targetId,
+   652	    });
+   653	    return { relationshipId };
+   654	  }
+   655	
+   656	  async unfollow(subjectId: string, targetId: string): Promise<void> {
+   657	    if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
+   658	    await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
+   659	      subject: subjectId,
+   660	      predicate: "follows",
+   661	      object: targetId,
+   662	      status: "inactive",
+   663	    });
+   664	  }
+   665	
+   666	  async like(subjectId: string, objectId: string): Promise<void> {
+   667	    if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
+   668	    if (!objectId) throw new BadRequestError("No object to like.");
+   669	    await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
+   670	      subject: subjectId,
+   671	      predicate: "likes",
+   672	      object: objectId,
+   673	    });
+   674	  }
+   675	
+   676	  async unlike(subjectId: string, objectId: string): Promise<void> {
+   677	    if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
+   678	    await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
+   679	      subject: subjectId,
+   680	      predicate: "likes",
+   681	      object: objectId,
+   682	      status: "inactive",
+   683	    });
+   684	  }
+   685	
+   686	  async updateBio(identityId: string, bio: string): Promise<void> {
+   687	    if (!identityId) throw new BadRequestError("No active practice identity. Select an identity first.");
+   688	    const clean = bio.trim();
+   689	    if (clean.length > 280) throw new BadRequestError("Bio must be 280 characters or fewer.");
+   690	    const profile = await this.getProfile(identityId);
+   691	    await this.submitSignedEvent(identityId, "OBJECT_UPDATED", {
+   692	      objectId: profile.objectId,
+   693	      schema: PROFILE_SCHEMA,
+   694	      changes: { bio: clean },
+   695	    });
+   696	  }
+   697	  // -----------------------------------------------------------------------
+   698	  // Lane A: object substrate. Projections over the same canonical events;
+   699	  // no new authorities. Website-derived objects merge at read time only.
+   700	  // -----------------------------------------------------------------------
+   701	
+   702	  private sanitizeFields(payload: JsonRecord): Record<string, string | string[]> {
+   703	    const DENY = new Set([
+   704	      "schema", "identityId", "controller", "authorId", "ownerId", "visibility",
+   705	      "verified", "handle", "displayName", "name", "title", "bio", "text", "body",
+   706	      "subject", "object", "target", "predicate", "status", "objectId", "object_id",
+   707	      "changes", "patch", "proof", "metadata", "signature", "publicKey", "privateKey",
+   708	      "token", "secret", "password", "claims", "keyFingerprint", "replyTo", "reply_to",
+   709	    ]);
+   710	    const out: Record<string, string | string[]> = {};
+   711	    for (const [k, v] of Object.entries(payload)) {
+   712	      if (DENY.has(k)) continue;
+   713	      if (typeof v === "string") {
+   714	        if (v.trim() !== "") out[k] = v.slice(0, 500);
+   715	      } else if (Array.isArray(v) && v.length > 0 && v.every((e) => typeof e === "string")) {
+   716	        out[k] = (v as string[]).slice(0, 20).map((s) => s.slice(0, 200));
+   717	      }
+   718	    }
+   719	    return out;
+   720	  }
+   721	
+   722	  private objectTitle(schema: string, p: JsonRecord): string {
+   723	    const pick = (...keys: string[]): string => {
+   724	      for (const k of keys) {
+   725	        const v = str(p[k]);
+   726	        if (v) return v;
+   727	      }
+   728	      return "";
+   729	    };
+   730	    if (schema === "ping.social.post@1") {
+   731	      const t = pick("text", "body");
+   732	      return t.length > 80 ? `${t.slice(0, 77)}...` : t;
+   733	    }
+   734	    return pick("displayName", "name", "title");
+   735	  }
+   736	
+   737	  private toPingObject(
+   738	    id: string,
+   739	    payload: JsonRecord,
+   740	    createdAt: string,
+   741	    updatedAt: string,
+   742	  ): PingObject | null {
+   743	    const schema = str(payload.schema);
+   744	    if (!schema) return null;
+   745	    const controllerId =
+   746	      str(payload.identityId) || str(payload.controller) || str(payload.authorId) || str(payload.ownerId);
+   747	    const visibility = str(payload.visibility) === "private" ? "private" : "public";
+   748	    let description = "";
+   749	    for (const k of ["bio", "description", "summary", "excerpt", "tagline"]) {
+   750	      const v = str(payload[k]);
+   751	      if (v) {
+   752	        description = v;
+   753	        break;
+   754	      }
+   755	    }
+   756	    if (schema === "ping.social.post@1") description = str(payload.text) || str(payload.body);
+   757	    return {
+   758	      id,
+   759	      schema,
+   760	      controllerId,
+   761	      visibility,
+   762	      title: this.objectTitle(schema, payload) || id.slice(0, 12),
+   763	      description,
+   764	      fields: this.sanitizeFields(payload),
+   765	      createdAt,
+   766	      updatedAt,
+   767	      provenance: { kind: "canonical-journal", ref: id, derivedAt: new Date().toISOString() },
+   768	    };
+   769	  }
+   770	
+   771	  /** Latest OBJECT_CREATED per object id, with OBJECT_UPDATED overlays. */
+   772	  private async canonicalObjects(): Promise<PingObject[]> {
+   773	    const [created, updated] = await Promise.all([
+   774	      this.queryEvents("OBJECT_CREATED"),
+   775	      this.queryEvents("OBJECT_UPDATED").catch(() => [] as JsonRecord[]),
+   776	    ]);
+   777	    const byId = new Map<string, { payload: JsonRecord; createdAt: string; updatedAt: string; updatedRefs: string[] }>();
+   778	    for (const ev of created) {
+   779	      const p = eventPayload(ev);
+   780	      const id = eventId(ev) || str(p.objectId);
+   781	      if (!id || !str(p.schema)) continue;
+   782	      const t = eventTime(ev);
+   783	      const prev = byId.get(id);
+   784	      if (!prev || t >= prev.createdAt) {
+   785	        byId.set(id, { payload: { ...p }, createdAt: t, updatedAt: t, updatedRefs: [] });
+   786	      }
+   787	    }
+   788	    for (const u of updated) {
+   789	      const up = eventPayload(u);
+   790	      const id = str(up.objectId) || str(up.object_id);
+   791	      const entry = byId.get(id);
+   792	      if (!entry) continue;
+   793	      const changes = asRecord(up.changes) ?? asRecord(up.patch) ?? {};
+   794	      for (const [k, v] of Object.entries(changes)) {
+   795	        if (typeof v === "string" || (Array.isArray(v) && v.every((e) => typeof e === "string"))) {
+   796	          entry.payload[k] = v;
+   797	        }
+   798	      }
+   799	      const t = eventTime(u);
+   800	      if (t > entry.updatedAt) entry.updatedAt = t;
+   801	      const uid = eventId(u);
+   802	      if (uid) entry.updatedRefs.push(uid);
+   803	    }
+   804	    const out: PingObject[] = [];
+   805	    for (const [id, e] of byId) {
+   806	      const obj = this.toPingObject(id, e.payload, e.createdAt, e.updatedAt);
+   807	      if (obj) {
+   808	        if (e.updatedRefs.length > 0) obj.provenance.updatedRefs = e.updatedRefs;
+   809	        out.push(obj);
+   810	      }
+   811	    }
+   812	    out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+   813	    return out;
+   814	  }
+   815	
+   816	  private visibleTo(obj: PingObject, viewerId?: string | null): boolean {
+   817	    if (obj.visibility === "public") return true;
+   818	    return !!viewerId && viewerId === obj.controllerId;
+   819	  }
+   820	
+   821	  private isGatewayError(err: unknown): boolean {
+   822	    return (
+   823	      err instanceof GatewayNotConfiguredError ||
+   824	      err instanceof GatewayUnreachableError ||
+   825	      err instanceof GatewayNotReadyError
+   826	    );
+   827	  }
+   828	
+   829	  /** Canonical objects, falling back to website-derived only when the gateway path is down. */
+   830	  private async allObjects(viewerId?: string | null): Promise<{ objects: PingObject[]; gatewayAvailable: boolean }> {
+   831	    const web = getWebsiteObjects().filter((o) => this.visibleTo(o, viewerId));
+   832	    try {
+   833	      const canonical = (await this.canonicalObjects()).filter((o) => this.visibleTo(o, viewerId));
+   834	      const seen = new Set(canonical.map((o) => o.id));
+   835	      return { objects: [...canonical, ...web.filter((o) => !seen.has(o.id))], gatewayAvailable: true };
+   836	    } catch (err) {
+   837	      if (this.isGatewayError(err)) return { objects: web, gatewayAvailable: false };
+   838	      throw err;
+   839	    }
+   840	  }
+   841	
+   842	  async getObject(objectId: string, viewerId?: string | null): Promise<PingObject> {
+   843	    const web = getWebsiteObjects().find((o) => o.id === objectId);
+   844	    if (web && this.visibleTo(web, viewerId)) return web;
+   845	    const { objects } = await this.allObjects(viewerId);
+   846	    const obj = objects.find((o) => o.id === objectId);
+   847	    if (!obj) throw new ObjectNotFoundError(objectId);
+   848	    return obj;
+   849	  }
+   850	
+   851	  async listObjects(
+   852	    viewerId?: string | null,
+   853	    opts?: { schema?: string; limit?: number },
+   854	  ): Promise<PingObject[]> {
+   855	    const { objects } = await this.allObjects(viewerId);
+   856	    let out = opts?.schema ? objects.filter((o) => o.schema === opts.schema) : objects;
+   857	    out = [...out].sort((a, b) => (a.updatedAt === b.updatedAt ? (a.id < b.id ? -1 : 1) : a.updatedAt < b.updatedAt ? 1 : -1));
+   858	    if (opts?.limit !== undefined) out = out.slice(0, Math.max(0, opts.limit));
+   859	    return out;
+   860	  }
+   861	
+   862	  async getRelationships(filter?: {
+   863	    subject?: string;
+   864	    predicate?: string;
+   865	    object?: string;
+   866	  }): Promise<PingRelationship[]> {
+   867	    const out: PingRelationship[] = [];
+   868	    try {
+   869	      const events = await this.queryEvents("RELATIONSHIP_CREATED");
+   870	      for (const ev of events) {
+   871	        const p = eventPayload(ev);
+   872	        const predicate = str(p.predicate);
+   873	        if (!predicate) continue;
+   874	        out.push({
+   875	          id: eventId(ev) || `rel:${predicate}:${str(p.subject)}:${str(p.object)}`,
+   876	          subject: str(p.subject) || str(p.subjectId),
+   877	          predicate,
+   878	          object: str(p.object) || str(p.target) || str(p.targetId) || str(p.objectId),
+   879	          status: str(p.status) === "inactive" ? "inactive" : "active",
+   880	          createdAt: eventTime(ev),
+   881	          evidenceRef: eventId(ev),
+   882	        });
+   883	      }
+   884	    } catch (err) {
+   885	      if (!this.isGatewayError(err)) throw err;
+   886	    }
+   887	    try {
+   888	      // Derived reply edges: a post with replyTo references its parent.
+   889	      const created = await this.queryEvents("OBJECT_CREATED");
+   890	      for (const ev of created) {
+   891	        const p = eventPayload(ev);
+   892	        if (p.schema !== POST_SCHEMA) continue;
+   893	        const replyTo = str(p.replyTo) || str(p.reply_to);
+   894	        const id = eventId(ev) || str(p.objectId);
+   895	        if (replyTo && id) {
+   896	          out.push({
+   897	            id: `reply:${id}`,
+   898	            subject: id,
+   899	            predicate: "replies",
+   900	            object: replyTo,
+   901	            status: "active",
+   902	            createdAt: eventTime(ev),
+   903	            evidenceRef: id,
+   904	          });
+   905	        }
+   906	      }
+   907	    } catch (err) {
+   908	      if (!this.isGatewayError(err)) throw err;
+   909	    }
+   910	    const all = [...getWebsiteRelationships(), ...out];
+   911	    const f = filter ?? {};
+   912	    const filtered = all.filter(
+   913	      (r) =>
+   914	        (!f.subject || r.subject === f.subject) &&
+   915	        (!f.predicate || r.predicate === f.predicate) &&
+   916	        (!f.object || r.object === f.object),
+   917	    );
+   918	    filtered.sort((a, b) =>
+   919	      a.createdAt === b.createdAt ? (a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : a.createdAt < b.createdAt ? 1 : -1,
+   920	    );
+   921	    return filtered;
+   922	  }
+   923	
+   924	  async getCircleCard(identityId: string, viewerId?: string | null): Promise<IntelligentCircleData> {
+   925	    const [profile, follows, objects] = await Promise.all([
+   926	      this.getProfile(identityId, viewerId),
+   927	      this.followEdges().then((e) => this.netFollows(e)),
+   928	      this.allObjects(viewerId).then((r) => r.objects).catch(() => [] as PingObject[]),
+   929	    ]);
+   930	    // Raw profile payload for the extended card fields.
+   931	    const profiles = await this.profileEvents();
+   932	    const mine = profiles.filter((ev) => {
+   933	      const p = eventPayload(ev);
+   934	      return str(p.identityId) === identityId || str(p.controller) === identityId;
+   935	    });
+   936	    mine.sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1));
+   937	    const p = mine.length > 0 ? eventPayload(mine[0]) : {};
+   938	
+   939	    const rawKind = str(p.type) || str(p.kind) || str(p.circleKind);
+   940	    const kind =
+   941	      rawKind === "person" || rawKind === "business" || rawKind === "organization" || rawKind === "agent"
+   942	        ? rawKind
+   943	        : null;
+   944	    const website = str(p.website) || str(p.url) || null;
+   945	    let domain: string | null = null;
+   946	    if (website) {
+   947	      try {
+   948	        domain = new URL(website.startsWith("http") ? website : `https://${website}`).hostname.replace(/^www\./, "");
+   949	      } catch {
+   950	        domain = null;
+   951	      }
+   952	    }
+   953	    const networks: { network: string; url?: string; label?: string }[] = [];
+   954	    const claims = p.claims;
+   955	    if (Array.isArray(claims)) {
+   956	      for (const c of claims) {
+   957	        const r = asRecord(c);
+   958	        if (!r) continue;
+   959	        const provider = str(r.provider);
+   960	        const linked = str(r.status) === "connected" || r.verified === true;
+   961	        if (provider && linked) {
+   962	          networks.push({
+   963	            network: provider.charAt(0).toUpperCase() + provider.slice(1),
+   964	            url: str(r.url) || str(r.profileUrl) || undefined,
+   965	            label: "Connected account",
+   966	          });
+   967	        }
+   968	      }
+   969	    }
+   970	    if (website && !networks.some((n) => n.url === website)) {
+   971	      networks.push({ network: "Website", url: website });
+   972	    }
+   973	
+   974	    const topObjects = objects
+   975	      .filter((o) => o.controllerId === identityId && o.visibility === "public")
+   976	      .sort((a, b) => (a.updatedAt === b.updatedAt ? (a.id < b.id ? -1 : 1) : a.updatedAt < b.updatedAt ? 1 : -1))
+   977	      .slice(0, 3)
+   978	      .map((o) => ({ id: o.id, schema: o.schema, title: o.title }));
+   979	
+   980	    const viewerFollows = viewerId ? follows.get(viewerId) ?? new Set<string>() : new Set<string>();
+   981	    const targetFollows = follows.get(identityId) ?? new Set<string>();
+   982	    let mutualCount = 0;
+   983	    for (const t of viewerFollows) if (targetFollows.has(t)) mutualCount += 1;
+   984	
+   985	    return {
+   986	      identity: profile.identity,
+   987	      objectId: profile.objectId,
+   988	      kind,
+   989	      description: profile.bio,
+   990	      website,
+   991	      domain,
+   992	      location: str(p.location) || str(p.city) || null,
+   993	      category: str(p.category) || str(p.businessCategory) || null,
+   994	      avatarUrl: str(p.avatarUrl) || str(p.avatar) || null,
+   995	      networks,
+   996	      topObjects,
+   997	      relationshipContext: {
+   998	        followedByViewer: profile.viewerFollowing,
+   999	        followsViewer: viewerId ? (follows.get(identityId)?.has(viewerId) ?? false) : false,
+  1000	        mutualCount,
+  1001	      },
+  1002	      provenanceLabel: "PING canonical profile",
+  1003	      updatedAt: profile.updatedAt,
+  1004	    };
+  1005	  }
+  1006	
+  1007	  async getDiscoveryFeed(
+  1008	    viewerId?: string | null,
+  1009	    limit = 30,
+  1010	  ): Promise<{ items: DiscoveryFeedItem[]; gatewayAvailable: boolean }> {
+  1011	    const nowIso = new Date().toISOString();
+  1012	    const items: DiscoveryFeedItem[] = [];
+  1013	    let gatewayAvailable = true;
+  1014	
+  1015	    try {
+  1016	      const [relEvents, follows, identities] = await Promise.all([
+  1017	        this.queryEvents("RELATIONSHIP_CREATED"),
+  1018	        this.followEdges().then((e) => this.netFollows(e)),
+  1019	        this.listIdentities(viewerId).catch(() => [] as import("./types").PingIdentitySummary[]),
+  1020	      ]);
+  1021	      const nameOf = new Map(identities.map((i) => [i.id, i.displayName]));
+  1022	      const shortName = (id: string) => nameOf.get(id) ?? `${id.slice(0, 12)}`;
+  1023	
+  1024	      // 1. Object activity: posts in the viewer feed.
+  1025	      if (viewerId) {
+  1026	        const feed = await this.getFeed(viewerId, viewerId).catch(() => [] as import("./types").PingPost[]);
+  1027	        for (const post of feed.slice(0, 20)) {
+  1028	          const obj = await this.getObject(post.id, viewerId).catch(() => null);
+  1029	          if (!obj) continue;
+  1030	          const mine = post.authorId === viewerId;
+  1031	          items.push({
+  1032	            kind: "object_activity",
+  1033	            object: obj,
+  1034	            actorId: post.authorId,
+  1035	            actorDisplayName: post.authorDisplayName || null,
+  1036	            eventTime: post.createdAt,
+  1037	            reason: mine ? "Your post." : `New post by ${post.authorDisplayName || shortName(post.authorId)}.`,
+  1038	            score: 0,
+  1039	            evidenceRef: post.id,
+  1040	          });
+  1041	          const last = items[items.length - 1];
+  1042	          last.score = rankScore({ id: last.object.id, kind: last.kind, eventTime: last.eventTime, actorProximity: mine ? 10 : 7 }, nowIso);
+  1043	        }
+  1044	      }
+  1045	
+  1046	      // 2. Relationship changes involving the viewer (latest 15).
+  1047	      const rels = relEvents
+  1048	        .map((ev) => ({ ev, p: eventPayload(ev) }))
+  1049	        .filter(({ p }) => {
+  1050	          const s = str(p.subject) || str(p.subjectId);
+  1051	          const o = str(p.object) || str(p.target) || str(p.targetId);
+  1052	          return !!viewerId && (s === viewerId || o === viewerId);
+  1053	        })
+  1054	        .sort((a, b) => (eventTime(a.ev) < eventTime(b.ev) ? 1 : -1))
+  1055	        .slice(0, 15);
+  1056	      for (const { ev, p } of rels) {
+  1057	        const s = str(p.subject) || str(p.subjectId);
+  1058	        const o = str(p.object) || str(p.target) || str(p.targetId);
+  1059	        const predicate = str(p.predicate);
+  1060	        const inactive = str(p.status) === "inactive";
+  1061	        const other = s === viewerId ? o : s;
+  1062	        const anchor = await this.getObject(other, viewerId).catch(() => null);
+  1063	        if (!anchor) continue;
+  1064	        const verb =
+  1065	          predicate === "follows"
+  1066	            ? inactive
+  1067	              ? "unfollowed"
+  1068	              : "followed"
+  1069	            : predicate === "likes"
+  1070	              ? inactive
+  1071	                ? "unliked"
+  1072	                : "liked"
+  1073	              : `${predicate}${inactive ? " (revoked)" : ""}`;
+  1074	        items.push({
+  1075	          kind: "relationship_change",
+  1076	          object: anchor,
+  1077	          actorId: s === viewerId ? viewerId : s,
+  1078	          actorDisplayName: s === viewerId ? nameOf.get(viewerId) ?? null : shortName(s),
+  1079	          eventTime: eventTime(ev),
+  1080	          reason:
+  1081	            s === viewerId
+  1082	              ? `You ${verb} ${shortName(o)}.`
+  1083	              : `${shortName(s)} ${verb} ${o === viewerId ? "you" : shortName(o)}.`,
+  1084	          score: 0,
+  1085	          evidenceRef: eventId(ev),
+  1086	        });
+  1087	        const last = items[items.length - 1];
+  1088	        last.score = rankScore({ id: last.object.id, kind: last.kind, eventTime: last.eventTime, actorProximity: 10 }, nowIso);
+  1089	      }
+  1090	
+  1091	      // 3. Newly discovered public objects (latest 10 by creation).
+  1092	      const { objects } = await this.allObjects(viewerId);
+  1093	      const fresh = [...objects]
+  1094	        .sort((a, b) => (a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? 1 : -1))
+  1095	        .slice(0, 10);
+  1096	      const seenIds = new Set(items.map((i) => i.object.id));
+  1097	      const followedSet = viewerId ? follows.get(viewerId) ?? new Set<string>() : new Set<string>();
+  1098	      for (const o of fresh) {
+  1099	        if (seenIds.has(o.id)) continue;
+  1100	        const prox = o.controllerId === viewerId ? 10 : followedSet.has(o.controllerId) ? 7 : 0;
+  1101	        items.push({
+  1102	          kind: "new_public_object",
+  1103	          object: o,
+  1104	          actorId: null,
+  1105	          actorDisplayName: null,
+  1106	          eventTime: o.createdAt,
+  1107	          reason: `New public object: ${o.title}.`,
+  1108	          score: 0,
+  1109	          evidenceRef: o.provenance.ref,
+  1110	        });
+  1111	        const last = items[items.length - 1];
+  1112	        last.score = rankScore({ id: last.object.id, kind: last.kind, eventTime: last.eventTime, actorProximity: prox }, nowIso);
+  1113	      }
+  1114	    } catch (err) {
+  1115	      if (this.isGatewayError(err)) {
+  1116	        gatewayAvailable = false;
+  1117	      } else {
+  1118	        throw err;
+  1119	      }
+  1120	    }
+  1121	
+  1122	    // 4. Website content: always available, clearly labeled.
+  1123	    for (const o of getWebsiteObjects()) {
+  1124	      if (o.schema !== "ping.social.article@1" && o.schema !== "ping.social.product@1") continue;
+  1125	      if (items.some((i) => i.object.id === o.id)) continue;
+  1126	      items.push({
+  1127	        kind: "website_content",
+  1128	        object: o,
+  1129	        actorId: null,
+  1130	        actorDisplayName: "PING Social",
+  1131	        eventTime: o.createdAt,
+  1132	        reason: `From the PING Social website: ${o.title}.`,
+  1133	        score: 0,
+  1134	        evidenceRef: o.provenance.ref,
+  1135	      });
+  1136	      const last = items[items.length - 1];
+  1137	      last.score = rankScore({ id: last.object.id, kind: last.kind, eventTime: last.eventTime, actorProximity: 0 }, nowIso);
+  1138	    }
+  1139	
+  1140	    const ranked = [...items]
+  1141	      .sort((a, b) =>
+  1142	        compareRanked(
+  1143	          { score: a.score, eventTime: a.eventTime, id: a.object.id },
+  1144	          { score: b.score, eventTime: b.eventTime, id: b.object.id },
+  1145	        ),
+  1146	      )
+  1147	      .slice(0, Math.max(1, limit));
+  1148	    return { items: ranked, gatewayAvailable };
+  1149	  }
+  1150	
+  1151	  async planActions(viewerId: string | null, objectId: string): Promise<CapabilityPlan> {
+  1152	    const object = await this.getObject(objectId, viewerId);
+  1153	    const identitySchemas = new Set(["ping.social.profile@1", "ping.social.person@1", "ping.social.business@1"]);
+  1154	    const targetIdentityId =
+  1155	      object.controllerId &&
+  1156	      !object.controllerId.startsWith("web:") &&
+  1157	      identitySchemas.has(object.schema)
+  1158	        ? object.controllerId
+  1159	        : null;
+  1160	    let followedByViewer = false;
+  1161	    let likedByViewer = false;
+  1162	    try {
+  1163	      const [follows, likes] = await Promise.all([
+  1164	        this.followEdges().then((e) => this.netFollows(e)),
+  1165	        this.likeEdges().then((e) => this.netLikes(e)),
+  1166	      ]);
+  1167	      if (viewerId) {
+  1168	        if (targetIdentityId) followedByViewer = follows.get(viewerId)?.has(targetIdentityId) ?? false;
+  1169	        likedByViewer = likes.get(viewerId)?.has(objectId) ?? false;
+  1170	      }
+  1171	    } catch (err) {
+  1172	      if (!this.isGatewayError(err)) throw err;
+  1173	    }
+  1174	    const website =
+  1175	      (typeof object.fields.website === "string" && object.fields.website) ||
+  1176	      (typeof object.fields.url === "string" && object.fields.url.startsWith("http") ? object.fields.url : null) ||
+  1177	      null;
+  1178	    // Explicit grants from the user-facing grant authority. The planner is
+  1179	    // still the capability authority; these grants only open the FYD site
+  1180	    // actions for site-capable objects the viewer controls.
+  1181	    const grants = grantsForViewer({
+  1182	      viewerId,
+  1183	      controllerId: object.controllerId,
+  1184	      isSite: isSiteCapableSchema(object.schema),
+  1185	    });
+  1186	    return planActionsPure({
+  1187	      viewerId,
+  1188	      target: object,
+  1189	      targetIdentityId,
+  1190	      followedByViewer,
+  1191	      likedByViewer,
+  1192	      website,
+  1193	      grants,
+  1194	    });
+  1195	  }
+  1196	
+  1197	  async getNode(objectId: string, viewerId?: string | null): Promise<NodePayload> {
+  1198	    const [object, relationships, plan] = await Promise.all([
+  1199	      this.getObject(objectId, viewerId),
+  1200	      this.getRelationships().catch(() => [] as PingRelationship[]),
+  1201	      this.planActions(viewerId ?? null, objectId),
+  1202	    ]);
+  1203	    const rel = relationships
+  1204	      .filter(
+  1205	        (r) =>
+  1206	          r.subject === objectId ||
+  1207	          r.object === objectId ||
+  1208	          r.subject === object.controllerId ||
+  1209	          r.object === object.controllerId,
+  1210	      )
+  1211	      .slice(0, 40);
+  1212	    const { objects } = await this.allObjects(viewerId).catch(() => ({
+  1213	      objects: [] as PingObject[],
+  1214	      gatewayAvailable: false,
+  1215	    }));
+  1216	    const byId = new Map(objects.map((o) => [o.id, o]));
+  1217	    const relatedIds: string[] = [];
+  1218	    for (const r of rel) {
+  1219	      for (const id of [r.subject, r.object]) {
+  1220	        if (id !== objectId && id !== object.controllerId && !relatedIds.includes(id)) relatedIds.push(id);
+  1221	      }
+  1222	      if (relatedIds.length >= 12) break;
+  1223	    }
+  1224	    const related = relatedIds
+  1225	      .map((id) => byId.get(id))
+  1226	      .filter((o): o is PingObject => !!o)
+  1227	      .slice(0, 12);
+  1228	    let controller: import("./types").PingIdentitySummary | null = null;
+  1229	    if (object.controllerId && !object.controllerId.startsWith("web:")) {
+  1230	      try {
+  1231	        controller = (await this.getProfile(object.controllerId, viewerId)).identity;
+  1232	      } catch {
+  1233	        controller = null;
+  1234	      }
+  1235	    }
+  1236	    return { object, relationships: rel, related, controller, plan };
+  1237	  }
+  1238	
+  1239	  async ask(
+  1240	    question: string,
+  1241	    viewerId: string | null,
+  1242	    targetObjectId?: string | null,
+  1243	  ): Promise<AskAnswer> {
+  1244	    const target = targetObjectId ? await this.getObject(targetObjectId, viewerId) : null;
+  1245	    const [relationships, plan, identities] = await Promise.all([
+  1246	      this.getRelationships().catch(() => [] as PingRelationship[]),
+  1247	      targetObjectId ? this.planActions(viewerId, targetObjectId) : Promise.resolve(null),
+  1248	      this.listIdentities(viewerId).catch(() => [] as import("./types").PingIdentitySummary[]),
+  1249	    ]);
+  1250	    const rel = target
+  1251	      ? relationships
+  1252	          .filter(
+  1253	            (r) =>
+  1254	              r.subject === target.id || r.object === target.id || r.subject === target.controllerId || r.object === target.controllerId,
+  1255	          )
+  1256	          .slice(0, 20)
+  1257	      : [];
+  1258	    const { objects } = await this.allObjects(viewerId).catch(() => ({
+  1259	      objects: [] as PingObject[],
+  1260	      gatewayAvailable: false,
+  1261	    }));
+  1262	    const byId = new Map(objects.map((o) => [o.id, o]));
+  1263	    const relatedIds: string[] = [];
+  1264	    for (const r of rel) {
+  1265	      for (const id of [r.subject, r.object]) {
+  1266	        if (target && id !== target.id && id !== target.controllerId && !relatedIds.includes(id)) {
+  1267	          relatedIds.push(id);
+  1268	        }
+  1269	      }
+  1270	      if (relatedIds.length >= 8) break;
+  1271	    }
+  1272	    let related = relatedIds.map((id) => byId.get(id)).filter((o): o is PingObject => !!o);
+  1273	    if (target && related.length === 0) {
+  1274	      // Fallback: recent objects from the same controller.
+  1275	      related = objects
+  1276	        .filter((o) => o.controllerId === target.controllerId && o.id !== target.id && o.visibility === "public")
+  1277	        .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+  1278	        .slice(0, 8);
+  1279	    }
+  1280	    const viewer = identities.find((i) => i.id === viewerId) ?? null;
+  1281	    const ctx = buildAskContext({
+  1282	      viewer: { id: viewerId, displayName: viewer?.displayName ?? null },
+  1283	      target,
+  1284	      relatedObjects: related,
+  1285	      relationships: rel,
+  1286	      plan,
+  1287	    });
+  1288	    return composeAnswer(ctx, question);
+  1289	  }
+  1290	
+  1291	  /**
+  1292	   * Human approval endpoint for Ask PING proposals. Re-verifies the exact
+  1293	   * digest, enforces owner-only updates, then submits through the governed
+  1294	   * signed envelope path as the viewer identity. Agents cannot call this
+  1295	   * with a forged digest: any modification fails verification.
+  1296	   */
+  1297	  async submitProposal(viewerId: string, proposal: AskProposal): Promise<{ eventId: string }> {
+  1298	    if (!viewerId) throw new BadRequestError("No active identity. Select an identity first.");
+  1299	    if (!verifyProposalDigest(proposal)) {
+  1300	      throw new BadRequestError("Proposal digest mismatch. The proposal changed after drafting; draft it again.");
+  1301	    }
+  1302	    if (proposal.kind === "object_update") {
+  1303	      if (!proposal.targetObjectId) throw new BadRequestError("Update proposal needs a target object.");
+  1304	      const obj = await this.getObject(proposal.targetObjectId, viewerId);
+  1305	      if (obj.controllerId !== viewerId) {
+  1306	        throw new BadRequestError("Only the controlling identity can update this object.");
+  1307	      }
+  1308	      if (obj.provenance.kind !== "canonical-journal") {
+  1309	        throw new BadRequestError("Only canonical-journal objects can be updated here.");
+  1310	      }
+  1311	      const eventId = await this.submitSignedEvent(viewerId, "OBJECT_UPDATED", {
+  1312	        objectId: obj.id,
+  1313	        schema: proposal.schema,
+  1314	        changes: proposal.changes,
+  1315	      });
+  1316	      return { eventId };
+  1317	    }
+  1318	    if (proposal.kind === "site_patch") {
+  1319	      // Agent-drafted SiteSpec transition. The digest was re-verified above;
+  1320	      // the envelope binding is checked at the API boundary (the FYD lane
+  1321	      // owns the signing key material). Approval is a human act: the owner
+  1322	      // approves the exact digest, and the approved patch is recorded as one
+  1323	      // governed OBJECT_UPDATED. The agent never applies it directly and
+  1324	      // nothing is published by this path.
+  1325	      const obj = await this.getObject(proposal.targetObjectId, viewerId);
+  1326	      if (obj.controllerId !== viewerId) {
+  1327	        throw new BadRequestError("Only the controlling identity can approve a site change.");
+  1328	      }
+  1329	      const siteGrants = grantsForViewer({
+  1330	        viewerId,
+  1331	        controllerId: obj.controllerId,
+  1332	        isSite: isSiteCapableSchema(obj.schema),
+  1333	      });
+  1334	      if (!siteGrants.includes("site.propose")) {
+  1335	        throw new BadRequestError("This identity cannot propose site changes for this site.");
+  1336	      }
+  1337	      if (proposal.envelope && proposal.envelope.payload_hash !== proposal.digest) {
+  1338	        throw new BadRequestError("Site-patch envelope does not bind this proposal digest.");
+  1339	      }
+  1340	      const eventId = await this.submitSignedEvent(viewerId, "OBJECT_UPDATED", {
+  1341	        objectId: obj.id,
+  1342	        schema: proposal.schema,
+  1343	        changes: {
+  1344	          ...proposal.changes,
+  1345	          site_patch: JSON.stringify(proposal.sitePatch),
+  1346	          proposal_digest: proposal.digest,
+  1347	          site_spec_digest: proposal.sitePatch.siteSpecDigest,
+  1348	        },
+  1349	      });
+  1350	      return { eventId };
+  1351	    }
+  1352	    const eventId = await this.submitSignedEvent(viewerId, "OBJECT_CREATED", {
+  1353	      schema: proposal.schema,
+  1354	      ...proposal.changes,
+  1355	      visibility: "public",
+  1356	    });
+  1357	    return { eventId };
+  1358	  }
+  1359	}
+  1360	
+  1361	
+  1362	// ---------------------------------------------------------------------------
+  1363	// Factory: one reader for the BFF. Swap the implementation here when the
+  1364	// runtime exposes a dedicated read API; the UI does not change.
+  1365	// ---------------------------------------------------------------------------
+  1366	
+  1367	let reader: PingObjectReader | null = null;
+  1368	
+  1369	export function getPingObjectReader(): PingObjectReader {
+  1370	  if (!reader) reader = new GatewayPingObjectReader();
+  1371	  return reader;
+  1372	}

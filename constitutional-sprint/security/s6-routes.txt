@@ -1,0 +1,62 @@
+===== R1: customize route auth gates =====
+20: * unresolved), 403 (no demo-owner mode, capability denied, public host),
+27:import { isPrivateHost } from "@/fyd/owner-mode/gate";
+55:  const privateNet = isPrivateHost(host);
+68:      { status: 403 },
+84:      { status: 403 },
+===== R2: object GET routes: projection/visibility filtering =====
+--- src/app/api/ping/object/route.ts ---
+21:    return NextResponse.json({ object });
+--- src/app/api/ping/node/route.ts ---
+21:    return NextResponse.json({ node });
+--- src/app/api/fyd/objects/[objectId]/route.ts ---
+4: * Public object projection. Resolves the id by site slug (legacy) or by
+17:import { objectViewToProjection } from "@/fyd/object/object-projection";
+30:    return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+38:    return NextResponse.json(
+43:  const projection = objectViewToProjection(view, graph);
+44:  return NextResponse.json({ ok: true, view, history, siteId, projection });
+--- src/app/api/fyd/projection/route.ts ---
+8: * GET /api/fyd/projection?siteId=<slug>
+10: * Serves the RAW PING-backed projection for a demo site: the canonical
+13: * endpoint: it shows what the source projection says, independent of any
+19: * The projection is produced by the PING-side dump
+20: * (/home/nolan/ping/tools/fyd-site-projection/dump.py), never hand-authored.
+21: * A missing or tampered projection is a 503, never a stale fallback.
+26:    return NextResponse.json(
+33:    return NextResponse.json({ ok: true, siteId, meta, graph });
+36:    return NextResponse.json({ ok: false, error: message }, { status: 503 });
+--- src/app/api/fyd/social/feed/route.ts ---
+2: * FYD social: visibility-aware feed for one identity.
+7: * counts are projections from net 'likes' edges. No ranking, no synthesis,
+21:      return NextResponse.json(
+29:    return NextResponse.json({ posts, source: "ping_events" });
+32:    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+--- src/app/api/fyd/social/state/route.ts ---
+7: * repo-booted gateway. Counts are projections over journaled
+22:      return NextResponse.json(
+29:      return NextResponse.json(
+34:    return NextResponse.json(state);
+37:    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+===== R3: mutation routes: like/follow/overrides/claims =====
+--- src/app/api/fyd/like/route.ts ---
+--- src/app/api/fyd/follow/route.ts ---
+--- src/app/api/fyd/objects/[objectId]/overrides/route.ts ---
+31: * private-network host. Anything else gets a typed 403
+46: * seam; a denied owner.correct-fact verdict returns 403 and nothing is
+66: * Failures are typed 400s/409s/403s; nothing is written on failure.
+70:import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+111: * refuse with a typed 403 unless the demo explicitly opts in via
+117:  const enabled = isDemoOwnerModeEnabled();
+119:  const privateNet = isPrivateHost(host);
+132:      { status: 403 },
+199:  // with 403 demo_owner_mode_required before any object I/O; nothing is
+368:      // alone never grants mutation. Denied -> 403, nothing written.
+387:          { status: 403 },
+--- src/app/api/fyd/claims/identity/route.ts ---
+--- src/app/api/ping/actions/route.ts ---
+--- src/app/api/fyd/social/post/route.ts ---
+5: * Real PING path: signed bff-envelope@1 OBJECT_CREATED (schema
+===== R4: kit webhook secret verification =====
+===== R5: workbench password check =====
+src/app/api/health/authority/route.ts

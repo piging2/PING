@@ -1,0 +1,101 @@
+244 gateway/kernel_replay_execution_provider.js
+'use strict';
+
+/**
+ * Kernel Replay Execution Provider
+ *
+ * Bridges the kernel deterministic replay engine (from commit b4c5d6e1)
+ * into PING's ReplayExecutionPort interface.
+ *
+ * PING transcripts contain replay_events[] in state.
+ * This provider converts them to kernel CanonicalEventEnvelope format
+ * and runs DeterministicReplayEngine.replay().
+ */
+
+const { DeterministicReplayEngine } = require('./replay/kernel/deterministic_replay_engine');
+const { CanonicalEventEnvelope } = require('./replay/kernel/canonical_event_envelope');
+const { ReplayEventStream } = require('./replay/kernel/replay_event_stream');
+
+class KernelReplayExecutionProvider {
+  constructor(options = {}) {
+    this._engineVersion = options.engineVersion || 'v1';
+    this._stats = { replays: 0, events: 0, failures: 0 };
+  }
+
+  /**
+   * Execute replay of a transcript through the kernel engine.
+   *
+   * @param {Object} transcript - PING transcript with state.replay_events[]
+   * @param {Object} options - { maxEvents }
+   * @returns {Promise<Object>} Replay result
+   */
+  async executeReplay(transcript, options = {}) {
+    this._stats.replays++;
+
+    const replayEvents = transcript?.state?.replay_events;
+    if (!Array.isArray(replayEvents) || replayEvents.length === 0) {
+      return {
+        status: 'no_events',
+        message: 'Transcript contains no replay_events in state'
+      };
+    }
+
+    const maxEvents = options.maxEvents != null ? options.maxEvents : 10000;
+    const eventsToReplay = replayEvents.slice(0, maxEvents);
+
+    if (eventsToReplay.length === 0) {
+      return {
+        status: 'no_events',
+        message: 'No events after applying maxEvents limit'
+      };
+    }
+
+    // Convert PING events → kernel CanonicalEventEnvelope instances
+    const envelopes = [];
+    const eventTypes = new Set();
+    let parentEventId = null;
+
+    for (let i = 0; i < eventsToReplay.length; i++) {
+      const event = eventsToReplay[i];
+      if (!event || typeof event !== 'object') {
+        this._stats.failures++;
+        continue;
+      }
+      const eventType = event.event_type || event.type || 'artifact_commit';
+      eventTypes.add(eventType);
+
+      // Kernel event_id must start with 'evt-'
+      let eventId = event.event_id;
+      if (!eventId || !eventId.startsWith('evt-')) {
+        eventId = `evt-ping-${i}-${this._hashId(event.event_id || event.id || String(i))}`;
+      }
+
+      // Kernel lineage: parent_event_ids must reference previously committed event IDs
+      const lineage = this._buildLineage(event, parentEventId, envelopes);
+
+      // Map PING event type to kernel event type (artifact_commit or artifact_update)
+      const kernelEventType = this._mapEventType(eventType);
+
+      // Deterministic artifact_hash from event content (kernel invariant requires non-empty)
+      const artifactHash = event.canonical_hash || event.metadata?.canonical_hash
+        || this._computeHash(JSON.stringify(event.payload || {}));
+
+      const envelopeData = {
+        event_id: eventId,
+        event_type: kernelEventType,
+        actor_id: event.actor_id || event.metadata?.worker || event.metadata?.source || 'ping-runtime',
+        timestamp: event.timestamp || '2026-01-01T00:00:00.000Z',
+        schema_version: event.schema_version || '3.0.0',
+        replay_version: event.replay_version || '5.0.0',
+        policy_version: event.policy_version || '1.0.0',
+        payload: {
+          artifact_id: event.artifact_id || eventId,
+          artifact_hash: artifactHash,
+          event_type: eventType,
+          payload: event.payload || event.event_data || {},
+          metadata: {
+            ...(event.metadata || {}),
+            // Propagate trace fields explicitly — the kernel engine does not
+            // re-emit individual events with their metadata, so these must be
+            // carried in the envelope payload for downstream reconstruction.
+            // Only set when present; never fabricate absent values.

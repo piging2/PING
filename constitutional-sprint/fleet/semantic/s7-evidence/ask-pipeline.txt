@@ -1,0 +1,307 @@
+306 src/app/api/fyd/ask/ask-pipeline.ts
+     1	/**
+     2	 * Tenant-safe Ask FYD request handling, shared by POST /api/fyd/ask and
+     3	 * POST /api/fyd/ask/[siteId].
+     4	 *
+     5	 * G3 (tenant from the trusted path): the nested /ask/[siteId] route derives
+     6	 * the tenant from the route path param, never from the request body or URL
+     7	 * query. A TenantContext is constructed server-side via requireTenantContext
+     8	 * (which also enforces the DNS-safe slug pattern, killing path traversal).
+     9	 * Any body-supplied tenant identity (siteId / tenantId / tenant keys) that
+    10	 * disagrees with the route tenant is REFUSED with 400 tenant_mismatch: the
+    11	 * request is served for the route tenant or refused, never for the
+    12	 * body-claimed tenant.
+    13	 *
+    14	 * The legacy flat POST /api/fyd/ask keeps its body contract ({ siteId,
+    15	 * objectId?, question, mode }) but now constructs the TenantContext
+    16	 * server-side from
+    17	 * the validated body siteId (previously: no tenant context at all). The
+    18	 * nested route is the trusted-path surface; prefer it for new callers.
+    19	 *
+    20	 * 3-class response contract: every 200 response carries
+    21	 * answerClass ("supported" | "derived" | "unknown"), every citation
+    22	 * carries claimClass ("supported" | "derived"), and the 200 body also
+    23	 * carries unknowns (string[]), suggestedActions (available actions,
+    24	 * [] when none), and proposal (draft AskProposal or null).
+    25	 * A refusal (no cited evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
+    26	 * GENERATED_COPY claims make the answer "derived" and are explicitly
+    27	 * labeled in the citation basis.
+    28	 *
+    29	 * Object-scoped ask: the optional body objectId selects the target
+    30	 * object INSIDE the route tenant's public graph; the tenant is still
+    31	 * chosen by the route path (or the validated body siteId on the legacy
+    32	 * flat route), never by objectId. Unknown ids -> 404 unknown_object;
+    33	 * non-public objects never enter the public graph, so they fail closed
+    34	 * the same way. objectId is object identity only, never a tenant key.
+    35	 *
+    36	 * Visitor vs owner scope: mode "visitor" (default) answers from PUBLIC
+    37	 * facts only. mode "owner" is accepted for a future authenticated lane but
+    38	 * until that lane exists it is treated as visitor-safe: it grants nothing
+    39	 * and changes nothing. There is deliberately no code path here that serves
+    40	 * owner-private facts.
+    41	 */
+    42	import { NextRequest, NextResponse } from "next/server";
+    43	import {
+    44	  answerAskFyd,
+    45	  type AnswerAskFydDeps,
+    46	  type AskFydCitation,
+    47	  type AskFydMode,
+    48	  type AskFydOutcome,
+    49	} from "@/fyd/ask/visitor-answer";
+    50	import {
+    51	  requireTenantContext,
+    52	  TenantContextError,
+    53	} from "@/fyd/tenant/tenant-context";
+    54	import { getSiteBundle, type SiteBundle } from "@/fyd/media/site-bundle";
+    55	import type { FydOverlayReader } from "@/fyd/data/fyd-tenant-graph";
+    56	import { applyOwnerFieldCorrections } from "@/fyd/object/owner-overlay";
+    57	
+    58	export const dynamic = "force-dynamic";
+    59	export const runtime = "nodejs";
+    60	
+    61	/** Answer-level class for the 3-class contract. */
+    62	export type AskAnswerClass = "supported" | "derived" | "unknown";
+    63	
+    64	const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
+    65	
+    66	/**
+    67	 * Bundle loader for Ask FYD: loads the site bundle through the authorized
+    68	 * application read seam (fixture base graph + journal overlays via the
+    69	 * governed PingObjectReader, digest-verified) and composes the tenant's
+    70	 * owner overlay (field corrections) over it, ABOVE the read seam. The read
+    71	 * model is the authorized graph read, so a correction the owner approved is
+    72	 * reflected in Ask FYD answers, cited as an owner override while the
+    73	 * source's value stays recorded as what the source says. Fail closed: on
+    74	 * overlay failure the raw bundle is served, never an invented value.
+    75	 *
+    76	 * The reader override exists for tests only; production always uses the
+    77	 * governed reader.
+    78	 */
+    79	export async function loadBundleWithOwnerOverlay(
+    80	  siteId: string,
+    81	  reader?: FydOverlayReader,
+    82	): Promise<SiteBundle | null> {
+    83	  const bundle = await getSiteBundle(siteId, reader ? { reader } : undefined);
+    84	  if (!bundle) return null;
+    85	  try {
+    86	    const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
+    87	    return { ...bundle, graph: overlaid.graph };
+    88	  } catch {
+    89	    return bundle;
+    90	  }
+    91	}
+    92	
+    93	/** Body keys that claim a tenant identity. Only the route path may do that. */
+    94	const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
+    95	
+    96	/**
+    97	 * Reduce one answered outcome to its 3-class label. A refusal (or an answer
+    98	 * with no citations) is "unknown": the pipeline had nothing to stand on.
+    99	 * Any derived/inferred/generated claim makes the whole answer "derived".
+   100	 */
+   101	export function answerClassFor(
+   102	  refusal: boolean,
+   103	  citations: AskFydCitation[],
+   104	): AskAnswerClass {
+   105	  if (refusal || citations.length === 0) return "unknown";
+   106	  return citations.some((c) => c.claimClass === "derived") ? "derived" : "supported";
+   107	}
+   108	
+   109	function tenantMismatchResponse(
+   110	  routeTenantId: string,
+   111	  key: string,
+   112	  claimed: string,
+   113	): NextResponse {
+   114	  return NextResponse.json(
+   115	    {
+   116	      ok: false,
+   117	      code: "tenant_mismatch",
+   118	      error:
+   119	        "Tenant identity comes from the request route, not the request body: " +
+   120	        "the body claimed tenant \"" +
+   121	        claimed +
+   122	        "\" under key \"" +
+   123	        key +
+   124	        "\" while the route serves tenant \"" +
+   125	        routeTenantId +
+   126	        "\". The request was refused; nothing was served for the claimed tenant.",
+   127	      routeTenantId,
+   128	      rejectedKey: key,
+   129	    },
+   130	    { status: 400 },
+   131	  );
+   132	}
+   133	
+   134	function invalidTenantResponse(raw: string): NextResponse {
+   135	  return NextResponse.json(
+   136	    {
+   137	      ok: false,
+   138	      code: "invalid_tenant",
+   139	      error:
+   140	        "Refusing to act: \"" +
+   141	        raw +
+   142	        "\" is not a valid tenant id. Tenant ids are DNS-safe slugs.",
+   143	    },
+   144	    { status: 400 },
+   145	  );
+   146	}
+   147	
+   148	/**
+   149	 * Handle one Ask FYD POST.
+   150	 *
+   151	 * @param routeTenantId the tenant from the trusted route path
+   152	 *   (/api/fyd/ask/[siteId]), or null for the legacy flat route where the
+   153	 *   subject tenant comes from the validated body siteId.
+   154	 */
+   155	export async function handleAskRequest(
+   156	  routeTenantId: string | null,
+   157	  request: NextRequest,
+   158	): Promise<NextResponse> {
+   159	  let body: unknown = null;
+   160	  try {
+   161	    body = await request.json();
+   162	  } catch {
+   163	    body = null;
+   164	  }
+   165	  const record =
+   166	    typeof body === "object" && body !== null ? (body as Record<string, unknown>) : ({} as Record<string, unknown>);
+   167	
+   168	  let siteId: string;
+   169	  if (routeTenantId !== null) {
+   170	    // Trusted path: the tenant is the route param, constructed server-side.
+   171	    try {
+   172	      siteId = requireTenantContext({ tenantId: routeTenantId });
+   173	    } catch (err) {
+   174	      if (err instanceof TenantContextError) return invalidTenantResponse(routeTenantId);
+   175	      throw err;
+   176	    }
+   177	    // Reject body-supplied tenant identity that disagrees with the route.
+   178	    // A matching claim is harmless and ignored; a mismatch is refused.
+   179	    for (const key of TENANT_CLAIM_KEYS) {
+   180	      const claimed = record[key];
+   181	      if (typeof claimed === "string" && claimed.trim().length > 0 && claimed.trim() !== siteId) {
+   182	        return tenantMismatchResponse(siteId, key, claimed.trim());
+   183	      }
+   184	    }
+   185	  } else {
+   186	    // Legacy flat route: subject tenant from the validated body siteId,
+   187	    // constructed server-side (previously no tenant context existed here).
+   188	    const raw = typeof record.siteId === "string" ? record.siteId.trim() : "";
+   189	    if (!raw) {
+   190	      return NextResponse.json({ ok: false, error: "Unknown site." }, { status: 404 });
+   191	    }
+   192	    try {
+   193	      siteId = requireTenantContext({ tenantId: raw });
+   194	    } catch (err) {
+   195	      if (err instanceof TenantContextError) return invalidTenantResponse(raw);
+   196	      throw err;
+   197	    }
+   198	  }
+   199	
+   200	  const question = typeof record.question === "string" ? record.question : "";
+   201	  const rawObjectId = typeof record.objectId === "string" ? record.objectId.trim() : "";
+   202	  const mode = record.mode === undefined ? "visitor" : record.mode;
+   203	  if (!VALID_MODES.includes(mode as AskFydMode)) {
+   204	    return NextResponse.json(
+   205	      { ok: false, error: "mode must be 'visitor' or 'owner'." },
+   206	      { status: 400 },
+   207	    );
+   208	  }
+   209	
+   210	  // The bundle loads through the authorized graph read on every request
+   211	  // (re-read on every serve). A load or verification failure is the same
+   212	  // honest unknown as a missing projection: never an answer, never a leak.
+   213	  let bundle: SiteBundle | null;
+   214	  try {
+   215	    bundle = await loadBundleWithOwnerOverlay(siteId);
+   216	  } catch (err) {
+   217	    console.error(
+   218	      `answerAskFyd: projection load failed for site "${siteId}":`,
+   219	      err instanceof Error ? err.message : err,
+   220	    );
+   221	    return NextResponse.json(
+   222	      {
+   223	        ok: false,
+   224	        kind: "projection_unavailable",
+   225	        error:
+   226	          "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+   227	        attempted: "load the site's verified data projection",
+   228	        answerUnknown: true,
+   229	      },
+   230	      { status: 503 },
+   231	    );
+   232	  }
+   233	
+   234	  const deps: AnswerAskFydDeps = {
+   235	    // Tenant-scoped: the answer engine can only ever load this request's
+   236	    // tenant bundle, never another tenant's graph.
+   237	    loadBundle: (id) => (id === siteId ? bundle : null),
+   238	  };
+   239	
+   240	  let outcome: AskFydOutcome;
+   241	  try {
+   242	    outcome = answerAskFyd(
+   243	      {
+   244	        siteId,
+   245	        objectId: rawObjectId.length > 0 ? rawObjectId : undefined,
+   246	        question,
+   247	        mode: mode as AskFydMode,
+   248	      },
+   249	      deps,
+   250	    );
+   251	  } catch {
+   252	    // The pipeline never throws by contract, but a route handler must never
+   253	    // leak an empty 500 if anything ever does: fail honestly and structurally.
+   254	    return NextResponse.json(
+   255	      {
+   256	        ok: false,
+   257	        kind: "internal_error",
+   258	        error: "Ask FYD hit an unexpected problem. The answer is unknown.",
+   259	        answerUnknown: true,
+   260	      },
+   261	      { status: 500 },
+   262	    );
+   263	  }
+   264	  if (!outcome.ok) {
+   265	    switch (outcome.error.kind) {
+   266	      case "unknown_site":
+   267	        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
+   268	      case "bad_question":
+   269	        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+   270	      case "bad_mode":
+   271	        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+   272	      case "unknown_object":
+   273	        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
+   274	      case "projection_unavailable":
+   275	        return NextResponse.json(
+   276	          {
+   277	            ok: false,
+   278	            kind: outcome.error.kind,
+   279	            error: outcome.error.message,
+   280	            attempted: "load the site's verified data projection",
+   281	            answerUnknown: true,
+   282	          },
+   283	          { status: 503 },
+   284	        );
+   285	      default:
+   286	        return NextResponse.json(
+   287	          { ok: false, error: "This site is not available right now." },
+   288	          { status: 500 },
+   289	        );
+   290	    }
+   291	  }
+   292	  return NextResponse.json({
+   293	    ok: true,
+   294	    answer: outcome.answer,
+   295	    answerClass: answerClassFor(outcome.refusal, outcome.citations),
+   296	    refusal: outcome.refusal,
+   297	    citations: outcome.citations,
+   298	    // Carried from the internal AskAnswer: unknowns and suggestedActions
+   299	    // are [] when the composer found none; proposal is null unless the
+   300	    // answer drafted one. Nothing here is ever invented.
+   301	    unknowns: outcome.unknowns,
+   302	    suggestedActions: outcome.suggestedActions,
+   303	    proposal: outcome.proposal,
+   304	    tenantId: siteId,
+   305	  });
+   306	}

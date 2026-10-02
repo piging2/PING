@@ -1,0 +1,290 @@
+[
+ {
+  "id": "Q6-1",
+  "desc": "POST /tenants no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "Q6-2",
+  "desc": "GET /tenants no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "Q6-3",
+  "desc": "GET /tenants/t-001 no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "Q6-4",
+  "desc": "PUT /tenants/t-001 no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "Q6-5",
+  "desc": "DELETE /tenants/t-001 no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "Q6-6",
+  "desc": "POST /tenants/t-001/heartbeat no auth",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "H-1",
+  "desc": "Bearer wrongkey",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-2",
+  "desc": "Basic scheme",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-3",
+  "desc": "Bearer with no key",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-4",
+  "desc": "lowercase bearer + valid key",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-5",
+  "desc": "double space after Bearer + valid key",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-6",
+  "desc": "raw valid key, no scheme (supported by design)",
+  "status": 200,
+  "handlerExecuted": true,
+  "body": "{\"tenants\":[],\"count\":0}",
+  "pass": true
+ },
+ {
+  "id": "H-7",
+  "desc": "empty authorization header",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "H-8",
+  "desc": "10KB garbage key",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "H-9",
+  "desc": "CONTROL: valid Bearer key reaches handler",
+  "status": 200,
+  "handlerExecuted": true,
+  "body": "{\"tenant\":{\"tenant_id\":\"t-001\",\"name\":\"attack-probe\",\"_route\":\"register\"}}",
+  "pass": true
+ },
+ {
+  "id": "P-1",
+  "desc": "POST /tenants/ trailing slash",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-2",
+  "desc": "GET /TENANTS uppercase",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-3",
+  "desc": "GET /Tenants/t-001 mixed case",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-4",
+  "desc": "GET /tenants// double slash",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-5",
+  "desc": "GET //tenants leading double slash",
+  "status": 404,
+  "handlerExecuted": false,
+  "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET //tenants</pre>\n</body>\n</html>\n",
+  "pass": true
+ },
+ {
+  "id": "P-6",
+  "desc": "GET /%74enants encoded t",
+  "status": 404,
+  "handlerExecuted": false,
+  "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /%74enants</pre>\n</body>\n</html>\n",
+  "pass": true
+ },
+ {
+  "id": "P-7",
+  "desc": "GET /tenants/%2e%2e encoded dotdot",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-8",
+  "desc": "POST /tenants/t-001/heartbeat/ trailing slash",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-9",
+  "desc": "GET /tenants.json suffix",
+  "status": 404,
+  "handlerExecuted": false,
+  "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /tenants.json</pre>\n</body>\n</html>\n",
+  "pass": true
+ },
+ {
+  "id": "P-10",
+  "desc": "GET /tenants?status=active query",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-11",
+  "desc": "GET /t%C3%A9nants unicode",
+  "status": 404,
+  "handlerExecuted": false,
+  "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /t%C3%A9nants</pre>\n</body>\n</html>\n",
+  "pass": true
+ },
+ {
+  "id": "P-12",
+  "desc": "HEAD /tenants",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "",
+  "pass": true
+ },
+ {
+  "id": "P-13",
+  "desc": "OPTIONS /tenants (global CORS preflight)",
+  "status": 200,
+  "handlerExecuted": false,
+  "body": "OK",
+  "pass": true
+ },
+ {
+  "id": "P-14",
+  "desc": "GET /tenants/./t-001 dot segment",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Missing authentication\",\"code\":\"MISSING_AUTH\"}",
+  "pass": true
+ },
+ {
+  "id": "P-15",
+  "desc": "POST /tenants;x semicolon",
+  "status": 404,
+  "handlerExecuted": false,
+  "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot POST /tenants;x</pre>\n</body>\n</html>\n",
+  "pass": true
+ },
+ {
+  "id": "D-1",
+  "desc": "dup Authorization: valid then junk",
+  "status": 500,
+  "handlerExecuted": false,
+  "body": "HTTP/1.1 500 Internal Server Error\r\nX-Powered-By: Express\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\nAccess-Control-Allow-Methods: GET,POST,OPTIONS\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 43\r\nETag: W/\"2b-gExq",
+  "pass": false
+ },
+ {
+  "id": "D-2",
+  "desc": "dup Authorization: junk then valid",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "HTTP/1.1 401 Unauthorized\r\nX-Powered-By: Express\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\nAccess-Control-Allow-Methods: GET,POST,OPTIONS\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 88\r\nETag: W/\"58-LrQfa5Qc/cGiT",
+  "pass": true
+ },
+ {
+  "id": "S-1",
+  "desc": "degraded: valid env key OK",
+  "status": 200,
+  "handlerExecuted": true,
+  "body": "{\"tenants\":[],\"count\":0}",
+  "pass": true
+ },
+ {
+  "id": "S-2",
+  "desc": "degraded: unknown key 401",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "S-3",
+  "desc": "degraded: deactivated key 401",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ },
+ {
+  "id": "S-4",
+  "desc": "degraded: expired key 401",
+  "status": 401,
+  "handlerExecuted": false,
+  "body": "{\"status\":\"denied\",\"reason\":\"Invalid or expired credential\",\"code\":\"INVALID_CREDENTIAL\"}",
+  "pass": true
+ }
+]

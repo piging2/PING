@@ -1,0 +1,408 @@
+########## src/app/api/fyd/claims/[resourceId]/claim/route.ts ##########
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/claim
+     3	 *
+     4	 * OBSERVED -> CLAIMED. Requires an authenticated identity from the claim
+     5	 * identity bridge. 401 when none is available (fail closed, never invent).
+     6	 * 403 for demo-context objects. 409 when the resource is not observed.
+     7	 */
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { claim, createObserved, DEMO_CONTEXT_IDS, isValidResourceId } from "@/fyd/claim/machine";
+    10	import { ClaimError } from "@/fyd/claim/types";
+    11	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    12	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    13	
+    14	export const runtime = "nodejs";
+    15	export const dynamic = "force-dynamic";
+    16	
+    17	export async function POST(
+    18	  req: NextRequest,
+    19	  ctx: { params: Promise<{ resourceId: string }> },
+    20	): Promise<NextResponse> {
+    21	  const { resourceId } = await ctx.params;
+    22	  if (!isValidResourceId(resourceId)) {
+    23	    return NextResponse.json(
+    24	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    25	      { status: 400 },
+    26	    );
+    27	  }
+    28	  if (DEMO_CONTEXT_IDS.has(resourceId)) {
+    29	    return NextResponse.json(
+    30	      {
+    31	        ok: false,
+    32	        code: "demo-context",
+    33	        message:
+    34	          "This is a source-derived demo object in a labeled demo/testing context. It cannot be claimed.",
+    35	      },
+    36	      { status: 403 },
+    37	    );
+    38	  }
+    39	
+    40	  const identity = resolveClaimIdentity();
+    41	  if (!identity) {
+    42	    return NextResponse.json(
+    43	      {
+    44	        ok: false,
+    45	        code: "identity-required",
+    46	        message:
+    47	          "Claiming needs an authenticated identity. Anonymous previews cannot claim.",
+    48	      },
+    49	      { status: 401 },
+    50	    );
+    51	  }
+    52	
+    53	  let sourceUrl: string | undefined;
+    54	  try {
+    55	    const body: unknown = await req.json().catch(() => null);
+    56	    const u = (body as { sourceUrl?: unknown } | null)?.sourceUrl;
+    57	    if (typeof u === "string" && u.startsWith("http")) sourceUrl = u;
+    58	  } catch {
+    59	    // Body is optional; ignore parse failures.
+    60	  }
+    61	
+    62	  try {
+    63	    const current = readClaim(resourceId) ?? createObserved(resourceId, sourceUrl);
+    64	    const next = claim(current, identity);
+    65	    writeClaim(next);
+    66	    return NextResponse.json({ ok: true, claim: next });
+    67	  } catch (e) {
+    68	    if (e instanceof ClaimError) {
+    69	      const status = e.code === "bad-transition" ? 409 : 400;
+    70	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status });
+    71	    }
+    72	    throw e;
+    73	  }
+    74	}
+########## src/app/api/fyd/claims/[resourceId]/release/route.ts ##########
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/release
+     3	 *
+     4	 * CLAIMED or VERIFIED-CONTROLLED -> OBSERVED. Only the identity that holds
+     5	 * the claim can release it. The audit history is preserved.
+     6	 */
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { isValidResourceId, release } from "@/fyd/claim/machine";
+     9	import { ClaimError } from "@/fyd/claim/types";
+    10	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    11	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    12	
+    13	export const runtime = "nodejs";
+    14	export const dynamic = "force-dynamic";
+    15	
+    16	export async function POST(
+    17	  _req: NextRequest,
+    18	  ctx: { params: Promise<{ resourceId: string }> },
+    19	): Promise<NextResponse> {
+    20	  const { resourceId } = await ctx.params;
+    21	  if (!isValidResourceId(resourceId)) {
+    22	    return NextResponse.json(
+    23	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    24	      { status: 400 },
+    25	    );
+    26	  }
+    27	  const identity = resolveClaimIdentity();
+    28	  if (!identity) {
+    29	    return NextResponse.json(
+    30	      { ok: false, code: "identity-required", message: "Releasing a claim needs an authenticated identity." },
+    31	      { status: 401 },
+    32	    );
+    33	  }
+    34	  const current = readClaim(resourceId);
+    35	  if (!current) {
+    36	    return NextResponse.json(
+    37	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+    38	      { status: 404 },
+    39	    );
+    40	  }
+    41	  if (current.claimedBy && current.claimedBy.actorId !== identity.actorId) {
+    42	    return NextResponse.json(
+    43	      { ok: false, code: "not-claimant", message: "Only the identity holding the claim can release it." },
+    44	      { status: 403 },
+    45	    );
+    46	  }
+    47	  try {
+    48	    const next = release(current, identity.actorLabel);
+    49	    writeClaim(next);
+    50	    return NextResponse.json({ ok: true, claim: next });
+    51	  } catch (e) {
+    52	    if (e instanceof ClaimError) {
+    53	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status: 409 });
+    54	    }
+    55	    throw e;
+    56	  }
+    57	}
+########## src/app/api/fyd/claims/[resourceId]/route.ts ##########
+     1	/**
+     2	 * GET /api/fyd/claims/[resourceId]
+     3	 *
+     4	 * Read a resource claim. 404 when no record exists (missing data fails
+     5	 * honest; nothing is invented). 400 on a malformed resource id.
+     6	 */
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { isValidResourceId } from "@/fyd/claim/machine";
+     9	import { readClaim } from "@/fyd/claim/store";
+    10	
+    11	export const runtime = "nodejs";
+    12	export const dynamic = "force-dynamic";
+    13	
+    14	export async function GET(
+    15	  _req: NextRequest,
+    16	  ctx: { params: Promise<{ resourceId: string }> },
+    17	): Promise<NextResponse> {
+    18	  const { resourceId } = await ctx.params;
+    19	  if (!isValidResourceId(resourceId)) {
+    20	    return NextResponse.json(
+    21	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    22	      { status: 400 },
+    23	    );
+    24	  }
+    25	  const claim = readClaim(resourceId);
+    26	  if (!claim) {
+    27	    return NextResponse.json(
+    28	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+    29	      { status: 404 },
+    30	    );
+    31	  }
+    32	  return NextResponse.json({ ok: true, claim });
+    33	}
+########## src/app/api/fyd/claims/identity/route.ts ##########
+     1	/**
+     2	 * GET /api/fyd/claims/identity
+     3	 *
+     4	 * Which identity, if any, is available for claiming in this build.
+     5	 * Demo-owner mode is the only source right now and is labeled as such.
+     6	 * Null identity means claiming is unavailable: the UI must not offer it.
+     7	 */
+     8	import { NextResponse } from "next/server";
+     9	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    10	
+    11	export const runtime = "nodejs";
+    12	export const dynamic = "force-dynamic";
+    13	
+    14	export async function GET(): Promise<NextResponse> {
+    15	  const identity = resolveClaimIdentity();
+    16	  return NextResponse.json({ ok: true, identity });
+    17	}
+########## src/app/api/fyd/claims/verification-methods/route.ts ##########
+     1	/**
+     2	 * GET /api/fyd/claims/verification-methods
+     3	 *
+     4	 * The verification seam, honestly listed: which proof methods exist and
+     5	 * which are actually implemented.
+     6	 */
+     7	import { NextResponse } from "next/server";
+     8	import { listVerificationMethods } from "@/fyd/claim/verification-seam";
+     9	
+    10	export const runtime = "nodejs";
+    11	export const dynamic = "force-dynamic";
+    12	
+    13	export async function GET(): Promise<NextResponse> {
+    14	  return NextResponse.json({ ok: true, methods: listVerificationMethods() });
+    15	}
+########## src/app/api/fyd/onboarding/preview/route.ts ##########
+     1	/**
+     2	 * POST /api/fyd/onboarding/preview
+     3	 *
+     4	 * Anonymous URL preview (onboarding order G). No authentication, no
+     5	 * consequential action: returns the evidence preview or a typed failure.
+     6	 * Abuse handling is owned by fyd/net (gate, SSRF gate, budgets); this route
+     7	 * only maps outcomes to HTTP.
+     8	 *
+     9	 * Body: { "url": "https://example.com/" }
+    10	 */
+    11	import { createHash } from "node:crypto";
+    12	import { NextRequest, NextResponse } from "next/server";
+    13	import {
+    14	  generateAnonymousPreview,
+    15	  type PreviewOutcome,
+    16	} from "@/fyd/onboarding/anonymous-preview";
+    17	
+    18	export const runtime = "nodejs";
+    19	export const dynamic = "force-dynamic";
+    20	
+    21	function clientIdFor(req: NextRequest): string {
+    22	  const forwarded = req.headers.get("x-forwarded-for");
+    23	  const ip = (forwarded ? forwarded.split(",")[0] : null)?.trim() || "unknown";
+    24	  return createHash("sha256").update("fyd-preview-v1:" + ip).digest("hex");
+    25	}
+    26	
+    27	function statusFor(outcome: Extract<PreviewOutcome, { ok: false }>): number {
+    28	  switch (outcome.code) {
+    29	    case "rate-limited":
+    30	      return 429;
+    31	    case "invalid-url":
+    32	      return 400;
+    33	    case "budget-exhausted":
+    34	      return 503;
+    35	    case "fetch-failed":
+    36	      return 502;
+    37	  }
+    38	}
+    39	
+    40	export async function POST(req: NextRequest): Promise<NextResponse> {
+    41	  let url: unknown;
+    42	  try {
+    43	    const body: unknown = await req.json();
+    44	    url = (body as { url?: unknown } | null)?.url;
+    45	  } catch {
+    46	    return NextResponse.json(
+    47	      { ok: false, code: "invalid-url", message: "Request body must be JSON with a url field." },
+    48	      { status: 400 },
+    49	    );
+    50	  }
+    51	  if (typeof url !== "string" || !url.trim()) {
+    52	    return NextResponse.json(
+    53	      { ok: false, code: "invalid-url", message: "A url field is required." },
+    54	      { status: 400 },
+    55	    );
+    56	  }
+    57	
+    58	  const outcome = await generateAnonymousPreview({
+    59	    url: url.trim(),
+    60	    clientId: clientIdFor(req),
+    61	  });
+    62	
+    63	  if (!outcome.ok) {
+    64	    const headers: Record<string, string> = {};
+    65	    if (outcome.code === "rate-limited" && outcome.retryAfterMs) {
+    66	      headers["Retry-After"] = String(Math.ceil(outcome.retryAfterMs / 1000));
+    67	    }
+    68	    return NextResponse.json(outcome, { status: statusFor(outcome), headers });
+    69	  }
+    70	  return NextResponse.json(outcome);
+    71	}
+########## src/app/api/fyd/objects/[objectId]/route.ts ##########
+     1	/**
+     2	 * GET /api/fyd/objects/[objectId]
+     3	 *
+     4	 * Public object projection. Resolves the id by site slug (legacy) or by
+     5	 * any public PING object id in any tenant. Returns the generic ObjectView:
+     6	 * identity, summary, media, services, contact, capabilities, and a quiet
+     7	 * provenance summary, plus the owner action history (human language) for
+     8	 * the Manage surface, plus the tenant siteId and the graph-enriched
+     9	 * ObjectProjection (services/people/external identities/location as
+    10	 * clickable related objects) for the object experience. No PING
+    11	 * engineering concepts leak into this payload.
+    12	 */
+    13	
+    14	import { NextRequest, NextResponse } from "next/server";
+    15	import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
+    16	import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+    17	import { objectViewToProjection } from "@/fyd/object/object-projection";
+    18	import { readOverrides } from "@/fyd/object/owner-store";
+    19	
+    20	export const dynamic = "force-dynamic";
+    21	export const runtime = "nodejs";
+    22	
+    23	export async function GET(
+    24	  _request: NextRequest,
+    25	  { params }: { params: Promise<{ objectId: string }> },
+    26	) {
+    27	  const { objectId } = await params;
+    28	  const resolved = loadObjectViewBySlugOrId(objectId);
+    29	  if (!resolved) {
+    30	    return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+    31	  }
+    32	  const { view, siteId } = resolved;
+    33	  const history = readOverrides(objectId).history;
+    34	  let graph;
+    35	  try {
+    36	    graph = getPingObjectGraphSync(siteId).graph;
+    37	  } catch {
+    38	    return NextResponse.json(
+    39	      { ok: false, error: "Projection unavailable." },
+    40	      { status: 503 },
+    41	    );
+    42	  }
+    43	  const projection = objectViewToProjection(view, graph);
+    44	  return NextResponse.json({ ok: true, view, history, siteId, projection });
+    45	}
+########## src/app/api/fyd/projection/route.ts ##########
+     1	import { NextResponse } from "next/server";
+     2	import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * GET /api/fyd/projection?siteId=<slug>
+     9	 *
+    10	 * Serves the RAW PING-backed projection for a demo site: the canonical
+    11	 * object graph plus the dump meta (base digest, overlay PING event ids,
+    12	 * graph digest), with NO owner overlay applied. This is the SOURCE SAYS X
+    13	 * endpoint: it shows what the source projection says, independent of any
+    14	 * owner correction. Compare with the ObjectView
+    15	 * (/api/fyd/objects/[objectId]) and the rendered pages, which show the
+    16	 * EFFECTIVE value (owner correction wins). This is the read seam between
+    17	 * PING state and the website.
+    18	 *
+    19	 * The projection is produced by the PING-side dump
+    20	 * (/home/nolan/ping/tools/fyd-site-projection/dump.py), never hand-authored.
+    21	 * A missing or tampered projection is a 503, never a stale fallback.
+    22	 */
+    23	export async function GET(request: Request): Promise<NextResponse> {
+    24	  const siteId = new URL(request.url).searchParams.get("siteId")?.trim() ?? "";
+    25	  if (!siteId) {
+    26	    return NextResponse.json(
+    27	      { ok: false, error: "siteId query parameter is required." },
+    28	      { status: 400 },
+    29	    );
+    30	  }
+    31	  try {
+    32	    const { graph, meta } = await getPingObjectGraph(siteId, { ownerOverlay: false });
+    33	    return NextResponse.json({ ok: true, siteId, meta, graph });
+    34	  } catch (err) {
+    35	    const message = err instanceof Error ? err.message : "Projection unavailable.";
+    36	    return NextResponse.json({ ok: false, error: message }, { status: 503 });
+    37	  }
+    38	}
+########## src/app/api/fyd/circle/route.ts ##########
+     1	/**
+     2	 * FYD Circle projection endpoint: the deploy-anywhere integration boundary.
+     3	 *
+     4	 * GET /api/fyd/circle?id=<objectId> returns { ok: true, projection } where
+     5	 * projection is the public-safe CircleProjection built by loadCircleProjection
+     6	 * (see src/fyd/object/view.ts). CORS is open for public embedding; the
+     7	 * projection carries public-safe data only.
+     8	 */
+     9	
+    10	import { NextResponse } from "next/server";
+    11	import { loadCircleProjection } from "@/fyd/object/view";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	const CORS_HEADERS: Record<string, string> = {
+    17	  "Access-Control-Allow-Origin": "*",
+    18	};
+    19	
+    20	function json(
+    21	  body: unknown,
+    22	  status: number,
+    23	): NextResponse {
+    24	  return NextResponse.json(body, { status, headers: CORS_HEADERS });
+    25	}
+    26	
+    27	export async function OPTIONS(): Promise<NextResponse> {
+    28	  return new NextResponse(null, {
+    29	    status: 204,
+    30	    headers: {
+    31	      ...CORS_HEADERS,
+    32	      "Access-Control-Allow-Methods": "GET, OPTIONS",
+    33	      "Access-Control-Allow-Headers": "*",
+    34	    },
+    35	  });
+    36	}
+    37	
+    38	export async function GET(request: Request): Promise<NextResponse> {
+    39	  const { searchParams } = new URL(request.url);
+    40	  const id = searchParams.get("id");
+    41	  if (!id || id.trim().length === 0) {
+    42	    return json({ ok: false, error: "missing or invalid id" }, 400);
+    43	  }
+    44	  const projection = loadCircleProjection(id);
+    45	  if (!projection) {
+    46	    return json({ ok: false, error: "object not found" }, 404);
+    47	  }
+    48	  return json({ ok: true, projection }, 200);
+    49	}

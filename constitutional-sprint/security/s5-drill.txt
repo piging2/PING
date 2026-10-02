@@ -1,0 +1,367 @@
+===== D1: slot-registry.ts dev bypass =====
+/**
+ * Slot Registry - Runtime registration of website visual slots
+ * 
+ * Purpose: Allow actual website components to register their image slots
+ * - Components wrap images with VisualSlot
+ * - VisualSlot registers itself to this registry
+ * - Workbench consumes registry to get slot mappings
+ * - Single source of truth: website components declare their own slots
+ * 
+ * Architecture:
+ * - VisualSlot component registers on mount, unregisters on unmount
+ * - Registry stores slot metadata (id, route, section, currentMediaId)
+ * - Workbench reads registry to enable click selection and drag/drop
+ * - Uses postMessage for iframe cross-frame communication
+ */
+
+export interface RegisteredSlot {
+  id: string;
+  route: string;
+  page: string;
+  section: string;
+  slotName: string;
+  currentMediaId: string | null;
+  element: HTMLElement | null;
+  component: string;
+}
+
+// Origin security for cross-frame Workbench messaging.
+// Dev is permissive (matches the existing NODE_ENV==='development' auth bypass);
+// production requires the peer origin to be in an allowlist (default: same-origin).
+function isProductionMode(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
+function getAllowedOrigins(): string[] {
+  const configured = process.env.NEXT_PUBLIC_WORKBENCH_ALLOWED_ORIGINS;
+  if (configured) {
+    return configured.split(',').map((o) => o.trim()).filter(Boolean);
+  }
+  if (typeof window !== 'undefined') return [window.location.origin];
+  return [];
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!isProductionMode()) return true; // dev: permissive, matches existing bypass
+  return getAllowedOrigins().includes(origin);
+}
+
+function getTargetOrigin(): string {
+  if (!isProductionMode()) return '*'; // dev: permissive
+  const configured = process.env.NEXT_PUBLIC_WORKBENCH_TARGET_ORIGIN;
+  if (configured) return configured;
+  if (typeof window !== 'undefined') return window.location.origin;
+  return '*';
+}
+
+class SlotRegistry {
+  private slots: Map<string, RegisteredSlot> = new Map();
+  private listeners: Set<() => void> = new Set();
+  private isWorkbenchMode = false;
+  private readonly instanceId: string;
+
+  constructor() {
+    this.instanceId = `REG-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    console.log('[REGISTRY] CONSTRUCTOR', {
+      instanceId: this.instanceId,
+      isBrowser: typeof window !== 'undefined',
+      windowLocation: typeof window !== 'undefined' ? window.location.pathname : 'SSR',
+      windowSearch: typeof window !== 'undefined' ? window.location.search : 'SSR',
+      timestamp: new Date().toISOString(),
+    });
+
+    if (typeof window !== 'undefined') {
+      this.isWorkbenchMode = window.location.pathname.startsWith('/workbench');
+      
+      console.log('[REGISTRY] WORKBENCH_MODE_DETECTION', {
+        instanceId: this.instanceId,
+        isWorkbenchMode: this.isWorkbenchMode,
+        pathname: window.location.pathname,
+===== D2: owner-mode gate.ts =====
+/**
+ * H3 lane: DEMO OWNER MODE is not authentication.
+ *
+ * Read this before trusting anything in this directory:
+ *
+ * - There is no identity verification here. No session, no signature, no
+ *   credential check of any kind. The "actor" is a label typed into a demo
+ *   control; the "relationship" is a hard-coded demo mapping.
+ * - This exists so the demo can SHOW the owner-action seam (actor ->
+ *   relationship -> capability evaluation -> gated operation) with the UI
+ *   banner making the demo status unmistakable.
+ * - Nothing in this directory may ever be consulted for a real
+ *   authorization decision. If production owner auth is built later, it
+ *   must be built as a separate, reviewed mechanism; these demo verdicts
+ *   must not be reused, wrapped, or "upgraded".
+ *
+ * Dev-only gate: the component renders nothing unless
+ * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 (see ./gate.ts).
+ */
+
+export const DEMO_OWNER_MODE_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
+
+/**
+ * True only when the demo explicitly opts in via the env var.
+ * Evaluated at module load on the client (NEXT_PUBLIC_* is inlined at
+ * build time) and per-call on the server.
+ */
+export function isDemoOwnerModeEnabled(): boolean {
+  return process.env[DEMO_OWNER_MODE_ENV_VAR] === "1";
+}
+
+/**
+ * Lane D: the demo-owner network gate. True only for localhost and
+ * private-network hosts. The customize approval API refuses anything else:
+ * demo-owner mode must never be reachable over a public bind.
+ *
+ * Ranges: loopback, RFC 1918 (10/8, 172.16/12, 192.168/16), link-local
+ * (169.254/16, fe80::/10), IPv6 unique-local (fc00::/7), the Tailscale
+ * range 100.64.0.0/10 (carrier-grade NAT space that Tailscale assigns
+ * from; the standing demo route is the private Tailscale forward), and
+ * .local/.internal/.lan names.
+ */
+export function isPrivateHost(host: string): boolean {
+  const h = host.split(":")[0].trim().toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h === "127.0.0.1" || h === "::1") return true;
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const a = Number(v4[1]);
+    const b = Number(v4[2]);
+    if (a === 10) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // Tailscale
+    if (a === 169 && b === 254) return true; // link-local
+    return false;
+  }
+  if (
+    h.startsWith("fc") ||
+    h.startsWith("fd") ||
+    h.startsWith("fe80:") ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal") ||
+    h.endsWith(".lan")
+  )
+    return true;
+  return false;
+}
+===== D3: owner-mode capability.ts (head) =====
+/**
+ * H3 lane: the explicit owner-action seam for DEMO OWNER MODE.
+ *
+ * The seam, in order, with nothing hidden:
+ *
+ *   1. ACTOR: a demo label (see DemoActor). Not a verified identity.
+ *   2. RELATIONSHIP: resolveDemoRelationship maps the actor to an owner /
+ *      controller relationship for a site. The mapping is hard-coded and
+ *      visible below; it proves nothing about the real world.
+ *   3. CAPABILITY EVALUATION: evaluateCapability answers "may this actor
+ *      perform this operation on this site?" with an allow/deny verdict
+ *      plus a human-readable reason. Deny is the default; allow is granted
+ *      only by the rules below.
+ *   4. OPERATION: the caller must check verdict.allowed BEFORE acting, and
+ *      owner attestations additionally pass the attestation gate
+ *      (./attestation-gate.ts), which rejects on missing evidence.
+ *
+ * THIS IS NOT AUTHENTICATION. See ./gate.ts. Every verdict carries its
+ * reason so a reviewer can see exactly why an action was permitted in the
+ * demo. Nothing here may back a production authorization decision.
+ */
+
+/** A demo actor: a label, not an identity. */
+export interface DemoActor {
+  id: string;
+  label: string;
+}
+
+/**
+ * The relationship the demo grants an actor to a site.
+ * "controller" mirrors the object-graph controllerId concept; in the demo
+ * it is assigned by the mapping below, not discovered or verified.
+ */
+export interface OwnerRelationship {
+  siteId: string;
+  kind: "controller" | "none";
+  /** Human-readable basis for the assignment. Always explicit. */
+  basis: string;
+}
+
+/** Operations the demo owner panel can attempt. */
+export type OwnerCapability =
+  | "owner.attest-regen"
+  | "owner.edit-visibility"
+  | "owner.publish"
+  | "owner.customize-approve"
+  | "owner.correct-fact";
+
+export interface CapabilityVerdict {
+  capability: OwnerCapability;
+  allowed: boolean;
+  /** Typed human reason, e.g. "demo: controller may attest". */
+  reason: string;
+  actorId: string;
+  relationshipKind: OwnerRelationship["kind"];
+}
+
+/** The one seeded demo actor the panel offers. */
+export const DEMO_OWNER_ACTOR: DemoActor = {
+  id: "demo-owner",
+  label: "Demo Owner (seeded, unverified)",
+};
+
+/**
+ * Demo relationship mapping. Explicit and total:
+ * - the seeded demo actor is treated as controller of every demo site;
+ * - any other actor id has no relationship to any site.
+ * This mapping is the demo. It verifies nothing.
+ */
+export function resolveDemoRelationship(
+  siteId: string,
+  actor: DemoActor,
+): OwnerRelationship {
+  if (actor.id === DEMO_OWNER_ACTOR.id) {
+    return {
+      siteId,
+      kind: "controller",
+      basis:
+        "demo mapping: the seeded demo actor is treated as the site " +
+        "controller. No identity was verified.",
+    };
+  }
+  return {
+    siteId,
+    kind: "none",
+    basis:
+      "demo mapping: actor '" +
+      actor.id +
+      "' is not the seeded demo actor, so it holds no demo relationship.",
+  };
+}
+
+const ALL_CAPABILITIES: OwnerCapability[] = [
+  "owner.attest-regen",
+  "owner.edit-visibility",
+  "owner.publish",
+  "owner.customize-approve",
+  "owner.correct-fact",
+];
+
+export function listOwnerCapabilities(): OwnerCapability[] {
+  return ALL_CAPABILITIES.slice();
+}
+
+/**
+ * Evaluate one capability. Deny-by-default; allow only by the rules below.
+ * The verdict reason always names the rule that fired.
+ */
+export function evaluateCapability(
+  actor: DemoActor,
+===== D4: assignment-store CREDENTIAL_INVESTIGATION log =====
+  const hasIntegrationUrl = !!integrationUrl;
+  const hasIntegrationToken = !!integrationToken;
+  const hasReadOnlyToken = !!readOnlyToken;
+  
+  // Determine token type
+  let tokenType = 'unknown';
+  if (token === readOnlyToken) {
+    tokenType = 'read-only';
+  } else if (token === integrationToken) {
+    tokenType = 'integration-read-write';
+  } else if (token) {
+    tokenType = 'manual-read-write';
+  }
+  
+  console.log('[CREDENTIAL_INVESTIGATION]', {
+    urlHost,
+    integrationUrlHost,
+    hasUrl,
+    hasToken,
+    hasIntegrationUrl,
+    hasIntegrationToken,
+    hasReadOnlyToken,
+    tokenType,
+    integrationUrlPresent: !!integrationUrl,
+    integrationTokenPresent: !!integrationToken,
+    readOnlyTokenPresent: !!readOnlyToken,
+    selectedCredentialHasValue: hasUrl || hasToken,
+    allRedisVars: Object.keys(process.env).filter(key => 
+      key.includes('KV') || key.includes('REDIS') || key.includes('UPSTASH')
+    ).map(key => ({ key, hasValue: !!process.env[key] })),
+  });
+  
+  // DEV_MODE_SKIP_KV: Allow development without KV credentials
+  // This enables testing the assignment loop in local development
+  if (process.env.DEV_MODE_SKIP_KV === 'true') {
+    console.log('[ASSIGNMENT_KV] DEV_MODE_SKIP_KV enabled - KV operations will be skipped');
+    throw new KvUnavailableError('DEV_MODE_SKIP_KV: KV operations skipped for development testing');
+  }
+
+  // During static build, KV may not be available - throw explicit error
+  // Runtime pages will handle this as a dependency failure
+  if (!url || !token) {
+    if (isStaticBuild()) {
+      throw new KvUnavailableError('KV credentials not available during static build');
+    }
+    throw new Error('Missing required environment variables: KV_REST_API_URL and KV_REST_API_TOKEN');
+  }
+  
+  // Create fresh client bound to current environment
+  const env = getEnvironment();
+  const client = new Redis({ url, token });
+===== D5: effective-project-gallery KV_CREDENTIALS log =====
+    if (!url && integrationUrl) {
+      url = integrationUrl;
+    }
+    if (!token && integrationToken) {
+      token = integrationToken;
+    }
+    
+    if (!url || !token) return null;
+    
+    console.log('[EFFECTIVE_GALLERY] KV_CREDENTIALS', {
+      hasUrl: !!url,
+      hasToken: !!token,
+      usingIntegration: !!integrationUrl || !!integrationToken,
+      urlPrefix: url ? url.substring(0, 20) + '...' : 'none'
+    });
+    
+    return new Redis({ url, token });
+  } catch {
+    console.error('[EFFECTIVE_GALLERY] KV_CLIENT_CREATION_FAILED');
+    return null;
+  }
+}
+===== D6: auth-manager hasRefreshToken log =====
+ */
+export function getSecureStorageInstructions(credentialName: string): string {
+  const instructions: Record<string, string> = {
+    GOOGLE_CLIENT_ID: 'Add as Vercel Environment Variable or GitHub Secret',
+    GOOGLE_CLIENT_SECRET: 'Add as Vercel Environment Variable or GitHub Secret',
+    GOOGLE_REFRESH_TOKEN: 'Add as Vercel Environment Variable or GitHub Secret',
+    VERCEL_TOKEN: 'Add as GitHub Secret in repository settings',
+    GITHUB_TOKEN: 'Add as GitHub Secret in repository settings',
+  };
+
+  return instructions[credentialName] || 'Add as environment variable in approved location';
+}
+
+/**
+ * Print authentication status report
+ */
+export function printAuthStatus(status: AuthStatus): void {
+  console.log(`\n${status.provider} Authentication Status:`);
+  console.log(`  Authenticated: ${status.authenticated ? '✅' : '❌'}`);
+  console.log(`  Has Refresh Token: ${status.hasRefreshToken ? '✅' : '❌'}`);
+  
+  if (status.missingCredentials.length > 0) {
+    console.log(`  Missing Credentials:`);
+    status.missingCredentials.forEach(cred => {
+      console.log(`    • ${cred}`);
+      console.log(`      → ${getSecureStorageInstructions(cred)}`);
+    });
+  }
+  
+  console.log(`  Last Verified: ${status.lastVerified}`);
+}

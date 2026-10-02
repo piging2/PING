@@ -1,0 +1,54 @@
+=== gateway_runtime.js: JS worker registration ===
+86:const { WorkerRuntime } = require('../../ping-runtime/workers/worker_runtime');
+87:const { registerCanonicalWorkers } = require('../../ping-runtime/workers/canonical_workers');
+514:        registerCanonicalWorkers(workerRuntime, {
+=== ping-runtime/workers/canonical_workers.js: what classes? ===
+20:class BaseWorker {
+90:class ObservationWorker extends BaseWorker {
+128:class ClaimWorker extends BaseWorker {
+163:class ProjectionWorker extends BaseWorker {
+226:class ReplayWorker extends BaseWorker {
+451:class WitnessWorker extends BaseWorker {
+513:class LineageWorker extends BaseWorker {
+549:class ClassificationWorker extends BaseWorker {
+614:class RecommendationWorker extends BaseWorker {
+668:const { IntelligenceWorker } = require('./intelligence_worker');
+748:module.exports = {
+=== ping-runtime/workers/worker_runtime.js head ===
+/**
+ * Worker Runtime v1 — PING Core v1
+ * 
+ * Extracted from 38 worker implementations across 7 generations.
+ * Best patterns combined:
+ * - Gen 1: HTTP-based event communication (simple, works)
+ * - Gen 2: WorkerBase with pooled connections and backoff (robust)
+ * - Gen 3: Lease management, heartbeat, health checks (production-grade)
+ * 
+ * Workers register as WorkerPorts in the Orca scheduler.
+ * Desktop agents coordinate; worker fleets execute.
+ */
+
+class WorkerRuntime {
+  constructor(options = {}) {
+    this._workers = new Map();
+    this._pool = options.pool || null;
+    this._gatewayUrl = options.gatewayUrl || 'http://localhost:8080';
+    this._pollInterval = options.pollInterval || 5000;
+    this._running = false;
+    this._stats = { dispatched: 0, completed: 0, failed: 0 };
+  }
+
+  /**
+   * Register a worker.
+   * @param {string} name — worker name (e.g., 'observation', 'claim', 'projection')
+   * @param {object} worker — must implement handle(event)
+   * @param {object} options — { eventTypes, maxConcurrent, capabilities }
+   */
+  register(name, worker, options = {}) {
+    if (typeof worker.handle !== 'function') {
+      throw new Error(`Worker '${name}' must imple
+=== brainos workers: who starts them (out-of-block context)? ===
+224:  newsletter-worker:
+228:    container_name: ping-newsletter-worker
+/home/nolan/ping/brainos/newsletter/Dockerfile
+/home/nolan/ping/brainos/rss/Dockerfile

@@ -1,0 +1,98 @@
+import unittest
+
+from scripts.constitutional_planner import build_plan
+
+
+class ConstitutionalPlannerTests(unittest.TestCase):
+    def test_plan_expands_to_dag(self):
+        plan = build_plan("Verify repository replay determinism.")
+        self.assertTrue(plan["ok"])
+        self.assertEqual(plan["mission"], "VerifyReplay")
+        self.assertTrue(plan["dag"])
+        self.assertTrue(any(node["kind"] == "Authority" for node in plan["dag"]))
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+=====DONE-PY=====
+const assert = require('assert');
+const { AdapterCompiler } = require('../gateway/adapter_compiler');
+const crypto = require('crypto');
+
+/**
+ * Constitutional Replay Tests
+ * 
+ * Phase 2 — Deterministic Replay
+ * 
+ * Verifies that the compiler produces identical outputs when run twice
+ * with identical inputs.
+ */
+
+// Test fixtures
+const TECHNOLOGY_MANIFEST = {
+  manifest_id: 'tm_test_1',
+  version: '1.0.0',
+  artifact_store: {
+    component: 'PostgreSQL',
+    version: '17',
+    checksum: 'sha256:abc123'
+  },
+  manifest_metadata: {
+    created_at: '2026-01-01T00:00:00Z',
+    created_by: 'TechnologyAuthority',
+    frozen: true,
+    hash: null,
+    previous_manifest_hash: null,
+    approval_reference: null
+  }
+};
+
+TECHNOLOGY_MANIFEST.manifest_metadata.hash = crypto.createHash('sha256')
+  .update(JSON.stringify(TECHNOLOGY_MANIFEST, Object.keys(TECHNOLOGY_MANIFEST).sort()))
+  .digest('hex');
+
+const CAPABILITY_CONTRACT = {
+  capability_name: 'ArtifactStore',
+  version: '1.0.0',
+  methods: [
+    {
+      name: 'saveArtifact',
+      input: { artifact: 'Artifact' },
+      output: { artifact_id: 'string' },
+      constraints: {
+        immutability: true,
+        determinism: true
+      }
+    },
+    {
+      name: 'getArtifact',
+      input: { artifact_id: 'string' },
+      output: { artifact: 'Artifact' },
+      constraints: {
+        determinism: true
+      }
+    }
+  ],
+  requirements: {
+    immutability: true,
+    determinism: true,
+    replay_safety: true
+  }
+};
+
+const ADAPTER_CONTRACT = {
+  adapter_name: 'PostgreSQLArtifactStoreAdapter',
+  vendor: 'PostgreSQL',
+  version: '1.0.0'
+};
+
+/**
+ * Test: Deterministic Replay
+ * 
+ * Runs the compiler twice with identical inputs and verifies:
+ * - adapter source identical
+ * - adapter source hash identical
+ * - witness hash identical
+ * - manifest hash identical
+ * - constitutional weighted score identical

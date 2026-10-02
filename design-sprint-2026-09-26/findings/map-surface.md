@@ -1,0 +1,123 @@
+# Visitor Surface Map - FYD Design Sprint
+Mapped from Pig: /home/nolan/projects/ping, branch fyd/sprint-integration-2026-09-24, HEAD a8ed5103. Read-only. 2026-09-26.
+
+## Route table
+
+No route groups (no parenthesized directories). No /sites/[slug] dynamic route exists; the two demo sites are separate static paths sharing one pipeline.
+
+Visitor surface routes:
+
+| Route | File | Type |
+|---|---|---|
+| `/sites/happy-place` | `src/app/sites/happy-place/page.tsx` | static path, dynamic render (async server component, reads PING graph per request) |
+| `/sites/coppersmith-plumbing` | `src/app/sites/coppersmith-plumbing/page.tsx` | static path, dynamic render, same shape as happy-place (diff is SITE_ID + comments only) |
+| `/sites` | `src/app/sites/page.tsx` | static |
+| `/sites/layout.tsx` | shared layout | imports edge-sheet.css only |
+| `/o/[objectId]` | `src/app/o/[objectId]/page.tsx` | dynamic, `force-dynamic`; full object node page ("DEMOTED: optional projection, not linked from normal navigation") |
+| `/o/[objectId]/manage` | `src/app/o/[objectId]/manage/page.tsx` | dynamic, owner control plane |
+| `/embed/object` | `src/app/embed/object/page.tsx` | embed variant |
+| `/` | `src/app/page.tsx` | PING marketing site (not FYD visitor) |
+| `/fyd` | `src/app/fyd/page.tsx` | FYD marketing page, static + client _components |
+| `/build` | `src/app/build/page.tsx` | static |
+| `/build/[siteId]` | `src/app/build/[siteId]/page.tsx` | dynamic; build-client.tsx + owner-panel.tsx |
+| `/build-my-fyd`, `/build-my-fyd/[jobId]` | dynamic | build client |
+| `/objects`, `/objects/spatial` | static/dynamic | object browsers |
+| `/node/[id]` | `src/app/node/[id]/page.tsx` | dynamic, node-client |
+| `/dev/objects` | `src/app/dev/objects/page.tsx` | objects lab; `notFound()` unless demo-owner-mode on AND private host (page.tsx:105) |
+| `/blog`, `/blog/[slug]` | blog, generateStaticParams |
+
+Ask FYD API:
+
+| Route | File | Method |
+|---|---|---|
+| `/api/fyd/ask` | `src/app/api/fyd/ask/route.ts` | POST, `force-dynamic`, nodejs runtime |
+| `/api/fyd/ask/[siteId]` | `src/app/api/fyd/ask/[siteId]/route.ts` | POST |
+| `/api/fyd/why-this` | `src/app/api/fyd/why-this/route.ts` | supports WhyThis drill-downs |
+
+No owner/customize/trust-lab/advanced page routes exist in the app router. The trust-lab-equivalent code lives under `src/fyd/owner-mode/` (rendered only via the demo flag) and the lab at `/dev/objects`.
+
+## Component tree (per site)
+
+Happy Place and Coppersmith are byte-identical in composition; only SITE_ID differs ("happy-place" vs "coppersmith-plumbing"). Tree from page.tsx:
+
+```
+HappyPlaceDemoPage / CoppersmithDemoPage (server component, page.tsx)
+  compilePublicSite(SITE_ID)        (spec-pipeline.ts)
+  heroMediaFor / galleryMediaFor    (media/select.ts)
+  <main>
+    SiteClient  (sites/_shared/site-client.tsx, "use client")
+      FydMotionFallback
+      <script> edgeClientScript(siteId)       (edge client, publishes window.__fydEdgeOpen)
+      MarginObjectLayer (fyd/ui/object-layer/, mounted always when renderable; no debug flag)
+        MarginObject | ClusterSlot -> PeekCard -> WorkspaceSheet | MobileSheet
+      ObjectOverlay  (on /o/ tap fallback)
+      header: "FYD Social" / "Generated site demo" / "Procedural clone proof" + page nav
+      SitePageView (fyd/components/renderer.tsx)
+        SectionShell x N (data-fyd-section=<sectionId> attribute)
+          Hero               (hero-section.tsx; HeroPhotoBlock + HeroMediaWhyThis)
+          IdentityCard       (ClaimBadge)
+          BusinessSummary | Services | Products | Locations | People | Posts
+          ObjectGrid | ObjectFeed | RecentObjects
+          Contact            (FydContactLink -> ContactFlow -> ProvenanceLine -> EvidenceStateLabel; CorrectionNote; ClaimBadge)
+          Links | SocialProof(ClaimBadge on each review) | CTA (Visit website / Ask FYD buttons)
+          AskFYD             (renderer.tsx:1923)
+          ObjectRail | Gallery (GalleryMediaWhyThis)
+          GenericObjectCard
+        per object/claim: ObjectAffordance (details disclosure), WhyThis, EvidenceStateLabel
+      footer: provenanceSentence + "Validator notes" disclosure
+      EditorPanel ("Customize this site"): per-section component label + section id + "N objects resolved",
+        reorder/hide/featured/copy-edit intents, design token editors, "Proposed change" JSON + Digest
+      DemoOwnerMode (renders null unless demo flag; see Demo-mode plumbing)
+```
+
+Section roster comes from registry.ts (19 entries: Hero, IdentityCard, BusinessSummary, Services, Products, Locations, People, Posts, ObjectGrid, ObjectFeed, RecentObjects, Contact, Links, SocialProof, CTA, AskFYD, ObjectRail, Gallery, GenericObjectCard).
+
+## Leak inventory
+
+Visitor-visible means rendered into the DOM for a normal visitor by default (no flag, no login). Drill-down = visible after a tap/click on a disclosure control.
+
+| Concept | file:line | Component | Visitor-visible? |
+|---|---|---|---|
+| "Generated by FYD Social from a {source} object graph (acceptance sequences N-M). All claims on this page are website statements, never verified fact." | `src/app/sites/_shared/site-client.tsx:54-58` | SiteClient footer (`provenanceSentence`) | YES, footer on every page load |
+| "Validator notes (N)" disclosure with `[severity] path: message` validator findings | `src/app/sites/_shared/site-client.tsx:240-254` | SiteClient footer | YES (tap to open) |
+| "Customize this site" structured editor: per-section component label, raw section id in parens, "N objects resolved", design-token inputs, "Proposed change" JSON dump, "Digest: <proposalDigest>" | `src/app/sites/_shared/site-client.tsx:259,286,333` | EditorPanel | YES, full section on every page |
+| Claim badge labels: "Website statement" / "Site record" / "Demo addition" / "Feed item" / "Mixed sources" | `src/fyd/components/renderer.tsx:314-327` | ClaimBadge (IdentityCard, Contact, SocialProof, CTA, ~9 call sites) | YES, badge pill next to content |
+| Affordance evidence line: "Site record" / "Demo addition" / "Feed item" / "From the business website" | `src/fyd/components/object-affordance.tsx:46-55` | ObjectAffordance | YES on hover/tap affordance |
+| "Why this?" drill-down control on claims, hero photo, gallery photos, contact values, object overlay | `src/fyd/ui/why-this.tsx:41` | WhyThis | YES (tap to open) |
+| "Content digest: <first16>..." truncated content hash as a WhyThis step | `src/fyd/components/hero-section.tsx:95-99`, `src/fyd/components/renderer.tsx:2042-2047` | HeroMediaWhyThis / GalleryMediaWhyThis | YES inside drill-down |
+| Event IDs: "PING canonical journal, event {ref}." in the Source step | `src/fyd/object/why-this-steps.ts:61` (`sourceDetail`) | WhyThis (via whyThisStepsFor / whyThisClaimChainFor) | YES inside drill-down when object provenance.kind is canonical-journal |
+| Raw provenance refs: 'Provenance ref "website-ingestion:<url>".' | `src/fyd/object/why-this-steps.ts:74` (`evidenceDetail`) | WhyThis | YES inside drill-down |
+| Demo-operator identity language: "Owner overlay: added by a demo operator", "Demo overlay: added by a demo operator. Not observed on any external website.", "DIRECT: added by a demo operator. Not the website's own words..." | `src/fyd/object/why-this-steps.ts:30,55,295-297` | WhyThis | YES inside drill-down when overlay-authored objects render |
+| Evidence taxonomy as steps: "Extraction method", "Observed evidence", "Support: DIRECT | DERIVED | OWNER-CONFIRMED" with "DIRECT: found on your website..." | `src/fyd/object/why-this-steps.ts:33-41,126-129,329-342` | WhyThis | YES inside drill-down |
+| Evidence-state badge vocabulary: "Observed / Inferred / Unverified / Unknown / Unavailable / Hidden by owner" | `src/fyd/ui/evidence-state.tsx:26-31` | EvidenceStateLabel (contact flows, WhyThis steps, ask citations) | YES (designed as customer language, still engineering taxonomy) |
+| "Source: {provenance.kind}" raw provenance-kind string in object overlay evidence box | `src/fyd/components/object-overlay.tsx:340` | ObjectOverlay | YES on /o/ tap (fallback overlay) |
+| Ask FYD answer "Why this?" with Source / Basis / Last checked per citation | `src/fyd/components/ask-fyd-widget.tsx:141-156` | AskFydWidget | YES after an answer with citations |
+| "Owner-corrected: the owner says this is the X (the site lists Y)." correction note | `src/fyd/components/renderer.tsx:388-394` | CorrectionNote | YES when owner corrections exist (borderline honest-copy) |
+| Demo flag ON only: "DEMO OWNER MODE - not real authentication" banner; "Capability evaluation (live)" with ALLOW/DENY badges and capability names (owner.attest-regen); "evidence preconditions: approved_transition_id, rendered_sitespec_hash, bindings_verified"; attestation result with attestedAt; demo hashes "demo-transition-001", "demo-sitespec-hash" | `src/fyd/owner-mode/demo-owner-mode.tsx:72-77,104,156,167-179,185-191,233` | DemoOwnerMode | YES in practice: the flag is live on the public :3100 deployment (see Demo-mode plumbing), so this renders for public visitors |
+| DEMO pill badge in margin peek cards when viewer.role is "owner-demo" | `src/fyd/ui/object-layer/PeekCard.tsx:276-288` (role set in `presentation-spec.ts:193`) | PeekCard | NO on /sites (visitor role), role-gated |
+
+Non-visible internal attributes present in the DOM but not as text: `data-projection="mobile|edge|single|dual|none"` (MarginObjectLayer.tsx:139-145), `data-fyd-section` / `data-object-anchor` section ids (renderer.tsx:1128-1132), `data-object-id` object ids, `data-testid` hooks. /o/ object ids appear in hrefs (intercepted into the edge sheet, not navigated).
+
+## Demo-mode plumbing
+
+- Env var: `NEXT_PUBLIC_FYD_DEMO_OWNER_MODE` (`src/fyd/owner-mode/gate.ts:38`).
+- Resolver: `isDemoOwnerModeEnabled()` reads `process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1"`. Because it is NEXT_PUBLIC, the value is inlined at build time; the server and client can disagree (documented as hydration #418, fixed by resolving once on the server and passing the boolean down as a prop).
+- Wiring: both site pages resolve it server-side and pass down: happy-place `page.tsx:72`, coppersmith `page.tsx:73`: `<DemoOwnerMode siteId={SITE_ID} enabled={isDemoOwnerModeEnabled()} />`. Component renders null when disabled; when enabled it renders the banner, actor card, ALLOW/DENY capability verdicts, attestation walkthrough (with evidence preconditions listed), and CustomizePanel.
+- `/dev/objects/page.tsx:105` hard-gates the objects lab with `notFound()` unless the flag is on AND the host is private (`isPrivateHost`).
+- The demo flag also gates `src/fyd/claim/identity.ts:17` (returns null when off).
+- `.env.example` on the Pig does NOT define this variable.
+- CRITICAL for builders: the flag IS live on the public :3100 deployment. The workspace house rules (`~/workspace/AGENTS.md`, ":3100 restart protocol", 2026-09-24) record that `/home/nolan/start-3100.sh` exports `NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1` on every restart per Nolan's standing directive (":3100 serves demo-owner tenants only"), and the healthy-check verifies the flag in the running process env. Consequence: the "DEMO OWNER MODE - not real authentication" banner, the live ALLOW/DENY capability evaluation, and the attestation walkthrough DO render on the public visitor pages /sites/happy-place and /sites/coppersmith-plumbing served from :3100 today. They are not dev-only in practice.
+
+## Ask FYD placement
+
+- Section: `AskFYDSection` in `src/fyd/components/renderer.tsx:1923-1942`, rendered when the spec includes an "AskFYD" section. `<section id="ask">` on a dark `theme.ink` slab. Default heading "Ask FYD about {ownerName}" (falls back to "this business"), default copy "Questions go to Ask FYD. Answers come only from this site's published information, with sources shown."
+- Entry points: Hero/CTA "Ask FYD" button anchors to `#ask` (renderer.tsx:1886-1890). Margin-layer peek cards have an "Ask FYD" action. Object overlay has "Ask FYD about this" deep-linking to `/o/{id}#ask`.
+- Widget: `AskFydWidget` (components/ask-fyd-widget.tsx) posts `POST /api/fyd/ask` with `{siteId, question, mode:"visitor"}`. States: idle, loading ("Looking that up..."), answered, error. Answers render paragraphs plus a collapsed "Why this?" disclosure with per-citation Source / Basis / Last checked. Refusal path adds "FYD only answers from what the site shows."
+
+## Open questions
+
+1. RESOLVED during mapping: `NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1` is baked into the :3100 deployment via `/home/nolan/start-3100.sh` (workspace AGENTS.md restart protocol). The demo-owner panel is live on the public visitor pages.
+2. `src/fyd/owner-mode/demo-owner-console.tsx:112` calls `isDemoOwnerModeEnabled()` directly inside a client component, which `gate.ts` explicitly forbids (hydration #418: "Client components MUST NOT call this themselves"). It is only mounted in `/dev/objects`, but the pattern contradicts the gate's own contract.
+3. Do any canonical-journal-provenance objects actually render on happy-place or coppersmith? If yes, the "PING canonical journal, event {ref}" event-ID leak is live on both sites; if not, it is latent in the drill-down builder.
+4. The "Customize this site" editor with proposal digests and section ids renders unconditionally on the visitor page. This looks like the intended owner projection leaking into the visitor projection; confirm whether it should move behind the demo flag or the owner route.
+5. `/o/[objectId]` (object node page) is reachable but "DEMOTED... not linked from normal navigation"; the visitor path into objects is the edge sheet + fallback overlay. Confirm the node page is not linked anywhere on /sites (only referenced via `data-fyd-open-full` bypass from the overlay).

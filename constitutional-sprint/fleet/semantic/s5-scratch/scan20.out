@@ -1,0 +1,45 @@
+=== tool_router callers ===
+./runtime/supervisor.py:8:invokes the `runtime/tool_router.py` to run them, assembles a context pack, and
+./runtime/supervisor.py:21:TOOL_ROUTER = os.path.join(ROOT, 'runtime', 'tool_router.py')
+=== runtime/tools ===
+README.md
+authority_search.py
+contradiction_search.py
+graph_expand.py
+lineage_search.py
+repository_relationships.py
+repository_symbols.py
+=== execution_authority.py run_command ===
+14:class ExecutionRequest:
+23:class ExecutionAdapter(Protocol):
+24:    def execute(self, request: ExecutionRequest) -> Any:
+28:class SubprocessExecutionAdapter:
+31:    def execute(self, request: ExecutionRequest) -> Any:
+56:class ExecutionAuthority:
+59:    def __init__(self, adapter: Optional[ExecutionAdapter] = None):
+62:    def run(self, args: List[str], cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+66:    def run_command(self, command: str, args: Optional[List[str]] = None, cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+70:    def run_docker(self, args: List[str], cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+=== test_mission_graph.py head ===
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from scripts.mission_graph import build_mission_graph, query_mission_graph
+
+
+class MissionGraphTests(unittest.TestCase):
+    def test_mission_graph_expands_to_authority_and_capability(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            graph = build_mission_graph(root=root)
+            self.assertTrue(graph["missions"])
+            mission = query_mission_graph(graph, "VerifyReplay")
+            self.assertIsNotNone(mission)
+            self.assertIn("ReplayAuthority", mission["authorities"])
+            self.assertIn("ReplayTranscript", mission["capabilities"])
+
+
+if __name__ == "__main__":
+    unittest.main()

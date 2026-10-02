@@ -1,0 +1,132 @@
+=====FILE:refresh/website-observe.ts=====
+/**
+ * Website source adapter: turn a fetched page (HTML string plus fetch
+ * metadata) into provenance-labeled claims. Pure function, no network, no
+ * journal writes. Every claim is graded "website_statement".
+ */
+
+import { createHash } from "node:crypto";
+import { normalizeClaimValue } from "./types.ts";
+import type { Claim, Observation, SourceKind } from "./types.ts";
+
+export interface WebsiteFetchMeta {
+  url: string;
+  observedAt: string;
+  evidenceRef: string;
+}
+
+interface RawFact {
+  field: string;
+  value: string;
+  confidence: number;
+  note: string;
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
+function metaContent(html: string, name: string): string | null {
+  const re = new RegExp(
+    '<meta[^>]+(?:name|property)="[^"]*' + name + '"[^>]+content="([^"]*)"',
+    "i",
+  );
+  const alt = new RegExp(
+    '<meta[^>]+content="([^"]*)"[^>]+(?:name|property)="[^"]*' + name + '"',
+    "i",
+  );
+  const m = html.match(re) || html.match(alt);
+  return m ? decodeEntities(m[1]).trim() : null;
+}
+
+function firstMatch(html: string, re: RegExp): string | null {
+  const m = html.match(re);
+  return m ? decodeEntities(m[1] !== undefined ? m[1] : m[0]).trim() : null;
+}
+
+/**
+ * Extract structured facts from the page HTML. Extraction is heuristic and
+ * best-effort; every extracted fact keeps its extractor note in the evidence
+ * chain via the observation's evidenceRef plus this module's name.
+ */
+export function extractRawFacts(html: string): RawFact[] {
+  const facts: RawFact[] = [];
+
+  const ogTitle = metaContent(html, "og:title");
+  const titleTag = firstMatch(html, /<title>([^<]{3,200})<\/title>/i);
+  const name = ogTitle ? ogTitle.split("—")[0].trim() : titleTag ? titleTag.split("—")[0].trim() : null;
+  if (name) facts.push({ field: "name", value: name, confidence: 0.95, note: "og:title/title tag" });
+
+  const description = metaContent(html, "description") || metaContent(html, "og:description");
+  if (description) facts.push({ field: "description", value: description, confidence: 0.95, note: "meta description" });
+
+  const tagline = firstMatch(
+    html,
+    /Decks, fences, repairs, remodels, finish carpentry, painting, and outdoor structures[^"<]{0,120}/i,
+=====FILE:owner-store-head=====
+/**
+ * Owner state store (server-only).
+ *
+ * Owner decisions are DURABLE state, not generated cache. They live in
+ * data/fyd-owner/<objectId>.json, one file per object, completely separate
+ * from source state (fixtures, manifests). Source re-ingestion reads and
+ * writes only source state; it can never erase owner intent.
+ *
+ * The store is APPEND-ONLY (see ./owner-events.ts): every command appends
+ * one provenance-backed event to the object's log, and the returned state
+ * is the pure projection over that log. Reverting a contact correction
+ * appends an owner.restored-fact event; the correction event stays in the
+ * log. There is no mutable owner map anymore.
+ *
+ * applyOwnerCommand / parseOwnerCommand keep their public API so the
+ * routes and UI keep working; they are adapters over the event log now.
+ *
+ * All commands fail closed: unknown ids, bad shapes, and empty names are
+ * rejected with a typed error and nothing is written.
+ *
+ * FYD_OWNER_DIR env override exists so tests can use a temp directory.
+ */
+
+import type {
+  FieldConfirmation,
+  OwnerCommand,
+  OwnerOverrides,
+} from "./types";
+import type { OwnerFieldCorrection } from "../../lib/ping/types";
+import {
+  ADDRESS_TARGET,
+  CONTACT_FIELD_TARGETS,
+  SERVICE_ORDER_TARGET,
+  appendOwnerEvent,
+  projectOwnerState,
+  serviceTarget,
+  type OwnerEventActor,
+  type OwnerEventDraft,
+  type OwnerEventEvidence,
+} from "./owner-events";
+import { slugifyService } from "./services";
+
+export class OwnerCommandError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OwnerCommandError";
+  }
+}
+
+/** Contact fields the owner may correct. Labels are human-facing. */
+export const CORRECTABLE_FIELDS = ["phone", "email", "website"] as const;
+export type CorrectableField = (typeof CORRECTABLE_FIELDS)[number];
+
+const FIELD_LABELS: Record<CorrectableField, string> = {
+  phone: "Phone",
+  email: "Email",
+  website: "Website",
+};
+
+function isCorrectableField(v: unknown): v is CorrectableField {

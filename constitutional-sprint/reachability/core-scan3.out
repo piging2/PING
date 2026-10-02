@@ -1,0 +1,120 @@
+### (1) require() targets in test/*.js and whether they resolve
+--- constitutional_failure.test.js
+require('../gateway/adapter_compiler')
+require('../gateway/constitutional_authority_weighted')
+require('../gateway/technology_authority')
+require('../gateway/witness_generator')
+require('assert')
+require('crypto')
+--- constitutional_replay.test.js
+require('../gateway/adapter_compiler')
+require('assert')
+require('crypto')
+--- cross_machine_replay.test.js
+require('../gateway/adapter_compiler')
+require('assert')
+require('crypto')
+require('fs')
+require('path')
+--- multi_vendor_validation.test.js
+require('../gateway/adapter_compiler')
+require('assert')
+require('crypto')
+--- ollama_replay.test.js
+require('../gateway/inference_witness')
+require('../gateway/model_authority')
+require('../gateway/ollama_adapter')
+require('../gateway/prompt_authority')
+require('../gateway/runtime_authority')
+require('../gateway/streaming_authority')
+require('crypto')
+--- replay_stress.test.js
+require('../gateway/adapter_compiler')
+require('assert')
+require('crypto')
+### resolve check: do those relative targets exist?
+MISSING: ../gateway/adapter_compiler
+OK: ../gateway/adapter_compiler_v2
+OK: ../ping-runtime/authorities/deterministic_id_authority
+MISSING: ../runtime/replay/deterministic_replay_engine
+### (2) runtime/replay and ping-runtime/authorities existence
+canonical_authority.js
+constitutional_time_authority.js
+constitutional_validation.js
+deterministic_id_authority.js
+identity_authority.js
+workflow_identity_authority.js
+### (3) adapter node_modules?
+NO node_modules
+NO core root node_modules
+### (4) workflow triggers + jobs
+===== constitutional_ci.yml =====
+name: Constitutional CI
+on:
+  push:
+  pull_request:
+jobs:
+    runs-on: ${{ matrix.os }}
+        node-version: [18.x, 20.x]
+    - name: Checkout code
+    - name: Setup Node.js ${{ matrix.node-version }}
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: npm ci
+===== replay-integrity.yml =====
+name: Replay Integrity
+on:
+  pull_request:
+  push:
+jobs:
+    runs-on: ubuntu-latest
+    - name: Checkout code
+    - name: Setup Node.js
+        node-version: '18'
+    - name: Install dependencies
+      run: npm ci
+    - name: Run dependency validator
+===== constitutional-pipeline.yml =====
+name: Constitutional Pipeline
+on:
+  push:
+  pull_request:
+jobs:
+    runs-on: ubuntu-latest
+      - name: Checkout code
+      - name: Setup Node.js
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify Technology Manifest
+===== constitutional-ops.yml =====
+name: Constitutional Operations
+on:
+  push:
+  pull_request:
+jobs:
+    runs-on: ubuntu-latest
+          python-version: '3.11'
+      - name: Validate mission graph
+        run: python scripts/constitutional_query.py show VerifyReplay
+===== freeze.yml =====
+name: freeze
+on:
+  pull_request:
+  push:
+jobs:
+    runs-on: ubuntu-latest
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test
+### (5) gh cli on Pig?
+NO gh
+### (6) workflow list full (names)
+name: Constitutional Learning Loop
+name: Constitutional Operating Mode
+name: Constitutional Operations
+name: Constitutional Pipeline
+name: Constitutional CI
+name: freeze
+name: Intent Graph Validation
+name: Replay Integrity

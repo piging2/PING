@@ -1,0 +1,74 @@
+=== runtime/supervisor.py spawn callers ===
+=== cognitive/supervisor.py ===
+259 runtime/cognitive/supervisor.py
+"""
+Supervisor Runtime — Rule 3
+
+Model: qwen2.5-coder:14b
+Responsibilities:
+- Plan reasoning (decompose question into steps)
+- Route tools (dispatch structured tasks to workers)
+- Synthesize evidence from all worker responses
+- Produce final answer with authority chain
+
+Constitutional constraints:
+- NEVER performs retrieval
+- NEVER queries vector search
+- ONLY reasons, plans, routes, and synthesizes
+"""
+import json
+import sys
+import os
+import uuid
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+
+from .models import (
+    ContextPack, WorkerTask, WorkerResponse, WorkerRole,
+    ReasoningPlan, TaskStatus, AuthorityResolution,
+    AuthorityResolutionFailure, ContextPackViolation
+)
+from .worker_protocol import WorkerProtocol
+from .context_pack import ContextPackBuilder
+from .context_pack_cache import ContextPackCache
+from .projection_sovereignty import ProjectionSovereignty
+from .search_worker import SearchWorker
+from .contradiction_worker import ContradictionWorker
+from .architecture_worker import ArchitectureWorker
+from .memory_worker import MemoryWorker
+
+
+SUPERVISOR_MODEL = "qwen2.5-coder:14b"
+
+
+class Supervisor:
+    """
+    AI Supervisor Runtime — Constitutional reasoning planner and synthesizer.
+    Plans reasoning, routes to workers, synthesizes evidence, produces final answer.
+    NEVER performs retrieval — only reasons.
+    """
+
+    def __init__(self):
+        self.protocol = WorkerProtocol()
+        self.pack_builder = ContextPackBuilder()
+        self.cache = ContextPackCache()
+        self.search_worker = SearchWorker()
+        self.contradiction_worker = ContradictionWorker()
+        self.architecture_worker = ArchitectureWorker()
+        self.memory_worker = MemoryWorker()
+
+    def plan(self, question: str) -> ReasoningPlan:
+        plan_id = str(uuid.uuid4())[:8]
+        steps = [
+            {"step": 1, "worker": "search_worker", "action": "authority_search", "description": "Resolve authority for the question"},
+            {"step": 2, "worker": "search_worker", "action": "lineage_search", "description": "Find lineage of highest authority"},
+            {"step": 3, "worker": "search_worker", "action": "graph_expand", "description": "Expand knowledge graph from lineage"},
+            {"step": 4, "worker": "contradiction_worker", "action": "contradiction_search", "description": "Detect conflicting evidence"},
+            {"step": 5, "worker": "architecture_worker", "action": "repository_query", "description": "Query repository symbols and relationships"},
+            {"step": 6, "worker": "memory_worker", "action": "context_pack_builder", "description": "Assemble Context Pack from all findings"},
+            {"step": 7, "worker": "supervisor", "action": "synthesize", "description": "Synthesize final answer from Context Pack"}
+        ]
+        assignments = [
+            WorkerTask(
+                task_id=f"{plan_id}-s1",
+=== intent_graph_builder sources ===

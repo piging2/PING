@@ -1,0 +1,8 @@
+87:        adapter.normalizeKnowledgeEnvelope || adapter.normalizeBffEnvelope;
+97:      const bffResult = await eventRuntime.emit(norm.eventType, 'api', norm.eventData, {
+100:      if (bffResult.status !== 'ok') {
+101:        throw new Error(bffResult.error || 'Event rejected');
+104:        event_id: bffResult.eventId,
+105:        id: bffResult.eventId, // BFF-reader compatibility: the website BFF reads `id`
+117:    // Canonical spine: emit directly through UnifiedEventRuntime (ping_events),
+120:    const result = await eventRuntime.emit(event_type, 'api', event_data, {

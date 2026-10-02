@@ -1,0 +1,128 @@
+### customize handleApprove/handleClear gate lines
+27:import { isPrivateHost } from "@/fyd/owner-mode/gate";
+52:function demoDenied(req: Request) {
+53:  const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+55:  const privateNet = isPrivateHost(host);
+63:          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+143:      demoOwnerMode: process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1",
+233:async function handleApprove(req: Request, siteId: string, text: string, clientProposal: SitePatchBody) {
+234:  const gate = demoDenied(req);
+335:async function handleClear(req: Request, siteId: string, intentId: string) {
+336:  const gate = demoDenied(req);
+### handleApprove body (lines 210-300)
+   185	  const resolved = resolveCustomizationIntent(site.spec, site.graph, parsed.intent);
+   186	  if (!resolved.resolved) {
+   187	    return NextResponse.json(
+   188	      {
+   189	        ok: false,
+   190	        code: "unresolved",
+   191	        error: resolved.reason,
+   192	        intent: parsed.intent,
+   193	        intentDigest: parsed.intentDigest,
+   194	        demo: true,
+   195	      },
+   196	      { status: 422 },
+   197	    );
+   198	  }
+   199	  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+   200	  if (!outcome.ok) {
+   201	    return NextResponse.json(
+   202	      {
+   203	        ok: false,
+   204	        code: "no_op",
+   205	        error: outcome.error,
+   206	        intent: parsed.intent,
+   207	        intentDigest: parsed.intentDigest,
+   208	        demo: true,
+   209	      },
+   210	      { status: 422 },
+   211	    );
+   212	  }
+   213	  return NextResponse.json({
+   214	    ok: true,
+   215	    siteId,
+   216	    intent: parsed.intent,
+   217	    intentDigest: parsed.intentDigest,
+   218	    resolutionNote: resolved.resolutionNote,
+   219	    siteIntent: resolved.siteIntent,
+   220	    proposal: outcome.proposal,
+   221	    reviewCard: outcome.reviewCard,
+   222	    specDigest: outcome.specDigest,
+   223	    demo: true,
+   224	  });
+   225	}
+   226	
+   227	/**
+   228	 * Approve -> apply (journal only; render picks it up on next regen).
+   229	 * Re-derives the entire chain from the text against the CURRENT spec and
+   230	 * re-verifies every digest. A stale spec, a stale digest, or an altered
+   231	 * proposal is refused — never applied.
+   232	 */
+   233	async function handleApprove(req: Request, siteId: string, text: string, clientProposal: SitePatchBody) {
+   234	  const gate = demoDenied(req);
+   235	  if (gate) return gate;
+   236	
+   237	  let site;
+   238	  try {
+   239	    site = await loadCustomizedSite(siteId);
+   240	  } catch (e) {
+   241	    return NextResponse.json(
+   242	      { ok: false, code: "site_not_found", error: e instanceof Error ? e.message : String(e), demo: true },
+   243	      { status: 404 },
+   244	    );
+   245	  }
+   246	  const parsed = parseCustomizationIntent(text);
+   247	  if (isUnsupported(parsed)) {
+   248	    return NextResponse.json(
+   249	      { ok: false, code: "unsupported", error: parsed.reason, demo: true },
+   250	      { status: 400 },
+   251	    );
+   252	  }
+   253	  const resolved = resolveCustomizationIntent(site.spec, site.graph, parsed.intent);
+   254	  if (!resolved.resolved) {
+   255	    return NextResponse.json(
+   256	      { ok: false, code: "unresolved", error: resolved.reason, demo: true },
+   257	      { status: 422 },
+   258	    );
+   259	  }
+   260	  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+   261	  if (!outcome.ok) {
+   262	    return NextResponse.json(
+   263	      { ok: false, code: "no_op", error: outcome.error, demo: true },
+   264	      { status: 422 },
+   265	    );
+   266	  }
+   267	  const fresh = outcome.proposal;
+   268	  if (
+   269	    !clientProposal ||
+   270	    clientProposal.proposalDigest !== fresh.proposalDigest
+   271	  ) {
+   272	    return NextResponse.json(
+   273	      {
+   274	        ok: false,
+   275	        code: "stale_digest",
+   276	        error:
+   277	          "The proposal the owner approved does not match a proposal freshly " +
+   278	          "derived from the current spec. The spec moved (or the proposal was " +
+   279	          "altered) since drafting: re-run parse and review the new proposal. " +
+   280	          "Nothing was applied.",
+   281	        expectedDigest: fresh.proposalDigest,
+   282	        receivedDigest: clientProposal?.proposalDigest,
+   283	        demo: true,
+   284	      },
+   285	      { status: 409 },
+   286	    );
+   287	  }
+   288	  // Belt and suspenders: full body must equal the fresh body, not just the digest.
+   289	  if (JSON.stringify(clientProposal) !== JSON.stringify(fresh)) {
+   290	    return NextResponse.json(
+   291	      {
+   292	        ok: false,
+   293	        code: "proposal_altered",
+   294	        error: "Proposal body differs from the freshly derived proposal. Nothing was applied.",
+   295	        demo: true,
+   296	      },
+   297	      { status: 409 },
+   298	    );
+   299	  }
+   300	

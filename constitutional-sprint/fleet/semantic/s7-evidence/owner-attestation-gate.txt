@@ -1,0 +1,85 @@
+     1	/**
+     2	 * H3 lane: failure-honesty gate for DEMO owner attestations.
+     3	 *
+     4	 * PROVENANCE (harvested pattern, not copied PING code):
+     5	 *   SOURCE: ~/workspace/fyd-lane/absorb/src/attestation-gate.ts (C4),
+     6	 *           itself harvested from /home/nolan/ping
+     7	 *           ping-runtime/workers/canonical_workers.js:451-510
+     8	 *           (WitnessWorker.handle, the "W7" failure-honesty gate: on
+     9	 *           REPLAY_COMPLETED with verified !== true, the worker REFUSES to
+    10	 *           attest and emits WITNESS_REJECTED - it never fabricates an
+    11	 *           attestation.)
+    12	 * This file re-implements the pattern as a dependency-free pure function
+    13	 * for the FYD demo. No PING runtime import.
+    14	 *
+    15	 * FYD form of Nolan's truth-model law ("missing evidence NEVER becomes
+    16	 * HEALTHY"): every owner attestation checks its evidence preconditions
+    17	 * FIRST. On missing evidence the gate returns ATTESTATION_REJECTED with a
+    18	 * reason and the emit callback is NEVER invoked - no success claim is
+    19	 * produced, observed, or implied.
+    20	 *
+    21	 * DEMO SCOPE: used only by DEMO OWNER MODE (see ./gate.ts). This gate
+    22	 * proves an attestation's evidence was present; it does not authenticate
+    23	 * the attester.
+    24	 */
+    25	
+    26	export type AttestationKind = 'regen-complete' | 'correction-survived' | 'refresh-applied';
+    27	
+    28	/**
+    29	 * Evidence preconditions per attestation kind. An attestation is a DERIVED
+    30	 * claim: it may only exist when every named precondition is present.
+    31	 */
+    32	const PRECONDITIONS: Record<AttestationKind, readonly string[]> = {
+    33	  'regen-complete': ['approved_transition_id', 'rendered_sitespec_hash', 'bindings_verified'],
+    34	  'correction-survived': ['correction_transition_id', 'post_regen_claim_hash', 'binding_verdict'],
+    35	  'refresh-applied': ['source_observation_id', 'owner_policy_preserved', 'binding_verdict'],
+    36	};
+    37	
+    38	export function preconditionsFor(kind: AttestationKind): readonly string[] {
+    39	  const p = (PRECONDITIONS as Record<string, readonly string[]>)[kind];
+    40	  if (!p) throw new Error(`attest: unknown attestation kind '${kind}' - refusing to guess preconditions`);
+    41	  return p;
+    42	}
+    43	
+    44	export interface Attestation {
+    45	  kind: AttestationKind;
+    46	  evidence: Record<string, unknown>;
+    47	  attestedAt: string;
+    48	}
+    49	
+    50	export type AttestationStatus = 'ATTESTED' | 'ATTESTATION_REJECTED';
+    51	
+    52	export interface AttestationResult {
+    53	  status: AttestationStatus;
+    54	  kind: AttestationKind;
+    55	  /** Typed reason. On rejection: 'missing_evidence:<names>'. On success: null. */
+    56	  reason: string | null;
+    57	  attestation: Attestation | null;
+    58	}
+    59	
+    60	/**
+    61	 * Attempt an attestation. Evidence preconditions are checked first; if any is
+    62	 * missing (undefined or null - explicit null is NOT evidence), the result is
+    63	 * ATTESTATION_REJECTED and `emit` is never called. Success is only reachable
+    64	 * through verified preconditions.
+    65	 */
+    66	export function attest(
+    67	  kind: AttestationKind,
+    68	  evidence: Record<string, unknown>,
+    69	  emit?: (a: Attestation) => void,
+    70	  nowIso: () => string = () => new Date().toISOString()
+    71	): AttestationResult {
+    72	  const required = preconditionsFor(kind);
+    73	  const missing = required.filter((name) => evidence[name] === undefined || evidence[name] === null);
+    74	  if (missing.length > 0) {
+    75	    return {
+    76	      status: 'ATTESTATION_REJECTED',
+    77	      kind,
+    78	      reason: `missing_evidence:${missing.join(',')}`,
+    79	      attestation: null,
+    80	    };
+    81	  }
+    82	  const attestation: Attestation = { kind, evidence, attestedAt: nowIso() };
+    83	  if (emit) emit(attestation);
+    84	  return { status: 'ATTESTED', kind, reason: null, attestation };
+    85	}

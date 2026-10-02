@@ -1,0 +1,14 @@
+diff --git a/src/app/api/fyd/customize/route.ts b/src/app/api/fyd/customize/route.ts
+index f5fed808..8070bb90 100644
+--- a/src/app/api/fyd/customize/route.ts
++++ b/src/app/api/fyd/customize/route.ts
+@@ -11,7 +11,8 @@
+  *       directive. DEMO OWNER MODE ONLY (localhost/private + env flag),
+  *       conspicuously labeled, never real authentication.
+  *   { action: "clear", siteId, intentId }
+- *       Removes an approved directive from the journal (demo only).
++ *       Appends a compensating clear_presentation_intent op (the journal
++ *       is append-only; directives are never removed) (demo only).
+  *
+  * GET ?siteId=<id>&view=inspect — current presentation-intent state,
+  *   section order, digest of the spec the owner reviews.

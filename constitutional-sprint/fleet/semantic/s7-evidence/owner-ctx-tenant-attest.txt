@@ -1,0 +1,329 @@
+nl: 'src/app/api/fyd/objects/[objectId]/owner-context.ts': No such file or directory
+===FILE: src/app/api/fyd/objects/[objectId]/owner-context.ts
+     1	/**
+     2	 * Tenant-scoped runtime entry points: the Phase 0 tenant contract applied
+     3	 * to the REAL store modules (not local test doubles).
+     4	 *
+     5	 * Every function asserts the tenant key BEFORE the underlying store's I/O
+     6	 * executes. Cross-tenant access throws TenantContextError
+     7	 * (CROSS_TENANT_REFERENCE); missing context throws TENANT_CONTEXT_MISSING.
+     8	 * Refusal is never null, [], or a successful-looking empty result.
+     9	 *
+    10	 * Tenant key model: the acting tenant's id IS the store key (the owner
+    11	 * object's id for owner state, the projection's siteId for projections and
+    12	 * Ask FYD). assertTenantKey enforces key === tenantId.
+    13	 *
+    14	 * The underlying stores themselves remain unscoped; these wrappers are the
+    15	 * only sanctioned consumption path for request/worker code.
+    16	 */
+    17	import {
+    18	  answerAskFyd,
+    19	  type AnswerAskFydDeps,
+    20	  type AnswerAskFydInput,
+    21	  type AskFydOutcome,
+    22	} from "@/fyd/ask/visitor-answer";
+    23	import {
+    24	  getPingObjectGraphSync,
+    25	  type PingProjection,
+    26	  type PingSourceOpts,
+    27	} from "@/fyd/data/ping-object-source";
+    28	import {
+    29	  applyOwnerCommand,
+    30	  readOverrides,
+    31	  type ApplyCommandOpts,
+    32	} from "@/fyd/object/owner-store";
+    33	import type { OwnerCommand, OwnerOverrides } from "@/fyd/object/types";
+    34	import {
+    35	  emitOverlayEvent,
+    36	} from "@/fyd/customize/server";
+    37	import type { PresentationIntentOverlayOp } from "@/fyd/customize/types";
+    38	import {
+    39	  TenantContextError,
+    40	  assertTenantKey,
+    41	  type TenantContext,
+    42	} from "./tenant-context";
+    43	
+    44	/** Scoped owner-override read: tenant A can never read tenant B's overrides. */
+    45	export function scopedReadOverrides(
+    46	  ctx: TenantContext,
+    47	  objectId: string,
+    48	): OwnerOverrides {
+    49	  assertTenantKey(ctx, objectId);
+    50	  return readOverrides(objectId);
+    51	}
+    52	
+    53	/** Scoped owner command/patch: cross-tenant patches are refused before I/O. */
+    54	export function scopedApplyOwnerCommand(
+    55	  ctx: TenantContext,
+    56	  objectId: string,
+    57	  cmd: OwnerCommand,
+    58	  knownServiceIds: string[],
+    59	  knownServiceNames: Map<string, string>,
+    60	  opts?: ApplyCommandOpts,
+    61	): OwnerOverrides {
+    62	  assertTenantKey(ctx, objectId);
+    63	  return applyOwnerCommand(objectId, cmd, knownServiceIds, knownServiceNames, opts);
+    64	}
+    65	
+    66	/**
+    67	 * Scoped projection read. Asserts the tenant key, loads through the
+    68	 * verifying source, then rechecks meta.siteId: a projection file whose
+    69	 * metadata disagrees with its key is refused even under the right context.
+    70	 */
+    71	export function scopedGetProjection(
+    72	  ctx: TenantContext,
+    73	  siteId: string,
+    74	  opts?: PingSourceOpts,
+    75	): PingProjection {
+    76	  assertTenantKey(ctx, siteId);
+    77	  let projection: PingProjection;
+    78	  try {
+    79	    projection = getPingObjectGraphSync(siteId, opts);
+    80	  } catch (err) {
+    81	    // The source verifies what it loads; when its verification refuses the
+    82	    // document (e.g. a meta.siteId disagreement), that refusal is a
+    83	    // cross-tenant boundary signal. Reclassify it so callers see the tenant
+    84	    // contract error, never a bare source error.
+    85	    throw new TenantContextError(
+    86	      "CROSS_TENANT_REFERENCE",
+    87	      "Refusing: the underlying projection source would not attest this document to the tenant key.",
+    88	      { tenantId: siteId, cause: err instanceof Error ? err.message : String(err) },
+    89	    );
+    90	  }
+    91	  const metaSiteId = (projection as { meta?: { siteId?: unknown } }).meta?.siteId;
+    92	  if (metaSiteId !== siteId) {
+    93	    throw new TenantContextError(
+    94	      "CROSS_TENANT_REFERENCE",
+    95	      "Refusing: the projection's metadata disagrees with the requested tenant key.",
+    96	      { tenantId: siteId, attemptedKey: String(metaSiteId) },
+    97	    );
+    98	  }
+    99	  return projection;
+   100	}
+   101	
+   102	/**
+   103	 * Scoped Ask FYD: the question's siteId must equal the acting tenant.
+   104	 * The bundle loader inside answerAskFyd then loads only that tenant's data.
+   105	 */
+   106	export function scopedAnswerAskFyd(
+   107	  ctx: TenantContext,
+   108	  input: AnswerAskFydInput,
+   109	  deps?: AnswerAskFydDeps,
+   110	): AskFydOutcome {
+   111	  assertTenantKey(ctx, input.siteId);
+   112	  return answerAskFyd(input, deps);
+   113	}
+   114	
+   115	/**
+   116	 * Scoped approval/apply: an owner approval (presentation-intent overlay
+   117	 * ops) is recorded against exactly the tenant that approved it. The tenant
+   118	 * key is asserted BEFORE the gateway emit: a context for tenant A can
+   119	 * never record an approval event for tenant B.
+   120	 *
+   121	 * Note: with no gateway reachable in unit tests, the success path throws
+   122	 * the gateway's own unreachable error AFTER the tenant gate passes. That
+   123	 * is the honest assertion: the tenant boundary held, the downstream was
+   124	 * absent.
+   125	 */
+   126	export async function scopedEmitOverlayEvent(
+   127	  ctx: TenantContext,
+   128	  siteId: string,
+   129	  ops: PresentationIntentOverlayOp[],
+   130	): Promise<string> {
+   131	  assertTenantKey(ctx, siteId);
+   132	  return emitOverlayEvent(siteId, ops);
+   133	}
+===FILE: src/fyd/tenant/scoped-stores.ts
+     1	/**
+     2	 * Failure-honesty attestation gate (absorbed C4 pattern). SERVER ONLY.
+     3	 *
+     4	 * Every social action attests its named evidence preconditions FIRST: the
+     5	 * journal must actually carry the claimed relationship state before the
+     6	 * action reports success. Missing evidence -> ATTESTATION_REJECTED with the
+     7	 * missing evidence named, and success is never reported. Explicit null is
+     8	 * not evidence. This is the executable form of the law: a failed follow can
+     9	 * never report success, and missing evidence never becomes healthy.
+    10	 */
+    11	
+    12	import { fydGatewayBaseUrl } from "./config";
+    13	import { asSequence } from "./readers";
+    14	
+    15	export interface JournalRelationshipRow {
+    16	  event_id: string;
+    17	  sequence: number | null;
+    18	  relationship_id: string;
+    19	  subject: string;
+    20	  predicate: string;
+    21	  object: string;
+    22	  status: string;
+    23	  created_at: string;
+    24	}
+    25	
+    26	export type Attestation =
+    27	  | { attested: true; relationshipId: string; eventId: string; sequence: number | null }
+    28	  | { attested: false; reason: "ATTESTATION_REJECTED"; missing: string[] };
+    29	
+    30	async function readRelationshipJournalRows(): Promise<JournalRelationshipRow[]> {
+    31	  const res = await fetch(
+    32	    `${fydGatewayBaseUrl()}/events/RELATIONSHIP_CREATED?limit=1000`,
+    33	    { cache: "no-store" },
+    34	  );
+    35	  if (!res.ok) {
+    36	    throw new Error(`journal read failed: HTTP ${res.status}`);
+    37	  }
+    38	  const body = (await res.json()) as { events?: unknown[] };
+    39	  const events = Array.isArray(body.events) ? body.events : [];
+    40	  const rows: JournalRelationshipRow[] = [];
+    41	  for (const e of events) {
+    42	    const ev = e as Record<string, unknown>;
+    43	    const p = (ev.payload || {}) as Record<string, unknown>;
+    44	    if (
+    45	      typeof p.subject !== "string" ||
+    46	      typeof p.predicate !== "string" ||
+    47	      typeof p.object !== "string"
+    48	    ) {
+    49	      continue;
+    50	    }
+    51	    rows.push({
+    52	      event_id: String(ev.event_id || ""),
+    53	      sequence: asSequence(ev.sequence),
+    54	      relationship_id: String(p.relationship_id || ""),
+    55	      subject: p.subject,
+    56	      predicate: p.predicate,
+    57	      object: p.object,
+    58	      status: typeof p.status === "string" ? p.status : "active",
+    59	      created_at: String(ev.created_at || ev.timestamp || ""),
+    60	    });
+    61	  }
+    62	  return rows;
+    63	}
+    64	
+    65	/**
+    66	 * Attest that the journal's latest state for (subject, predicate, object)
+    67	 * equals wantStatus. Preconditions are named and checked in order; the first
+    68	 * failure rejects the attestation with the missing evidence named.
+    69	 */
+    70	export async function attestRelationshipState(input: {  subject: string;
+    71	  predicate: string;
+    72	  object: string;
+    73	  wantStatus: "active" | "inactive";
+    74	  /** For a fresh write, the submitted event must be the latest row. */
+    75	  expectEventId?: string;
+    76	}): Promise<Attestation> {
+    77	  const missing: string[] = [];
+    78	  let rows: JournalRelationshipRow[];
+    79	  try {
+    80	    rows = await readRelationshipJournalRows();
+    81	  } catch {
+    82	    return {
+    83	      attested: false,
+    84	      reason: "ATTESTATION_REJECTED",
+    85	      missing: ["journal:RELATIONSHIP_CREATED (read failed)"],
+    86	    };
+    87	  }
+    88	
+    89	  const matching = rows.filter(
+    90	    (r) =>
+    91	      r.subject === input.subject &&
+    92	      r.predicate === input.predicate &&
+    93	      r.object === input.object,
+    94	  );
+    95	  if (matching.length === 0) {
+    96	    missing.push(
+    97	      `journal_row:RELATIONSHIP_CREATED(subject=${input.subject},predicate=${input.predicate},object=${input.object})`,
+    98	    );
+    99	    return { attested: false, reason: "ATTESTATION_REJECTED", missing };
+   100	  }
+   101	
+   102	  // Latest-wins by (sequence, created_at, event_id), mirroring the
+   103	  // readers' adapter-local ordering (readers.ts). NOTE: ping_events has
+   104	  // no sequence column (the gateway never allocates one), so in practice
+   105	  // this degrades to (created_at DESC, event_id DESC). No core-side
+   106	  // projector enforces this order.
+   107	  matching.sort((a, b) => {
+   108	    const sa = a.sequence ?? -1;
+   109	    const sb = b.sequence ?? -1;
+   110	    if (sa !== sb) return sb - sa;
+   111	    if (a.created_at !== b.created_at) return a.created_at < b.created_at ? 1 : -1;
+   112	    return a.event_id < b.event_id ? 1 : -1;
+   113	  });
+   114	  const latest = matching[0];
+   115	
+   116	  if (latest.status !== input.wantStatus) {
+   117	    missing.push(
+   118	      `journal_row_status:${input.wantStatus} (latest is ${latest.status}, event ${latest.event_id})`,
+   119	    );
+   120	    return { attested: false, reason: "ATTESTATION_REJECTED", missing };
+   121	  }
+   122	
+   123	  if (input.expectEventId && latest.event_id !== input.expectEventId) {
+   124	    missing.push(
+   125	      `journal_latest_event:${input.expectEventId} (latest is ${latest.event_id})`,
+   126	    );
+   127	    return { attested: false, reason: "ATTESTATION_REJECTED", missing };
+   128	  }
+   129	
+   130	  return {
+   131	    attested: true,
+   132	    relationshipId: latest.relationship_id,
+   133	    eventId: latest.event_id,
+   134	    sequence: latest.sequence,
+   135	  };
+   136	}
+   137	
+   138	/**
+   139	 * Attest that a submitted OBJECT_CREATED actually landed in the journal.
+   140	 * Same failure-honesty contract: missing evidence -> ATTESTATION_REJECTED
+   141	 * with the missing evidence named; success is never reported otherwise.
+   142	 */
+   143	export async function attestObjectCreated(input: {
+   144	  eventId: string;
+   145	  schema: string;
+   146	  controller: string;
+   147	}): Promise<
+   148	  | { attested: true; objectId: string; eventId: string; sequence: number | null }
+   149	  | { attested: false; reason: "ATTESTATION_REJECTED"; missing: string[] }
+   150	> {
+   151	  const res = await fetch(`${fydGatewayBaseUrl()}/events/OBJECT_CREATED?limit=1000`, {
+   152	    cache: "no-store",
+   153	  });
+   154	  if (!res.ok) {
+   155	    return {
+   156	      attested: false,
+   157	      reason: "ATTESTATION_REJECTED",
+   158	      missing: ["journal:OBJECT_CREATED (read failed)"],
+   159	    };
+   160	  }
+   161	  const body = (await res.json()) as { events?: unknown[] };
+   162	  const events = Array.isArray(body.events) ? body.events : [];
+   163	  const hit = events
+   164	    .map((e) => e as Record<string, unknown>)
+   165	    .find((e) => String(e.event_id || "") === input.eventId);
+   166	  if (!hit) {
+   167	    return {
+   168	      attested: false,
+   169	      reason: "ATTESTATION_REJECTED",
+   170	      missing: [`journal_row:OBJECT_CREATED(event_id=${input.eventId})`],
+   171	    };
+   172	  }
+   173	  const p = (hit.payload || {}) as Record<string, unknown>;
+   174	  const missing: string[] = [];
+   175	  if (p.schema !== input.schema) {
+   176	    missing.push(`journal_row_schema:${input.schema} (found ${String(p.schema)})`);
+   177	  }
+   178	  if (p.controller !== input.controller) {
+   179	    missing.push(
+   180	      `journal_row_controller:${input.controller} (found ${String(p.controller)})`,
+   181	    );
+   182	  }
+   183	  if (missing.length > 0) {
+   184	    return { attested: false, reason: "ATTESTATION_REJECTED", missing };
+   185	  }
+   186	  return {
+   187	    attested: true,
+   188	    objectId: String(p.object_id || ""),
+   189	    eventId: String(hit.event_id || ""),
+   190	    sequence: asSequence(hit.sequence),
+   191	  };
+   192	}
+===FILE: src/fyd/social/attestation-gate.ts

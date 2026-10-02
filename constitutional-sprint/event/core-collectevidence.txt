@@ -1,0 +1,12 @@
+154-    return this._backgroundQueue.shift() || null;
+155-  }
+156-
+157:  collectEvidence(batchId, workerOutputs) {
+158-    return {
+159-      batchId,
+160-      worker_count: workerOutputs.length,
+161-      findings: workerOutputs.map(o => ({
+162-        worker: o.workerId,
+163-        confidence: o.confidence || 0,
+164-        findings_count: (o.findings || []).length,
+165-        accepted: o.accepted || false

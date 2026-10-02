@@ -1,0 +1,54 @@
+# chrome-cdp-watchdog-threads.ps1 -- STAGED (not active)
+# Keeps the Pig's dedicated headed Chrome (threads-profile + CDP :9228) alive.
+# Mirrors chrome-cdp-watchdog-ig.ps1. To activate: copy to
+# C:/Users/nolan/.local/share/pigi/chrome-cdp-watchdog-threads.ps1 and register
+# the PigiThreadsLogin scheduled task (at nolan logon + every 5 min) pointing at
+# it via hidden-launch.vbs, exactly like PigiIGLogin.
+# Behavior: probe CDP; if down, stop ONLY chrome processes whose command line
+# references the threads-profile (never Nolan's personal Chrome, never the
+# fb/ig/x/tt profiles), then relaunch at the Threads login page.
+$ErrorActionPreference = 'SilentlyContinue'
+$profileDir = 'C:/Users/nolan/.local/share/pigi/threads-profile'
+$chromeExe  = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+$logFile    = 'C:/Users/nolan/.local/share/pigi/chrome-cdp-watchdog-threads.log'
+
+function Probe-Cdp {
+  try {
+    $r = Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:9228/json/version' -TimeoutSec 5
+    return ($r.StatusCode -eq 200)
+  } catch { return $false }
+}
+
+function Write-WatchLog($msg) {
+  $stamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+  Add-Content -Path $logFile -Value "$stamp $msg"
+  $lines = (Get-Content $logFile).Count
+  if ($lines -gt 5000) {
+    (Get-Content $logFile | Select-Object -Last 500) | Set-Content $logFile
+  }
+}
+
+if (Probe-Cdp) { exit 0 }
+
+$thProcs = Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" |
+  Where-Object { $_.CommandLine -like "*$profileDir*" }
+
+if ($thProcs) {
+  $pids = ($thProcs | Select-Object -ExpandProperty ProcessId) -join ','
+  Write-WatchLog "CDP down; stopping threads-profile chrome PIDs $pids"
+  $thProcs | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+  Start-Sleep -Seconds 3
+} else {
+  Write-WatchLog "CDP down; no threads-profile chrome process running"
+}
+
+Start-Process -FilePath $chromeExe -ArgumentList @(
+  "--user-data-dir=$profileDir",
+  '--remote-debugging-port=9228',
+  '--start-maximized',
+  'https://www.threads.com/'
+)
+Start-Sleep -Seconds 10
+
+if (Probe-Cdp) { Write-WatchLog "relaunch OK; CDP :9228 up" }
+else           { Write-WatchLog "relaunch attempted; CDP :9228 STILL DOWN" }

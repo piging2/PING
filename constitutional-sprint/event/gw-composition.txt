@@ -1,0 +1,97 @@
+gateway/routes/ingest.js
+gateway/routes/events.js
+gateway/capability_authority.js
+gateway/bootstrap/gateway_runtime.js
+ping-runtime/evidence/evidence_authority.js
+ping-runtime/workers/canonical_workers.js
+ping-runtime/workers/intelligence_worker.js
+ping-runtime/business/business_emitters.js
+ping-runtime/canonicalization/canonicalization_service.js
+ping-runtime/embeddings/embedding_service.js
+ping-runtime/events/event_governance.js
+ping-runtime/events/unified_event_runtime.js
+ping-runtime/events/event_bridge.js
+ping-runtime/orchestration/event_to_mission_bridge.js
+ping-runtime/orchestration/mission_scheduler.js
+ping-runtime/orchestration/mission_runtime.js
+=== events route head ===
+﻿/**
+ * Events Routes
+ * 
+ * Bounded context for event query and creation endpoints.
+ * HTTP → EventReadAuthority/EventWriteAuthority → Result
+ */
+
+const express = require('express');
+const router = express.Router();
+const { asyncHandler } = require('../route_middleware');
+const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+function createEventRoutes(eventReadAuthority, eventRuntime, pool) {
+  router.get('/', asyncHandler('/events', async (req) => {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    // Tenant isolation on reads: an optional namespace filter scopes the query
+    // to one tenant's events. Namespace syntax is enforced (core::<name> or
+    // tenant::<id>); anything else is rejected.
+    const namespace = req.query.namespace;
+    if (namespace !== undefined && (typeof namespace !== 'string' || !/^(core|tenant)::[a-zA-Z0-9_-]+$/.test(namespace))) {
+      throw new Error('Invalid namespace filter');
+    }
+    let events = await eventReadAuthority.getAllEvents(limit, offset);
+    if ((!events || events.length === 0) && pool) {
+      const params = [limit, offset];
+      let sql = 'SELECT * FROM ping_events';
+      if (namespace) {
+        sql += ' WHERE namespace = $3';
+        params.push(namespace);
+      }
+      sql += ' ORDER BY timestamp DESC LIMIT $1 OFFSET $2';
+      const result = await pool.query(sql, params);
+      events = result.rows;
+    } else if (namespace && events) {
+      events = events.filter((e) => (e.namespace || e.NAMESPACE) === namespace);
+    }
+    return { events, count: events.length, limit, offset };
+  }));
+
+  router.get('/recent', asyncHandler('/events/recent', async (req) => {
+    const minutes = parseInt(req.query.minutes) || 60;
+    const limit = parseInt(req.query.limit) || 100;
+    let events = [];
+    try {
+      events = await eventReadAuthority.getRecentEvents(minutes, limit);
+    } catch (e) {}
+    if ((!events || events.length === 0) && pool) {
+      const since = new Date(constitutionalTimeAuthority.nowAsMillis() - minutes * 60 * 1000).toISOString();
+      const result = await pool.query('SELECT * FROM ping_events WHERE timestamp >= $1 ORDER BY timestamp DESC LIMIT $2', [since, limit]);
+      events = result.rows;
+    }
+    return { events, count: events.length, minutes, limit };
+  }));
+
+  router.get('/stats', asyncHandler('/events/stats', async (req) => {
+    let stats;
+    try {
+      stats = await eventReadAuthority.getEventStats();
+    } catch (e) {}
+    if ((!stats || !stats.total_events || stats.total_events === '0') && pool) {
+      const result = await pool.query(`SELECT COUNT(*) as total_events, COUNT(DISTINCT event_type) as event_types, MIN(timestamp) as oldest_event, MAX(timestamp) as newest_event FROM ping_events`);
+      const row = result.rows[0];
+      stats = {
+        total_events: row.total_events,
+        streams: row.total_events,
+        event_types: row.event_types,
+        oldest_event: row.oldest_event,
+        newest_event: row.newest_event
+      };
+    }
+    return { stats };
+  }));
+
+  router.get('/:stream', asyncHandler('/events/:stream', async (req) => {
+    const stream = req.params.stream;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    let events = await eventReadAuthority.getEventsByStream(stream, limit, offset);
+    if ((!events || events.length === 0) && pool) {

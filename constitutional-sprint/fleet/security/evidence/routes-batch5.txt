@@ -1,0 +1,260 @@
+########## customize route.ts (POST section) ##########
+     1	    approvedAt: string;
+     2	    eventId?: string;
+     3	  }[];
+     4	  appliedIntentIds: string[];
+     5	  unresolved: { intentId: string; reason: string }[];
+     6	  demoOwnerMode: boolean;
+     7	  demo: true;
+     8	}
+     9	
+    10	export async function GET(req: Request) {
+    11	  const url = new URL(req.url);
+    12	  const siteId = (url.searchParams.get("siteId") ?? "").trim();
+    13	  const view = url.searchParams.get("view") ?? "";
+    14	  if (!siteId || view !== "inspect") {
+    15	    return NextResponse.json(
+    16	      { ok: false, error: "Usage: ?siteId=<id>&view=inspect" },
+    17	      { status: 400 },
+    18	    );
+    19	  }
+    20	  try {
+    21	    const site = await loadCustomizedSite(siteId);
+    22	    const body: InspectView = {
+    23	      siteId,
+    24	      specDigest: site.specDigest,
+    25	      baseSpecDigest: site.baseSpecDigest,
+    26	      pageOrder: site.spec.pages.map((p) => ({
+    27	        pageSlug: p.slug,
+    28	        sections: p.sections.map((s) => ({
+    29	          id: s.id,
+    30	          component: s.component,
+    31	          hidden: s.presentation.hidden === true,
+    32	        })),
+    33	      })),
+    34	      directives: (site.presentationIntent?.directives ?? []).map((d) => ({
+    35	        intentId: d.intentId,
+    36	        siteIntent: d.siteIntent,
+    37	        proposalDigest: d.proposal.proposalDigest,
+    38	        approvedBy: d.approval.approvedBy,
+    39	        approvedAt: d.approval.approvedAt,
+    40	        eventId: d.approval.eventId,
+    41	      })),
+    42	      appliedIntentIds: site.appliedIntentIds,
+    43	      unresolved: site.unresolved,
+    44	      demoOwnerMode: process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1",
+    45	      demo: true,
+    46	    };
+    47	    return NextResponse.json({ ok: true, ...body });
+    48	  } catch (e) {
+    49	    return NextResponse.json(
+    50	      {
+    51	        ok: false,
+    52	        error: e instanceof Error ? e.message : String(e),
+    53	        demo: true,
+    54	      },
+    55	      { status: 404 },
+    56	    );
+    57	  }
+    58	}
+    59	
+    60	interface ActionBody {
+    61	  action?: string;
+    62	  siteId?: string;
+    63	  text?: string;
+    64	  proposal?: SitePatchBody;
+    65	  intentId?: string;
+    66	}
+    67	
+    68	/** Parse -> resolve -> propose. Stateless; commits nothing. */
+    69	async function handleParse(siteId: string, text: string) {
+    70	  const parsed = parseCustomizationIntent(text);
+    71	  if (isUnsupported(parsed)) {
+    72	    return NextResponse.json(
+    73	      { ok: false, code: "unsupported", error: parsed.reason, demo: true },
+    74	      { status: 400 },
+    75	    );
+    76	  }
+    77	  let site;
+    78	  try {
+    79	    site = await loadCustomizedSite(siteId);
+    80	  } catch (e) {
+    81	    return NextResponse.json(
+    82	    demo: true,
+    83	    demoOwnerMode: true,
+    84	  });
+    85	}
+    86	
+    87	export async function POST(req: Request) {
+    88	  let body: ActionBody;
+    89	  try {
+    90	    body = (await req.json()) as ActionBody;
+    91	  } catch {
+    92	    return NextResponse.json({ ok: false, error: "Body must be JSON.", demo: true }, { status: 400 });
+    93	  }
+    94	  const action = body.action ?? "";
+    95	  const siteId = (body.siteId ?? "").trim();
+    96	  if (!siteId) {
+    97	    return NextResponse.json({ ok: false, error: "siteId is required.", demo: true }, { status: 400 });
+    98	  }
+    99	  if (action === "parse") {
+   100	    const text = (body.text ?? "").trim();
+   101	    if (!text) {
+   102	      return NextResponse.json({ ok: false, error: "text is required.", demo: true }, { status: 400 });
+   103	    }
+   104	    return handleParse(siteId, text);
+   105	  }
+   106	  if (action === "approve") {
+   107	    const text = (body.text ?? "").trim();
+   108	    if (!text) {
+   109	      return NextResponse.json({ ok: false, error: "text is required.", demo: true }, { status: 400 });
+   110	    }
+   111	    if (!body.proposal) {
+   112	      return NextResponse.json(
+   113	        {
+   114	          ok: false,
+   115	          code: "no_proposal",
+   116	          error:
+   117	            "Approve requires the exact proposal the owner reviewed (from parse). " +
+   118	            "Nothing is applied without an explicit, digest-verified approval.",
+   119	          demo: true,
+   120	        },
+   121	        { status: 400 },
+   122	      );
+   123	    }
+   124	    return handleApprove(req, siteId, text, body.proposal);
+   125	  }
+   126	  if (action === "clear") {
+   127	    const intentId = (body.intentId ?? "").trim();
+   128	    if (!intentId) {
+   129	      return NextResponse.json({ ok: false, error: "intentId is required.", demo: true }, { status: 400 });
+   130	    }
+   131	    return handleClear(req, siteId, intentId);
+   132	  }
+   133	  return NextResponse.json(
+   134	    { ok: false, error: "Unknown action. Use parse, approve, or clear.", demo: true },
+   135	    { status: 400 },
+   136	  );
+   137	}
+########## overrides route.ts ##########
+   100	} from "./owner-context";
+   101	
+   102	export const dynamic = "force-dynamic";
+   103	export const runtime = "nodejs";
+   104	
+   105	const NOT_REAL_AUTH =
+   106	  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+   107	  "this mode is for localhost/private-network demonstration only.";
+   108	
+   109	/**
+   110	 * Demo-owner-mode gate (same contract as the customize approval API):
+   111	 * refuse with a typed 403 unless the demo explicitly opts in via
+   112	 * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
+   113	 * localhost/private-network host. Default off; absent/false => fail closed
+   114	 * with { ok:false, code:"demo_owner_mode_required" }, before any I/O.
+   115	 */
+   116	function demoDenied(request: NextRequest) {
+   117	  const enabled = isDemoOwnerModeEnabled();
+   118	  const host = request.headers.get("host") ?? "";
+   119	  const privateNet = isPrivateHost(host);
+   120	  if (!enabled || !privateNet) {
+   121	    return NextResponse.json(
+   122	      {
+   123	        ok: false,
+   124	        code: "demo_owner_mode_required",
+   125	        error:
+   126	          "Owner overrides require DEV/DEMO OWNER MODE " +
+   127	          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+   128	          NOT_REAL_AUTH,
+   129	        demoOwnerMode: enabled,
+   130	        hostPrivate: privateNet,
+   131	      },
+   132	      { status: 403 },
+   133	    );
+   134	  }
+   135	  return null;
+   136	}
+   137	
+   138	/** Body keys that claim a tenant identity. Only the route path may do that. */
+   139	const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
+   140	
+   141	function tenantMismatchResponse(ctx: OwnerContext, key: string, claimed: string) {
+   142	  return NextResponse.json(
+   143	    {
+   144	      ...ctx.responseLabel(),
+   145	      ok: false,
+   146	      code: "tenant_mismatch",
+   147	      error:
+   148	        "Tenant identity comes from the request route, not the request body: " +
+   149	        "the body claimed tenant \"" +
+   150	        claimed +
+   151	        "\" under key \"" +
+   152	        key +
+   153	        "\" while the route serves tenant \"" +
+   154	        ctx.tenantId +
+   155	        "\". The request was refused; nothing was served or written for the claimed tenant.",
+   156	      tenantId: ctx.tenantId,
+   157	      rejectedKey: key,
+   158	    },
+   159	    { status: 400 },
+   160	  );
+   161	}
+   162	
+   163	export async function POST(
+   164	  request: NextRequest,
+   165	  { params }: { params: Promise<{ objectId: string }> },
+   166	) {
+   167	  const { objectId } = await params;
+   168	
+   169	  // G4: the tenant comes from the trusted route path. The object id IS the
+   170	  // site id (listObjectIds serves the PING-backed site projections), so the
+   171	  // OwnerContext is constructed server-side here, before any I/O, through
+   172	  // the single owner-context seam: createOwnerContext (DemoOwnerContext
+   173	  // today; a PING identity/capability implementation later, by changing
+   174	  // the factory body alone - this route does not change).
+   175	  // Even the invalid-tenant refusal is stamped with the seam's refusal
+   176	  // label: no response leaves this route unlabeled.
+   177	  let ctx: OwnerContext;
+   178	  try {
+   179	    ctx = await createOwnerContext(objectId);
+   180	  } catch (err) {
+   181	    if (err instanceof TenantContextError) {
+   182	      return NextResponse.json(
+   183	        {
+   184	          ...ownerContextRefusalLabel(),
+   185	          ok: false,
+   186	          code: "invalid_tenant",
+   187	          error:
+   188	            "Refusing to act: the route object id is not a valid tenant id. " +
+   189	            "Tenant ids are DNS-safe slugs.",
+   190	        },
+   191	        { status: 400 },
+   192	      );
+   193	    }
+   194	    throw err;
+   195	  }
+   196	
+   197	  // Demo-owner-mode gate: BOTH stages (propose and approve) require the
+   198	  // demo env flag on a localhost/private-network host. Visitors fail closed
+   199	  // with 403 demo_owner_mode_required before any object I/O; nothing is
+   200	  // written. (Invalid-tenant refusal above stays first: it is pure, before
+   201	  // any I/O, and never serves another tenant's object.)
+   202	  const gate = demoDenied(request);
+   203	  if (gate) return gate;
+   204	
+   205	  if (!loadObjectView(objectId)) {
+   206	    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
+   207	  }
+   208	
+   209	  let body: unknown = null;
+   210	  try {
+   211	    body = await request.json();
+   212	  } catch {
+   213	    body = null;
+   214	  }
+   215	  const record =
+   216	    typeof body === "object" && body !== null ? (body as Record<string, unknown>) : ({} as Record<string, unknown>);
+   217	
+   218	  // Reject body-supplied tenant identity that disagrees with the route.
+   219	  for (const key of TENANT_CLAIM_KEYS) {
+   220	    const claimed = record[key];

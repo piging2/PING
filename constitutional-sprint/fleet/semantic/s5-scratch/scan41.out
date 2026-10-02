@@ -1,0 +1,83 @@
+=== tool_authority.js ===
+388 gateway/tool_authority.js
+/**
+ * Tool Authority
+ * 
+ * Refactor 6 — Tool Authority for Inference
+ * 
+ * Pipeline:
+ * Mission → Tool Authority → Tool Manifest → Inference
+ * 
+ * Separates tool management from Inference Authority.
+ * Tools are registered, permission-checked, and executed through this authority.
+ */
+
+const { constitutionalTimeAuthority } = require('../ping-runtime/authorities/constitutional_time_authority.js');
+const { deterministicIdAuthority } = require('../ping-runtime/authorities/deterministic_id_authority');
+
+class ToolAuthority {
+  constructor(postgresPool, permissionAuthority) {
+    this._postgres = postgresPool;
+    this._permissionAuthority = permissionAuthority;
+    this._tools = new Map(); // tool_id → tool descriptor
+    this._toolCategories = new Map(); // category → Set<tool_id>
+  }
+
+  /**
+   * Initialize tool authority
+   */
+  async initialize() {
+    console.log('[ToolAuthority] Initializing tool authority');
+
+    // Load tool descriptors
+    await this._loadToolDescriptors();
+
+    console.log('[ToolAuthority] Tool authority initialized');
+  }
+
+  /**
+   * Register tool
+   * 
+   * @param {Object} toolDescriptor - Tool descriptor
+   */
+  registerTool(toolDescriptor) {
+    console.log(`[ToolAuthority] Registering tool: ${toolDescriptor.tool_id}`);
+
+    this._tools.set(toolDescriptor.tool_id, toolDescriptor);
+
+    // Add to category
+    const category = toolDescriptor.category || 'general';
+    if (!this._toolCategories.has(category)) {
+      this._toolCategories.set(category, new Set());
+    }
+    this._toolCategories.get(category).add(toolDescriptor.tool_id);
+  }
+
+  /**
+   * Get tool manifest for mission
+   * 
+   * @param {Object} mission - Mission descriptor
+   * @returns {Array} Tool manifest
+   */
+  async getToolManifest(mission) {
+    console.log(`[ToolAuthority] Getting tool manifest for mission: ${mission.mission_id}`);
+
+    const toolManifest = [];
+
+    // Get allowed tools from mission
+    const allowedToolIds = mission.allowed_tools || [];
+    const allowedCategories = mission.allowed_tool_categories || [];
+
+    // Get tools by category
+    for (const category of allowedCategories) {
+      const toolIds = this._toolCategories.get(category) || new Set();
+      for (const toolId of toolIds) {
+        if (!allowedToolIds.includes(toolId)) {
+          allowedToolIds.push(toolId);
+        }
+      }
+    }
+
+    // Build tool manifest
+    for (const toolId of allowedToolIds) {
+=== tool_authority importers ===

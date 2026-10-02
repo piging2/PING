@@ -1,0 +1,31 @@
+ping-runtime/canonicalization/canonicalization_service.js:40:class CanonicalizationService {
+ping-runtime/canonicalization/canonicalization_service.js:76:  authorizeNamespace(source, requested) {
+ping-runtime/canonicalization/canonicalization_service.js:109:  async canonicalizeAndEmit({
+ping-runtime/canonicalization/canonicalization_service.js:120:    if (!this._eventRuntime) throw new Error('CanonicalizationService: no eventRuntime configured');
+ping-runtime/canonicalization/canonicalization_service.js:121:    if (!source || typeof source !== 'string') throw new Error('CanonicalizationService: source (string) required');
+ping-runtime/canonicalization/canonicalization_service.js:122:    if (!eventType || typeof eventType !== 'string') throw new Error('CanonicalizationService: eventType (string) required');
+ping-runtime/canonicalization/canonicalization_service.js:123:    if (typeof payload !== 'object' || payload === null) throw new Error('CanonicalizationService: payload (object) required');
+ping-runtime/canonicalization/canonicalization_service.js:176:    return this.canonicalizeAndEmit({
+ping-runtime/canonicalization/canonicalization_service.js:190:module.exports = { CanonicalizationService, DEFAULT_NAMESPACE, CANONICAL_VERSION };
+gateway/routes/ingest.js:6: * No business logic lives here. The boundary is the CanonicalizationService,
+gateway/routes/ingest.js:48:      const auth = canonicalizationService.authorizeNamespace(body.source, body.namespace);
+gateway/routes/ingest.js:53:      const result = await canonicalizationService.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:2: * Canonical Boundary Tests — POST /ingest + CanonicalizationService
+gateway/test_ingest_boundary.js:19:const { CanonicalizationService, DEFAULT_NAMESPACE, CANONICAL_VERSION } = require('../ping-runtime/canonicalization/canonicalization_service');
+gateway/test_ingest_boundary.js:61:  const service = new CanonicalizationService({ eventRuntime: runtime, namespaces });
+gateway/test_ingest_boundary.js:67:test('canonicalizeAndEmit produces a verified canonical envelope', async () => {
+gateway/test_ingest_boundary.js:69:  const result = await service.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:90:  const result = await service.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:105:  const first = await service.canonicalizeAndEmit(input);
+gateway/test_ingest_boundary.js:106:  const second = await service.canonicalizeAndEmit(input);
+gateway/test_ingest_boundary.js:113:  const a = await service.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:118:  const b = await service.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:128:  const a = await service.canonicalizeAndEmit({ source: 's', eventType: 'REVIEW_RECEIVED', payload: { review_id: 'x' } });
+gateway/test_ingest_boundary.js:129:  const b = await service.canonicalizeAndEmit({ source: 's', eventType: 'REVIEW_RECEIVED', payload: { review_id: 'y' } });
+gateway/test_ingest_boundary.js:135:  const result = await service.canonicalizeAndEmit({ source: 'unmapped-source', eventType: 'OBSERVATION_CREATED', payload: { id: 1 } });
+gateway/test_ingest_boundary.js:142:  const result = await service.canonicalizeAndEmit({ source: 'review-authority', eventType: 'REVIEW_RECEIVED', payload: { review_id: 'r3' } });
+gateway/test_ingest_boundary.js:149:  const result = await service.canonicalizeAndEmit({ source: 'review-authority', eventType: 'REVIEW_RECEIVED', payload: { review_id: 'r4' }, namespace: 'core::system' });
+gateway/test_ingest_boundary.js:155:  await assert.rejects(() => service.canonicalizeAndEmit({
+gateway/test_ingest_boundary.js:160:test('authorizeNamespace: mapped source → authorized with mapped namespace', async () => {
+gateway/test_ingest_boundary.js:162:  const auth = service.authorizeNamespace('review-authority');
+DONE

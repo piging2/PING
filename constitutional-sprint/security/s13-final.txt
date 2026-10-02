@@ -1,0 +1,52 @@
+===== L1: events repository backend =====
+120:class InMemoryEventRepository implements EventRepository {
+200:let repository: EventRepository = new InMemoryEventRepository();
+===== L2: claim store backend =====
+3: * one JSON file per resource under data/fyd-claims/<resourceId>.json,
+12:import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+24:  const override = process.env.FYD_CLAIM_DIR;
+26:  return join(process.cwd(), "data", "fyd-claims");
+33:  return join(claimDir(), resourceId + ".json");
+58:    const raw = readFileSync(path, "utf8");
+75:  writeFileSync(tmp, JSON.stringify(claim, null, 2), "utf8");
+===== L3: src/app/dev page =====
+objects
+===== L4: any leftover TODO/FIXME security markers =====
+===== L5: fetch/axios calls to external URLs with hardcoded hosts =====
+src/lib/infrastructure/auth-manager.ts:136:        'https://www.googleapis.com/auth/gmail.send',
+src/lib/infrastructure/auth-manager.ts:137:        'https://www.googleapis.com/auth/drive.file',
+src/lib/infrastructure/auth-manager.ts:138:        'https://www.googleapis.com/auth/contacts',
+src/lib/infrastructure/auth-manager.ts:139:        'https://www.googleapis.com/auth/spreadsheets',
+src/lib/__tests__/media-audit-classification.test.ts:181:          original: 'https://blob.vercel-storage.com/test.jpg',
+src/lib/__tests__/media-audit-classification.test.ts:186:        url: 'https://blob.vercel-storage.com/test.jpg',
+src/lib/__tests__/media-audit-classification.test.ts:218:          original: 'https://wrong-url.com/test.jpg',
+src/lib/__tests__/media-audit-classification.test.ts:223:        url: 'https://blob.vercel-storage.com/test.jpg',
+src/lib/__tests__/media-authority-route.test.ts:13:process.env.KV_REST_API_URL = 'https://test.redis.com';
+src/lib/__tests__/assignment-store-kv.test.ts:86:    process.env.KV_REST_API_URL = 'https://manual.upstash.io';
+src/lib/__tests__/assignment-store-kv.test.ts:93:      url: 'https://manual.upstash.io',
+src/lib/__tests__/assignment-store-kv.test.ts:99:    process.env.KV_REST_API__KV_REST_API_URL = 'https://integration.upstash.io';
+src/lib/__tests__/assignment-store-kv.test.ts:106:      url: 'https://integration.upstash.io',
+src/lib/__tests__/assignment-store-kv.test.ts:112:    process.env.KV_REST_API_URL = 'https://manual.upstash.io';
+src/lib/__tests__/assignment-store-kv.test.ts:114:    process.env.KV_REST_API__KV_REST_API_URL = 'https://integration.upstash.io';
+===== L6: package.json scripts (anything exfil-ish?) =====
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "jest",
+    "test:compiler": "jest --testPathPattern=compiler",
+    "test:media-invariant": "tsx scripts/test-media-invariant.ts",
+    "test:oauth": "jest --testPathPatterns=oauth",
+    "images": "node scripts/image-pipeline.mjs",
+    "qa:images": "node scripts/image-qa.mjs",
+    "bootstrap:kv": "tsx scripts/bootstrap-kv-staging.ts",
+    "reconcile:hashes": "tsx scripts/reconcile-media-hashes.ts"
+  },
+  "dependencies": {
+    "@atproto/api": "0.20.44",
+    "@fedify/fedify": "2.3.7",
+    "@studio-freight/lenis": "^1.0.42",
+    "@upstash/redis": "^1.34.4",
+    "@vercel/blob": "^2.8.0",
+    "class-variance-authority": "^0.7.1",

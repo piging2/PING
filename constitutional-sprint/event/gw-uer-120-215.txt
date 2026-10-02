@@ -1,0 +1,96 @@
+    }
+
+    // 4. Build canonical event (namespace resolved in step 3)
+    //    Confidence is optional — producers that compute it pass it via options.metadata.confidence.
+    //    The spine carries but does NOT compute confidence; each worker re-evaluates at its hop.
+    const event = {
+      event_id: eventId,
+      event_type: eventType,
+      source,
+      namespace,
+      timestamp: constitutionalTimeAuthority.nowAsISOString(),
+      payload,
+      metadata: {
+        schema_version: '1.0.0',
+        namespace,
+        causation_id: options.causation_id || null,
+        correlation_id: options.correlation_id || eventId,
+        ...(options.metadata && options.metadata.confidence != null
+          ? { confidence: options.metadata.confidence }
+          : {}),
+        ...options.metadata,
+      },
+    };
+
+    // 5. Persist
+    let isDuplicate = false;
+    if (this._pool) {
+      try {
+        const result = await this._pool.query(
+          `INSERT INTO ping_events (event_id, event_type, source, timestamp, payload, metadata, namespace)
+           VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (event_id) DO NOTHING`,
+          [event.event_id, event.event_type, event.source, event.timestamp,
+           JSON.stringify(event.payload), JSON.stringify(event.metadata), event.namespace]
+        );
+        // Only count actual inserts, not ON CONFLICT DO NOTHING no-ops
+        if ((result.rowCount || 0) > 0) {
+          this._stats.persisted++;
+        } else {
+          this._stats.deduplicated++;
+          isDuplicate = true;
+        }
+      } catch (err) {
+        this._stats.failed++;
+        return { status: 'error', error: `Persist failed: ${err.message}`, eventId };
+      }
+    }
+
+    // 5b. Replay idempotency: a duplicate delivery converges on the already-stored
+    // row and MUST NOT re-trigger handlers or integrations. Redelivery is safe
+    // exactly because this early return suppresses all downstream side effects.
+    if (isDuplicate) {
+      return { status: 'ok', eventId, deduplicated: true, event };
+    }
+
+    // 6. Dispatch to handlers (first delivery only)
+    const handlers = this._handlers.get(eventType) || [];
+    for (const handler of handlers) {
+      try {
+        await handler(event);
+        this._stats.dispatched++;
+      } catch (err) {
+        console.error(`[EventRuntime] Handler failed for ${eventType}:`, err.message);
+      }
+    }
+
+    // 7. Route to integrations
+    if (this._integrationManager) {
+      try {
+        await this._integrationManager.emit(event.event_type, event.payload);
+      } catch (err) {
+        console.error(`[EventRuntime] Integration routing failed:`, err.message);
+      }
+    }
+
+    this._stats.emitted++;
+    return { status: 'ok', eventId, event };
+  }
+
+  /**
+   * Subscribe to an event type.
+   * @param {string} eventType — event type to listen for
+   * @param {function} handler — async function(event)
+   */
+  on(eventType, handler) {
+    if (!this._handlers.has(eventType)) {
+      this._handlers.set(eventType, []);
+    }
+    this._handlers.get(eventType).push(handler);
+  }
+
+  /**
+   * Query events.
+   */
+  async query(options = {}) {
+    if (!this._pool) return { status: 'error', error: 'No pool' };
+

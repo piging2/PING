@@ -1,0 +1,118 @@
+### (a) adapter_compiler existence
+adapter_compiler_v2.js
+structural_index.js
+rc=0
+/home/nolan/ping/gateway/adapter_compiler_v2.js
+### (b) ask-fyd.test.ts grantsForViewer usage
+12:import { grantsForViewer } from "../../../lib/ping/grants";
+121:    grants: grantsForViewer({ viewerId: ALICE, controllerId: ALICE, isSite: true }),
+304:    const grants = grantsForViewer({ viewerId: BOB, controllerId: ALICE, isSite: true });
+312:    const grants = grantsForViewer({ viewerId: ALICE, controllerId: ALICE, isSite: true });
+330:    const grants = grantsForViewer({ viewerId: ALICE, controllerId: ALICE, isSite: false });
+385:      grants: grantsForViewer({ viewerId: BOB, controllerId: ALICE, isSite: true }),
+### (c1) replay-determinism-1000x.test.ts imports+asserts
+/**
+ * FCA-12: 1000x Determinism Test
+ * 
+ * Verifies that replay produces identical results across 1000 executions.
+ * Expected: 1000/1000 witness matches
+ */
+
+import { ReplayEventStream } from '../../runtime/replay/replay_event_stream';
+import { CanonicalEventEnvelope } from '../../runtime/replay/canonical_event_envelope';
+import { DeterministicReplayEngine } from '../../runtime/replay/deterministic_replay_engine';
+import * as fs from 'fs';
+import * as path from 'path';
+
+async function run1000xDeterminismTest() {
+  console.log('FCA-12: 1000x Determinism Test\n');
+  
+  const corpusFiles = [
+    'minimal_replay.json',
+    'multi_event_replay.json',
+    'lineage_replay.json',
+    'unicode_replay.json'
+  ];
+  
+  let totalMatches = 0;
+  let totalTests = 0;
+  
+  for (const corpusFile of corpusFiles) {
+    const corpusPath = path.join(__dirname, '../corpus', corpusFile);
+    const corpus = JSON.parse(fs.readFileSync(corpusPath, 'utf-8'));
+    
+    console.log(`Testing corpus: ${corpus.name}`);
+    
+    const events = corpus.event_stream.map((e: any) => new CanonicalEventEnvelope(e));
+    const eventStream = new ReplayEventStream(events);
+    const engine = new DeterministicReplayEngine();
+    
+    // Run 1000 times
+    const results: any[] = [];
+    for (let i = 0; i < 1000; i++) {
+      const result = engine.replay(eventStream);
+      results.push(result);
+    }
+    
+    // Verify all results are identical
+    const firstResult = results[0];
+    let matches = 0;
+    
+    for (let i = 1; i < results.length; i++) {
+      if (results[i].witness_root.witness_root === firstResult.witness_root.witness_root &&
+          results[i].witness_root.leaf_count === firstResult.witness_root.leaf_count &&
+### (c2) replay_determinism.test.js imports
+/**
+ * Phase 3.22 — Certification Test: Replay Determinism
+ * 
+ * Asserts that same inputs produce same outputs (deterministic behavior).
+ * 
+ * Test:
+ * - Execute authority with same inputs twice
+ * - Assert outputs are identical
+ * - Verify deterministic ID generation
+ */
+
+const { deterministicIdAuthority } = require('../../ping-runtime/authorities/deterministic_id_authority');
+const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+
+/**
+ * Test replay determinism
+ */
+function testReplayDeterminism() {
+  console.log('[Replay Determinism Test] Starting replay determinism check...\n');
+
+  let allPassed = true;
+  const results = [];
+
+  // Test 1: Deterministic ID generation with same inputs
+  const input1 = {
+    node_id: 'test-node-1',
+    timestamp: 1234567890,
+  };
+
+  const id1 = deterministicIdAuthority.generateIdFromObject(input1);
+  const id2 = deterministicIdAuthority.generateIdFromObject(input1);
+
+  if (id1 === id2) {
+    console.log('✅ Deterministic ID generation - PASSED');
+    results.push({ test: 'deterministic ID', passed: true });
+  } else {
+    console.log('❌ Deterministic ID generation - FAILED');
+    console.log(`   First ID: ${id1}`);
+    console.log(`   Second ID: ${id2}`);
+    allPassed = false;
+### (c3) what do certification tests require (real modules?)
+import { CanonicalEventEnvelope } from '../../runtime/replay/canonical_event_envelope';
+import { DeterministicReplayEngine } from '../../runtime/replay/deterministic_replay_engine';
+import { InvariantRunner } from '../../runtime/replay/invariant_runner';
+import { ReplayEventStream } from '../../runtime/replay/replay_event_stream';
+import { WitnessAuthority } from '../../runtime/replay/witness_authority';
+### (d) adapter package.json top-level jest key
+top-level keys with jest: []
+has jest config key: False
+### refresh assert counts (node:assert)
+diff: asserts=16
+conflict: asserts=16
+dependency-index: asserts=15
+website-observe: asserts=19

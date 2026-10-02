@@ -1,0 +1,46 @@
+# PING gateway image: converged source (event authority convergence, 2026-09-19).
+# Remediated per Phase 19 ARM64 investigation (2026-09-19):
+#   - Multi-stage build: the toolchain (build-base, python3) lives only in the
+#     builder stage and never ships in the runtime image.
+#   - CXXFLAGS="-std=c++20": tree-sitter@0.21.1's binding.gyp pins -std=c++17,
+#     but Node 24's V8 headers require C++20 (proven live on musl/aarch64,
+#     Phase 19 Trial A). Required on ANY platform and ANY libc; without it
+#     the tree-sitter node-gyp build fails.
+#   - Single "npm install" step (package-lock.json is honored when present);
+#     the old stray second "npm install pg express" is folded into it.
+#   - Identity labels baked in at build time via --build-arg:
+#       SOURCE_SHA, BUILD_ID, BUILD_TIMESTAMP, SCHEMA_VERSION,
+#       EVENT_IDENTITY_VERSION.
+# Promotion target: linux/arm64 on node:24-alpine (stays on Alpine per the
+# Phase 19 recommendation; the glibc switch buys only the Temporal dlopen,
+# which is out of scope for the gateway package set).
+FROM node:24-alpine AS builder
+RUN apk add --no-cache build-base python3 git
+WORKDIR /app
+COPY gateway/package*.json ./
+ENV CXXFLAGS="-std=c++20"
+RUN npm install
+
+FROM node:24-alpine
+RUN apk add --no-cache git
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+
+ARG SOURCE_SHA="unknown"
+ARG BUILD_ID="unknown"
+ARG BUILD_TIMESTAMP="unknown"
+ARG SCHEMA_VERSION="unknown"
+ARG EVENT_IDENTITY_VERSION="unknown"
+
+LABEL org.opencontainers.image.title="ping-gateway" \
+      org.opencontainers.image.revision="${SOURCE_SHA}" \
+      org.opencontainers.image.created="${BUILD_TIMESTAMP}" \
+      ping.build.id="${BUILD_ID}" \
+      ping.schema.version="${SCHEMA_VERSION}" \
+      ping.event_identity.version="${EVENT_IDENTITY_VERSION}" \
+      ping.source.tree="constitutional-convergence-authority-law"
+
+EXPOSE 8080
+ENV NODE_ENV=production
+CMD ["node", "gateway/server.js"]

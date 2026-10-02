@@ -1,0 +1,162 @@
+./gateway/test_commissioning.js:202:  const eventRuntime = new UnifiedEventRuntime({ pool });
+./gateway/test_correlation_chain.js:560:  const runtime = new UnifiedEventRuntime({ pool: mockPool });
+./gateway/test_kernel_pipeline.js:163:  const eventRuntime = new UnifiedEventRuntime({ pool });
+./gateway/test_slice3a_convergence.js:138:  const er = new UnifiedEventRuntime({ eventGovernance: governance() });
+./gateway/test_slice3a_convergence.js:146:  const er = new UnifiedEventRuntime({ eventGovernance: governance() });
+./gateway/test_confidence_convergence.js:100:  const eventRuntime = new UnifiedEventRuntime({ pool });
+./gateway/test_ingest_boundary.js:60:  const runtime = new UnifiedEventRuntime({ eventValidator: new MockValidator(ACCEPTED_TYPES) });
+./gateway/test_phase0_fixes.js:304:  const eventRuntime = new UnifiedEventRuntime({ pool });
+./gateway/test_decision_graph.js:207:    const runtime = new UnifiedEventRuntime();
+./gateway/test_decision_graph.js:222:    const runtime = new UnifiedEventRuntime();
+=== canon svc 76-190 ===
+class CanonicalizationService {
+  /**
+   * @param {object} options
+   * @param {object} options.eventRuntime — UnifiedEventRuntime instance
+   * @param {object} [options.namespaces] — source → namespace map (e.g. { 'review-authority': 'tenant::hpp' })
+   * @param {string} [options.defaultNamespace] — fallback namespace (default 'core::owner')
+   */
+  constructor(options = {}) {
+    this._eventRuntime = options.eventRuntime || null;
+    this._namespaces = options.namespaces || {};
+    this._defaultNamespace = options.defaultNamespace || DEFAULT_NAMESPACE;
+  }
+
+  /**
+   * Resolve and validate the namespace for a source.
+   * Priority: explicit request > per-source map > default.
+   */
+  resolveNamespace(source, requested) {
+    const namespace = requested || this._namespaces[source] || this._defaultNamespace;
+    if (!NAMESPACE_RE.test(namespace)) {
+      throw new Error(`Invalid namespace: '${namespace}' (must be core::<name> or tenant::<id>)`);
+    }
+    return namespace;
+  }
+
+  /**
+   * Authorize a producer's namespace claim at the boundary (audit §7 #1).
+   * Producers' allowed namespaces = the per-source map + explicit override,
+   * resolved by the same rule as resolveNamespace. This is the guard decision
+   * (authorized: true/false) the boundary route uses before canonicalizing;
+   * it wraps resolveNamespace so resolution + validation have exactly one owner.
+   *
+   * @param {string} source — producing source/authority ID
+   * @param {string} [requested] — explicit namespace override (optional)
+   * @returns {{authorized: true, namespace: string} | {authorized: false, reason: string}}
+   */
+  authorizeNamespace(source, requested) {
+    try {
+      const namespace = this.resolveNamespace(source, requested);
+      return { authorized: true, namespace };
+    } catch (err) {
+      return { authorized: false, reason: err.message };
+    }
+  }
+
+  /**
+   * Derive a deterministic logical identity, stripping volatile timestamp
+   * fields from the payload so retries never produce duplicate IDs.
+   */
+  _logicalIdentity(payload, logicalId) {
+    if (logicalId) return logicalId;
+    const stable = { ...payload };
+    for (const field of VOLATILE_FIELDS) delete stable[field];
+    return JSON.stringify(stable);
+  }
+
+  /**
+   * The canonical boundary. Every producer calls this.
+   * @param {object} input
+   * @param {string} input.source — producing source/authority ID
+   * @param {string} input.eventType — event type (validated by EventValidator)
+   * @param {object} input.payload — event data
+   * @param {string} [input.namespace] — explicit namespace override
+   * @param {string} [input.logicalId] — explicit logical identity (defaults to timestamp-stripped payload)
+   * @param {number} [input.confidence] — default 0.5 (observations are not knowledge)
+   * @param {array} [input.evidence] — evidence event IDs / references
+   * @param {string} [input.lifecycleStage] — 'observation' | 'candidate' | 'knowledge' (default 'observation')
+   * @param {object} [input.options] — passthrough to eventRuntime.emit (causation_id, correlation_id, metadata)
+   */
+  async canonicalizeAndEmit({
+    source,
+    eventType,
+    payload,
+    namespace,
+    logicalId,
+    confidence,
+    evidence,
+    lifecycleStage,
+    options = {},
+  }) {
+    if (!this._eventRuntime) throw new Error('CanonicalizationService: no eventRuntime configured');
+    if (!source || typeof source !== 'string') throw new Error('CanonicalizationService: source (string) required');
+    if (!eventType || typeof eventType !== 'string') throw new Error('CanonicalizationService: eventType (string) required');
+    if (typeof payload !== 'object' || payload === null) throw new Error('CanonicalizationService: payload (object) required');
+
+    const ns = this.resolveNamespace(source, namespace);
+    const lifecycle = lifecycleStage || 'observation';
+
+    const envelope = createCanonicalObject({
+      kind: eventType,
+      payload,
+      authority: source,
+      options: {
+        namespace: ns,
+        confidence: confidence === undefined ? 0.5 : confidence,
+        metadata: {
+          canonical_version: CANONICAL_VERSION,
+          lifecycle_stage: lifecycle,
+          evidence: evidence || [],
+        },
+      },
+    });
+
+    const result = await this._eventRuntime.emit(eventType, source, payload, {
+      ...options,
+      namespace: ns,
+      logical_id: this._logicalIdentity(payload, logicalId),
+      metadata: {
+        canonical_object_id: envelope.id,
+        canonical_hash: envelope.canonical_hash,
+        canonical_version: CANONICAL_VERSION,
+        lifecycle_stage: lifecycle,
+        evidence: evidence || [],
+        // Forward confidence from producer into event metadata so downstream
+        // workers and projection subscribers can read it without recomputing.
+        confidence: confidence === undefined ? 0.5 : confidence,
+        ...(options.metadata || {}),
+      },
+    });
+
+    return {
+      ...result,
+      objectId: envelope.id,
+      canonicalHash: envelope.canonical_hash,
+      canonicalVersion: CANONICAL_VERSION,
+      namespace: ns,
+      envelope,
+      verified: verifyCanonicalObject(envelope),
+    };
+  }
+
+  /**
+   * Duck-typed emit for existing producers that call runtime.emit(eventType, source, payload, options).
+   * Allows emitters/workers to be pointed at this service without signature changes.
+   */
+  async emit(eventType, source, payload, options = {}) {
+    return this.canonicalizeAndEmit({
+      source,
+      eventType,
+      payload,
+      namespace: options.namespace,
+      logicalId: options.logicalId,
+      confidence: options.confidence,
+      evidence: options.evidence,
+      lifecycleStage: options.lifecycleStage,
+      options,
+    });
+  }
+}
+
+module.exports = { CanonicalizationService, DEFAULT_NAMESPACE, CANONICAL_VERSION };

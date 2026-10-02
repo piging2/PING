@@ -1,0 +1,177 @@
+===== G1: likes storage backend =====
+/**
+ * Likes store (server-only).
+ *
+ * A like is a durable PING signal: the viewer liked a business circle
+ * (object). Likes live in data/fyd-likes/local.json, a single file keyed
+ * by object id:
+ *   { version: 1, liked: { [objectId]: { likedAt: string } } }
+ *
+ * Demo-local viewer. Real user identity is a separate gate; this store
+ * proves the signal shape. Until identity exists there is exactly one
+ * viewer ("local"), so this module never exposes other viewers and never
+ * lists all likes.
+ *
+ * All commands fail closed: malformed ids and unknown object ids are
+ * rejected with a typed error and nothing is written.
+ *
+ * FYD_LIKES_DIR env override exists so tests can use a temp directory.
+ */
+
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { listObjectIds } from "./view";
+
+export class LikeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LikeError";
+  }
+}
+
+interface LikeEntry {
+  likedAt: string;
+}
+
+interface LikesFile {
+  version: 1;
+  liked: Record<string, LikeEntry>;
+}
+
+const OBJECT_ID_PATTERN = /^[a-z0-9-]+$/;
+
+function likesDir(): string {
+  const override = process.env.FYD_LIKES_DIR;
+  if (override) return override;
+  return join(process.cwd(), "data", "fyd-likes");
+}
+
+function likesPath(): string {
+  return join(likesDir(), "local.json");
+}
+
+function emptyFile(): LikesFile {
+  return { version: 1, liked: {} };
+}
+
+function isValidFile(v: unknown): v is LikesFile {
+  if (typeof v !== "object" || v === null) return false;
+  const r = v as Record<string, unknown>;
+  if (r.version !== 1) return false;
+  if (typeof r.liked !== "object" || r.liked === null) return false;
+===== G2: kit webhook route (FULL) =====
+import { NextRequest, NextResponse } from "next/server";
+import { logEvent } from "@/lib/events";
+
+/**
+ * Kit Webhook Handler
+ * 
+ * Receives Kit webhook events and maps them to HPP events.
+ * Events flow into HPP first for logging and future analysis by PING.
+ */
+
+// Kit event name to HPP event type mapping
+const KIT_EVENT_MAPPING: Record<string, string> = {
+  "subscriber.subscriber_activate": "NewsletterConfirmed",
+  "subscriber.subscriber_unsubscribe": "NewsletterConfirmed", // Track unsubscribes
+  "subscriber.form_subscribe": "NewsletterSignup",
+  "subscriber.link_click": "EmailClicked",
+  "subscriber.product_purchase": "CustomerCreated",
+};
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // Kit webhook structure
+    const { event, subscriber } = body;
+    
+    if (!event || !subscriber) {
+      return NextResponse.json(
+        { error: "Invalid webhook payload" },
+        { status: 400 }
+      );
+    }
+
+    const eventName = event.name;
+    const eventType = KIT_EVENT_MAPPING[eventName];
+
+    if (eventType) {
+      // Map Kit event to HPP event
+      logEvent(eventType as any, {
+        kitEventName: eventName,
+        email: subscriber.email_address,
+        subscriberId: subscriber.id,
+        firstName: subscriber.first_name,
+        state: subscriber.state,
+        eventData: event,
+      }, {
+        acquisitionSource: "kit_webhook",
+      });
+    } else {
+      // Log unknown Kit events for debugging
+      console.log("[Kit Webhook] Unmapped event:", eventName);
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Kit webhook error:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    );
+  }
+}
+
+// Kit webhooks require GET endpoint for verification
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ status: "Kit webhook endpoint active" });
+}
+===== G3: workbench password consumers =====
+src/app/api/health/authority/route.ts:46:      configured: !!process.env.WORKBENCH_PASSWORD,
+src/app/api/health/authority/route.ts:47:      password_present: !!process.env.WORKBENCH_PASSWORD,
+===== G4: claims identity + claim/release/verify routes (auth lines) =====
+--- src/app/api/fyd/claims/identity/route.ts ---
+8:import { NextResponse } from "next/server";
+9:import { resolveClaimIdentity } from "@/fyd/claim/identity";
+14:export async function GET(): Promise<NextResponse> {
+--- src/app/api/fyd/claims/[resourceId]/claim/route.ts ---
+4: * OBSERVED -> CLAIMED. Requires an authenticated identity from the claim
+5: * identity bridge. 401 when none is available (fail closed, never invent).
+6: * 403 for demo-context objects. 409 when the resource is not observed.
+8:import { NextRequest, NextResponse } from "next/server";
+9:import { claim, createObserved, DEMO_CONTEXT_IDS, isValidResourceId } from "@/fyd/claim/machine";
+10:import { ClaimError } from "@/fyd/claim/types";
+11:import { resolveClaimIdentity } from "@/fyd/claim/identity";
+12:import { readClaim, writeClaim } from "@/fyd/claim/store";
+17:export async function POST(
+36:      { status: 403 },
+47:          "Claiming needs an authenticated identity. Anonymous previews cannot claim.",
+49:      { status: 401 },
+--- src/app/api/fyd/claims/[resourceId]/release/route.ts ---
+7:import { NextRequest, NextResponse } from "next/server";
+8:import { isValidResourceId, release } from "@/fyd/claim/machine";
+9:import { ClaimError } from "@/fyd/claim/types";
+10:import { resolveClaimIdentity } from "@/fyd/claim/identity";
+11:import { readClaim, writeClaim } from "@/fyd/claim/store";
+16:export async function POST(
+30:      { ok: false, code: "identity-required", message: "Releasing a claim needs an authenticated identity." },
+31:      { status: 401 },
+44:      { status: 403 },
+--- src/app/api/fyd/claims/[resourceId]/verify/route.ts ---
+2: * POST /api/fyd/claims/[resourceId]/verify
+13: * host. Anything else gets a typed 403
+19:import { NextRequest, NextResponse } from "next/server";
+20:import { isValidResourceId, verifyControl } from "@/fyd/claim/machine";
+21:import { ClaimError, type VerificationMethod } from "@/fyd/claim/types";
+22:import {
+27:import { readClaim, writeClaim } from "@/fyd/claim/store";
+28:import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+34:  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+39: * the object overrides route): refuse with a typed 403 unless
+--- src/app/api/ping/actions/route.ts ---
+7:import { NextRequest, NextResponse } from "next/server";
+8:import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+9:import { readerErrorResponse } from "@/lib/ping/api-errors";
+10:import { getPracticeIdentityId } from "@/lib/ping/session";
+15:export async function GET(request: NextRequest) {

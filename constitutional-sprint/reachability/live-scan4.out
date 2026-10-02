@@ -1,0 +1,41 @@
+### gateway /health (documented endpoint, plain GET)
+{"status":"healthy","uptime":116489.518148793,"components":{"gateway":{"status":"healthy","uptime":116489.518372753,"memory":{"rss":125923328,"heapTotal":106622976,"heapUsed":103367200,"external":22956065,"arrayBuffers":2182230}},"generated_artifacts":{"status":"healthy","artifacts":5},"integrations":{"status":"healthy","integrations":{"total":3,"healthy":3,"error":0,"integrations":{"posthog":{"status":"healthy","registeredAt":"2026-09-22T16:54:49.388Z","lastEventAt":null,"eventCount":0,"errorCount":0,"health":{"status":"healthy","apiKey":"not configured","host":"https://app.posthog.com","queu
+### rc gateway /health
+{"status":"unhealthy","uptime":116441.375139761,"components":{"gateway":{"status":"healthy","uptime":116441.376658294,"memory":{"rss":0,"heapTotal":89976832,"heapUsed":87132384,"external":20373358,"arrayBuffers":180917}},"generated_artifacts":{"status":"healthy","artifacts":5},"integrations":{"status":"healthy","integrations":{"total":3,"healthy":3,"error":0,"integrations":{"posthog":{"status":"healthy","registeredAt":"2026-09-22T16:55:48.799Z","lastEventAt":null,"eventCount":0,"errorCount":0,"health":{"status":"healthy","apiKey":"not configured","host":"https://app.posthog.com","queuedEvents"
+### served site vs sprint worktree commit distance
+2
+served HEAD is ancestor of sprint HEAD
+### next-server (3100) gateway env (names + host:port only)
+### session.test.ts header
+/**
+ * Session cookie and CSRF contract tests.
+ */
+
+import {
+  clearSessionCookie,
+  createOAuthStateValue,
+  createSessionValue,
+  loadSessionConfig,
+  newCsrfToken,
+  parseCookies,
+  readOAuthStateValue,
+  readSessionValue,
+  serializeSessionCookie,
+  verifyCsrfToken,
+  SESSION_COOKIE_NAME,
+} from "../session";
+import { FYD_IDENTITY_NAMESPACE, uuidv5 } from "../uuid";
+
+const SECRET = "test-session-secret-that-is-long-enough-123";
+const IDENTITY = uuidv5(FYD_IDENTITY_NAMESPACE, "provider-account:google::https://accounts.google.com::sub-1");
+
+function sessionConfig(overrides: Partial<{ secure: boolean }> = {}) {
+  return {
+    secret: SECRET,
+    configured: true,
+    problems: [],
+    maxAgeSeconds: 30 * 24 * 60 * 60,
+    secure: overrides.secure ?? false,
+  };
+### qdrant port check (is qdrant actually answering despite unhealthy tag?)
+{"title":"qdrant - vector search engine","version":"1.18.2","commit":"44ad62f8cd69642be5afa6441612525e24a0d063"}

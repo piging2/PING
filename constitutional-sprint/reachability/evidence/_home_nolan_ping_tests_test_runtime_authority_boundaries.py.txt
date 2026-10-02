@@ -1,0 +1,196 @@
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from runtime.configuration import Configuration
+from runtime.authorities.repository_authority import RepositoryAuthority
+from runtime.authorities.execution_authority import ExecutionAuthority
+from runtime.authorities.embedding_authority import EmbeddingAuthority
+from scripts.knowledge_event_bus import KnowledgeEventBus
+from scripts.workspace_builder import prepare_workspace
+from scripts.constitutional_planner import build_plan
+from scripts.mission_scoring import score_missions, rank_missions, update_mission_profile, load_mission_profile
+from scripts.worktree_executor import prepare_worktree
+from scripts.reflection_engine import reflect_on_mission
+from scripts.skill_registry import register_skill
+from scripts.policy_proposals import propose_policy
+from scripts.organizational_metrics import compute_organizational_metrics, record_metric_event
+from scripts.roi_engine import compute_roi
+from scripts.knowledge_confidence import decay_knowledge_object, score_knowledge_object
+from scripts.pattern_miner import mine_patterns
+
+
+class DummySecretAdapter:
+    def get_postgres_password(self):
+        return "secret-pw"
+
+    def get_qdrant_key(self):
+        return "qdrant-key"
+
+
+class RuntimeAuthorityBoundaryTests(unittest.TestCase):
+    def test_configuration_is_immutable_and_uses_secret_adapter_values(self):
+        adapter = DummySecretAdapter()
+        config = Configuration(secret_adapter=adapter)
+
+        postgres = config.get_postgres_config()
+        qdrant = config.get_qdrant_config()
+
+        self.assertEqual(postgres["password"], "secret-pw")
+        self.assertEqual(qdrant["api_key"], "qdrant-key")
+        self.assertEqual(config.get_postgres_config()["password"], "secret-pw")
+
+    def test_repository_authority_persist_returns_event_id(self):
+        authority = RepositoryAuthority()
+        event_id = authority.persist({"event_type": "TEST_EVENT"}, aggregate_id="agg-1")
+        self.assertTrue(event_id)
+
+    def test_execution_authority_routes_through_adapter(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.calls = []
+
+            def execute(self, request):
+                self.calls.append(request)
+                return type("Result", (), {"returncode": 0, "stdout": "ok", "stderr": "", "command": request.command})()
+
+        adapter = RecordingAdapter()
+        authority = ExecutionAuthority(adapter=adapter)
+        result = authority.run(["echo", "ok"])
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "ok")
+        self.assertEqual(len(adapter.calls), 1)
+        self.assertEqual(adapter.calls[0].command, "echo")
+
+    def test_embedding_authority_uses_inference_adapter_for_embeddings(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.texts = []
+
+            def embed(self, text):
+                self.texts.append(text)
+                return [0.1, 0.2, 0.3]
+
+        adapter = RecordingAdapter()
+        authority = EmbeddingAuthority()
+
+        with patch("runtime.authorities.embedding_authority.get_inference_adapter", return_value=adapter):
+            result = authority.embed_text("hello")
+
+        self.assertEqual(result, [0.1, 0.2, 0.3])
+        self.assertEqual(adapter.texts, ["hello"])
+
+    def test_execution_authority_can_wrap_docker_commands(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.calls = []
+
+            def execute(self, request):
+                self.calls.append(request)
+                return type("Result", (), {"returncode": 0, "stdout": "ok", "stderr": "", "command": request.command})()
+
+        adapter = RecordingAdapter()
+        authority = ExecutionAuthority(adapter=adapter)
+        result = authority.run_docker(["exec", "container", "psql", "-U", "postgres"])
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(adapter.calls[0].command, "docker")
+        self.assertEqual(adapter.calls[0].args, ["exec", "container", "psql", "-U", "postgres"])
+
+    def test_knowledge_event_bus_emits_unified_knowledge_object(self):
+        with TemporaryDirectory() as tmpdir:
+            bus = KnowledgeEventBus(root=Path(tmpdir))
+            obj = bus.emit("MISSION_COMPLETED", mission="demo", authority="ConfigurationAuthority", provider="local", capability="test")
+
+            self.assertTrue(obj["id"])
+            self.assertEqual(obj["type"], "event")
+            self.assertEqual(obj["mission_id"], "demo")
+            self.assertTrue(obj["hash"])
+            self.assertTrue((Path(tmpdir) / "knowledge" / "objects" / f"{obj['id']}.json").exists())
+
+    def test_prepare_workspace_creates_isolated_workspace_manifest(self):
+        with TemporaryDirectory() as tmpdir:
+            result = prepare_workspace("VerifyReplay", root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["mission"], "VerifyReplay")
+            self.assertTrue(result["workspace"]["path"].endswith("VerifyReplay"))
+
+    def test_build_plan_includes_execution_graph(self):
+        plan = build_plan("Verify repository replay determinism.")
+        self.assertTrue(plan["ok"])
+        self.assertIn("execution_graph", plan)
+        self.assertTrue(plan["execution_graph"]["tasks"])
+
+    def test_rank_missions_returns_top_three(self):
+        missions = [
+            {"id": "one", "impact": 1, "risk": 3, "authority_touched": 1, "replay_safety": 2, "tech_debt": 1, "frequency": 1, "previous_failures": 0},
+            {"id": "two", "impact": 4, "risk": 1, "authority_touched": 2, "replay_safety": 4, "tech_debt": 4, "frequency": 3, "previous_failures": 2},
+            {"id": "three", "impact": 3, "risk": 2, "authority_touched": 3, "replay_safety": 3, "tech_debt": 2, "frequency": 2, "previous_failures": 1},
+        ]
+        ranked = rank_missions(missions)
+        self.assertEqual(ranked[0]["id"], "two")
+        self.assertLessEqual(len(ranked), 3)
+
+    def test_prepare_worktree_creates_isolated_manifest(self):
+        with TemporaryDirectory() as tmpdir:
+            result = prepare_worktree("VerifyReplay", root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["mission"], "VerifyReplay")
+            self.assertTrue(result["worktree"]["path"].endswith("VerifyReplay"))
+
+    def test_reflection_engine_creates_structured_reflection(self):
+        with TemporaryDirectory() as tmpdir:
+            result = reflect_on_mission("VerifyReplay", {"ok": True}, root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["reflection"]["mission"], "VerifyReplay")
+            self.assertIn("mistakes", result["reflection"])
+            self.assertIn("improvements", result["reflection"])
+
+    def test_mission_profile_persists_reward_and_penalty_history(self):
+        with TemporaryDirectory() as tmpdir:
+            profile = update_mission_profile("VerifyReplay", {"ok": True, "score": 25}, root=Path(tmpdir))
+            self.assertTrue(profile["ok"])
+            self.assertGreaterEqual(profile["profile"]["total_score"], 25)
+            self.assertTrue(load_mission_profile(root=Path(tmpdir))["missions"]["VerifyReplay"])
+
+    def test_skill_registry_creates_reusable_skill(self):
+        with TemporaryDirectory() as tmpdir:
+            skill = register_skill("VerifyReplay", {"mission": "VerifyReplay"}, root=Path(tmpdir))
+            self.assertTrue(skill["ok"])
+            self.assertEqual(skill["skill"]["name"], "Replay Verification")
+
+    def test_policy_proposal_is_non_mutating(self):
+        with TemporaryDirectory() as tmpdir:
+            proposal = propose_policy({"mission": "VerifyReplay", "recommendations": ["reuse semantic index"]}, root=Path(tmpdir))
+            self.assertTrue(proposal["ok"])
+            self.assertFalse(proposal["proposal"]["mutates_policy"])
+
+    def test_organizational_metrics_compute_health_summary(self):
+        with TemporaryDirectory() as tmpdir:
+            result = record_metric_event("ReplayAuthority", {"failure_rate": 0.02, "repair_time_min": 8, "trend": "improving"}, root=Path(tmpdir))
+            metrics = compute_organizational_metrics(root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertTrue(metrics["ok"])
+            self.assertIn("ReplayAuthority", metrics["metrics"])
+
+    def test_roi_engine_ranks_high_value_missions(self):
+        roi = compute_roi({"engineering_value": 100, "engineering_cost": 20})
+        self.assertGreater(roi, 4)
+
+    def test_knowledge_confidence_decays_and_scores(self):
+        with TemporaryDirectory() as tmpdir:
+            decayed = decay_knowledge_object({"confidence": 0.95, "recency": 5, "verification_count": 2, "contradictions": 0}, root=Path(tmpdir))
+            scored = score_knowledge_object({"confidence": 0.95, "recency": 5, "verification_count": 2, "contradictions": 0})
+            self.assertLess(decayed["confidence"], 0.95)
+            self.assertGreater(scored, 0.0)
+
+    def test_pattern_miner_discovers_repeated_behavior(self):
+        patterns = mine_patterns([{"type": "Reflection", "mission": "VerifyReplay"}, {"type": "Reflection", "mission": "VerifyReplay"}, {"type": "Skill", "mission": "VerifyProjection"}])
+        self.assertTrue(patterns)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

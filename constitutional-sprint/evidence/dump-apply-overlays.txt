@@ -1,0 +1,120 @@
+def apply_overlays(graph, events):
+    """Apply overlay ops deterministically.
+    Returns (graph, applied_event_ids, presentation_intents).
+    Presentation-intent ops never touch the graph: they accumulate in a
+    separate journal-ordered list, upserted by intentId. Any malformed op
+    aborts the whole dump (fail closed)."""
+    objects = {o["id"]: o for o in graph["objects"]}
+    rel_ids = {r["id"] for r in graph["relationships"]}
+    applied = []
+    presentation_intents = []
+    for ev in events:
+        eid = ev["event_id"]
+        ops = (ev.get("event_data") or {}).get("ops")
+        if not isinstance(ops, list):
+            raise ValueError("event %s: ops is not a list" % eid)
+        for op in ops:
+            kind = op.get("op") if isinstance(op, dict) else None
+            if kind == "set_field":
+                oid, field, value = op.get("objectId"), op.get("field"), op.get("value")
+                if not (isinstance(oid, str) and isinstance(field, str)
+                        and isinstance(value, (str, list)) and oid in objects):
+                    raise ValueError("event %s: bad set_field %r" % (eid, op))
+                o = objects[oid]
+                if field in ("title", "description"):
+                    o[field] = value if isinstance(value, str) else value
+                else:
+                    o.setdefault("fields", {})[field] = value
+                prov = o.setdefault("provenance", {})
+                refs = prov.setdefault("updatedRefs", [])
+                ref = "ping-event:" + eid
+                if ref not in refs:
+                    refs.append(ref)
+            elif kind == "add_object":
+                o = op.get("object")
+                if not (isinstance(o, dict) and isinstance(o.get("id"), str)
+                        and o["id"] not in objects):
+                    raise ValueError("event %s: bad add_object %r" % (eid, op))
+                new_o = dict(o)
+                new_o["provenance"] = {
+                    "kind": "canonical-journal",
+                    "ref": "ping-event:" + eid,
+                    "derivedAt": ev["timestamp"],
+                }
+                objects[new_o["id"]] = new_o
+                graph["objects"].append(new_o)
+            elif kind == "add_relationship":
+                r = op.get("relationship")
+                if not (isinstance(r, dict) and isinstance(r.get("id"), str)
+                        and r["id"] not in rel_ids):
+                    raise ValueError("event %s: bad add_relationship %r" % (eid, op))
+                new_r = dict(r)
+                new_r["evidenceRef"] = "ping-event:" + eid
+                rel_ids.add(new_r["id"])
+                graph["relationships"].append(new_r)
+            elif kind == "deactivate_object":
+                oid = op.get("objectId")
+                if not (isinstance(oid, str) and oid in objects):
+                    raise ValueError("event %s: bad deactivate_object %r" % (eid, op))
+                objects[oid]["visibility"] = "private"
+                prov = objects[oid].setdefault("provenance", {})
+                refs = prov.setdefault("updatedRefs", [])
+                ref = "ping-event:" + eid
+                if ref not in refs:
+                    refs.append(ref)
+            elif kind == "set_presentation_intent":
+                # PRESENTATION INTENT layer. Validated strictly; never merged
+                # into the object graph. The website's read seam re-verifies
+                # the block digest and the apply layer re-resolves targets.
+                intent_id = op.get("intentId")
+                site_intent = op.get("siteIntent")
+                proposal = op.get("proposal")
+                approval = op.get("approval")
+                ok = (
+                    isinstance(intent_id, str) and intent_id
+                    and isinstance(site_intent, dict)
+                    and isinstance(site_intent.get("kind"), str)
+                    and isinstance(proposal, dict)
+                    and isinstance(proposal.get("proposalDigest"), str)
+                    and proposal["proposalDigest"]
+                    and isinstance(approval, dict)
+                    and all(isinstance(approval.get(k), str) and approval[k]
+                            for k in ("proposalDigest", "approvedBy", "approvedAt", "note"))
+                )
+                if not ok:
+                    raise ValueError("event %s: bad set_presentation_intent %r" % (eid, op))
+                if approval["proposalDigest"] != proposal["proposalDigest"]:
+                    raise ValueError("event %s: approval digest != proposal digest" % eid)
+                if "DEMO OWNER MODE" not in approval["note"]:
+                    raise ValueError("event %s: approval note lacks the demo-owner marker" % eid)
+                directive = {
+                    "intentId": intent_id,
+                    "siteIntent": site_intent,
+                    "proposal": proposal,
+                    "approval": {
+                        "proposalDigest": approval["proposalDigest"],
+                        "approvedBy": approval["approvedBy"],
+                        "approvedAt": approval["approvedAt"],
+                        "note": approval["note"],
+                        "eventId": eid,
+                    },
+                }
+                for i, existing in enumerate(presentation_intents):
+                    if existing["intentId"] == intent_id:
+                        presentation_intents[i] = directive
+                        break
+                else:
+                    presentation_intents.append(directive)
+            elif kind == "clear_presentation_intent":
+                intent_id = op.get("intentId")
+                if not (isinstance(intent_id, str) and intent_id):
+                    raise ValueError("event %s: bad clear_presentation_intent %r" % (eid, op))
+                presentation_intents[:] = [
+                    d for d in presentation_intents if d["intentId"] != intent_id
+                ]
+            else:
+                raise ValueError("event %s: unknown op kind %r" % (eid, kind))
+        applied.append(eid)
+    return graph, applied, presentation_intents
+
+

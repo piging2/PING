@@ -1,0 +1,131 @@
+### ollama gateway modules
+OK inference_witness
+OK model_authority
+OK ollama_adapter
+OK prompt_authority
+OK runtime_authority
+OK streaming_authority
+OK constitutional_authority_weighted
+OK technology_authority
+OK witness_generator
+### constitutional_ci.yml test steps
+name: Constitutional CI
+    - name: Checkout code
+    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: npm ci
+    - name: Run build
+      run: npm run build
+    - name: Run unit tests
+      run: npm test
+    - name: Checkout code
+    - name: Setup Node.js
+    - name: Install dependencies
+      run: npm ci
+    - name: Load golden corpus
+      run: node test/replay_corpus_test.js
+    - name: Verify all transcripts
+      run: node test/verify_corpus.js
+    - name: Generate certificates
+      run: node test/generate_certificates.js
+    - name: Compare with golden certificates
+      run: node test/compare_certificates.js
+    - name: Checkout code
+    - name: Setup Node.js
+    - name: Install dependencies
+      run: npm ci
+    - name: Run constitutional fuzzer
+      run: node test/fuzz_test.js --iterations 1000
+    - name: Verify deterministic hashes
+      run: node test/verify_determinism.js
+    - name: Checkout code
+### adapter: vitest dep? jest config anywhere?
+no vitest dep
+/home/nolan/projects/ping-constitutional/src/jest.config.cjs
+### core: how do certification tests run in CI (replay-integrity steps)?
+name: Replay Integrity
+    - name: Checkout code
+    - name: Setup Node.js
+    - name: Install dependencies
+      run: npm ci
+    - name: Run dependency validator
+      run: npx ts-node tools/dependency-guard/dependency-validator.ts runtime/replay
+    - name: Run replay tests
+      run: npm run replay:test
+    - name: Check for forbidden imports in replay kernel
+      run: |
+=== LIVE REACHABILITY (passive) ===
+### ps: node/next/python/postgres/qdrant/docker
+189 snapfuse /var/lib/snapd/snaps/core24_1643.snap /snap/core24/1643
+191 snapfuse /var/lib/snapd/snaps/codex_34.snap /snap/codex/34
+197 snapfuse /var/lib/snapd/snaps/core24_2124.snap /snap/core24/2124
+202 snapfuse /var/lib/snapd/snaps/snapd_27710.snap /snap/snapd/27710
+205 snapfuse /var/lib/snapd/snaps/snapd_27738.snap /snap/snapd/27738
+239 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+296 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+3024 /init /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe powershell.exe
+3287 sh -c next
+3288 next-server (v15.5.24) 
+12090 /mnt/wsl/docker-desktop/docker-desktop-user-distro proxy --distro-name
+16301 sh -c next
+16302 next-server (v15.5.24) 
+50757 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe
+50758 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe
+55042 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe
+55043 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe
+58850 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/out/server-main.js --host=127.0.0.1
+58902 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/out/bootstrap-fork --type=fileWatcher
+58914 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/out/bootstrap-fork --type=agentHost
+58920 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node --dns-result-order=ipv4first /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/out/bootstrap-fork
+58945 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node_modules/@github/copilot-sdk-linux-x64/prebuilds/linux-x64/copilot-runtime --headless --no-auto-update
+59072 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node /home/nolan/.vscode-remote-containers/dist/vscode-remote-containers-server-0.469.0.js 
+85078 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe
+85079 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe
+87919 sh -c next
+87920 next-server (v15.5.24) 
+88085 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node_repl.exe
+88086 /init /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe /mnt/c/Users/nolan/AppData/Local/OpenAI/Codex/runtimes/cua_node/6f12e0ef1c6e5061/bin/node.exe
+91356 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node -e const
+91368 /home/nolan/.vscode-server/bin/2242ebbb54efeeb0129e08e919e7e8d43033cd83/node -e const
+### listening ports
+State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess                                     
+LISTEN 0      4096    127.0.0.53%lo:53         0.0.0.0:*                                               
+LISTEN 0      4096        127.0.0.1:15433      0.0.0.0:*                                               
+LISTEN 0      511         127.0.0.1:44203      0.0.0.0:*    users:(("MainThread",pid=58914,fd=30))     
+LISTEN 0      511         127.0.0.1:44029      0.0.0.0:*    users:(("MainThread",pid=58850,fd=23))     
+LISTEN 0      1000   10.255.255.254:53         0.0.0.0:*                                               
+LISTEN 0      4096        127.0.0.1:54339      0.0.0.0:*                                               
+LISTEN 0      4096       127.0.0.54:53         0.0.0.0:*                                               
+LISTEN 0      4096        127.0.0.1:18099      0.0.0.0:*                                               
+LISTEN 0      4096        127.0.0.1:22         0.0.0.0:*                                               
+LISTEN 0      4096                *:8200             *:*                                               
+LISTEN 0      4096                *:11434            *:*                                               
+LISTEN 0      4096                *:3001             *:*                                               
+LISTEN 0      511                 *:3100             *:*    users:(("next-server (v1",pid=87920,fd=21))
+LISTEN 0      511                 *:3101             *:*    users:(("next-server (v1",pid=3288,fd=21)) 
+LISTEN 0      511                 *:3210             *:*    users:(("next-server (v1",pid=16302,fd=21))
+LISTEN 0      4096                *:5001             *:*                                               
+LISTEN 0      4096                *:5432             *:*                                               
+LISTEN 0      4096                *:5433             *:*                                               
+LISTEN 0      4096                *:6379             *:*                                               
+LISTEN 0      4096                *:6334             *:*                                               
+LISTEN 0      4096                *:6333             *:*                                               
+LISTEN 0      4096                *:55434            *:*                                               
+LISTEN 0      4096                *:55433            *:*                                               
+LISTEN 0      4096                *:8080             *:*                                               
+### docker ps (passive)
+swarm02-pg Up 3 seconds 0.0.0.0:55434->5432/tcp, [::]:55434->5432/tcp
+ping-gauntlet-pg Up 3 minutes 127.0.0.1:54339->5432/tcp
+ping-test-pg Up 33 hours 0.0.0.0:55433->5432/tcp, [::]:55433->5432/tcp
+ping-rc-gateway Up 33 hours 127.0.0.1:18099->8080/tcp
+ping-rc-postgres Up 33 hours 127.0.0.1:15433->5432/tcp
+cosyvoice-tts Up 33 hours 0.0.0.0:5001->5001/tcp, [::]:5001->5001/tcp
+ping-gateway Up 33 hours 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+ping-postgres Up 33 hours 0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+ping-qdrant Up 33 hours (unhealthy) 6333/tcp
+ping-redis Up 33 hours (healthy) 0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+ping-vault Up 33 hours (unhealthy) 0.0.0.0:8200->8200/tcp, [::]:8200->8200/tcp
+ollama Up 33 hours 0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp
+brain-postgres Up 33 hours 0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+brain-qdrant Up 33 hours 0.0.0.0:6333-6334->6333-6334/tcp, [::]:6333-6334->6333-6334/tcp
+open-webui Up 33 hours (healthy) 0.0.0.0:3001->8080/tcp, [::]:3001->8080/tcp

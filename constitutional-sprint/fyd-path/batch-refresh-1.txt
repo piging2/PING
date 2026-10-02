@@ -1,0 +1,142 @@
+=====FILE:refresh/conflict.ts=====
+/**
+ * Conflict detection: when two sources make claims about the same entity
+ * and the same field but disagree on the value, FYD must KNOW the conflict,
+ * not silently pick a winner. A conflict record keeps both claims with full
+ * provenance, carries a human-readable surface text, and stays "open" until
+ * a human resolves it. Resolution records the decision; it never deletes the
+ * losing claim.
+ */
+
+import { createHash } from "node:crypto";
+import { claimSlotKey } from "./types.ts";
+import type { Claim, Conflict } from "./types.ts";
+
+function conflictIdFor(a: Claim, b: Claim): string {
+  const [first, second] = [a.claimId, b.claimId].sort();
+  return "cf-" + createHash("sha256")
+    .update(a.entityId + "|" + a.field + "|" + first + "|" + second)
+    .digest("hex")
+    .slice(0, 12);
+}
+
+function sourceLabel(c: Claim): string {
+  if (c.grade === "synthetic_fixture") return "the synthetic Facebook fixture (labeled test data)";
+  if (c.sourceKind === "website") return "your website";
+  if (c.sourceKind === "facebook") return "your Facebook page";
+  return c.sourceKind;
+}
+
+export function conflictSurfaceText(entityId: string, field: string, a: Claim, b: Claim): string {
+  const fieldName = field.replace(/_/g, " ");
+  return (
+    "Conflict on " + entityId + " field '" + fieldName + "': " +
+    sourceLabel(a) + " (observed " + a.observedAt.slice(0, 10) + ") says '" +
+    a.value + "', while " + sourceLabel(b) + " (observed " +
+    b.observedAt.slice(0, 10) + ") says '" + b.value + "'. " +
+    "Both claims are kept with their provenance. Tell me which one is right, " +
+    "and I will regenerate only the affected sections."
+  );
+}
+
+/**
+ * Detect conflicts across a set of claims. Rules:
+ *  - same entityId and same field, but different normalized values,
+ *  - from different source kinds (website vs facebook vs synthetic),
+ *  - one Conflict per disagreeing pair, deduped by conflict id.
+ * Identical values across sources produce no conflict. A single source
+ * never conflicts with itself.
+ */
+export function detectConflicts(claims: Claim[], detectedAt: string): Conflict[] {
+  const bySlot = new Map<string, Claim[]>();
+  for (const c of claims) {
+    const key = claimSlotKey(c.entityId, c.field);
+    const arr = bySlot.get(key);
+    if (arr) arr.push(c);
+    else bySlot.set(key, [c]);
+  }
+
+  const conflicts: Conflict[] = [];
+  const seen = new Set<string>();
+  for (const [, slotClaims] of bySlot) {
+    for (let i = 0; i < slotClaims.length; i++) {
+      for (let j = i + 1; j < slotClaims.length; j++) {
+        const a = slotClaims[i];
+        const b = slotClaims[j];
+        if (a.sourceKind === b.sourceKind) continue;
+        if (a.normalizedValue === b.normalizedValue) continue;
+        const id = conflictIdFor(a, b);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        conflicts.push({
+          conflictId: id,
+          entityId: a.entityId,
+          field: a.field,
+          kind: "value_disagreement",
+          claims: [a, b],
+          status: "open",
+          detectedAt,
+          surfaceText: conflictSurfaceText(a.entityId, a.field, a, b),
+        });
+      }
+=====FILE:refresh/facebook-source.ts=====
+/**
+ * Facebook second-source adapter for the FYD refresh lane.
+ *
+ * Tonight's finding (2026-09-21, checked by the temporal-refresh agent):
+ * authorized Facebook data for this entity is genuinely unavailable:
+ *  - the website publishes no facebook.com link (outbound link scan of the
+ *    fetched homepage found none),
+ *  - an authorized social.search sweep for "Happy Place Carpentry" on
+ *    Facebook surfaced only unrelated "happy place" woodworking content,
+ *  - facebook-cli is not installed on the Pig, and on the sandbox side its
+ *    profile/timeline reads require a page or profile ID obtained from
+ *    earlier authorized output; no such ID exists for this business.
+ *
+ * The adapter below encodes that availability check, keeps the real ingest
+ * path wired (fromFacebookCliJson) for the day an authorized ID exists, and
+ * provides a clearly-labeled synthetic fixture so the conflict machinery can
+ * be proved tonight without fabricating real-world data.
+ */
+
+import { createHash } from "node:crypto";
+import { normalizeClaimValue } from "./types.ts";
+import type { Claim, Observation, SourceKind } from "./types.ts";
+
+export interface FacebookAvailability {
+  available: boolean;
+  checkedAt: string;
+  methodsTried: string[];
+  reason: string;
+}
+
+export function checkFacebookAvailability(checkedAt: string): FacebookAvailability {
+  return {
+    available: false,
+    checkedAt,
+    methodsTried: [
+      "website outbound link scan of the fetched homepage for facebook.com (none found)",
+      "authorized social.search sweep for 'Happy Place Carpentry' on Facebook, Corvallis OR (no business page surfaced; only unrelated 'happy place' woodworking content)",
+      "facebook-cli availability on the Pig (not installed); sandbox-side reads require a page/profile ID from prior authorized output, which does not exist for this business",
+    ],
+    reason:
+      "No authorized Facebook page or profile for this entity is reachable " +
+      "through the authorized read paths. The website publishes no Facebook " +
+      "link and no public business page surfaced. Conflict machinery is " +
+      "proved tonight on a labeled synthetic fixture instead.",
+  };
+}
+
+function syntheticClaimId(entityId: string, field: string, normalized: string): string {
+  return "syn-" + createHash("sha256")
+    .update(entityId + "|" + field + "|facebook|" + normalized)
+    .digest("hex")
+    .slice(0, 12);
+}
+
+function fbClaim(
+  entityId: string,
+  field: string,
+  value: string,
+  observedAt: string,
+  confidence: number,

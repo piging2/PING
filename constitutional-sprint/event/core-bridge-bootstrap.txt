@@ -1,0 +1,61 @@
+        console.log('[GatewayRuntime] Unified Event Runtime initialized');
+
+        // ─── Canonicalization Boundary (thin façade) ──────────────
+        // The single public boundary: every observation/command/artifact/event
+        // must canonicalize here before it exists. Namespace is resolved BEFORE
+        // persistence. Business sources default to tenant::hpp; system sources
+        // to core::system.
+        canonicalizationService = new CanonicalizationService({
+          eventRuntime: unifiedEventRuntime,
+          namespaces: {
+            'review-authority': 'tenant::hpp',
+            'customer-authority': 'tenant::hpp',
+            'project-authority': 'tenant::hpp',
+            'email-connector': 'tenant::hpp',
+            'sms-connector': 'tenant::hpp',
+            'google-connector': 'tenant::hpp',
+            'github-connector': 'tenant::hpp',
+          },
+        });
+        console.log('[GatewayRuntime] Canonicalization Service initialized');
+
+        // Event Bridge — polls repository_events + canonical_events → UnifiedEventRuntime
+        eventBridge = new EventBridge({
+          pool: this._pool,
+          eventRuntime: unifiedEventRuntime,
+          pollIntervalMs: 5000,
+          batchSize: 50,
+        });
+        await eventBridge.initialize();
+        eventBridge.start();
+        console.log('[GatewayRuntime] Event Bridge started');
+
+        knowledgeGraph = new KnowledgeGraph({ pool: this._pool });
+        await knowledgeGraph.initialize();
+        console.log('[GatewayRuntime] Knowledge Graph initialized');
+
+        missionRuntime = new MissionRuntime({ pool: this._pool, eventRuntime: unifiedEventRuntime });
+        await missionRuntime.initialize();
+        console.log('[GatewayRuntime] Mission Runtime initialized');
+
+        workerRuntime = new WorkerRuntime({ pool: this._pool });
+        console.log('[GatewayRuntime] Worker Runtime initialized');
+
+        // Knowledge Adapters — thin REST wrappers
+        neo4jAdapter = new Neo4jAdapter();
+        qdrantAdapter = new QdrantAdapter();
+        console.log('[GatewayRuntime] Knowledge Adapters initialized (Neo4j + Qdrant)');
+
+        // ─── Embedding Service (async projection subscriber) ──────
+        // Subscribes to indexable event types; embedding is queued (non-blocking),
+        // falls back to deterministic seeded vectors when Ollama is unreachable.
+        // Init failure here must NOT disable the PG-backed pipeline (workers,
+        // scheduler, bridge, emitters all continue) — it is surfaced and scoped.
+        try {
+          embeddingService = new EmbeddingService({
+            aiRuntime,
+            qdrantAdapter,
+            collection: 'knowledge',
+            vectorSize: 768,
+            embeddingModel: 'nomic-embed-text',
+          });

@@ -1,0 +1,71 @@
+import subprocess
+import sys
+import tempfile
+
+DUMPER_VERSION = "fyd-projection-dump@1.1.0"
+REPO = "/home/nolan/projects/ping"
+OUT_DIR = "/home/nolan/ping/var/fyd-projections"
+
+# Overlay journal selection. "main" (default) reads overlays from the 8080
+# deployment gateway's Postgres via the ping-gateway container. "demo" reads
+# from FYD's own demo journal: the repo-booted gateway on 127.0.0.1:18199
+# backed by ping-test-pg (127.0.0.1:55433, db ping-fyd-demo). The demo journal
+# is used until the 8080 deployment lane registers FYD_SITE_OVERLAY in its
+# own baked registry (see FAILURE_LEDGER FL-20260921-231).
+OVERLAY_JOURNAL = os.environ.get("FYD_OVERLAY_JOURNAL", "main")
+DEMO_PG = {
+    "host": os.environ.get("FYD_DEMO_PG_HOST", "127.0.0.1"),
+    "port": os.environ.get("FYD_DEMO_PG_PORT", "55433"),
+    "user": os.environ.get("FYD_DEMO_PG_USER", "postgres"),
+    "db": os.environ.get("FYD_DEMO_PG_DB", "ping-fyd-demo"),
+}
+HOST_PG_MODULE = "/home/nolan/ping/gateway/node_modules/pg"
+
+# Spec-compile pins, copied from fyd-proof-run/regen.ts SITES (the values the
+# public pages currently hardcode). These are derivation parameters, not
+# customer facts; they travel in the projection meta so the page no longer
+# hardcodes them.
+SITES = {
+    "happy-place": {
+        "fixture": REPO + "/src/fyd/proceduralize/__fixtures__/happy-place-graph.ts",
+        "generatedAt": "2026-09-21T12:00:00.000Z",
+        "eventSequences": [65, 83],
+    },
+    "coppersmith-plumbing": {
+        "fixture": REPO + "/src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts",
+        "generatedAt": "2026-09-21T12:01:10.844Z",
+        "eventSequences": None,
+    },
+}
+
+QUERY_JS = r"""
+const {Client}=require('/app/node_modules/pg');
+(async()=>{
+ const c=new Client({host:process.env.POSTGRES_HOST,
+  port:parseInt(process.env.POSTGRES_PORT||'5432',10),
+  user:process.env.POSTGRES_USER,password:process.env.POSTGRES_PASSWORD,
+  database:process.env.POSTGRES_DB,connectionTimeoutMillis:8000});
+ try{await c.connect();}catch(e){console.error('QUERY_ERROR connect:'+e.message);process.exit(2);}
+ try{
+  const r=await c.query(
+   "SELECT event_id, timestamp, payload AS event_data FROM ping_events "+
+   "WHERE event_type='FYD_SITE_OVERLAY' AND payload->>'siteId'=$1 "+
+   "ORDER BY timestamp ASC, event_id ASC",[process.argv[2]]);
+  for(const row of r.rows){
+   const ts=row.timestamp instanceof Date?row.timestamp.toISOString():row.timestamp;
+   console.log(JSON.stringify({event_id:row.event_id,timestamp:ts,event_data:row.event_data}));
+  }
+ }catch(e){console.error('QUERY_ERROR query:'+e.message);process.exit(2);}
+ await c.end();
+})().catch(e=>{console.error('QUERY_ERROR:'+e.message);process.exit(2);});
+"""
+
+
+def sha256_hex(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+def canonicalize(v):
+    """Canonical JSON string: recursive key sort, array order preserved,
+    separators (',', ':'). Must byte-match the TS canonicalize() in the
+    website repo for pure-JSON values. Floats are refused: TS and Python

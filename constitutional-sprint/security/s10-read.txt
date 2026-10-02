@@ -1,0 +1,104 @@
+===== I1: sharp route GET handler auth =====
+6: * AUTHORIZATION: Requires same authentication as /api/drive/ingest
+136:export async function GET(request: Request) {
+139:  // Simple header-based authorization for diagnostic endpoint
+140:  const authHeader = request.headers.get('authorization');
+143:  if (authHeader !== expectedAuth) {
+150:      { status: 401 }
+===== I2: ping-object-reader visibility enforcement =====
+14: *   Dev signing happens server-side via dev-signer; private keys never
+130:  listIdentities(viewerId?: string | null): Promise<PingIdentitySummary[]>;
+131:  getProfile(identityId: string, viewerId?: string | null): Promise<PublicCircleProjection>;
+132:  getFeed(identityId: string, viewerId?: string | null): Promise<PingPost[]>;
+141:  getObject(objectId: string, viewerId?: string | null): Promise<PingObject>;
+142:  listObjects(viewerId?: string | null, opts?: { schema?: string; limit?: number }): Promise<PingObject[]>;
+144:  getCircleCard(identityId: string, viewerId?: string | null): Promise<IntelligentCircleData>;
+146:    viewerId?: string | null,
+149:  planActions(viewerId: string | null, objectId: string): Promise<CapabilityPlan>;
+150:  getNode(objectId: string, viewerId?: string | null): Promise<NodePayload>;
+151:  ask(question: string, viewerId: string | null, targetObjectId?: string | null): Promise<AskAnswer>;
+152:  submitProposal(viewerId: string, proposal: AskProposal): Promise<{ eventId: string }>;
+239:  private base(): string {
+245:  private async gw(path: string, init?: RequestInit): Promise<Response> {
+263:  private fydJournalBase(): string {
+268:  private async gwFyd(path: string): Promise<Response> {
+321:  private async queryEvents(type: string): Promise<JsonRecord[]> {
+343:  private async submitSignedEvent(
+393:  private async followEdges(): Promise<FollowEdge[]> {
+408:  private netFollows(edges: FollowEdge[]): Map<string, Set<string>> {
+423:  private async likeEdges(): Promise<LikeEdge[]> {
+438:  private netLikes(edges: LikeEdge[]): Map<string, Set<string>> {
+452:  private async profileEvents(): Promise<JsonRecord[]> {
+456:      return p.schema === PROFILE_SCHEMA && (p.visibility === undefined || p.visibility === "public");
+460:  private profileUpdates(): Promise<JsonRecord[]> {
+464:  private toSummary(ev: JsonRecord, follows: Map<string, Set<string>>, viewerId?: string | null): PingIdentitySummary | null {
+466:    const identityId = str(p.identityId) || str(p.controller);
+481:      followedByViewer: viewerId ? (follows.get(viewerId)?.has(identityId) ?? false) : undefined,
+485:  async listIdentities(viewerId?: string | null): Promise<PingIdentitySummary[]> {
+490:      const id = str(eventPayload(ev).identityId) || str(eventPayload(ev).controller);
+497:      const s = this.toSummary(ev, follows, viewerId);
+504:  async getProfile(identityId: string, viewerId?: string | null): Promise<PublicCircleProjection> {
+512:      return str(p.identityId) === identityId || str(p.controller) === identityId;
+529:    const summary = this.toSummary(latest, follows, viewerId);
+536:      viewerFollowing: viewerId ? (follows.get(viewerId)?.has(identityId) ?? false) : false,
+540:  async getFeed(identityId: string, viewerId?: string | null): Promise<PingPost[]> {
+553:        if (subject === viewerId) likedByViewer.add(o);
+560:      if (p.visibility !== undefined && p.visibility !== "public") continue;
+561:      const authorId = str(p.authorId) || str(p.identityId) || str(p.controller);
+630:      visibility: "public",
+===== I3: session.ts cookie verification =====
+/**
+ * Practice session: which dev PING identity the browser is acting as.
+ *
+ * SERVER ONLY. The session is an httpOnly cookie, so a hard refresh
+ * reconstructs it from the server and private keys never touch the browser.
+ *
+ * The selector chooses which already-existing dev identity signs practice
+ * actions. It does NOT grant capabilities: an identity can only do what the
+ * PING runtime allows that identity to do.
+ */
+
+import { cookies } from "next/headers";
+
+export const PRACTICE_IDENTITY_COOKIE = "ping_practice_identity";
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7, // 7 days
+};
+
+export async function getPracticeIdentityId(): Promise<string | null> {
+  const jar = await cookies();
+  return jar.get(PRACTICE_IDENTITY_COOKIE)?.value ?? null;
+}
+
+export async function setPracticeIdentityId(identityId: string): Promise<void> {
+  const jar = await cookies();
+  jar.set(PRACTICE_IDENTITY_COOKIE, identityId, COOKIE_OPTIONS);
+}
+
+export async function clearPracticeIdentityId(): Promise<void> {
+  const jar = await cookies();
+  jar.delete(PRACTICE_IDENTITY_COOKIE);
+}
+===== I4: workbench routes =====
+===== I5: fyd ask siteId route POST auth =====
+ * - mode "owner": accepted for a future authenticated lane; until that lane
+ *   exists it is treated as visitor-safe and grants nothing.
+ *
+ * Response: { ok: true, answer, answerClass, refusal, citations,
+ *   unknowns, suggestedActions, proposal, tenantId }
+ *   unknowns is string[]; suggestedActions is the available-actions list
+ *   ([] when none); proposal is a draft AskProposal or null.
+ *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+ *   Every citation carries claimClass ("supported" | "derived").
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ siteId: string }> },
+): Promise<NextResponse> {
+  const { siteId } = await params;
+  return handleAskRequest(siteId, request);
+}

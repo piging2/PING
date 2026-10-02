@@ -1,0 +1,47 @@
+### 3101/3210 next-server gateway env
+pid 3288: gateway_matches=0
+pid 16302: gateway_matches=0
+### fyd-tenant-graph catch block (186-205)
+  }
+
+  const reader = opts?.reader ?? getPingObjectReader();
+  let overlays: FydJournalOverlay[];
+  try {
+    overlays = await reader.queryFydSiteOverlays(siteId);
+  } catch (err) {
+    throw new FydTenantGraphError(
+      "reader_failed",
+      `overlay read failed for "${siteId}": ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
+    );
+  }
+
+  const { eventIds, directives } = applyTenantOverlays(base, overlays);
+
+  return {
+    graph: base,
+    presentationIntent: buildPresentationIntentBlock(directives, eventIds),
+    meta: {
+      siteId,
+      baseDigest,
+      graphDigest: sha256Hex(canonicalize(base)),
+      eventIds,
+      generatedAt: pin.generatedAt,
+      eventSequences: pin.eventSequences,
+### REAL execution probe: replay_determinism.test.js
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+✅ Different inputs produce different IDs - PASSED
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+✅ Property order independence - PASSED
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+✅ Nested object determinism - PASSED
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+[DEPRECATED] deterministicIdAuthority.generateIdFromObject() is deprecated. Use IdentityAuthority.generateFromCanonicalHash() instead.
+✅ Array order sensitivity - PASSED
+
+==================================================
+✅ Replay Determinism Test: PASSED
+Deterministic ID generation works correctly.
+==================================================
+exit=0

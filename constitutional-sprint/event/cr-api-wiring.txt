@@ -1,0 +1,87 @@
+=== main.py imports ===
+1:from datetime import datetime
+2:from typing import Any
+3:import os
+4:from fastapi import FastAPI, HTTPException, status, Depends
+5:from fastapi.responses import JSONResponse
+6:from pydantic import BaseModel
+7:from contextlib import asynccontextmanager
+8:from sqlalchemy import text
+10:from config.settings import Settings
+11:from config.logging import configure_logging, get_logger
+12:from runtime.observability import Observability
+13:from runtime.di_container import RuntimeContainer
+16:from api.events import router as events_router, set_event_service
+17:from api.commands import router as commands_router, set_command_service
+18:from api.oracle import router as oracle_router, set_oracle_service
+19:from api.business import router as business_router, set_business_service
+20:from api.product import router as product_router, set_product_service
+21:from api.health import router as health_router, set_health_service
+22:from api.replay import router as replay_router, set_replay_service
+25:from application.event_service import EventApplicationService
+26:from application.command_service import CommandApplicationService
+27:from application.oracle_service import OracleApplicationService
+28:from application.business_service import BusinessApplicationService
+29:from application.product_service import ProductApplicationService
+30:from application.health_service import HealthApplicationService
+31:from application.replay_service import ReplayApplicationService
+=== events.py head ===
+"""
+Event API Module
+
+Handles event-related HTTP endpoints.
+Delegates to EventApplicationService for business logic.
+"""
+
+from fastapi import APIRouter, status
+from fastapi.responses import JSONResponse
+from application.event_service import EventApplicationService
+from api.dto import EventRequestDTO, EventResponseDTO, EventListResponseDTO
+
+router = APIRouter(prefix="/events", tags=["events"])
+
+# Application service (will be injected via DI)
+_event_service: EventApplicationService = None
+
+
+def set_event_service(service: EventApplicationService):
+    """Set the event application service (DI)."""
+    global _event_service
+    _event_service = service
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=EventResponseDTO)
+async def create_event(request: EventRequestDTO) -> EventResponseDTO:
+    """Create an event with constitutional hashing and persistence."""
+    return await _event_service.create_event(request)
+
+
+@router.get("", response_model=EventListResponseDTO)
+async def list_events(limit: int = 100, offset: int = 0) -> EventListResponseDTO:
+    """List events from the event store."""
+    from storage.postgres.database import get_session
+    from storage.postgres.models import Event as EventModel
+    from sqlalchemy import select
+    
+    events: list[dict] = []
+    try:
+        async with get_session() as session:
+            result = await session.execute(
+                select(EventModel).order_by(EventModel.global_sequence).limit(limit).offset(offset)
+            )
+            event_records = result.scalars().all()
+            
+            for event in event_records:
+                events.append({
+                    "event_id": event.event_id,
+                    "event_type": event.event_type,
+                    "event_category": event.event_category,
+                    "payload": event.decoded_payload_cache,
+                    "occurred_at": event.occurred_at.isoformat() if event.occurred_at else None,
+                    "recorded_at": event.recorded_at.isoformat() if event.recorded_at else None,
+                    "global_sequence": event.global_sequence,
+                })
+    except Exception:
+        pass
+    
+    return EventListResponseDTO(events=events, count=len(events))

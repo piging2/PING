@@ -1,0 +1,152 @@
+=====FILE:overrides/route.ts=====
+/**
+ * POST /api/fyd/objects/[objectId]/overrides
+ *
+ * Owner intent as a digest-bound two-step loop: PROPOSE then APPROVE.
+ *
+ *   { stage: "propose", text: "Correct phone to +1 555 123 4567" }
+ *     -> interprets the free text into a typed OwnerCommand and returns a
+ *        proposal { command, summary } plus a preview (before/after +
+ *        evidence/capability impact) and digests { baseStateDigest,
+ *        patchDigest }. NOTHING IS WRITTEN at this stage.
+ *
+ *   { stage: "approve", command: {...}, baseStateDigest, patchDigest }
+ *     -> re-reads the CURRENT owner state and recomputes its digest. If it
+ *        no longer matches baseStateDigest the state moved since the
+ *        proposal was drafted: 409 stale_proposal, nothing written. If the
+ *        command no longer matches patchDigest: 400, nothing written.
+ *        Otherwise validates, applies, and returns the refreshed public
+ *        ObjectView, the human-language history, a bound approval record
+ *        (tenant + actor + base digest + patch digest + approval metadata +
+ *        result digest), and the chain audit trail. Only this stage mutates.
+ *
+ * G4 (tenant from the trusted path): the object id IS the site id, so the
+ * OwnerContext is constructed server-side from the route param via
+ * createOwnerContext (the single owner-context seam). Any
+ * body-supplied tenant identity (siteId / tenantId / tenant keys) that
+ * disagrees with the route tenant is REFUSED with 400 tenant_mismatch.
+ * A tenant mismatch never serves another tenant's object.
+ *
+ * DEMO OWNER MODE GATE: both stages (propose and approve) require
+ * DEV/DEMO OWNER MODE: NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or
+ * private-network host. Anything else gets a typed 403
+ * { ok:false, code:"demo_owner_mode_required" } before any object I/O, and
+ * nothing is written. Visitors may still read via the GET object routes
+ * and Ask FYD. This route is the seam where real owner auth will attach;
+ * until that lane exists, every response is stamped through the
+ * OwnerContext seam with demoOwnerContext: true plus the actor disclosure,
+ * and the Manage surface labels every session DEV/DEMO.
+ *
+ * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION. No identity is
+ * verified here. This route must not be treated as a production owner API.
+ *
+ * The approve stage enforces the owner-core chain:
+ *   SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP -> CAPABILITY
+ *     -> PROPOSE/APPLY RULE -> EVENT -> PROJECTION.
+ * ctx.evaluateCapability evaluates the chain through the OwnerContext
+ * seam; a denied owner.correct-fact verdict returns 403 and nothing is
+ * written. The OwnerContext is required on every mutation: the actor is
+ * always the seeded demo actor, labeled as DEMO OWNER CONTEXT.
+ * Authentication alone NEVER grants mutation.
+ *
+ * AUTHORITY GRADIENT (FYD-24H-BUILDER-DECISIONS 2026-09-22): the loop
+ * reflects consequence, not one heavyweight path for everything.
+ * commandConsequenceTier classifies each OwnerCommand:
+ * - "presentation" (local presentation change: reorder, show/hide): fast
+ *   proposal/undo. The proposal stays digest-bound to its base state (the
+ *   proven safety property), and a successful approve returns a ready
+ *   `undo` (exact inverse command pre-bound to the post-apply digests),
+ *   so the owner can reverse it in one approve call.
+ * - "factual" (public factual change: correct, confirm, add): explicit
+ *   confirmation. The full propose -> digest-bound approve loop, and the
+ *   approval records an owner assertion (actor + timestamp) while the
+ *   source record is never rewritten.
+ * Approval never confers capability: the capability gate runs on every
+ * approve call regardless of tier.
+ *
+ * Failures are typed 400s/409s/403s; nothing is written on failure.
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+import { loadObjectView, knownServices } from "@/fyd/object/view";
+import {
+  commandConsequenceTier,
+  describeCommand,
+  interpretTextCommand,
+  invertOwnerCommand,
+} from "@/fyd/object/commands";
+import {
+  applyOwnerCommand,
+  parseOwnerCommand,
+=====FILE:patch-loop.ts=====
+/**
+ * Owner patch loop helpers for POST /api/fyd/objects/[objectId]/overrides.
+ *
+ * The loop: typed owner request -> proposal -> preview (before/after +
+ * evidence/capability impact) -> bound approval -> apply -> revert.
+ *
+ * Digest binding (STALE PROPOSAL): the propose stage returns
+ * baseStateDigest = sha256 over the canonicalized CURRENT owner state
+ * projection (the event-log projection, stable across reads) and
+ * patchDigest = sha256 over the canonicalized typed command. The approve
+ * stage recomputes the state digest against the live log; a mismatch means
+ * the state moved since the proposal was drafted and the approval is
+ * refused with 409 stale_proposal. Nothing is written on refusal.
+ *
+ * The approval record binds tenant + actor + base digest + patch digest +
+ * approval metadata + result digest, and is returned with every approve
+ * response alongside the chain audit trail.
+ *
+ * G4: every mutation requires a server-side TenantContext (derived from
+ * the trusted route path: the object id IS the site id) and an
+ * ActorContext. The actor on this route is always the seeded demo actor:
+ * DEMO OWNER CONTEXT is labeled on every response, never presented as a
+ * verified owner identity.
+ */
+import { createHash } from "node:crypto";
+import { canonicalize } from "@/lib/ping/ask-composer";
+import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
+import { readOverrides } from "@/fyd/object/owner-store";
+import { readOwnerEvents } from "@/fyd/object/owner-events";
+import type { OwnerCommand } from "@/fyd/object/types";
+import { loadObjectView } from "@/fyd/object/view";
+
+/** sha256 hex over the canonicalized value. Deterministic across reads. */
+export function digestOf(value: unknown): string {
+  return createHash("sha256").update(canonicalize(value), "utf8").digest("hex");
+}
+
+/**
+ * Digest of the owner state the proposal was computed against: the
+ * event-log projection for this object. Stable across reads when nothing
+ * is written (updatedAt tracks the last event, not read time).
+ */
+export function ownerStateDigest(objectId: string): string {
+  return digestOf(readOverrides(objectId));
+}
+
+/** Digest of the typed command the owner is asked to approve. */
+export function patchDigestOf(command: OwnerCommand): string {
+  return digestOf(command);
+}
+
+/**
+ * The acting owner identity, future-neutral. The demo implementation
+ * (OwnerActorContext, below) pins demoOwnerContext: true; a future
+ * PING-backed implementation satisfies this base with a verified owner
+ * identity and no demo marker. Demo honesty is preserved structurally:
+ * every DEMO response and approval still carries the literal
+ * demoOwnerContext: true stamp, so demo authorization can never be
+ * mistaken for production authorization.
+ */
+export interface OwnerActor {
+  actorId: string;
+  label: string;
+  /** Human-readable statement of what this context is and is not. */
+  disclosure: string;
+}
+
+/**
+ * The acting owner identity on this route. DEMO SCAFFOLDING: always the

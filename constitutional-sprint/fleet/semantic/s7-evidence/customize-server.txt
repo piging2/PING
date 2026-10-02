@@ -1,0 +1,142 @@
+     1	/**
+     2	 * Lane D: server-side helpers for the customize API route. SERVER ONLY.
+     3	 *
+     4	 * loadCustomizedSite: projection -> generateSiteSpec -> apply the
+     5	 * presentation-intent layer. The proposal/approve path always reasons
+     6	 * over the CURRENT layered spec, so sequential customizations compose.
+     7	 *
+     8	 * emitOverlayEvent: appends a FYD_SITE_OVERLAY event to the FYD demo
+     9	 * journal (the repo-booted gateway; no auth on its event route). The
+    10	 * projection dump picks it up on the next regen. Demo-journal only;
+    11	 * nothing here touches the main deployment journal.
+    12	 */
+    13	
+    14	import { createHash } from "node:crypto";
+    15	import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+    16	import { generateSiteSpec } from "@/fyd/proceduralize/generator";
+    17	import type { FYDSiteSpec, ObjectGraph } from "@/fyd/sitespec/types";
+    18	import { applyPresentationIntent } from "./apply-layer";
+    19	import type {
+    20	  PresentationIntentBlock,
+    21	  PresentationIntentDirective,
+    22	  PresentationIntentOverlayOp,
+    23	} from "./types";
+    24	
+    25	export interface CustomizedSite {
+    26	  siteId: string;
+    27	  graph: ObjectGraph;
+    28	  /** Spec as rendered: base compiled spec + approved presentation intents. */
+    29	  spec: FYDSiteSpec;
+    30	  /** Digest of the base compiled spec (before the intent layer). */
+    31	  baseSpecDigest: string;
+    32	  /** Digest of the layered spec the owner reviews and approves against. */
+    33	  specDigest: string;
+    34	  presentationIntent: PresentationIntentBlock | null;
+    35	  appliedIntentIds: string[];
+    36	  unresolved: { intentId: string; reason: string }[];
+    37	}
+    38	
+    39	function sha256Hex(s: string): string {
+    40	  return createHash("sha256").update(s, "utf8").digest("hex");
+    41	}
+    42	
+    43	export async function loadCustomizedSite(siteId: string): Promise<CustomizedSite> {
+    44	  const { graph, meta, presentationIntent } = await getPingObjectGraph(siteId);
+    45	  // generatedAt comes from the projection meta (stable per dump), never the
+    46	  // wall clock: the spec digest must be reproducible across calls.
+    47	  const base = generateSiteSpec(graph, { generatedAt: meta.generatedAt });
+    48	  const { canonicalize } = await import("@/lib/ping/ask-composer");
+    49	  const baseSpecDigest = sha256Hex(canonicalize(base));
+    50	  const layered = applyPresentationIntent(base, presentationIntent, graph);
+    51	  const specDigest = sha256Hex(canonicalize(layered.spec));
+    52	  return {
+    53	    siteId,
+    54	    graph,
+    55	    spec: layered.spec,
+    56	    baseSpecDigest,
+    57	    specDigest,
+    58	    presentationIntent,
+    59	    appliedIntentIds: layered.applied.map((a) => a.intentId),
+    60	    unresolved: layered.unresolved,
+    61	  };
+    62	}
+    63	
+    64	/** Deterministic directive id: "pi-" + sha256(siteId + proposalDigest)[0:16]. */
+    65	export function directiveIdFor(siteId: string, proposalDigest: string): string {
+    66	  return "pi-" + sha256Hex(siteId + "|" + proposalDigest).slice(0, 16);
+    67	}
+    68	
+    69	function gatewayUrl(): string {
+    70	  return process.env.FYD_CUSTOMIZE_GATEWAY_URL ?? "http://127.0.0.1:18199/events";
+    71	}
+    72	
+    73	/**
+    74	 * Emit one FYD_SITE_OVERLAY event carrying presentation-intent ops to the
+    75	 * FYD demo journal. Returns the accepted event_id. Throws on rejection:
+    76	 * an unrecorded approval is never reported as recorded.
+    77	 */
+    78	export async function emitOverlayEvent(
+    79	  siteId: string,
+    80	  ops: PresentationIntentOverlayOp[],
+    81	): Promise<string> {
+    82	  const envelope = {
+    83	    event_type: "FYD_SITE_OVERLAY",
+    84	    aggregate_id: "fyd-site:" + siteId,
+    85	    aggregate_type: "fyd_site",
+    86	    event_data: { siteId, ops },
+    87	  };
+    88	  let res: Response;
+    89	  try {
+    90	    res = await fetch(gatewayUrl(), {
+    91	      method: "POST",
+    92	      headers: { "Content-Type": "application/json" },
+    93	      body: JSON.stringify(envelope),
+    94	    });
+    95	  } catch (e) {
+    96	    throw new Error(
+    97	      "customize: demo gateway unreachable at " + gatewayUrl() + ": " +
+    98	        (e instanceof Error ? e.message : String(e)),
+    99	    );
+   100	  }
+   101	  if (!res.ok) {
+   102	    const text = await res.text().catch(() => "");
+   103	    throw new Error(
+   104	      "customize: demo gateway rejected the overlay event (" + res.status + "): " + text.slice(0, 300),
+   105	    );
+   106	  }
+   107	  let doc: unknown;
+   108	  try {
+   109	    doc = await res.json();
+   110	  } catch {
+   111	    throw new Error("customize: demo gateway returned non-JSON on event emit.");
+   112	  }
+   113	  const eid =
+   114	    doc && typeof doc === "object"
+   115	      ? ((doc as Record<string, unknown>)["event_id"] ??
+   116	        (doc as Record<string, unknown>)["id"])
+   117	      : null;
+   118	  if (typeof eid !== "string" || eid.length === 0) {
+   119	    throw new Error("customize: gateway accepted the event but returned no event_id.");
+   120	  }
+   121	  return eid;
+   122	}
+   123	
+   124	export function buildDirective(
+   125	  siteId: string,
+   126	  siteIntent: PresentationIntentDirective["siteIntent"],
+   127	  proposal: PresentationIntentDirective["proposal"],
+   128	  approvedAt: string,
+   129	): PresentationIntentOverlayOp {
+   130	  return {
+   131	    op: "set_presentation_intent",
+   132	    intentId: directiveIdFor(siteId, proposal.proposalDigest),
+   133	    siteIntent,
+   134	    proposal,
+   135	    approval: {
+   136	      proposalDigest: proposal.proposalDigest,
+   137	      approvedBy: "demo-owner (seeded, unverified)",
+   138	      approvedAt,
+   139	      note: "DEMO OWNER MODE - not real authentication. No identity was verified.",
+   140	    },
+   141	  };
+   142	}

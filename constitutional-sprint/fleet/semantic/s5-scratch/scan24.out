@@ -1,0 +1,75 @@
+=== brainos mission_control app ===
+1614 brainos/orchestration/src/mission_control/app.py
+"""
+PING Mission Control
+Observability and Control Layer
+Date: 2026-06-22
+
+Provides Open WebUI integration for system observability.
+"""
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Dict, List, Optional, Any
+import os
+import sys
+import psycopg2
+from datetime import datetime
+import requests
+from qdrant_client import QdrantClient
+import json
+import hashlib
+import uuid
+from pathlib import Path
+
+# Add constitutional path for SecretAdapter
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'runtime' / 'adapters'))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'runtime'))
+from constitutional.secret_adapter import get_secret_adapter
+from security.projection_integrity import ProjectionIntegrity, ProjectionMetadata
+
+app = FastAPI(title="PING Mission Control", version="1.0.0")
+
+# CORS middleware for Open WebUI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Constitutional: Use SecretAdapter for secret access
+try:
+    secret_adapter = get_secret_adapter()
+    postgres_config = secret_adapter.get_postgres_config()
+    POSTGRES_HOST = postgres_config.get('host', os.getenv('POSTGRES_HOST', 'localhost'))
+    POSTGRES_PORT = postgres_config.get('port', os.getenv('POSTGRES_PORT', '5432'))
+    POSTGRES_DB = postgres_config.get('database', os.getenv('POSTGRES_DB', 'crx_runtime'))
+    POSTGRES_USER = postgres_config.get('user', os.getenv('POSTGRES_USER', 'postgres'))
+    POSTGRES_PASSWORD = postgres_config.get('password', os.getenv('POSTGRES_PASSWORD', ''))
+    _QDRANT_API_KEY = secret_adapter.get_qdrant_key()
+=== brainos live? ===
+---
+=== intent_graph_builder source dir ===
+24:def _load_intent_manifests() -> List[Dict[str, Any]]:
+26:    intent_dir = ROOT / "intent"
+27:    if not intent_dir.exists():
+29:    for manifest_path in sorted(intent_dir.glob("*.intent.yaml")):
+38:    intent_map = _read_yaml(ROOT / "intent-map.yaml")
+42:    intent_manifests = _load_intent_manifests()
+44:        "intent_map": intent_map,
+48:        "intent_manifests": intent_manifests,
+52:def _normalize_intent_name(name: str) -> str:
+56:def _collect_intent_entries(intent_map: Dict[str, Any], manifests: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+61:            name = manifest.get("intent")
+64:            entry_id = f"intent:{_normalize_intent_name(name)}"
+83:    for name, data in intent_map.items():
+88:                "id": f"intent:{_normalize_intent_name(name)}",
+111:                "intent": data.get("intent"),
+131:                "intent": data.get("intent"),
+140:def _collect_spec_entries(intent_entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+143:    for intent in intent_entries:
+144:        for spec in intent.get("specifications", []) or []:
+149:            entries.append({"id": spec_id, "name": spec, "intent": intent["name"]})

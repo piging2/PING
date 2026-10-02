@@ -1,0 +1,125 @@
+=== Dockerfile.projection/witness/replay existence anywhere ===
+/home/nolan/ping/Dockerfile.worker-runtime
+/home/nolan/ping/gateway/Dockerfile
+=== git: were Dockerfile.projection/witness/replay ever present? ===
+=== root replay_worker.py main() ===
+128-
+129-
+130:def main():
+131-    """Main execution"""
+132-    postgres_config = get_postgres_config()
+133-    
+134-    worker = ReplayWorker(postgres_config)
+135-    
+136-    # Test with a sample event
+137-    sample_event = {
+138-        "event_id": str(uuid.uuid4()),
+139-        "event_type": "CLAIM_GENERATED",
+140-        "timestamp": datetime.utcnow().isoformat(),
+141-        "aggregate_id": "test-doc-001",
+142-        "aggregate_type": "DOCUMENT",
+143-        "event_data": {
+144-            "document_id": "test-doc-001",
+145-            "source_event_id": str(uuid.uuid4()),
+146-            "claim_count": 5
+147-        }
+148-    }
+149-    
+150-    worker.handle_claim_generated(sample_event)
+151-    print("Replay worker test complete")
+152-
+153-
+154-if __name__ == "__main__":
+155-    main()
+=== root filesystem_worker.py main() ===
+206-
+207-
+208:def main():
+209-    phase = sys.argv[1] if len(sys.argv) > 1 else "all"
+210-    logger.info("=== PING Filesystem Constitutional Worker ===")
+211-    logger.info("Root: %s Phase: %s", PING_ROOT, phase)
+212-
+213-    files = scan_files(PING_ROOT)
+214-    logger.info("Scanned %d files", len(files))
+215-
+216-    if phase in ("all", "1"):
+217-        emit_phase1_sql(files)
+218-
+219-    if phase in ("all", "2"):
+220-        counts = emit_phase2_sql(files)
+221-
+222-
+223-if __name__ == "__main__":
+224-    main()
+=== .constitutional_snapshot.json tracked in git? ===
+.constitutional_snapshot.json
+PING_constitutional_snapshot_20260622.zip
+constitutional_snapshot_verification.md
+(end)
+=== ping-runtime/workers dir (JS canonical workers) ===
+canonical_workers.js
+intelligence_worker.js
+worker_runtime.js
+=== git log dates for root workers (latest 3) ===
+6357e70ca 2026-06-27 Phase Ω: Overwrite 5 execution-proof documents with full-codebase audit data
+8f203d538 2026-06-25 refactor(configuration): remove sys.path.append drift, use proper package imports
+dd67887e5 2026-06-25 refactor(configuration): update remaining workers to use shared configuration module
+=== kernel/event_dispatcher.py register_event_handlers body ===
+
+def register_event_handlers():
+    """Register all constitutional event handlers."""
+    # Import handlers here to avoid circular imports
+    from workers.observation_worker import handle_document_imported
+    from workers.claim_worker import handle_observation_created
+    from workers.replay_worker import handle_claim_generated
+    from workers.witness_worker import handle_replay_executed
+    from workers.lineage_worker import handle_witness_created
+    from workers.projection_worker import handle_lineage_created
+
+    # Register handlers
+    dispatcher.register_handler("DOCUMENT_IMPORTED", handle_document_imported)
+    dispatcher.register_handler("OBSERVATION_CREATED", handle_observation_created)
+    dispatcher.register_handler("CLAIM_GENERATED", handle_claim_generated)
+    dispatcher.register_handler("REPLAY_EXECUTED", handle_replay_executed)
+    dispatcher.register_handler("WITNESS_CREATED", handle_witness_created)
+    dispatcher.register_handler("LINEAGE_CREATED", handle_lineage_created)
+
+    logger.info("All event handlers registered")
+
+
+def get_dispatcher() -> EventDispatcher:
+    """Get the global dispatcher instance."""
+    return dispatcher
+=== simple_projection_worker bottom (how it ends / runs) ===
+            "content": event_data.get('content', ''),
+            "event_id": event_id,
+            "source_event_id": event_id,
+            "canonical_hash": canonical_hash,
+            "embedding_hash": embedding_hash,
+            "projection_signature": projection_signature,
+            "generated_by_worker": "simple_projection_worker",
+            "generated_at": datetime.utcnow().isoformat()
+        }
+    )
+    
+    # Insert into Qdrant
+    try:
+        client.upsert(
+            collection_name="constitutional_memory",
+            points=[point]
+        )
+        print(f"Projected event {event_id} to Qdrant")
+    except Exception as e:
+        print(f"ERROR: Failed to project event {event_id}: {e}")
+        continue
+    
+    # Mark event as projected using docker exec
+    timestamp = datetime.utcnow().isoformat()
+    update_cmd = 'docker exec brain-postgres psql -U postgres -d crx_runtime -c "UPDATE events SET projected_to_qdrant = true, projected_at = \'{}\' WHERE event_id = \'{}\';"'.format(timestamp, event_id)
+    result = subprocess.run(update_cmd, shell=True, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"ERROR: Failed to mark event {event_id} as projected: {result.stderr}")
+
+print("Projection worker complete")
+=== any .service files mentioning these workers ===
+(end)

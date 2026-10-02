@@ -1,0 +1,1778 @@
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/object/__tests__/owner-events.test.ts=====
+/**
+ * Tests for the append-only owner event log.
+ *
+ * The acceptance bar for the owner-core transition model:
+ *  1. Every event carries full provenance (actor, target, previous basis,
+ *     new value/state, timestamp, event identity, evidence reference).
+ *  2. The reducer is a pure fold: the same log replayed twice from empty
+ *     state produces byte-identical owner-visible state (digest match).
+ *  3. The replayed projection matches the live read path
+ *     (readOverrides, which is what every consumer serves).
+ *  4. Revert is append-only: a restored event, never a delete.
+ *  5. v1 (mutable) files migrate transparently on read.
+ */
+
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { canonicalizeJson } from "../../../lib/ping/dev-signer";
+import {
+  applyOwnerCommand,
+  readOverrides,
+  OwnerCommandError,
+} from "../owner-store";
+import {
+  appendOwnerEvent,
+  digestOwnerState,
+  fydOwnerEventId,
+  migrateV1ToEvents,
+  readOwnerEvents,
+  reduceOwnerEvents,
+  type OwnerEvent,
+  type OwnerEventDraft,
+} from "../owner-events";
+
+const KNOWN_IDS = ["svc-decks", "svc-fences", "svc-pergolas"];
+const KNOWN_NAMES = new Map([
+  ["svc-decks", "Decks"],
+  ["svc-fences", "Fences"],
+  ["svc-pergolas", "Pergolas"],
+]);
+
+beforeEach(() => {
+  process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-owner-events-"));
+});
+
+function draft(over: Partial<OwnerEventDraft> = {}): OwnerEventDraft {
+  return {
+    at: "2026-09-21T15:00:00.000Z",
+    objectId: "happy-place",
+    type: "owner.confirmed-fact",
+    actor: { kind: "demo", label: "Demo Owner (seeded, unverified)" },
+    target: "object",
+    previousBasis: null,
+    newValue: null,
+    evidence: { kind: "owner-attestation", ref: "test" },
+    note: "test note",
+    generator: "fyd-owner@1",
+    ...over,
+  };
+}
+
+describe("event identity", () => {
+  test("same body yields the same id; seq is part of the identity", () => {
+    const a = { ...draft(), seq: 0 };
+    const b = { ...draft(), seq: 0 };
+    const c = { ...draft(), seq: 1 };
+    expect(fydOwnerEventId(a)).toBe(fydOwnerEventId(b));
+    expect(fydOwnerEventId(a)).not.toBe(fydOwnerEventId(c));
+    expect(fydOwnerEventId(a)).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("appended events get sequential seqs and stable ids", () => {
+    const e1 = appendOwnerEvent("happy-place", draft({ note: "one" }));
+    const e2 = appendOwnerEvent("happy-place", draft({ note: "two" }));
+    expect(e1.seq).toBe(0);
+    expect(e2.seq).toBe(1);
+    expect(e1.id).not.toBe(e2.id);
+    const reread = readOwnerEvents("happy-place");
+    expect(reread.map((e) => e.id)).toEqual([e1.id, e2.id]);
+  });
+});
+
+describe("provenance", () => {
+  test("every appended event carries the full provenance record", () => {
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-contact-field", field: "phone", value: "+15551234567" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+      { sourceValue: "+15550000000" },
+    );
+    const events = readOwnerEvents("happy-place");
+    expect(events.length).toBe(1);
+    const e = events[0];
+    expect(e.type).toBe("owner.corrected-fact");
+    expect(e.actor).toEqual({
+      kind: "demo",
+      label: "Demo Owner (seeded, unverified)",
+    });
+    expect(e.target).toBe("contact:phone");
+    expect(e.previousBasis).toEqual({
+      priorOwnerValue: null,
+      sourceValue: "+15550000000",
+    });
+    expect((e.newValue as { ownerValue: string }).ownerValue).toBe(
+      "+15551234567",
+    );
+    expect(typeof e.at).toBe("string");
+    expect(e.id).toMatch(/^[0-9a-f]{64}$/);
+    expect(e.evidence.kind).toBe("source-snapshot");
+  });
+});
+
+describe("replay determinism", () => {
+  test("same log folded twice from empty state is byte-identical", () => {
+    applyOwnerCommand(
+      "happy-place",
+      { type: "move-service", id: "svc-fences", to: "first" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-service-visibility", id: "svc-decks", visible: false },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    applyOwnerCommand(
+      "happy-place",
+      { type: "add-service", name: "Patios" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-address-visibility", visibility: "hidden" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-contact-field", field: "phone", value: "+15551234567" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+      { sourceValue: "+15550000000" },
+    );
+
+    const events = readOwnerEvents("happy-place");
+    expect(events.length).toBe(5);
+
+    const first = reduceOwnerEvents("happy-place", events);
+    const second = reduceOwnerEvents("happy-place", events);
+    const bytes1 = canonicalizeJson(first);
+    const bytes2 = canonicalizeJson(second);
+    expect(bytes1).toBe(bytes2);
+    expect(digestOwnerState(first)).toBe(digestOwnerState(second));
+
+    // The persisted file holds only events: no mutable owner map.
+    const raw = JSON.parse(
+      readFileSync(
+        join(process.env.FYD_OWNER_DIR as string, "happy-place.json"),
+        "utf8",
+      ),
+    );
+    expect(raw.version).toBe(2);
+    expect(Array.isArray(raw.events)).toBe(true);
+    expect(raw.fieldCorrections).toBeUndefined();
+    expect(raw.serviceOrder).toBeUndefined();
+  });
+
+  test("replayed projection matches the live read path digest", () => {
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-contact-field", field: "email", value: "a@b.com" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+      { sourceValue: null },
+    );
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-service-visibility", id: "svc-pergolas", visible: false },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+
+    // Live path: what every consumer (view, overlay, routes) serves.
+    const liveDigest = digestOwnerState(readOverrides("happy-place"));
+    // Replay path: raw log folded from empty state, twice.
+    const events = readOwnerEvents("happy-place");
+    const replayDigest1 = digestOwnerState(
+      reduceOwnerEvents("happy-place", events),
+    );
+    const replayDigest2 = digestOwnerState(
+      reduceOwnerEvents("happy-place", events),
+    );
+    expect(replayDigest1).toBe(liveDigest);
+    expect(replayDigest2).toBe(liveDigest);
+  });
+});
+
+describe("append-only revert", () => {
+  test("revert appends a restored event; the correction event is never deleted", () => {
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-contact-field", field: "phone", value: "+15551234567" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+      { sourceValue: "+15550000000" },
+    );
+    const reverted = applyOwnerCommand(
+      "happy-place",
+      { type: "revert-contact-field", field: "phone" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    // Projection: the correction is no longer composed.
+    expect(reverted.fieldCorrections).toEqual({});
+    // Log: append-only. The corrected event is still there, followed by
+    // the restored event. Nothing was deleted.
+    const events = readOwnerEvents("happy-place");
+    expect(events.length).toBe(2);
+    expect(events.map((e) => e.type)).toEqual([
+      "owner.corrected-fact",
+      "owner.restored-fact",
+    ]);
+    expect(events[1].target).toBe("contact:phone");
+    expect(events[1].previousBasis).toMatchObject({
+      ownerValue: "+15551234567",
+      sourceValue: "+15550000000",
+    });
+  });
+
+  test("revert with no correction fails closed and writes nothing", () => {
+    expect(() =>
+      applyOwnerCommand(
+        "happy-place",
+        { type: "revert-contact-field", field: "phone" },
+        KNOWN_IDS,
+        KNOWN_NAMES,
+      ),
+    ).toThrow(OwnerCommandError);
+    expect(readOwnerEvents("happy-place")).toEqual([]);
+  });
+});
+
+describe("v1 migration", () => {
+  test("a v1 mutable file migrates transparently on read", () => {
+    const dir = process.env.FYD_OWNER_DIR as string;
+    const v1 = {
+      version: 1,
+      objectId: "happy-place",
+      updatedAt: "2026-09-20T10:00:00.000Z",
+      serviceOrder: ["svc-fences", "svc-decks"],
+      hiddenServices: ["svc-pergolas"],
+      addedServices: [{ id: "svc-patios", name: "Patios" }],
+      addressVisibility: "hidden",
+      fieldCorrections: {
+        phone: {
+          field: "phone",
+          label: "Phone",
+          sourceValue: "+15550000000",
+          ownerValue: "+15551234567",
+          correctedAt: "2026-09-20T10:00:00.000Z",
+          actorLabel: "Demo Owner (seeded, unverified)",
+          basis: "Owner correction: the owner says this is the correct phone. The source record is unchanged.",
+        },
+      },
+      history: [{ at: "2026-09-20T10:00:00.000Z", text: "Hid Pergolas." }],
+    };
+    writeFileSync(join(dir, "happy-place.json"), JSON.stringify(v1), "utf8");
+
+    // Transparent on read: the projected state matches the old v1 state.
+    const o = readOverrides("happy-place");
+    expect(o.serviceOrder).toEqual(["svc-fences", "svc-decks"]);
+    expect(o.hiddenServices).toEqual(["svc-pergolas"]);
+    expect(o.addedServices).toEqual([{ id: "svc-patios", name: "Patios" }]);
+    expect(o.addressVisibility).toBe("hidden");
+    expect(o.fieldCorrections.phone.ownerValue).toBe("+15551234567");
+    expect(o.fieldCorrections.phone.sourceValue).toBe("+15550000000");
+    // The human log survived migration.
+    expect(o.history.map((h) => h.text)).toContain("Hid Pergolas.");
+
+    // Migration events are provenance-labeled and deterministic.
+    const events = readOwnerEvents("happy-place");
+    expect(events.length).toBeGreaterThan(0);
+    expect(
+      events.every((e) => e.evidence.kind === "migration"),
+    ).toBe(true);
+    expect(events.map((e) => e.type)).toContain("owner.corrected-fact");
+    expect(events.map((e) => e.type)).toContain("owner.hid-fact");
+    expect(events.map((e) => e.type)).toContain("owner.added-fact");
+    // Deterministic: migrating the same v1 file twice yields the same ids.
+    const again = migrateV1ToEvents(v1 as never);
+    const once = readOwnerEvents("happy-place");
+    expect(again.length).toBe(once.length);
+
+    // A new command after migration persists one v2 file with everything.
+    applyOwnerCommand(
+      "happy-place",
+      { type: "set-contact-field", field: "email", value: "a@b.com" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+      { sourceValue: null },
+    );
+    const raw = JSON.parse(
+      readFileSync(join(dir, "happy-place.json"), "utf8"),
+    );
+    expect(raw.version).toBe(2);
+    const after = readOverrides("happy-place");
+    expect(after.fieldCorrections.email.ownerValue).toBe("a@b.com");
+    expect(after.fieldCorrections.phone.ownerValue).toBe("+15551234567");
+  });
+});
+
+describe("fail closed", () => {
+  test("unknown event types throw in the reducer", () => {
+    const bad = [
+      { ...draft({ type: "owner.nuke-fact" as never }), seq: 0, id: "x" },
+    ];
+    expect(() => reduceOwnerEvents("happy-place", bad)).toThrow();
+  });
+
+  test("events for another object throw in the reducer", () => {
+    const e: OwnerEvent = { ...draft(), seq: 0, id: "x" };
+    expect(() => reduceOwnerEvents("other-object", [e])).toThrow();
+  });
+
+  test("rejected commands write nothing", () => {
+    expect(() =>
+      applyOwnerCommand(
+        "happy-place",
+        { type: "move-service", id: "svc-nope", to: "first" },
+        KNOWN_IDS,
+        KNOWN_NAMES,
+      ),
+    ).toThrow(OwnerCommandError);
+    expect(readOwnerEvents("happy-place")).toEqual([]);
+  });
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/identity/__tests__/principal.test.ts=====
+/**
+ * Binding contract tests: provider account -> authenticated principal ->
+ * ONE PING identity. Proves the non-negotiable semantics:
+ * sign-up binds one identity; sign-in preserves it; a second provider
+ * links to the same identity; unlink keeps the identity while another
+ * method remains; unlinking the last method is refused; email collisions
+ * never merge.
+ */
+
+import {
+  deriveIdentityId,
+  IdentityBindingError,
+  InMemoryIdentityBindingStore,
+  linkProviderAccount,
+  providerAccountId,
+  signInOrSignUp,
+  unlinkProviderAccount,
+} from "../principal";
+import { isUuid, uuidv5, FYD_IDENTITY_NAMESPACE } from "../uuid";
+import type { VerifiedAccount } from "../provider";
+
+const NOW = "2026-09-21T15:00:00.000Z";
+
+function googleAccount(sub: string, email?: string, emailVerified?: boolean): VerifiedAccount {
+  return {
+    provider: "google",
+    issuer: "https://accounts.google.com",
+    subject: sub,
+    email,
+    emailVerified,
+    name: "Owner " + sub,
+  };
+}
+
+describe("identity derivation (extracted PING semantics)", () => {
+  test("same provider account always derives the same identity ID", () => {
+    const a = deriveIdentityId("google", "https://accounts.google.com", "sub-1");
+    const b = deriveIdentityId("google", "https://accounts.google.com", "sub-1");
+    expect(a).toBe(b);
+    expect(isUuid(a)).toBe(true);
+  });
+
+  test("different subjects derive different identities", () => {
+    expect(
+      deriveIdentityId("google", "https://accounts.google.com", "sub-1")
+    ).not.toBe(deriveIdentityId("google", "https://accounts.google.com", "sub-2"));
+  });
+
+  test("the namespace is stable and derived once", () => {
+    expect(isUuid(FYD_IDENTITY_NAMESPACE)).toBe(true);
+    expect(uuidv5(FYD_IDENTITY_NAMESPACE, "x")).toBe(uuidv5(FYD_IDENTITY_NAMESPACE, "x"));
+  });
+
+  test("provider account key excludes email by construction", () => {
+    const id = providerAccountId("google", "https://accounts.google.com", "sub-1");
+    expect(id).not.toContain("@");
+    expect(id).toBe("google::https://accounts.google.com::sub-1");
+  });
+});
+
+describe("signInOrSignUp", () => {
+  test("sign-up binds ONE identity to the provider account", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const result = signInOrSignUp(store, googleAccount("sub-1", "a@example.com", true), NOW);
+    expect(result.created).toBe(true);
+    expect(isUuid(result.identityId)).toBe(true);
+    const stored = store.getAccount("google::https://accounts.google.com::sub-1");
+    expect(stored?.identityId).toBe(result.identityId);
+    expect(stored?.email).toBe("a@example.com");
+  });
+
+  test("sign-in with the same provider account preserves the identity", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1", "a@example.com", true), NOW);
+    const second = signInOrSignUp(
+      store,
+      googleAccount("sub-1", "a@example.com", true),
+      "2026-09-22T15:00:00.000Z"
+    );
+    expect(second.created).toBe(false);
+    expect(second.identityId).toBe(first.identityId);
+  });
+
+  test("a second provider with the same verified email does NOT merge: separate identity, flagged", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1", "same@example.com", true), NOW);
+    const second = signInOrSignUp(
+      store,
+      { provider: "google", issuer: "https://accounts.google.com", subject: "sub-2", email: "same@example.com", emailVerified: true },
+      NOW
+    );
+    expect(second.created).toBe(true);
+    expect(second.identityId).not.toBe(first.identityId);
+    expect(second.emailCollision).toBe(true);
+    const stored = store.getAccount("google::https://accounts.google.com::sub-2");
+    expect(stored?.emailCollision).toBe(true);
+    expect(stored?.identityId).toBe(second.identityId);
+  });
+
+  test("unverified email does not trigger a collision flag", () => {
+    const store = new InMemoryIdentityBindingStore();
+    signInOrSignUp(store, googleAccount("sub-1", "same@example.com", true), NOW);
+    const second = signInOrSignUp(store, googleAccount("sub-2", "same@example.com", false), NOW);
+    expect(second.emailCollision).toBe(false);
+  });
+});
+
+describe("linkProviderAccount", () => {
+  test("linking a second provider keeps the SAME identity", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1", "a@example.com", true), NOW);
+    const proof = googleAccount("sub-2", "a@example.com", true);
+    const link = linkProviderAccount(store, first.identityId, proof, { proofOfAuthentication: proof }, NOW);
+    expect(link.identityId).toBe(first.identityId);
+    expect(link.alreadyLinked).toBe(false);
+    const accounts = store.listAccountsByIdentity(first.identityId);
+    expect(accounts).toHaveLength(2);
+  });
+
+  test("linking is idempotent for an already-linked account", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1"), NOW);
+    const proof = googleAccount("sub-2");
+    linkProviderAccount(store, first.identityId, proof, { proofOfAuthentication: proof }, NOW);
+    const again = linkProviderAccount(store, first.identityId, proof, { proofOfAuthentication: proof }, NOW);
+    expect(again.alreadyLinked).toBe(true);
+    expect(store.listAccountsByIdentity(first.identityId)).toHaveLength(2);
+  });
+
+  test("linking requires fresh authenticated proof", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1"), NOW);
+    expect(() =>
+      linkProviderAccount(store, first.identityId, googleAccount("sub-2"), { proofOfAuthentication: null }, NOW)
+    ).toThrow(IdentityBindingError);
+  });
+
+  test("cannot link an account bound to a different identity", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1"), NOW);
+    const other = signInOrSignUp(store, googleAccount("sub-9"), NOW);
+    const proof = googleAccount("sub-9");
+    expect(() =>
+      linkProviderAccount(store, first.identityId, proof, { proofOfAuthentication: proof }, NOW)
+    ).toThrow(expect.objectContaining({ code: "ACCOUNT_BOUND_ELSEWHERE" }));
+    expect(other.identityId).not.toBe(first.identityId);
+  });
+});
+
+describe("unlinkProviderAccount", () => {
+  function twoAccountIdentity(): { store: InMemoryIdentityBindingStore; identityId: string } {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1", "a@example.com", true), NOW);
+    const proof = googleAccount("sub-2", "a@example.com", true);
+    linkProviderAccount(store, first.identityId, proof, { proofOfAuthentication: proof }, NOW);
+    return { store, identityId: first.identityId };
+  }
+
+  test("unlinking one of two methods keeps the identity", () => {
+    const { store, identityId } = twoAccountIdentity();
+    const out = unlinkProviderAccount(store, identityId, "google::https://accounts.google.com::sub-2");
+    expect(out.identityId).toBe(identityId);
+    expect(out.remaining).toBe(1);
+    expect(store.getAccount("google::https://accounts.google.com::sub-2")).toBeNull();
+    // the identity still resolves through the remaining account
+    const again = signInOrSignUp(store, googleAccount("sub-1", "a@example.com", true), NOW);
+    expect(again.identityId).toBe(identityId);
+    expect(again.created).toBe(false);
+  });
+
+  test("unlinking the last method is refused", () => {
+    const store = new InMemoryIdentityBindingStore();
+    const first = signInOrSignUp(store, googleAccount("sub-1"), NOW);
+    expect(() =>
+      unlinkProviderAccount(store, first.identityId, "google::https://accounts.google.com::sub-1")
+    ).toThrow(expect.objectContaining({ code: "LAST_AUTH_METHOD" }));
+    expect(store.getAccount("google::https://accounts.google.com::sub-1")).not.toBeNull();
+  });
+
+  test("cannot unlink another identity's account", () => {
+    const { store, identityId } = twoAccountIdentity();
+    const other = signInOrSignUp(store, googleAccount("sub-9"), NOW);
+    expect(() =>
+      unlinkProviderAccount(store, other.identityId, "google::https://accounts.google.com::sub-1")
+    ).toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
+    expect(identityId).not.toBe(other.identityId);
+  });
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/resolve/spike/__tests__/resolve.test.ts=====
+/**
+ * Entity-resolution spike tests (spike-1). jest, deterministic.
+ *
+ * Real-data provenance: the EXACT/AMBIGUOUS/UNMATCHED cases below use
+ * verbatim rows from the PING Social outreach pipeline
+ * (~/workspace/outreach, 2026-09-21) and the committed Coppersmith
+ * proceduralizer fixture. Only the exact-name-address pair is synthetic,
+ * labeled as such, because the real corpus contains no street addresses.
+ */
+
+import assert from "node:assert/strict";
+import type { ResolveEntity } from "../types";
+import {
+  normalizeAddress,
+  normalizeCity,
+  normalizeName,
+  normalizePhone,
+  normalizeUrl,
+  urlHost,
+} from "../normalize";
+import { exactPhone, exactUrl, pairScore } from "../matchers";
+import { buildIndex, resolveAll, tierCounts } from "../resolve";
+import { COPPERSMITH_GRAPH } from "../../../proceduralize/__fixtures__/coppersmith-graph";
+
+const AT = "2026-09-21T00:00:00.000Z";
+
+// --- Verbatim real rows -------------------------------------------------
+// Round 53 meta-AI intel (jsonl-additions-round53-meta.jsonl), verified 2026-09-14.
+const COPPERSMITH_ROUND53: ResolveEntity = {
+  id: "round53:coppersmith",
+  name: "Coppersmith Plumbing & HVAC",
+  phone: "970-245-3869",
+  url: "http://www.coppersmithplumbing.com/",
+  city: "Grand Junction",
+  trade: "plumbing and HVAC",
+};
+// Round 40 research (jsonl-additions-round40-research.jsonl).
+const MARTINS_PAINTING: ResolveEntity = {
+  id: "round40:martins-painting",
+  name: "Martin's Painting",
+  phone: "(970) 275-9999",
+  url: "http://www.martinspainting.net",
+  city: "Montrose",
+  trade: "painting contractor",
+};
+// Canonical pipeline (western-co-prospects.jsonl).
+const RJS_PAINTING: ResolveEntity = {
+  id: "corpus:rjs-painting",
+  name: "RJ's Painting",
+  phone: "(970) 249-2137",
+  url: "http://rjspainting.com/",
+  city: "Montrose",
+  trade: "painting contractor",
+};
+
+function fixtureCoppersmith(): ResolveEntity {
+  const o = COPPERSMITH_GRAPH.objects[0];
+  const f = o.fields as Record<string, string>;
+  return { id: "fixture:coppersmith", name: f["title"], url: f["website"] };
+}
+
+// --- Normalization -------------------------------------------------------
+
+test("normalizeUrl strips scheme, www, trailing junk; keeps the path", () => {
+  assert.equal(normalizeUrl("http://www.coppersmithplumbing.com/"), "coppersmithplumbing.com");
+  assert.equal(normalizeUrl("https://www.coppersmithplumbing.com/"), "coppersmithplumbing.com");
+  // Real ";" artifact observed in western-co-prospects.jsonl (2026-09-21).
+  assert.equal(normalizeUrl("https://cillessenconstruction.com/contact;"), "cillessenconstruction.com/contact");
+  assert.equal(normalizeUrl("https://example.com/page?x=1#frag"), "example.com/page");
+  assert.equal(normalizeUrl(""), "");
+});
+
+test("normalizeUrl keeps /contact distinct from / (host signal is separate)", () => {
+  assert.notEqual(normalizeUrl("https://example.com/contact"), normalizeUrl("https://example.com/"));
+  assert.equal(urlHost("https://example.com/contact"), urlHost("https://example.com/"));
+});
+
+test("normalizePhone returns 10 digits or empty, never coerced", () => {
+  assert.equal(normalizePhone("(970) 245-3869"), "9702453869");
+  assert.equal(normalizePhone("970-245-3869"), "9702453869");
+  assert.equal(normalizePhone("+15412865190"), "5412865190"); // real Happy Place fixture phone
+  assert.equal(normalizePhone(""), "");
+  assert.equal(normalizePhone("555-1234"), ""); // not a 10-digit NANP number: UNKNOWN
+});
+
+test("normalizeName drops case, punctuation, legal suffixes; & -> and", () => {
+  assert.equal(normalizeName("Coppersmith Plumbing & HVAC"), "coppersmith plumbing and hvac");
+  assert.equal(normalizeName("Kaylor Fencing LLC"), "kaylor fencing");
+  assert.equal(normalizeName("Alpine Fencing & Supplies, Inc."), "alpine fencing and supplies");
+  assert.equal(normalizeName(""), "");
+});
+
+test("normalizeAddress expands street abbreviations but keeps suite tokens", () => {
+  assert.equal(normalizeAddress("123 Main St Ste 4"), "123 main street suite 4");
+  assert.notEqual(normalizeAddress("123 Main St Ste 4"), normalizeAddress("123 Main St Ste 5"));
+});
+
+test("normalizeCity is case- and punctuation-insensitive", () => {
+  assert.equal(normalizeCity("Grand Junction"), normalizeCity("grand junction"));
+});
+
+// --- EXACT tier ----------------------------------------------------------
+
+test("EXACT: fixture Coppersmith matches round-53 row via exact-url despite different names", () => {
+  const fixture = fixtureCoppersmith();
+  // Fixture reads the live title from COPPERSMITH_GRAPH; the business renamed.
+  assert.equal(fixture.name, "Coppersmith Plumbing - HVAC - Mechanical");
+  assert.equal(exactUrl(fixture, COPPERSMITH_ROUND53), "coppersmithplumbing.com");
+  const decisions = resolveAll([fixture], [COPPERSMITH_ROUND53], {
+    corpusRef: "test-corpus@1",
+    evaluatedAt: AT,
+  });
+  const d = decisions[0];
+  assert.equal(d.tier, "EXACT");
+  if (d.tier !== "EXACT") throw new Error("unreachable");
+  assert.equal(d.rule, "exact-url");
+  assert.deepEqual(d.matchedIds, ["round53:coppersmith"]);
+  assert.deepEqual(d.evidence, { "exact-url": "coppersmithplumbing.com" });
+});
+
+test("EXACT: exact-phone probe matches real phone spellings", () => {
+  const a: ResolveEntity = { id: "a", name: "Coppersmith Plumbing & HVAC", phone: "970-245-3869" };
+  const b: ResolveEntity = { id: "b", name: "Coppersmith Plumbing", phone: "(970) 245-3869" };
+  assert.equal(exactPhone(a, b), "9702453869");
+  const decisions = resolveAll([a], [b], { corpusRef: "t@1", evaluatedAt: AT });
+  assert.equal(decisions[0].tier, "EXACT");
+  if (decisions[0].tier !== "EXACT") throw new Error("unreachable");
+  assert.equal(decisions[0].rule, "exact-phone");
+});
+
+test("EXACT: exact-name-address needs both name and full address (synthetic pair)", () => {
+  const a: ResolveEntity = { id: "a", name: "Acme Plumbing LLC", address: "123 Main St Ste 4, Grand Junction CO" };
+  const b: ResolveEntity = { id: "b", name: "Acme Plumbing", address: "123 Main Street Suite 4, Grand Junction CO" };
+  const c: ResolveEntity = { id: "c", name: "Acme Plumbing", address: "123 Main Street Suite 5, Grand Junction CO" };
+  const decisions = resolveAll([a], [b, c], { corpusRef: "t@2", evaluatedAt: AT });
+  const d = decisions[0];
+  assert.equal(d.tier, "EXACT");
+  if (d.tier !== "EXACT") throw new Error("unreachable");
+  assert.equal(d.rule, "exact-name-address");
+  assert.deepEqual(d.matchedIds, ["b"]); // suite 5 must not match
+});
+
+test("EXACT: empty fields never match (unknown is not evidence)", () => {
+  const a: ResolveEntity = { id: "a", name: "No Phone Co" };
+  const b: ResolveEntity = { id: "b", name: "No Phone Co" };
+  const decisions = resolveAll([a], [b], { corpusRef: "t@1", evaluatedAt: AT });
+  // Same normalized name but no URL/phone/address: not an exact rule.
+  assert.notEqual(decisions[0].tier, "EXACT");
+});
+
+// --- AMBIGUOUS tier -------------------------------------------------------
+
+test("AMBIGUOUS: Martin's Painting vs RJ's Painting is isolated, never merged", () => {
+  const decisions = resolveAll([MARTINS_PAINTING], [RJS_PAINTING], {
+    corpusRef: "western-co-prospects.jsonl@318",
+    evaluatedAt: AT,
+  });
+  const d = decisions[0];
+  assert.equal(d.tier, "AMBIGUOUS");
+  if (d.tier !== "AMBIGUOUS") throw new Error("unreachable");
+  assert.equal(d.action, "intelligence-review");
+  assert.ok(d.candidates.length >= 1);
+  assert.equal(d.candidates[0].id, "corpus:rjs-painting");
+  assert.ok(d.candidates[0].score >= 0.5);
+  assert.ok(d.candidates[0].score < 1);
+  // The never-auto-merge invariant: no matchedIds field exists on this tier.
+  assert.ok(!("matchedIds" in d));
+});
+
+test("AMBIGUOUS: pairScore exposes per-feature evidence for the reviewer", () => {
+  const { score, features } = pairScore(MARTINS_PAINTING, RJS_PAINTING);
+  assert.ok(score >= 0.5 && score <= 1);
+  assert.equal(features.sameCity, true);
+  assert.equal(features.sameUrlHost, false);
+  assert.equal(features.phoneAreaMatch, false);
+});
+
+// --- UNMATCHED tier -------------------------------------------------------
+
+test("UNMATCHED: distinct businesses with no corroborating signal are reported honestly", () => {
+  const decisions = resolveAll([MARTINS_PAINTING], [COPPERSMITH_ROUND53], {
+    corpusRef: "western-co-prospects.jsonl@318",
+    evaluatedAt: AT,
+  });
+  const d = decisions[0];
+  assert.equal(d.tier, "UNMATCHED");
+  assert.ok(!("matchedIds" in d));
+  assert.ok(!("candidates" in d));
+});
+
+// --- Provenance and determinism ------------------------------------------
+
+test("every decision carries provenance", () => {
+  const corpus = [COPPERSMITH_ROUND53, RJS_PAINTING];
+  const candidates = [fixtureCoppersmith(), MARTINS_PAINTING];
+  const decisions = resolveAll(candidates, corpus, {
+    corpusRef: "western-co-prospects.jsonl@318",
+    evaluatedAt: AT,
+  });
+  for (const d of decisions) {
+    assert.ok(d.provenance.candidateId);
+    assert.equal(d.provenance.corpusRef, "western-co-prospects.jsonl@318");
+    assert.equal(d.provenance.evaluatedAt, AT);
+    assert.equal(d.provenance.normalizerVersion, "spike-1");
+    assert.ok(d.provenance.mechanism.length > 0);
+  }
+});
+
+test("resolution is deterministic across runs", () => {
+  const corpus = [COPPERSMITH_ROUND53, RJS_PAINTING];
+  const candidates = [fixtureCoppersmith(), MARTINS_PAINTING];
+  const opts = { corpusRef: "western-co-prospects.jsonl@318", evaluatedAt: AT } as const;
+  const once = resolveAll(candidates, corpus, opts);
+  const twice = resolveAll(candidates, corpus, opts);
+  assert.deepEqual(once, twice);
+});
+
+test("tierCounts sums to the candidate count", () => {
+  const corpus = [COPPERSMITH_ROUND53, RJS_PAINTING];
+  const candidates = [fixtureCoppersmith(), MARTINS_PAINTING];
+  const counts = tierCounts(
+    resolveAll(candidates, corpus, { corpusRef: "t@2", evaluatedAt: AT }),
+  );
+  assert.equal(counts.EXACT + counts.AMBIGUOUS + counts.UNMATCHED, candidates.length);
+  assert.equal(counts.EXACT, 1);
+  assert.equal(counts.AMBIGUOUS, 1);
+  assert.equal(counts.UNMATCHED, 0);
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/website-observe.test.ts=====
+/**
+ * Website observation tests: the extractor finds the real facts in page
+ * HTML and labels every claim website_statement with full provenance.
+ */
+import assert from "node:assert/strict";
+import { extractWebsiteClaims, extractRawFacts } from "../website-observe";
+
+const ENTITY = "fyd:business:happy-place-carpentry";
+const META = {
+  url: "https://happy-place-platform.vercel.app/",
+  observedAt: "2026-09-21T11:23:35.000Z",
+  evidenceRef: "test-fixture",
+};
+
+const HTML =
+  '<html><head><title>Happy Place Carpentry — Decks, Fences &amp; Remodels in the Willamette Valley</title>' +
+  '<meta name="description" content="Licensed Oregon carpentry contractor (CCB# 254240) building decks, fences, pergolas, bathrooms, and custom work across Benton, Linn, Marion &amp; Polk Counties."/>' +
+  '<meta property="og:title" content="Happy Place Carpentry — Decks, Fences &amp; Remodels in the Willamette Valley"/>' +
+  "</head><body>" +
+  "Decks, fences, repairs, remodels, finish carpentry, painting, and outdoor structures throughout Oregon's Mid-Willamette Valley." +
+  "Mon–Fri 8am–5pm · Sat by appointment" +
+  "Call 541-286-5190 or taylor@happyplacecarpentry.com | " +
+  "Benton · Linn · Marion · Polk" +
+  "Licensed · Insured · Est. 2024 · 125+ projects" +
+  "</body></html>";
+
+test("extracts the core business facts", () => {
+  const facts = extractRawFacts(HTML);
+  const byField = new Map(facts.map((f) => [f.field, f.value]));
+  assert.equal(byField.get("name"), "Happy Place Carpentry");
+  assert.ok((byField.get("description") || "").includes("CCB# 254240"));
+  assert.ok((byField.get("hours") || "").includes("8am"));
+  assert.equal(byField.get("phone"), "541-286-5190");
+  assert.equal(byField.get("email"), "taylor@happyplacecarpentry.com");
+  assert.equal(byField.get("license_ccb"), "CCB #254240");
+  assert.ok((byField.get("service_area") || "").includes("Benton"));
+  assert.equal(byField.get("established"), "2024");
+});
+
+test("every claim is website_statement with full provenance", () => {
+  const claims = extractWebsiteClaims(HTML, ENTITY, META);
+  assert.ok(claims.length >= 7);
+  for (const c of claims) {
+    assert.equal(c.grade, "website_statement");
+    assert.equal(c.sourceKind, "website");
+    assert.equal(c.sourceUrl, META.url);
+    assert.equal(c.observedAt, META.observedAt);
+    assert.ok(c.evidenceRef.length > 0);
+    assert.ok(c.confidence > 0 && c.confidence <= 1);
+    assert.ok(c.normalizedValue.length > 0);
+    assert.equal(c.entityId, ENTITY);
+  }
+});
+
+test("claim ids are deterministic for the same input", () => {
+  const a = extractWebsiteClaims(HTML, ENTITY, META);
+  const b = extractWebsiteClaims(HTML, ENTITY, META);
+  assert.deepEqual(a.map((c) => c.claimId), b.map((c) => c.claimId));
+});
+
+test("empty page yields no claims, never fabricated ones", () => {
+  const claims = extractWebsiteClaims("<html><body></body></html>", ENTITY, META);
+  assert.deepEqual(claims, []);
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/ui/__tests__/capability-runtime.test.ts=====
+/**
+ * CapabilityRuntime tests: detection plus fail-closed executors.
+ *
+ * The executors are pure HTTP against relative API paths; fetch is mocked
+ * here. The dev-server round-trip (Lane A step 4) proves the real wire.
+ */
+import {
+  executeFollow,
+  executeLike,
+  hasCapability,
+  openWebsite,
+  submitAsk,
+  type CapabilityKind,
+} from "@/fyd/capabilities/runtime";
+import type { PortalProjection } from "@/fyd/preview/types";
+
+function portalWith(kinds: CapabilityKind[]): PortalProjection {
+  return {
+    circle: { capabilities: kinds.map((kind) => ({ kind })) },
+  } as unknown as PortalProjection;
+}
+
+function mockFetchJson(payload: unknown): jest.Mock {
+  const m = jest.fn().mockResolvedValue({ json: async () => payload });
+  (global as { fetch?: unknown }).fetch = m;
+  return m;
+}
+
+function mockFetchReject(): jest.Mock {
+  const m = jest.fn().mockRejectedValue(new Error("network down"));
+  (global as { fetch?: unknown }).fetch = m;
+  return m;
+}
+
+describe("hasCapability", () => {
+  it("detects present and absent capabilities", () => {
+    const portal = portalWith(["follow", "like"]);
+    expect(hasCapability(portal, "follow")).toBe(true);
+    expect(hasCapability(portal, "like")).toBe(true);
+    expect(hasCapability(portal, "ask")).toBe(false);
+    expect(hasCapability(portal, "website")).toBe(false);
+  });
+});
+
+describe("executeFollow", () => {
+  it("posts follow and returns the server-confirmed state", async () => {
+    const fetchMock = mockFetchJson({ ok: true, following: true });
+    await expect(executeFollow("happy-place", false)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/fyd/follow",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ objectId: "happy-place", action: "follow" }),
+      }),
+    );
+  });
+
+  it("posts unfollow when already following", async () => {
+    const fetchMock = mockFetchJson({ ok: true, following: false });
+    await expect(executeFollow("happy-place", true)).resolves.toBe(false);
+    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"unfollow"');
+  });
+
+  it("returns the previous state when the server says not-ok", async () => {
+    mockFetchJson({ ok: false });
+    await expect(executeFollow("happy-place", true)).resolves.toBe(true);
+    await expect(executeFollow("happy-place", false)).resolves.toBe(false);
+  });
+
+  it("returns the previous state when the network fails", async () => {
+    mockFetchReject();
+    await expect(executeFollow("happy-place", true)).resolves.toBe(true);
+    await expect(executeFollow("happy-place", false)).resolves.toBe(false);
+  });
+});
+
+describe("executeLike", () => {
+  it("posts like and returns the server-confirmed state", async () => {
+    const fetchMock = mockFetchJson({ ok: true, liked: true });
+    await expect(executeLike("happy-place", false)).resolves.toBe(true);
+    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"like"');
+  });
+
+  it("posts unlike when already liked, fail-closed otherwise", async () => {
+    const fetchMock = mockFetchJson({ ok: true, liked: false });
+    await expect(executeLike("happy-place", true)).resolves.toBe(false);
+    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"unlike"');
+
+    mockFetchJson({ ok: false });
+    await expect(executeLike("happy-place", true)).resolves.toBe(true);
+
+    mockFetchReject();
+    await expect(executeLike("happy-place", false)).resolves.toBe(false);
+  });
+});
+
+describe("submitAsk", () => {
+  it("posts siteId, question, and visitor mode, returning the answer", async () => {
+    const fetchMock = mockFetchJson({ ok: true, answer: "Nine to five.", refusal: false });
+    const result = await submitAsk("happy-place", "What are the hours?");
+    expect(result).toEqual({ ok: true, answer: "Nine to five.", refusal: false });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/fyd/ask",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          siteId: "happy-place",
+          question: "What are the hours?",
+          mode: "visitor",
+        }),
+      }),
+    );
+  });
+
+  it("surfaces a refusal as ok with refusal true", async () => {
+    mockFetchJson({ ok: true, answer: "", refusal: true });
+    await expect(submitAsk("happy-place", "Secrets?")).resolves.toEqual({
+      ok: true,
+      answer: "",
+      refusal: true,
+    });
+  });
+
+  it("returns ok false on transport failure or server not-ok", async () => {
+    mockFetchReject();
+    await expect(submitAsk("happy-place", "Hi?")).resolves.toEqual({ ok: false });
+    mockFetchJson({ ok: false });
+    await expect(submitAsk("happy-place", "Hi?")).resolves.toEqual({ ok: false });
+  });
+});
+
+describe("openWebsite", () => {
+  const realWindow = (globalThis as { window?: unknown }).window;
+
+  beforeEach(() => {
+    (globalThis as { window?: unknown }).window = { open: jest.fn() };
+  });
+
+  afterEach(() => {
+    (globalThis as { window?: unknown }).window = realWindow;
+  });
+
+  it("opens a safe https href _blank noopener", () => {
+    openWebsite("https://example.com/menu");
+    expect(
+      ((globalThis as { window: { open: jest.Mock } }).window.open as jest.Mock),
+    ).toHaveBeenCalledWith("https://example.com/menu", "_blank", "noopener,noreferrer");
+  });
+
+  it("refuses javascript:, http:, and data: hrefs", () => {
+    openWebsite("javascript:alert(1)");
+    openWebsite("http://example.com/");
+    openWebsite("data:text/html,hi");
+    expect(
+      ((globalThis as { window: { open: jest.Mock } }).window.open as jest.Mock),
+    ).not.toHaveBeenCalled();
+  });
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/tenant/__tests__/d-worker.test.ts=====
+/**
+ * (d) ADVERSARIAL: a projection/worker path invoked without tenant context fails closed.
+ *
+ * REPO LANDING PATH: src/fyd/tenant/__tests__/d-worker.test.ts
+ *
+ * What this proves:
+ *  1. withTenantContext never executes the wrapped path when the context is
+ *     missing or invalid: the spy is NOT called and a typed
+ *     TenantContextError(TENANT_CONTEXT_MISSING) is thrown. This is the
+ *     "background worker cannot run without tenant context" bar.
+ *  2. A simulated worker job that touches the real owner store refuses to
+ *     run context-less and writes nothing.
+ *  3. tenantScopedDir refuses invalid/traversal tenant ids (fail closed on
+ *     path construction, the privileged-path analog).
+ *  4. Valid contexts pass through with the verified tenant id.
+ */
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import { readOverrides } from "@/fyd/object/owner-store";
+import {
+  TenantContextError,
+  requireTenantContext,
+  tenantScopedDir,
+  withTenantContext,
+  type TenantContext,
+} from "@/fyd/tenant/tenant-context";
+import { installDirOverrides, makeTempDir } from "./helpers";
+
+describe("tenant boundary: context-less worker paths fail closed", () => {
+  test("undefined context: the path never executes", () => {
+    const spy = jest.fn();
+    let err: unknown = null;
+    try {
+      withTenantContext(undefined, spy);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(TenantContextError);
+    expect((err as TenantContextError).code).toBe("TENANT_CONTEXT_MISSING");
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  test("null context: the path never executes", () => {
+    const spy = jest.fn();
+    expect(() => withTenantContext(null, spy)).toThrow(TenantContextError);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  test("empty or malformed tenant id: treated as missing context", () => {
+    const spy = jest.fn();
+    for (const bad of [
+      { tenantId: "" },
+      { tenantId: "../escape" },
+      { tenantId: "SITE_A" },
+      {},
+      "site-a",
+    ] as never[]) {
+      expect(() => withTenantContext(bad, spy)).toThrow(TenantContextError);
+    }
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  test("valid context: the path runs with the verified tenant id", () => {
+    const spy = jest.fn((tenantId: string) => "ran:" + tenantId);
+    const result = withTenantContext({ tenantId: "site-a" }, spy);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("site-a");
+    expect(result).toBe("ran:site-a");
+  });
+
+  test("a worker job touching the real owner store refuses context-less runs and writes nothing", () => {
+    const dir = makeTempDir("fyd-tenant-worker-");
+    const restoreEnv = installDirOverrides({ FYD_OWNER_DIR: dir });
+    try {
+      // The worker's contract: bind context BEFORE any store call.
+      const runOwnerWorkerJob = (
+        ctx: TenantContext | null,
+        objectId: string,
+      ) => {
+        const tenantId = requireTenantContext(ctx);
+        if (objectId !== tenantId) {
+          throw new TenantContextError(
+            "CROSS_TENANT_REFERENCE",
+            "Worker refused a cross-tenant reference.",
+            { tenantId, attemptedKey: objectId },
+          );
+        }
+        return readOverrides(objectId);
+      };
+
+      const worker = jest.fn(runOwnerWorkerJob);
+      expect(() => worker(null, "site-a")).toThrow(TenantContextError);
+      // The store read never happened: nothing was written, not even a file.
+      expect(readdirSync(dir)).toEqual([]);
+
+      const okWorker = jest.fn(runOwnerWorkerJob);
+      okWorker({ tenantId: "site-a" }, "site-a");
+      expect(okWorker).toHaveBeenCalledTimes(1);
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  test("tenantScopedDir: valid ids scope under the base dir; bad ids throw", () => {
+    expect(tenantScopedDir("/data/fyd-owner", "site-a")).toBe(
+      join("/data/fyd-owner", "site-a"),
+    );
+    for (const bad of ["../escape", "/abs", "SITE_A", "", "a b"]) {
+      expect(() => tenantScopedDir("/data/fyd-owner", bad)).toThrow(
+        TenantContextError,
+      );
+    }
+  });
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/claim/__tests__/machine.test.ts=====
+/**
+ * Regression tests for the claim state machine: OBSERVED -> CLAIMED ->
+ * VERIFIED-CONTROLLED transitions, reload persistence via the store, and
+ * every fail-closed guard (anonymous claim, demo-context claim, double
+ * claim, verify-before-claim, unimplemented method, weak proof, release).
+ */
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  claim,
+  createObserved,
+  DEMO_CONTEXT_IDS,
+  recordVerifyAttempt,
+  release,
+  verifyControl,
+} from "../machine";
+import { readClaim, writeClaim } from "../store";
+import { attestOperatorControl } from "../verification-seam";
+import type { ClaimedIdentity, VerificationProof } from "../types";
+import { ClaimError } from "../types";
+
+const DEMO_IDENTITY: ClaimedIdentity = {
+  kind: "demo-owner",
+  actorId: "demo-owner",
+  actorLabel: "Demo Owner (seeded, unverified)",
+  authenticatedAt: "2026-09-21T00:00:00.000Z",
+  authNote: "DEMO OWNER MODE - not real authentication.",
+};
+
+function attested(resourceId = "url-abcdef1234567890"): VerificationProof {
+  return attestOperatorControl({
+    resourceId,
+    operatorLabel: DEMO_IDENTITY.actorLabel,
+    basis: "I operate this site and control its content.",
+  });
+}
+
+describe("createObserved", () => {
+  test("starts in observed with an audit event and no identity", () => {
+    const c = createObserved("url-abcdef1234567890", "https://example.com/");
+    expect(c.state).toBe("observed");
+    expect(c.claimedBy).toBeNull();
+    expect(c.verification).toBeNull();
+    expect(c.sourceUrl).toBe("https://example.com/");
+    expect(c.history).toHaveLength(1);
+    expect(c.history[0].type).toBe("observed-created");
+  });
+  test("rejects invalid resource ids", () => {
+    expect(() => createObserved("HAS SPACES")).toThrow(ClaimError);
+    expect(() => createObserved("")).toThrow(ClaimError);
+    expect(() => createObserved("../escape")).toThrow(ClaimError);
+  });
+});
+
+describe("claim", () => {
+  test("anonymous (null identity) cannot claim", () => {
+    const c = createObserved("url-abcdef1234567890");
+    expect(() => claim(c, null)).toThrow(ClaimError);
+    expect(() => claim(c, null)).toThrow(/authenticated identity/);
+  });
+  test("demo-context objects cannot be claimed", () => {
+    for (const id of DEMO_CONTEXT_IDS) {
+      const c = createObserved(id);
+      expect(() => claim(c, DEMO_IDENTITY)).toThrow(/Demo objects cannot be claimed/);
+    }
+  });
+  test("observed -> claimed binds the identity and audits", () => {
+    const before = createObserved("url-abcdef1234567890");
+    const after = claim(before, DEMO_IDENTITY);
+    expect(after.state).toBe("claimed");
+    expect(after.claimedBy).toEqual(DEMO_IDENTITY);
+    expect(after.history).toHaveLength(2);
+    expect(after.history[1].type).toBe("claimed");
+    // Immutable: the input is untouched.
+    expect(before.state).toBe("observed");
+    expect(before.claimedBy).toBeNull();
+  });
+  test("double claim is refused", () => {
+    const c = claim(createObserved("url-abcdef1234567890"), DEMO_IDENTITY);
+    expect(() => claim(c, DEMO_IDENTITY)).toThrow(/Only an observed/);
+  });
+});
+
+describe("verifyControl", () => {
+  test("verify before claim is refused", () => {
+    const c = createObserved("url-abcdef1234567890");
+    expect(() => verifyControl(c, attested())).toThrow(/Only a claimed resource/);
+  });
+  test("unimplemented methods are refused", () => {
+    const c = claim(createObserved("url-abcdef1234567890"), DEMO_IDENTITY);
+    const proof: VerificationProof = {
+      ...attested(),
+      method: "dns-txt",
+    };
+    expect(() => verifyControl(c, proof)).toThrow(/not implemented yet/);
+  });
+  test("claimed -> verified-controlled with operator attestation", () => {
+    const c = claim(createObserved("url-abcdef1234567890"), DEMO_IDENTITY);
+    const after = verifyControl(c, attested());
+    expect(after.state).toBe("verified-controlled");
+    expect(after.verification?.method).toBe("operator-attestation");
+    expect(after.verification?.proofNote).toMatch(/not a cryptographic proof/);
+    expect(after.history.map((h) => h.type)).toEqual([
+      "observed-created",
+      "claimed",
+      "verified",
+    ]);
+  });
+  test("verify attempts can be audited without a transition", () => {
+    const c = claim(createObserved("url-abcdef1234567890"), DEMO_IDENTITY);
+    const after = recordVerifyAttempt(c, "someone", "tried dns-txt, token not found");
+    expect(after.state).toBe("claimed");
+    expect(after.history[after.history.length - 1]?.type).toBe("verify-attempt");
+  });
+});
+
+describe("release", () => {
+  test("claimed -> observed clears identity and proof, keeps history", () => {
+    const c = verifyControl(claim(createObserved("url-abcdef1234567890"), DEMO_IDENTITY), attested());
+    const after = release(c, DEMO_IDENTITY.actorLabel);
+    expect(after.state).toBe("observed");
+    expect(after.claimedBy).toBeNull();
+    expect(after.verification).toBeNull();
+    expect(after.history.map((h) => h.type)).toEqual([
+      "observed-created",
+      "claimed",
+      "verified",
+      "released",
+    ]);
+  });
+  test("release on observed is refused", () => {
+    expect(() => release(createObserved("url-abcdef1234567890"), "x")).toThrow(
+      /already unclaimed/,
+    );
+  });
+});
+
+describe("reload persistence (store round-trip)", () => {
+  test("a claimed record survives write/read with history intact", () => {
+    const dir = mkdtempSync(join(tmpdir(), "fyd-claims-"));
+    process.env.FYD_CLAIM_DIR = dir;
+    try {
+      const c = claim(createObserved("url-abcdef1234567890", "https://example.com/"), DEMO_IDENTITY);
+      writeClaim(c);
+      const reloaded = readClaim("url-abcdef1234567890");
+      expect(reloaded).toEqual(c);
+      expect(reloaded?.history).toHaveLength(2);
+      // A second process-equivalent read sees the same state.
+      expect(readClaim("url-abcdef1234567890")?.state).toBe("claimed");
+    } finally {
+      delete process.env.FYD_CLAIM_DIR;
+    }
+  });
+  test("missing, corrupt, and mismatched files read as null (fail honest)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "fyd-claims-"));
+    process.env.FYD_CLAIM_DIR = dir;
+    try {
+      expect(readClaim("url-doesnotexist0000")).toBeNull();
+      writeFileSync(join(dir, "url-bad000000000000.json"), "{not json", "utf8");
+      expect(readClaim("url-bad000000000000")).toBeNull();
+      const other = createObserved("url-other0000000000");
+      writeFileSync(
+        join(dir, "url-mismatch00000000.json"),
+        JSON.stringify(other),
+        "utf8",
+      );
+      expect(readClaim("url-mismatch00000000")).toBeNull();
+    } finally {
+      delete process.env.FYD_CLAIM_DIR;
+    }
+  });
+  test("invalid ids read as null (fail honest, never invented state)", () => {
+    expect(readClaim("../escape")).toBeNull();
+  });
+});
+
+=====FILE:/home/nolan/projects/ping-constitutional/src/fyd/claim/__tests__/seam.test.ts=====
+/**
+ * Regression tests for the verification seam: six named methods, exactly
+ * one implemented, honest labeling on the operator attestation proof.
+ */
+import {
+  attestOperatorControl,
+  isVerificationMethodImplemented,
+  listVerificationMethods,
+} from "../verification-seam";
+import { ClaimError } from "../types";
+
+describe("verification seam", () => {
+  test("declares all six future methods", () => {
+    const methods = listVerificationMethods().map((m) => m.method);
+    expect(methods).toEqual([
+      "dns-txt",
+      "well-known-file",
+      "html-meta-tag",
+      "cms-integration",
+      "provider-evidence",
+      "operator-attestation",
+    ]);
+  });
+  test("only operator-attestation is implemented", () => {
+    const implemented = listVerificationMethods().filter((m) => m.implemented);
+    expect(implemented.map((m) => m.method)).toEqual(["operator-attestation"]);
+    expect(isVerificationMethodImplemented("operator-attestation")).toBe(true);
+    expect(isVerificationMethodImplemented("dns-txt")).toBe(false);
+    expect(isVerificationMethodImplemented("well-known-file")).toBe(false);
+  });
+  test("unimplemented methods say what they are and why", () => {
+    for (const m of listVerificationMethods().filter((x) => !x.implemented)) {
+      expect(m.description).toMatch(/Not built yet/);
+    }
+  });
+  test("operator attestation fails closed on a missing basis", () => {
+    expect(() =>
+      attestOperatorControl({ resourceId: "url-x", operatorLabel: "Op", basis: "short" }),
+    ).toThrow(ClaimError);
+    expect(() =>
+      attestOperatorControl({ resourceId: "url-x", operatorLabel: "", basis: "A long enough basis statement." }),
+    ).toThrow(ClaimError);
+  });
+  test("operator attestation proof is honestly labeled", () => {
+    const proof = attestOperatorControl({
+      resourceId: "url-x",
+      operatorLabel: "Nolan (operator)",
+      basis: "I operate this site and control its hosting.",
+    });
+    expect(proof.method).toBe("operator-attestation");
+    expect(proof.verifiedBy).toBe("Nolan (operator)");
+    expect(proof.basis).toBe("I operate this site and control its hosting.");
+    expect(proof.proofNote).toMatch(/not a cryptographic proof/);
+  });
+});
+
+=====DONE-ADAPTER=====
+=====FILE:/home/nolan/ping/test_event_ingestion.py=====
+"""
+Test Event Ingestion Script
+Populates PostgreSQL events table with test data for projection sovereignty audit.
+Uses docker exec to connect to PostgreSQL container.
+"""
+
+import subprocess
+import json
+import uuid
+from datetime import datetime
+
+# Generate test events
+test_events = []
+for i in range(10):
+    event_uuid = str(uuid.uuid4())
+    aggregate_uuid = str(uuid.uuid4())
+    event = {
+        'event_id': event_uuid,
+        'event_type': 'DOCUMENT_IMPORTED',
+        'timestamp': datetime.utcnow().isoformat(),
+        'aggregate_id': aggregate_uuid,
+        'aggregate_type': 'DOCUMENT',
+        'event_data': {
+            'document_id': f"doc_{i}",
+            'title': f"Test Document {i}",
+            'content': f"This is test content for document {i}",
+            'source': 'test_ingestion'
+        }
+    }
+    test_events.append(event)
+
+print(f"Generated {len(test_events)} test events")
+
+# Write SQL to file and execute
+sql_file = 'insert_events.sql'
+with open(sql_file, 'w') as f:
+    for event in test_events:
+        event_data_json = json.dumps(event['event_data']).replace("'", "''")
+        sql = f"INSERT INTO events (id, event_id, event_type, timestamp, aggregate_id, aggregate_type, event_data, projected_to_qdrant) VALUES ('{event['event_id']}', '{event['event_id']}', '{event['event_type']}', '{event['timestamp']}', '{event['aggregate_id']}', '{event['aggregate_type']}', '{event_data_json}'::jsonb, false);"
+        f.write(sql + '\n')
+
+# Copy SQL file to container and execute
+copy_cmd = f'docker cp {sql_file} brain-postgres:/tmp/insert_events.sql'
+subprocess.run(copy_cmd, shell=True, capture_output=True, text=True)
+
+exec_cmd = f'docker exec brain-postgres psql -U postgres -d crx_runtime -f /tmp/insert_events.sql'
+result = subprocess.run(exec_cmd, shell=True, capture_output=True, text=True)
+
+if result.returncode == 0:
+    print(f"Inserted {len(test_events)} events")
+    print(result.stdout)
+else:
+    print(f"ERROR: Failed to insert events: {result.stderr}")
+
+# Verify insertion
+verify_cmd = 'docker exec brain-postgres psql -U postgres -d crx_runtime -c "SELECT COUNT(*) FROM events;"'
+try:
+    result = subprocess.run(verify_cmd, shell=True, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"Verification result: {result.stdout}")
+    else:
+        print(f"ERROR: Verification failed: {result.stderr}")
+except Exception as e:
+    print(f"ERROR: Exception during verification: {e}")
+
+print("Test event ingestion complete")
+
+=====FILE:/home/nolan/ping/tests/test_runtime_authority_boundaries.py=====
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from runtime.configuration import Configuration
+from runtime.authorities.repository_authority import RepositoryAuthority
+from runtime.authorities.execution_authority import ExecutionAuthority
+from runtime.authorities.embedding_authority import EmbeddingAuthority
+from scripts.knowledge_event_bus import KnowledgeEventBus
+from scripts.workspace_builder import prepare_workspace
+from scripts.constitutional_planner import build_plan
+from scripts.mission_scoring import score_missions, rank_missions, update_mission_profile, load_mission_profile
+from scripts.worktree_executor import prepare_worktree
+from scripts.reflection_engine import reflect_on_mission
+from scripts.skill_registry import register_skill
+from scripts.policy_proposals import propose_policy
+from scripts.organizational_metrics import compute_organizational_metrics, record_metric_event
+from scripts.roi_engine import compute_roi
+from scripts.knowledge_confidence import decay_knowledge_object, score_knowledge_object
+from scripts.pattern_miner import mine_patterns
+
+
+class DummySecretAdapter:
+    def get_postgres_password(self):
+        return "secret-pw"
+
+    def get_qdrant_key(self):
+        return "qdrant-key"
+
+
+class RuntimeAuthorityBoundaryTests(unittest.TestCase):
+    def test_configuration_is_immutable_and_uses_secret_adapter_values(self):
+        adapter = DummySecretAdapter()
+        config = Configuration(secret_adapter=adapter)
+
+        postgres = config.get_postgres_config()
+        qdrant = config.get_qdrant_config()
+
+        self.assertEqual(postgres["password"], "secret-pw")
+        self.assertEqual(qdrant["api_key"], "qdrant-key")
+        self.assertEqual(config.get_postgres_config()["password"], "secret-pw")
+
+    def test_repository_authority_persist_returns_event_id(self):
+        authority = RepositoryAuthority()
+        event_id = authority.persist({"event_type": "TEST_EVENT"}, aggregate_id="agg-1")
+        self.assertTrue(event_id)
+
+    def test_execution_authority_routes_through_adapter(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.calls = []
+
+            def execute(self, request):
+                self.calls.append(request)
+                return type("Result", (), {"returncode": 0, "stdout": "ok", "stderr": "", "command": request.command})()
+
+        adapter = RecordingAdapter()
+        authority = ExecutionAuthority(adapter=adapter)
+        result = authority.run(["echo", "ok"])
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "ok")
+        self.assertEqual(len(adapter.calls), 1)
+        self.assertEqual(adapter.calls[0].command, "echo")
+
+    def test_embedding_authority_uses_inference_adapter_for_embeddings(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.texts = []
+
+            def embed(self, text):
+                self.texts.append(text)
+                return [0.1, 0.2, 0.3]
+
+        adapter = RecordingAdapter()
+        authority = EmbeddingAuthority()
+
+        with patch("runtime.authorities.embedding_authority.get_inference_adapter", return_value=adapter):
+            result = authority.embed_text("hello")
+
+        self.assertEqual(result, [0.1, 0.2, 0.3])
+        self.assertEqual(adapter.texts, ["hello"])
+
+    def test_execution_authority_can_wrap_docker_commands(self):
+        class RecordingAdapter:
+            def __init__(self):
+                self.calls = []
+
+            def execute(self, request):
+                self.calls.append(request)
+                return type("Result", (), {"returncode": 0, "stdout": "ok", "stderr": "", "command": request.command})()
+
+        adapter = RecordingAdapter()
+        authority = ExecutionAuthority(adapter=adapter)
+        result = authority.run_docker(["exec", "container", "psql", "-U", "postgres"])
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(adapter.calls[0].command, "docker")
+        self.assertEqual(adapter.calls[0].args, ["exec", "container", "psql", "-U", "postgres"])
+
+    def test_knowledge_event_bus_emits_unified_knowledge_object(self):
+        with TemporaryDirectory() as tmpdir:
+            bus = KnowledgeEventBus(root=Path(tmpdir))
+            obj = bus.emit("MISSION_COMPLETED", mission="demo", authority="ConfigurationAuthority", provider="local", capability="test")
+
+            self.assertTrue(obj["id"])
+            self.assertEqual(obj["type"], "event")
+            self.assertEqual(obj["mission_id"], "demo")
+            self.assertTrue(obj["hash"])
+            self.assertTrue((Path(tmpdir) / "knowledge" / "objects" / f"{obj['id']}.json").exists())
+
+    def test_prepare_workspace_creates_isolated_workspace_manifest(self):
+        with TemporaryDirectory() as tmpdir:
+            result = prepare_workspace("VerifyReplay", root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["mission"], "VerifyReplay")
+            self.assertTrue(result["workspace"]["path"].endswith("VerifyReplay"))
+
+    def test_build_plan_includes_execution_graph(self):
+        plan = build_plan("Verify repository replay determinism.")
+        self.assertTrue(plan["ok"])
+        self.assertIn("execution_graph", plan)
+        self.assertTrue(plan["execution_graph"]["tasks"])
+
+    def test_rank_missions_returns_top_three(self):
+        missions = [
+            {"id": "one", "impact": 1, "risk": 3, "authority_touched": 1, "replay_safety": 2, "tech_debt": 1, "frequency": 1, "previous_failures": 0},
+            {"id": "two", "impact": 4, "risk": 1, "authority_touched": 2, "replay_safety": 4, "tech_debt": 4, "frequency": 3, "previous_failures": 2},
+            {"id": "three", "impact": 3, "risk": 2, "authority_touched": 3, "replay_safety": 3, "tech_debt": 2, "frequency": 2, "previous_failures": 1},
+        ]
+        ranked = rank_missions(missions)
+        self.assertEqual(ranked[0]["id"], "two")
+        self.assertLessEqual(len(ranked), 3)
+
+    def test_prepare_worktree_creates_isolated_manifest(self):
+        with TemporaryDirectory() as tmpdir:
+            result = prepare_worktree("VerifyReplay", root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["mission"], "VerifyReplay")
+            self.assertTrue(result["worktree"]["path"].endswith("VerifyReplay"))
+
+    def test_reflection_engine_creates_structured_reflection(self):
+        with TemporaryDirectory() as tmpdir:
+            result = reflect_on_mission("VerifyReplay", {"ok": True}, root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["reflection"]["mission"], "VerifyReplay")
+            self.assertIn("mistakes", result["reflection"])
+            self.assertIn("improvements", result["reflection"])
+
+    def test_mission_profile_persists_reward_and_penalty_history(self):
+        with TemporaryDirectory() as tmpdir:
+            profile = update_mission_profile("VerifyReplay", {"ok": True, "score": 25}, root=Path(tmpdir))
+            self.assertTrue(profile["ok"])
+            self.assertGreaterEqual(profile["profile"]["total_score"], 25)
+            self.assertTrue(load_mission_profile(root=Path(tmpdir))["missions"]["VerifyReplay"])
+
+    def test_skill_registry_creates_reusable_skill(self):
+        with TemporaryDirectory() as tmpdir:
+            skill = register_skill("VerifyReplay", {"mission": "VerifyReplay"}, root=Path(tmpdir))
+            self.assertTrue(skill["ok"])
+            self.assertEqual(skill["skill"]["name"], "Replay Verification")
+
+    def test_policy_proposal_is_non_mutating(self):
+        with TemporaryDirectory() as tmpdir:
+            proposal = propose_policy({"mission": "VerifyReplay", "recommendations": ["reuse semantic index"]}, root=Path(tmpdir))
+            self.assertTrue(proposal["ok"])
+            self.assertFalse(proposal["proposal"]["mutates_policy"])
+
+    def test_organizational_metrics_compute_health_summary(self):
+        with TemporaryDirectory() as tmpdir:
+            result = record_metric_event("ReplayAuthority", {"failure_rate": 0.02, "repair_time_min": 8, "trend": "improving"}, root=Path(tmpdir))
+            metrics = compute_organizational_metrics(root=Path(tmpdir))
+            self.assertTrue(result["ok"])
+            self.assertTrue(metrics["ok"])
+            self.assertIn("ReplayAuthority", metrics["metrics"])
+
+    def test_roi_engine_ranks_high_value_missions(self):
+        roi = compute_roi({"engineering_value": 100, "engineering_cost": 20})
+        self.assertGreater(roi, 4)
+
+    def test_knowledge_confidence_decays_and_scores(self):
+        with TemporaryDirectory() as tmpdir:
+            decayed = decay_knowledge_object({"confidence": 0.95, "recency": 5, "verification_count": 2, "contradictions": 0}, root=Path(tmpdir))
+            scored = score_knowledge_object({"confidence": 0.95, "recency": 5, "verification_count": 2, "contradictions": 0})
+            self.assertLess(decayed["confidence"], 0.95)
+            self.assertGreater(scored, 0.0)
+
+    def test_pattern_miner_discovers_repeated_behavior(self):
+        patterns = mine_patterns([{"type": "Reflection", "mission": "VerifyReplay"}, {"type": "Reflection", "mission": "VerifyReplay"}, {"type": "Skill", "mission": "VerifyProjection"}])
+        self.assertTrue(patterns)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+=====FILE:/home/nolan/ping/tests/test_constitutional_planner.py=====
+import unittest
+
+from scripts.constitutional_planner import build_plan
+
+
+class ConstitutionalPlannerTests(unittest.TestCase):
+    def test_plan_expands_to_dag(self):
+        plan = build_plan("Verify repository replay determinism.")
+        self.assertTrue(plan["ok"])
+        self.assertEqual(plan["mission"], "VerifyReplay")
+        self.assertTrue(plan["dag"])
+        self.assertTrue(any(node["kind"] == "Authority" for node in plan["dag"]))
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+=====DONE-PY=====
+const assert = require('assert');
+const { AdapterCompiler } = require('../gateway/adapter_compiler');
+const crypto = require('crypto');
+
+/**
+ * Constitutional Replay Tests
+ * 
+ * Phase 2 — Deterministic Replay
+ * 
+ * Verifies that the compiler produces identical outputs when run twice
+ * with identical inputs.
+ */
+
+// Test fixtures
+const TECHNOLOGY_MANIFEST = {
+  manifest_id: 'tm_test_1',
+  version: '1.0.0',
+  artifact_store: {
+    component: 'PostgreSQL',
+    version: '17',
+    checksum: 'sha256:abc123'
+  },
+  manifest_metadata: {
+    created_at: '2026-01-01T00:00:00Z',
+    created_by: 'TechnologyAuthority',
+    frozen: true,
+    hash: null,
+    previous_manifest_hash: null,
+    approval_reference: null
+  }
+};
+
+TECHNOLOGY_MANIFEST.manifest_metadata.hash = crypto.createHash('sha256')
+  .update(JSON.stringify(TECHNOLOGY_MANIFEST, Object.keys(TECHNOLOGY_MANIFEST).sort()))
+  .digest('hex');
+
+const CAPABILITY_CONTRACT = {
+  capability_name: 'ArtifactStore',
+  version: '1.0.0',
+  methods: [
+    {
+      name: 'saveArtifact',
+      input: { artifact: 'Artifact' },
+      output: { artifact_id: 'string' },
+      constraints: {
+        immutability: true,
+        determinism: true
+      }
+    },
+    {
+      name: 'getArtifact',
+      input: { artifact_id: 'string' },
+      output: { artifact: 'Artifact' },
+      constraints: {
+        determinism: true
+      }
+    }
+  ],
+  requirements: {
+    immutability: true,
+    determinism: true,
+    replay_safety: true
+  }
+};
+
+const ADAPTER_CONTRACT = {
+  adapter_name: 'PostgreSQLArtifactStoreAdapter',
+  vendor: 'PostgreSQL',
+  version: '1.0.0'
+};
+
+/**
+ * Test: Deterministic Replay
+ * 
+ * Runs the compiler twice with identical inputs and verifies:
+ * - adapter source identical
+ * - adapter source hash identical
+ * - witness hash identical
+ * - manifest hash identical
+ * - constitutional weighted score identical
+=====FILE:run_constitutional_pipeline.js(head)=====
+const { spawn } = require('child_process');
+const path = require('path');
+
+const tests = [
+  'constitutional_replay.test.js',
+  'cross_machine_replay.test.js',
+  'multi_vendor_validation.test.js',
+  'constitutional_failure.test.js'
+];
+
+async function runTests() {
+  console.log('=== Running Constitutional Pipeline Tests ===\n');
+
+  for (const test of tests) {
+    console.log(`Running ${test}...`);
+    const testPath = path.join(__dirname, test);
+    
+    await new Promise((resolve, reject) => {
+      const proc = spawn('node', [testPath], {
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit'
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          console.log(`✓ ${test} PASSED\n`);
+          resolve();
+        } else {
+          console.error(`✗ ${test} FAILED\n`);
+          reject(new Error(`${test} failed with exit code ${code}`));
+        }
+      });
+    });
+  }
+
+  console.log('=== All Constitutional Pipeline Tests PASSED ===');
+  process.exit(0);
+}
+
+runTests().catch(error => {
+  console.error('Constitutional Pipeline Tests FAILED:', error.message);
+  process.exit(1);
+});
+=====FILE:_test_pipeline.py(head)=====
+#!/usr/bin/env python3
+"""Test authority_search and lineage_search with new data."""
+import sys, json, subprocess
+
+# Test authority_search
+p = subprocess.run(['python', '/app/runtime/tools/authority_search.py'],
+    input=json.dumps({'query': 'constitution'}), capture_output=True, text=True)
+try:
+    r = json.loads(p.stdout)
+    print("=== AUTHORITY SEARCH ===")
+    print(f"Highest: {r['highest_authority'].get('title','?')}")
+    print(f"Authority class: {r['authority_class']}")
+    print(f"Verified overall: {r['verification']['overall']}")
+    print(f"Chain length: {len(r['authority_chain'])}")
+    for a in r['authority_chain'][:3]:
+        print(f"  - {a.get('title','?'):30s} class={a.get('authority_class','?'):25s} verified={a.get('verification',{}).get('overall')}")
+except Exception as e:
+    print(f"Authority search failed: {e}")
+    print(f"Stdout: {p.stdout[:500]}")
+    print(f"Stderr: {p.stderr[:500]}")
+
+# Test authority_search with Postgres match
+p2 = subprocess.run(['python', '/app/runtime/tools/authority_search.py'],
+    input=json.dumps({'query': 'Test Document'}), capture_output=True, text=True)
+try:
+    r2 = json.loads(p2.stdout)
+    print("\n=== POSTGRES MATCH ===")
+    print(f"Highest: {r2['highest_authority'].get('title','?')} (class={r2['authority_class']}, verified={r2['verification']['overall']})")
+except Exception as e:
+    print(f"Postgres search failed: {e}")

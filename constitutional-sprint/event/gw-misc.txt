@@ -1,0 +1,58 @@
+/home/nolan/workspace/ping-overnight/forensics/AUTHORITY_FORENSICS.md
+/home/nolan/workspace/ping-overnight/STATUS.md
+/home/nolan/workspace/ping-overnight/PING_OVERNIGHT_2026-09-16.md
+/home/nolan/workspace/agents/45102851-366b-4bad-879b-31f8e64d08f5/tool-output/context_fetch-call_01a0ad85d5cf74d18b0aec69963c8c6f.txt
+/home/nolan/workspace/agents/2eb039d1-2a1b-4cb0-b660-8a4b3bb1d16b/tool-output/context_fetch-call_01a0ae8a1d45797093e63459fe400676.txt
+/home/nolan/workspace/agents/2eb039d1-2a1b-4cb0-b660-8a4b3bb1d16b/tool-output/context_fetch-call_01a0ae89c3f575b39201976a3898ab36.txt
+/home/nolan/workspace/agents/94f38ac1-2973-4a93-977c-834af6d5fbad/tool-output/context_fetch-call_01a0ad42902f7531bf6b2b240043e4fe.txt
+/home/nolan/workspace/agents/dc8778af-ecf1-415c-94d0-fe3f901bacd9/tool-output/context_fetch-call_01a0b72d88af773e920364fd2e4ecffe.txt
+/home/nolan/workspace/agents/6289f8a8-5c08-4ad7-9ac0-476b3927a480/tool-output/context_fetch-call_01a0bcbb9d4f74d2aa09ce6028f15666.txt
+/home/nolan/workspace/agents/90866423-5f94-49dd-93b2-582314335443/tool-output/exec-call_01a0b9f7fa4a73c8a8a630b02afb44d4.json
+=== sqlite event in gateway-src ===
+/home/nolan/ping-gateway-src/gateway/document_tracker.js
+/home/nolan/ping-gateway-src/gateway/embedding_cache.js
+/home/nolan/ping-gateway-src/gateway/graceful_shutdown.js
+/home/nolan/ping-gateway-src/gateway/persistence_adapter.js
+/home/nolan/ping-gateway-src/gateway/verify/05_database.js
+=== canonical_events route head ===
+/**
+ * Canonical Event Routes
+ * 
+ * P001: HTTP interface for the Canonical Event Envelope Authority.
+ * 
+ * POST /canonical-events — Emit event
+ * GET /canonical-events — Query events
+ * GET /canonical-events/stats — Event statistics
+ * GET /canonical-events/unprocessed — Unprocessed events
+ * POST /canonical-events/:id/processed — Mark processed
+ * POST /canonical-events/:id/failed — Mark failed
+ */
+
+const express = require('express');
+const router = express.Router();
+const { asyncHandler } = require('../route_middleware');
+
+function createCanonicalEventRoutes(canonicalEventEnvelope) {
+  router.post('/', asyncHandler('POST /canonical-events', async (req) => {
+    const {
+      tenant_id, event_type, source, actor, payload,
+      causation_id, correlation_id, metadata,
+    } = req.body;
+
+    if (!tenant_id || !event_type || !source || !actor || !payload) {
+      throw new Error('tenant_id, event_type, source, actor, and payload are required');
+    }
+
+    const event = await canonicalEventEnvelope.executeEmitEvent({
+      tenantId: tenant_id,
+      eventType: event_type,
+      source,
+      actor,
+      payload,
+      causationId: causation_id,
+      correlationId: correlation_id,
+      metadata,
+    });
+
+    return { event };
+DONE

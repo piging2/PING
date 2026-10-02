@@ -1,0 +1,104 @@
+=== tool_authority rest ===
+    for (const toolId of allowedToolIds) {
+      const tool = this._tools.get(toolId);
+      if (!tool) {
+        console.warn(`[ToolAuthority] Tool not found: ${toolId}`);
+        continue;
+      }
+
+      // Check permission
+      const permission = await this._checkToolPermission(tool, mission);
+      if (!permission.allowed) {
+        console.warn(`[ToolAuthority] Tool not permitted: ${toolId} - ${permission.reason}`);
+        continue;
+      }
+
+      toolManifest.push({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+        tool_id: tool.tool_id,
+        category: tool.category,
+      });
+    }
+
+    return toolManifest;
+  }
+
+  /**
+   * Check tool permission
+   */
+  async _checkToolPermission(tool, mission) {
+    if (!this._permissionAuthority) {
+      // No permission authority, allow all
+      return { allowed: true };
+    }
+
+    // Check with permission authority
+    const permission = await this._permissionAuthority.checkPermission({
+      resource_type: 'tool',
+      resource_id: tool.tool_id,
+      mission_id: mission.mission_id,
+      authority_id: mission.authority_id,
+    });
+
+    return permission;
+  }
+
+  /**
+   * Execute tool
+   * 
+   * @param {string} toolId - Tool identifier
+   * @param {Object} parameters - Tool parameters
+   * @param {Object} context - Execution context
+   * @returns {Object} Execution result
+   */
+  async executeTool(toolId, parameters, context) {
+    console.log(`[ToolAuthority] Executing tool: ${toolId}`);
+
+    const tool = this._tools.get(toolId);
+    if (!tool) {
+      throw new Error(`Tool not found: ${toolId}`);
+    }
+
+    // Check permission
+    const permission = await this._checkToolPermission(tool, context.mission);
+    if (!permission.allowed) {
+      throw new Error(`Tool not permitted: ${toolId} - ${permission.reason}`);
+    }
+
+    // Execute tool
+    const executionId = deterministicIdAuthority.generateIdFromObject({
+      tool_id: toolId,
+      timestamp: constitutionalTimeAuthority.now(),
+    });
+
+    try {
+      // Call tool implementation
+      const result = await tool.implementation(parameters, context);
+
+      return {
+        success: true,
+        tool_id: toolId,
+        execution_id: executionId,
+        result: result,
+        timestamp: constitutionalTimeAuthority.now(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        tool_id: toolId,
+        execution_id: executionId,
+        error: error.message,
+        timestamp: constitutionalTimeAuthority.now(),
+      };
+    }
+  }
+
+  /**
+   * Load tool descriptors
+   */
+  async _loadToolDescriptors() {
+    // Load default tools if empty
+=== permission_authority exists? ===
+exit=2

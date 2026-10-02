@@ -1,0 +1,142 @@
+=== bootstrap 330-362 ===
+    // docs/EXECUTION_EVIDENCE_LEDGER.md §15). But Orca is a parallel execution
+    // authority, NOT the production spine: the live spine's single inference owner is
+    // AIRuntime + ping-runtime/ai/ollama_provider.js (default localhost:11434), and
+    // the single worker-identity decider is WorkerRuntime.dispatch (P3 audit A).
+    // Enabling this here would register a second, unconsumed Ollama worker pool —
+    // contradicting single-owner convergence. Keep DISABLED until an explicit
+    // Orca-vs-live-spine convergence decision is made.
+    let executionEngine = null;
+    try {
+      executionEngine = new ExecutionEngine();
+      await executionEngine.initialize({ discoverOllama: false });
+      console.log('[GatewayRuntime] Orca engine initialized');
+    } catch (err) {
+      console.error('[GatewayRuntime] WARNING: Orca engine failed to initialize:', err.message);
+    }
+
+    // ─── Phase 3: Postgres-dependent services (graceful degradation) ──
+    let eventReadAuthority = null;
+    let repoStore = null;
+    let kernelAdapter = null;
+    let canonicalEventEnvelope = null;
+    let tenantRegistry = null;
+    let deploymentRegistry = null;
+    let runtimeRegistry = null;
+    let systemAuthority = null;
+    let huggingfaceAdapter = null;
+    let aiWorkspaceAuthority = null;
+    let reviewAuthority = null;
+    let customerAuthority = null;
+    let projectAuthority = null;
+    let unifiedEventRuntime = null;
+    let knowledgeGraph = null;
+    let missionRuntime = null;
+=== executionEngine used later ===
+337:    let executionEngine = null;
+339:      executionEngine = new ExecutionEngine();
+340:      await executionEngine.initialize({ discoverOllama: false });
+657:      executionEngine,
+792:    if (services.executionEngine) {
+793:      this._app.use('/orchestration', createOrchestrationRoutes(services.executionEngine));
+=== worker_port.js head ===
+const crypto = require('crypto');
+const path = require('path');
+
+// Generated from state_machine_registry.json — single source of truth
+const _generatedMachine = (() => {
+  const registry = require(path.join(__dirname, '..', '..', '..', 'gateway', 'generated', 'state_machine_registry.json'));
+  const worker = registry.state_machines.find(m => m.name === 'WorkerLifecycle');
+  if (!worker) throw new Error('[WorkerPort] WorkerLifecycle not found in state_machine_registry.json');
+  const transMap = {};
+  for (const t of worker.transitions) {
+    if (!transMap[t.from]) transMap[t.from] = [];
+    transMap[t.from].push(t.to);
+  }
+  return { states: worker.states, transitions: transMap };
+})();
+
+// Generated from capability_registry.json — single source of truth
+const _generatedCapabilities = (() => {
+  const registry = require(path.join(__dirname, '..', '..', '..', 'gateway', 'generated', 'capability_registry.json'));
+  const byOwner = {};
+  for (const cap of registry.capabilities) {
+    if (cap.owner === 'WorkerPort') {
+      if (!byOwner[cap.name]) byOwner[cap.name] = cap;
+    }
+  }
+  return byOwner;
+})();
+
+function getCapabilitiesByNames(names) {
+  return names.filter(n => _generatedCapabilities[n]).sort();
+}
+
+const WORKER_STATES = _generatedMachine.states;
+const VALID_TRANSITIONS = _generatedMachine.transitions;
+
+class WorkerPort {
+  constructor(config = {}) {
+    this._workerId = config.workerId || `worker_${crypto.createHash('sha256').update(JSON.stringify(config)).digest('hex').substring(0, 8)}`;
+    this._model = config.model || 'unknown';
+    this._capabilities = config.capabilities || [];
+    this._state = 'idle';
+    this._currentMissionId = null;
+    this._latency = [];
+    this._history = [];
+    this._failurePatterns = [];
+    this._load = 0;
+    this._maxLoad = config.maxLoad || 3;
+    this._contextWindow = config.contextWindow || 32000;
+    this._replayCompatibility = config.replayCompatibility || false;
+    this._specialization = config.specialization || 'general_purpose';
+    this._executor = config.executor || null;
+    this._eventQueue = config.eventQueue || null;
+  }
+
+  get workerId() { return this._workerId; }
+  get model() { return this._model; }
+  get capabilities() { return [...this._capabilities]; }
+  get state() { return this._state; }
+  get currentLoad() { return this._load; }
+  get maxLoad() { return this._maxLoad; }
+  get currentMissionId() { return this._currentMissionId; }
+  get averageLatency() {
+    if (this._latency.length === 0) return 0;
+    return this._latency.reduce((s, v) => s + v, 0) / this._latency.length;
+  }
+  get acceptanceRate() {
+    if (this._history.length === 0) return 0;
+    const accepted = this._history.filter(h => h.accepted).length;
+    return accepted / this._history.length;
+  }
+  get failurePatterns() { return [...this._failurePatterns]; }
+  get specialization() { return this._specialization; }
+  get replayCompatibility() { return this._replayCompatibility; }
+  get contextWindow() { return this._contextWindow; }
+  get isAvailable() { return this._load < this._maxLoad; }
+
+  canTransition(targetState) {
+    const allowed = VALID_TRANSITIONS[this._state] || [];
+    return allowed.includes(targetState);
+  }
+
+  transition(targetState, meta = {}) {
+    if (!this.canTransition(targetState)) {
+      console.warn(`[WorkerPort ${this._workerId}] Invalid transition: ${this._state} → ${targetState}`);
+      return false;
+    }
+    const from = this._state;
+    this._state = targetState;
+    if (targetState === 'assigned') {
+      this._load = Math.min(this._load + 1, this._maxLoad);
+      this._currentMissionId = meta.missionId || this._currentMissionId;
+    }
+    if (targetState === 'idle') {
+      this._load = 0;
+      this._currentMissionId = null;
+    }
+    if (targetState === 'completed' || targetState === 'failed' || targetState === 'archived') {
+      this._load = Math.max(this._load - 1, 0);
+      if (this._load === 0) this._currentMissionId = null;
+    }

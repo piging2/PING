@@ -1,0 +1,26 @@
+13: * - source (which connector/worker emitted it)
+21:class UnifiedEventRuntime {
+35:    this._stats = { emitted: 0, persisted: 0, deduplicated: 0, dispatched: 0, failed: 0 };
+44:      CREATE TABLE IF NOT EXISTS ping_events (
+55:      ALTER TABLE ping_events ADD COLUMN IF NOT EXISTS namespace VARCHAR(255) NOT NULL DEFAULT 'core::system';
+56:      CREATE INDEX IF NOT EXISTS idx_ping_events_type ON ping_events(event_type);
+57:      CREATE INDEX IF NOT EXISTS idx_ping_events_source ON ping_events(source);
+58:      CREATE INDEX IF NOT EXISTS idx_ping_events_namespace ON ping_events(namespace);
+59:      CREATE INDEX IF NOT EXISTS idx_ping_events_processed ON ping_events(processed);
+60:      CREATE INDEX IF NOT EXISTS idx_ping_events_timestamp ON ping_events(timestamp);
+61:      CREATE INDEX IF NOT EXISTS idx_ping_events_causation ON ping_events ((metadata->>'causation_id'));
+62:      CREATE INDEX IF NOT EXISTS idx_ping_events_correlation ON ping_events ((metadata->>'correlation_id'));
+69:   * @param {string} source — which connector/worker emitted it
+73:  async emit(eventType, source, payload, options = {}) {
+149:          `INSERT INTO ping_events (event_id, event_type, source, timestamp, payload, metadata, namespace)
+188:        await this._integrationManager.emit(event.event_type, event.payload);
+194:    this._stats.emitted++;
+216:    let sql = 'SELECT * FROM ping_events WHERE 1=1';
+257:       FROM ping_events
+280:        FROM ping_events
+285:        FROM ping_events e
+312:        FROM ping_events
+317:        FROM ping_events e
+341:       FROM ping_events
+358:module.exports = { UnifiedEventRuntime };
+DONE

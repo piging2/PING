@@ -1,0 +1,245 @@
+########## src/app/api/ping/actions/route.ts ##########
+     1	/**
+     2	 * BFF: capability-aware action plan for one object. The same plan drives
+     3	 * the human UI action row and the agent context builder.
+     4	 * GET ?objectId= -> { plan: CapabilityPlan }.
+     5	 */
+     6	
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+     9	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    10	import { getPracticeIdentityId } from "@/lib/ping/session";
+    11	
+    12	export const dynamic = "force-dynamic";
+    13	export const runtime = "nodejs";
+    14	
+    15	export async function GET(request: NextRequest) {
+    16	  try {
+    17	    const viewerId = await getPracticeIdentityId();
+    18	    const objectId = request.nextUrl.searchParams.get("objectId");
+    19	    if (!objectId) throw new BadRequestError("objectId is required.");
+    20	    const plan = await getPingObjectReader().planActions(viewerId, objectId);
+    21	    return NextResponse.json({ plan });
+    22	  } catch (err) {
+    23	    return readerErrorResponse(err);
+    24	  }
+    25	}
+########## src/app/api/ping/ask/route.ts ##########
+     1	/**
+     2	 * BFF: Ask PING. Server-side bounded context builder plus the deterministic
+     3	 * evidence-backed answer composer.
+     4	 * POST { question: string, targetObjectId?: string } -> AskAnswer.
+     5	 * The composer never fabricates: no evidence means an honest partial answer.
+     6	 */
+     7	
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    10	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    11	import { getPracticeIdentityId } from "@/lib/ping/session";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	export async function POST(request: NextRequest) {
+    17	  try {
+    18	    const viewerId = await getPracticeIdentityId();
+    19	    const body: unknown = await request.json().catch(() => null);
+    20	    const rec = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+    21	    const question = typeof rec.question === "string" ? rec.question : "";
+    22	    if (!question.trim()) throw new BadRequestError("question is required.");
+    23	    if (question.length > 2000) throw new BadRequestError("question is too long (max 2000 chars).");
+    24	    const targetObjectId = typeof rec.targetObjectId === "string" ? rec.targetObjectId : null;
+    25	    const answer = await getPingObjectReader().ask(question.trim(), viewerId, targetObjectId);
+    26	    return NextResponse.json(answer);
+    27	  } catch (err) {
+    28	    return readerErrorResponse(err);
+    29	  }
+    30	}
+########## src/app/api/ping/proposal/route.ts ##########
+     1	/**
+     2	 * BFF: human approval for Ask PING proposals. The digest is re-verified
+     3	 * server-side; any modification after drafting fails. Owner-only updates
+     4	 * are enforced before the governed signed envelope is submitted as the
+     5	 * viewer identity. Agents propose; they cannot publish.
+     6	 *
+     7	 * site_patch proposals additionally carry a signed canonical envelope and a
+     8	 * siteSpecDigest binding; the current SiteSpec digest is re-read and
+     9	 * compared before approval so a stale draft cannot apply to a changed spec.
+    10	 * POST { proposal: AskProposal } -> { eventId: string }.
+    11	 */
+    12	
+    13	import { NextRequest, NextResponse } from "next/server";
+    14	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    15	import { verifySignedSitePatchDraft } from "@/fyd/ask/site-patch";
+    16	import { getSiteSpecProvider } from "@/fyd/ask/site-spec";
+    17	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    18	import { getPracticeIdentityId } from "@/lib/ping/session";
+    19	import type { AskProposal } from "@/lib/ping/types";
+    20	
+    21	export const dynamic = "force-dynamic";
+    22	export const runtime = "nodejs";
+    23	
+    24	function isProposal(v: unknown): v is AskProposal {
+    25	  if (typeof v !== "object" || v === null) return false;
+    26	  const r = v as Record<string, unknown>;
+    27	  const base =
+    28	    typeof r.schema === "string" &&
+    29	    typeof r.digest === "string" &&
+    30	    typeof r.changes === "object" &&
+    31	    r.changes !== null;
+    32	  if (r.kind === "object_update" || r.kind === "object_create") return base;
+    33	  if (r.kind === "site_patch") {
+    34	    const sp = r.sitePatch as Record<string, unknown> | null;
+    35	    return (
+    36	      base &&
+    37	      typeof r.targetObjectId === "string" &&
+    38	      typeof sp === "object" &&
+    39	      sp !== null &&
+    40	      typeof sp.siteSpecDigest === "string" &&
+    41	      Array.isArray(sp.operations)
+    42	    );
+    43	  }
+    44	  return false;
+    45	}
+    46	
+    47	export async function POST(request: NextRequest) {
+    48	  try {
+    49	    const viewerId = await getPracticeIdentityId();
+    50	    if (!viewerId) throw new BadRequestError("No active identity. Select an identity first.");
+    51	    const body: unknown = await request.json().catch(() => null);
+    52	    const rec = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+    53	    if (!isProposal(rec.proposal)) throw new BadRequestError("proposal is required and must be a drafted AskProposal.");
+    54	    const proposal = rec.proposal as AskProposal;
+    55	    if (proposal.kind === "site_patch") {
+    56	      // The FYD lane owns the signing key material: verify the draft's digest,
+    57	      // its canonical envelope signature, and the envelope's digest binding.
+    58	      if (!verifySignedSitePatchDraft(proposal)) {
+    59	        throw new BadRequestError("Site-patch draft failed verification. Draft it again.");
+    60	      }
+    61	      // Re-read the CURRENT SiteSpec and compare digests: a draft reasoned
+    62	      // over an older spec cannot apply after the spec changed.
+    63	      const current = await getSiteSpecProvider()
+    64	        .getSummary(proposal.sitePatch.siteId)
+    65	        .catch(() => null);
+    66	      if (!current) {
+    67	        throw new BadRequestError("The site spec is unavailable; cannot verify the proposal is current.");
+    68	      }
+    69	      if (current.digest !== proposal.sitePatch.siteSpecDigest) {
+    70	        throw new BadRequestError(
+    71	          "The site changed since this proposal was drafted. Ask again for a fresh proposal.",
+    72	        );
+    73	      }
+    74	    }
+    75	    const result = await getPingObjectReader().submitProposal(viewerId, proposal);
+    76	    return NextResponse.json(result);
+    77	  } catch (err) {
+    78	    return readerErrorResponse(err);
+    79	  }
+    80	}
+########## src/app/api/ping/object/route.ts ##########
+     1	/**
+     2	 * BFF: one sanitized PING object by id (canonical or website-derived).
+     3	 * GET ?id= -> { object: PingObject }. Public fields only; private objects
+     4	 * are visible only to their controlling identity.
+     5	 */
+     6	
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+     9	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    10	import { getPracticeIdentityId } from "@/lib/ping/session";
+    11	
+    12	export const dynamic = "force-dynamic";
+    13	export const runtime = "nodejs";
+    14	
+    15	export async function GET(request: NextRequest) {
+    16	  try {
+    17	    const viewerId = await getPracticeIdentityId();
+    18	    const id = request.nextUrl.searchParams.get("id");
+    19	    if (!id) throw new BadRequestError("id is required.");
+    20	    const object = await getPingObjectReader().getObject(id, viewerId);
+    21	    return NextResponse.json({ object });
+    22	  } catch (err) {
+    23	    return readerErrorResponse(err);
+    24	  }
+    25	}
+########## src/app/api/fyd/ask/route.ts ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { handleAskRequest } from "./ask-pipeline";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * POST /api/fyd/ask (legacy flat route).
+     9	 *
+    10	 * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+    11	 *
+    12	 * Body: { siteId: string, objectId?: string, question: string, mode?: "visitor" | "owner" }
+    13	 *
+    14	 * - mode "visitor" (default): anonymous, public objects only, no grants.
+    15	 * - mode "owner": accepted for a future authenticated lane; until that lane
+    16	 *   exists it is treated as visitor-safe and grants nothing.
+    17	 *
+    18	 * The subject tenant is constructed server-side into a TenantContext from
+    19	 * the validated body siteId (G3 hardening: previously no tenant context
+    20	 * existed on this route). New callers should prefer the trusted-path route
+    21	 * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
+    22	 * and any body-supplied tenant identity is refused on mismatch.
+    23	 *
+    24	 * Response: { ok: true, answer, answerClass, refusal, citations,
+    25	 *   unknowns, suggestedActions, proposal, tenantId }
+    26	 *   unknowns is string[]; suggestedActions is the available-actions list
+    27	 *   ([] when none); proposal is a draft AskProposal or null.
+    28	 *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+    29	 *   Every citation carries claimClass ("supported" | "derived").
+    30	 * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /
+    31	 * invalid_tenant, 503 projection unavailable (answer unknown), 500 bundle
+    32	 * invalid or unexpected internal failure. Every failure is structured JSON
+    33	 * naming the failure kind; the answer is unknown in every failure case
+    34	 * (answerUnknown: true), never an empty body.
+    35	 */
+    36	export async function POST(request: NextRequest): Promise<NextResponse> {
+    37	  return handleAskRequest(null, request);
+    38	}
+########## src/app/api/fyd/ask/[siteId]/route.ts ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { handleAskRequest } from "../ask-pipeline";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * POST /api/fyd/ask/[siteId] (trusted-path route; G3).
+     9	 *
+    10	 * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+    11	 * The tenant is derived from the route path param, never from the request
+    12	 * body or URL query: a TenantContext is constructed server-side via
+    13	 * requireTenantContext (which also enforces the DNS-safe slug pattern).
+    14	 *
+    15	 * Body: { question: string, objectId?: string, mode?: "visitor" | "owner" }
+    16	 *   objectId selects the target object inside the route tenant public graph
+    17	 *   (unknown ids fail closed as 404 unknown_object).
+    18	 *
+    19	 * Any body-supplied tenant identity (siteId / tenantId / tenant keys) that
+    20	 * disagrees with the route tenant is REFUSED with 400 tenant_mismatch: the
+    21	 * request is served for the route tenant or refused, never for the
+    22	 * body-claimed tenant. A matching claim is harmless and ignored.
+    23	 *
+    24	 * - mode "visitor" (default): anonymous, public objects only, no grants.
+    25	 * - mode "owner": accepted for a future authenticated lane; until that lane
+    26	 *   exists it is treated as visitor-safe and grants nothing.
+    27	 *
+    28	 * Response: { ok: true, answer, answerClass, refusal, citations,
+    29	 *   unknowns, suggestedActions, proposal, tenantId }
+    30	 *   unknowns is string[]; suggestedActions is the available-actions list
+    31	 *   ([] when none); proposal is a draft AskProposal or null.
+    32	 *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+    33	 *   Every citation carries claimClass ("supported" | "derived").
+    34	 */
+    35	export async function POST(
+    36	  request: NextRequest,
+    37	  { params }: { params: Promise<{ siteId: string }> },
+    38	): Promise<NextResponse> {
+    39	  const { siteId } = await params;
+    40	  return handleAskRequest(siteId, request);
+    41	}

@@ -1,0 +1,69 @@
+11:    event_id: str = Field(..., description="SHA256 of constitutional event identity")
+44:    def verify_event_id(self) -> "EventEnvelope":
+45:        """Verify that event_id matches constitutional hash (excludes infrastructure timestamps)"""
+46:        # Constitutional hash excludes recorded_at and processed_at (infrastructure timestamps)
+65:        computed_hash = authority.hash_dict(data)
+67:        if self.event_id != computed_hash:
+68:            raise ValueError(f"Event ID hash mismatch: expected {computed_hash}, got {self.event_id}")
+72:    def verify_hash(self) -> bool:
+73:        """Explicit hash verification method"""
+88:        computed_hash = authority.hash_dict(data)
+89:        return self.event_id == computed_hash
+92:    def create(
+109:        """Factory method to create EventEnvelope with computed constitutional hash"""
+110:        # Constitutional hash excludes infrastructure timestamps
+128:        event_id = authority.hash_dict(data)
+131:            event_id=event_id,
+=== authority files ===
+__init__.py
+__pycache__
+artifact_authority.py
+authority_hash.py
+authority_registry.py
+canonical_authority.py
+canonical_byte_authority.py
+canonical_serializer.py
+canonical_traversal_authority.py
+canonical_tree.py
+constitution_authority.py
+encoding_authority.py
+hash_authority.py
+interface.py
+internal
+traversal_policy.py
+ARCHIVE.md
+CONSTITUTIONAL_PROOF.md
+CONTINUITY.md
+EVENT_LAW.md
+GOVERNANCE.md
+KNOWLEDGE.md
+STATE_TRANSITION_LAW.md
+THESIS.md
+TIME_LAW.md
+TRUTH_LAW.md
+__pycache__
+authority
+authority_model.md
+canonical_serialization.py
+connectors
+evidence
+hashing
+hashing.py
+intents.py
+invariant_law.md
+laws.py
+layer0_kernel.md
+layering_law.md
+mission
+models
+mutation_law.md
+registries.py
+registry
+replay_law.md
+retrieval_law.md
+schema_registry.py
+source_of_truth_law.md
+terminology.md
+transcript.py
+value_objects.py
+witness_law.md

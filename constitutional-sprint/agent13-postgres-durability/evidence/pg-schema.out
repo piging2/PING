@@ -1,0 +1,133 @@
+### EXACT COUNTS brain-postgres/ping_runtime
+ERROR:  column "tablename" does not exist
+LINE 1: SELECT tablename||'='||n_live_tup FROM pg_stat_user_tables O...
+               ^
+### EXACT COUNTS brain-postgres/crx_runtime (key tables)
+ERROR:  column "tablename" does not exist
+LINE 1: SELECT tablename||'='||n_live_tup FROM pg_stat_user_tables W...
+               ^
+### EXACT COUNTS ping-postgres/crx_runtime
+ERROR:  column "tablename" does not exist
+LINE 1: SELECT tablename||'='||n_live_tup FROM pg_stat_user_tables W...
+               ^
+### ping_events COLUMN/CONSTRAINT/INDEX DEF brain-postgres/ping_runtime
+COL:event_id character varying
+COL:event_type character varying
+COL:source character varying
+COL:timestamp timestamp with time zone
+COL:payload jsonb
+COL:metadata jsonb
+COL:namespace character varying
+COL:processed boolean
+COL:created_at timestamp with time zone
+PK/UK:ping_events_pkey PRIMARY KEY (event_id)
+IDX:idx_ping_events_causation
+IDX:idx_ping_events_correlation
+IDX:idx_ping_events_namespace
+IDX:idx_ping_events_processed
+IDX:idx_ping_events_source
+IDX:idx_ping_events_timestamp
+IDX:idx_ping_events_type
+IDX:ping_events_pkey
+### same: ping-postgres/lanea_gate (has append trigger)
+COL:event_id character varying
+COL:event_type character varying
+COL:source character varying
+COL:timestamp timestamp with time zone
+COL:payload jsonb
+COL:metadata jsonb
+COL:namespace character varying
+COL:processed boolean
+COL:created_at timestamp with time zone
+COL:sequence bigint
+IDX:idx_ping_events_causation
+IDX:idx_ping_events_correlation
+IDX:idx_ping_events_namespace
+IDX:idx_ping_events_processed
+IDX:idx_ping_events_sequence
+IDX:idx_ping_events_source
+IDX:idx_ping_events_timestamp
+IDX:idx_ping_events_type
+IDX:ping_events_pkey
+### same: ping-rc-postgres/rc_staging
+COL:event_id character varying
+COL:event_type character varying
+COL:source character varying
+COL:timestamp timestamp with time zone
+COL:payload jsonb
+COL:metadata jsonb
+COL:namespace character varying
+COL:processed boolean
+COL:created_at timestamp with time zone
+COL:sequence bigint
+### repository_events def brain-postgres/ping_runtime
+COL:event_id text
+COL:object_id text
+COL:event_type text
+COL:aggregate_type text
+COL:sequence integer
+COL:payload jsonb
+COL:witness jsonb
+COL:timestamp timestamp with time zone
+COL:authority text
+COL:authority_version text
+COL:causation_id text
+COL:correlation_id text
+COL:created_at timestamp with time zone
+COL:runtimeid text
+COL:previouseventhash text
+COL:canonicaleventhash text
+COL:reducerhash text
+COL:witnesshash text
+COL:replayhash text
+COL:chain_root text
+### canonical_events def brain-postgres/ping_runtime
+COL:event_id uuid
+COL:event_type character varying
+COL:event_version character varying
+COL:tenant_id character varying
+COL:timestamp timestamp with time zone
+COL:sequence bigint
+COL:source character varying
+COL:actor character varying
+COL:causation_id uuid
+COL:correlation_id uuid
+COL:payload jsonb
+COL:metadata jsonb
+COL:processed boolean
+COL:processed_at timestamp with time zone
+COL:worker character varying
+COL:retries integer
+COL:last_error text
+COL:created_at timestamp with time zone
+### archive/backup settings (all 6)
+--- brain-postgres
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica
+--- ping-postgres
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica
+--- ping-rc-postgres
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica
+--- ping-test-pg
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica
+--- ping-gauntlet-pg
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica
+--- swarm02-pg
+archive_command=(disabled)
+archive_mode=off
+fsync=on
+wal_level=replica

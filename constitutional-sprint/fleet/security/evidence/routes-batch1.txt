@@ -1,0 +1,359 @@
+########## src/app/api/newsletter/subscribe/route.ts ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { syncNewsletterSubscriber } from "@/lib/kit";
+     3	import { logEvent } from "@/lib/events";
+     4	
+     5	export async function POST(request: NextRequest) {
+     6	  try {
+     7	    const body = await request.json();
+     8	    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+     9	    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : undefined;
+    10	    const source = typeof body.source === "string" ? body.source.trim() : undefined;
+    11	
+    12	    // Extract acquisition metadata
+    13	    const referrer = request.headers.get("referer") || undefined;
+    14	    const userAgent = request.headers.get("user-agent") || "";
+    15	    const deviceClass = userAgent.includes("Mobile") ? "mobile" : userAgent.includes("Tablet") ? "tablet" : "desktop";
+    16	    const landingPage = request.url;
+    17	
+    18	    // Extract UTM parameters from URL
+    19	    const url = new URL(request.url);
+    20	    const utmSource = url.searchParams.get("utm_source") || undefined;
+    21	    const utmMedium = url.searchParams.get("utm_medium") || undefined;
+    22	    const utmCampaign = url.searchParams.get("utm_campaign") || undefined;
+    23	    const utmContent = url.searchParams.get("utm_content") || undefined;
+    24	    const utmTerm = url.searchParams.get("utm_term") || undefined;
+    25	
+    26	    // Validate email
+    27	    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    28	      return NextResponse.json(
+    29	        { error: "Invalid email address" },
+    30	        { status: 400 }
+    31	      );
+    32	    }
+    33	
+    34	    const kitResult = await syncNewsletterSubscriber({
+    35	      email,
+    36	      firstName,
+    37	      source,
+    38	    });
+    39	
+    40	    if (!kitResult.success) {
+    41	      const status = kitResult.failure === "validation" ? 503 : kitResult.suppressed ? 409 : 502;
+    42	      return NextResponse.json(
+    43	        {
+    44	          error: kitResult.suppressed ? "subscription_suppressed" : "kit_sync_failed",
+    45	          failure: kitResult.failure,
+    46	          operation: kitResult.failedOperation,
+    47	          message: kitResult.message,
+    48	        },
+    49	        { status }
+    50	      );
+    51	    }
+    52	
+    53	    await logEvent("NewsletterSignup", {
+    54	      email,
+    55	      firstName,
+    56	      subscriberId: kitResult.subscriber?.id,
+    57	      tagsApplied: kitResult.tagsApplied,
+    58	      sequenceEnrolled: kitResult.sequenceEnrolled,
+    59	    }, {
+    60	      acquisitionSource: source || "website",
+    61	      landingPage,
+    62	      referrer,
+    63	      utmSource,
+    64	      utmMedium,
+    65	      utmCampaign,
+    66	      utmContent,
+    67	      utmTerm,
+    68	      deviceClass,
+    69	    });
+    70	
+    71	    return NextResponse.json({
+    72	      success: true,
+    73	      subscriber: kitResult.subscriber,
+    74	      kit: {
+    75	        created: kitResult.created,
+    76	        tagsApplied: kitResult.tagsApplied,
+    77	        sequenceEnrolled: kitResult.sequenceEnrolled,
+    78	      },
+    79	    });
+    80	  } catch (error) {
+    81	    console.error("Newsletter subscription error:", error);
+    82	    return NextResponse.json(
+    83	      { error: "Internal server error" },
+    84	      { status: 500 }
+    85	    );
+    86	  }
+    87	}
+########## src/app/api/practice/session/route.ts ##########
+     1	/**
+     2	 * BFF: practice session (dev identity selector).
+     3	 * GET    -> { identityId, identity } | { identityId: null, identity: null }
+     4	 * POST   -> { identityId } (select an already-existing dev identity)
+     5	 * DELETE -> { ok: true } (sign out of the practice session)
+     6	 */
+     7	
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    10	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    11	import { clearPracticeIdentityId, getPracticeIdentityId, setPracticeIdentityId } from "@/lib/ping/session";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	export async function GET() {
+    17	  try {
+    18	    const identityId = await getPracticeIdentityId();
+    19	    if (!identityId) return NextResponse.json({ identityId: null, identity: null });
+    20	    const identities = await getPingObjectReader().listIdentities(identityId);
+    21	    const identity = identities.find((i) => i.id === identityId) ?? null;
+    22	    if (!identity) {
+    23	      // The session points at an identity the gateway no longer knows.
+    24	      // Drop the stale cookie rather than stranding the user.
+    25	      await clearPracticeIdentityId();
+    26	      return NextResponse.json({ identityId: null, identity: null });
+    27	    }
+    28	    return NextResponse.json({ identityId, identity });
+    29	  } catch (err) {
+    30	    return readerErrorResponse(err);
+    31	  }
+    32	}
+    33	
+    34	export async function POST(request: NextRequest) {
+    35	  try {
+    36	    const body = (await request.json().catch(() => null)) as { identityId?: unknown } | null;
+    37	    const identityId = typeof body?.identityId === "string" ? body.identityId : "";
+    38	    if (!identityId) throw new BadRequestError("identityId is required.");
+    39	    // Only already-existing identities can be selected. The selector never
+    40	    // invents an identity and never grants capabilities.
+    41	    const identities = await getPingObjectReader().listIdentities(identityId);
+    42	    const found = identities.some((i) => i.id === identityId);
+    43	    if (!found) throw new BadRequestError("Unknown identity. Create it first, then select it.");
+    44	    await setPracticeIdentityId(identityId);
+    45	    return NextResponse.json({ identityId });
+    46	  } catch (err) {
+    47	    return readerErrorResponse(err);
+    48	  }
+    49	}
+    50	
+    51	export async function DELETE() {
+    52	  await clearPracticeIdentityId();
+    53	  return NextResponse.json({ ok: true });
+    54	}
+########## src/app/api/practice/identities/route.ts ##########
+     1	/**
+     2	 * BFF: list and create PING practice identities.
+     3	 * GET  -> { identities: PingIdentitySummary[] }
+     4	 * POST -> { identity } (also becomes the active practice session identity)
+     5	 */
+     6	
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { getPingObjectReader } from "@/lib/ping/ping-object-reader";
+     9	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    10	import { getPracticeIdentityId, setPracticeIdentityId } from "@/lib/ping/session";
+    11	import type { CreateIdentityInput } from "@/lib/ping/types";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	export async function GET() {
+    17	  try {
+    18	    const viewerId = await getPracticeIdentityId();
+    19	    const identities = await getPingObjectReader().listIdentities(viewerId);
+    20	    return NextResponse.json({ identities });
+    21	  } catch (err) {
+    22	    return readerErrorResponse(err);
+    23	  }
+    24	}
+    25	
+    26	export async function POST(request: NextRequest) {
+    27	  try {
+    28	    const body = (await request.json().catch(() => null)) as Partial<CreateIdentityInput> | null;
+    29	    const input: CreateIdentityInput = {
+    30	      displayName: typeof body?.displayName === "string" ? body.displayName : "",
+    31	      handle: typeof body?.handle === "string" ? body.handle : "",
+    32	      bio: typeof body?.bio === "string" ? body.bio : "",
+    33	    };
+    34	    const identity = await getPingObjectReader().createIdentity(input);
+    35	    // Creating a test identity signs you in as it: name + handle + bio is the
+    36	    // whole morning flow. Keypair generation and dev custody stay server-side.
+    37	    await setPracticeIdentityId(identity.id);
+    38	    return NextResponse.json({ identity }, { status: 201 });
+    39	  } catch (err) {
+    40	    return readerErrorResponse(err);
+    41	  }
+    42	}
+########## src/app/api/practice/follow/route.ts ##########
+     1	/**
+     2	 * BFF: follow / unfollow as the session identity.
+     3	 * POST   { targetId } -> { relationshipId } (canonical RELATIONSHIP_CREATED)
+     4	 * DELETE ?targetId=  -> { ok: true }        (canonical revocation event)
+     5	 * Each follow is its own canonical relationship; there is no batch fakery.
+     6	 */
+     7	
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    10	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    11	import { getPracticeIdentityId } from "@/lib/ping/session";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	async function requireSessionId(): Promise<string> {
+    17	  const id = await getPracticeIdentityId();
+    18	  if (!id) throw new BadRequestError("No active practice identity. Select an identity first.");
+    19	  return id;
+    20	}
+    21	
+    22	export async function POST(request: NextRequest) {
+    23	  try {
+    24	    const subjectId = await requireSessionId();
+    25	    const body = (await request.json().catch(() => null)) as { targetId?: unknown } | null;
+    26	    const targetId = typeof body?.targetId === "string" ? body.targetId : "";
+    27	    if (!targetId) throw new BadRequestError("targetId is required.");
+    28	    const result = await getPingObjectReader().follow(subjectId, targetId);
+    29	    return NextResponse.json(result, { status: 201 });
+    30	  } catch (err) {
+    31	    return readerErrorResponse(err);
+    32	  }
+    33	}
+    34	
+    35	export async function DELETE(request: NextRequest) {
+    36	  try {
+    37	    const subjectId = await requireSessionId();
+    38	    const targetId = request.nextUrl.searchParams.get("targetId") || "";
+    39	    if (!targetId) throw new BadRequestError("targetId is required.");
+    40	    await getPingObjectReader().unfollow(subjectId, targetId);
+    41	    return NextResponse.json({ ok: true });
+    42	  } catch (err) {
+    43	    return readerErrorResponse(err);
+    44	  }
+    45	}
+########## src/app/api/practice/like/route.ts ##########
+     1	/**
+     2	 * BFF: like / unlike a post object as the session identity.
+     3	 * POST   { objectId } -> { ok: true } (canonical RELATIONSHIP_CREATED)
+     4	 * DELETE ?objectId=  -> { ok: true } (canonical revocation event)
+     5	 * Like counts are projections computed from relationship events; the
+     6	 * counter itself is never canonical truth.
+     7	 */
+     8	
+     9	import { NextRequest, NextResponse } from "next/server";
+    10	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    11	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    12	import { getPracticeIdentityId } from "@/lib/ping/session";
+    13	
+    14	export const dynamic = "force-dynamic";
+    15	export const runtime = "nodejs";
+    16	
+    17	async function requireSessionId(): Promise<string> {
+    18	  const id = await getPracticeIdentityId();
+    19	  if (!id) throw new BadRequestError("No active practice identity. Select an identity first.");
+    20	  return id;
+    21	}
+    22	
+    23	export async function POST(request: NextRequest) {
+    24	  try {
+    25	    const subjectId = await requireSessionId();
+    26	    const body = (await request.json().catch(() => null)) as { objectId?: unknown } | null;
+    27	    const objectId = typeof body?.objectId === "string" ? body.objectId : "";
+    28	    if (!objectId) throw new BadRequestError("objectId is required.");
+    29	    await getPingObjectReader().like(subjectId, objectId);
+    30	    return NextResponse.json({ ok: true }, { status: 201 });
+    31	  } catch (err) {
+    32	    return readerErrorResponse(err);
+    33	  }
+    34	}
+    35	
+    36	export async function DELETE(request: NextRequest) {
+    37	  try {
+    38	    const subjectId = await requireSessionId();
+    39	    const objectId = request.nextUrl.searchParams.get("objectId") || "";
+    40	    if (!objectId) throw new BadRequestError("objectId is required.");
+    41	    await getPingObjectReader().unlike(subjectId, objectId);
+    42	    return NextResponse.json({ ok: true });
+    43	  } catch (err) {
+    44	    return readerErrorResponse(err);
+    45	  }
+    46	}
+########## src/app/api/practice/bio/route.ts ##########
+     1	/**
+     2	 * BFF: update the session identity's bio through the canonical object path.
+     3	 * PATCH { bio } -> { ok: true }
+     4	 * Only the active identity can edit its own bio.
+     5	 */
+     6	
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+     9	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    10	import { getPracticeIdentityId } from "@/lib/ping/session";
+    11	
+    12	export const dynamic = "force-dynamic";
+    13	export const runtime = "nodejs";
+    14	
+    15	export async function PATCH(request: NextRequest) {
+    16	  try {
+    17	    const identityId = await getPracticeIdentityId();
+    18	    if (!identityId) throw new BadRequestError("No active practice identity. Select an identity first.");
+    19	    const body = (await request.json().catch(() => null)) as { bio?: unknown } | null;
+    20	    const bio = typeof body?.bio === "string" ? body.bio : "";
+    21	    await getPingObjectReader().updateBio(identityId, bio);
+    22	    return NextResponse.json({ ok: true });
+    23	  } catch (err) {
+    24	    return readerErrorResponse(err);
+    25	  }
+    26	}
+########## src/app/api/practice/feed/route.ts ##########
+     1	/**
+     2	 * BFF: practice feed for one identity (own posts + posts by followed
+     3	 * identities, deterministic newest-first order).
+     4	 * GET ?identityId= (defaults to the session identity) -> { posts: PingPost[] }
+     5	 */
+     6	
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+     9	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    10	import { getPracticeIdentityId } from "@/lib/ping/session";
+    11	
+    12	export const dynamic = "force-dynamic";
+    13	export const runtime = "nodejs";
+    14	
+    15	export async function GET(request: NextRequest) {
+    16	  try {
+    17	    const viewerId = await getPracticeIdentityId();
+    18	    const identityId = request.nextUrl.searchParams.get("identityId") || viewerId;
+    19	    if (!identityId) throw new BadRequestError("identityId is required (or select a practice identity).");
+    20	    const posts = await getPingObjectReader().getFeed(identityId, viewerId);
+    21	    return NextResponse.json({ posts });
+    22	  } catch (err) {
+    23	    return readerErrorResponse(err);
+    24	  }
+    25	}
+########## src/app/api/practice/profile/route.ts ##########
+     1	/**
+     2	 * BFF: public Circle projection for one identity.
+     3	 * GET ?identityId= (defaults to the session identity)
+     4	 * -> PublicCircleProjection. Public fields only; the raw journal never
+     5	 * reaches the browser.
+     6	 */
+     7	
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { getPingObjectReader, BadRequestError } from "@/lib/ping/ping-object-reader";
+    10	import { readerErrorResponse } from "@/lib/ping/api-errors";
+    11	import { getPracticeIdentityId } from "@/lib/ping/session";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	export async function GET(request: NextRequest) {
+    17	  try {
+    18	    const viewerId = await getPracticeIdentityId();
+    19	    const identityId = request.nextUrl.searchParams.get("identityId") || viewerId;
+    20	    if (!identityId) throw new BadRequestError("identityId is required (or select a practice identity).");
+    21	    const profile = await getPingObjectReader().getProfile(identityId, viewerId);
+    22	    return NextResponse.json({ profile });
+    23	  } catch (err) {
+    24	    return readerErrorResponse(err);
+    25	  }
+    26	}

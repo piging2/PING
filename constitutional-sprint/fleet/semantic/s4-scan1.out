@@ -1,0 +1,628 @@
+=== ROOT WORKERS: size + first-40-lines ===
+--- replay_worker.py ---
+155 /home/nolan/ping/replay_worker.py
+#!/usr/bin/env python3
+"""
+Replay Worker
+Processes CLAIM_GENERATED events and executes replay verification.
+Emits REPLAY_EXECUTED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+import hashlib
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_postgres_config
+
+
+class ReplayWorker:
+    """Replay Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def execute_replay(self, aggregate_id: str) -> Dict[str, Any]:
+        """Execute replay verification for aggregate"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Fetch all events for this aggregate
+        cursor.execute("""
+            SELECT event_id, event_type, timestamp, event_data
+            FROM events
+            WHERE aggregate_id = %s
+            ORDER BY timestamp ASC
+        """, (aggregate_id,))
+        
+        events = []
+        for row in cursor.fetchall():
+            events.append({
+                "event_id": row[0],
+                "event_type": row[1],
+                "timestamp": row[2],
+                "event_data": row[3]
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        # Compute replay fingerprint
+        event_data = json.dumps(events, sort_keys=True, default=str)
+        replay_fingerprint = hashlib.sha256(event_data.encode()).hexdigest()
+        
+        # Simple replay verification: check event sequence integrity
+        verified = True
+        expected_sequence = ["DOCUMENT_IMPORTED", "OBSERVATION_CREATED", "CLAIM_GENERATED"]
+        actual_sequence = [e["event_type"] for e in events]
+        
+        for expected, actual in zip(expected_sequence, actual_sequence):
+            if expected != actual:
+            
+--- witness_worker.py ---
+141 /home/nolan/ping/witness_worker.py
+#!/usr/bin/env python3
+"""
+Witness Worker
+Processes REPLAY_EXECUTED events and generates witness roots.
+Emits WITNESS_CREATED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+import hashlib
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_postgres_config
+
+
+class WitnessWorker:
+    """Witness Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def generate_witness_root(self, aggregate_id: str, replay_fingerprint: str) -> Dict[str, Any]:
+        """Generate witness root from replay fingerprint (deterministic)"""
+        # Deterministic witness generation: hash of aggregate_id and replay fingerprint only
+        # No timestamp - witnesses must be deterministic for constitutional verification
+        witness_data = f"{aggregate_id}:{replay_fingerprint}"
+        witness_root = hashlib.sha256(witness_data.encode()).hexdigest()
+        
+        return {
+            "witness_root": witness_root,
+            "replay_fingerprint": replay_fingerprint,
+            "aggregate_id": aggregate_id
+        }
+    
+    def store_witness(self, witness_data: Dict[str, Any]):
+        """Store witness in authority_witness table"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO authority_witness (id, witness_root, created_at)
+            VALUES (%s, %s, %s)
+        """, (str(uuid.uuid4()), witness_data["witness_root"], datetime.utcnow()))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    
+    def emit_witness_created_event(self, event_id: str, aggregate_id: str, document_id: str, witness_data: Dict[str, Any]):
+        """Emit WITNESS_CREATED event"""
+        conn = self.get_conn
+--- lineage_worker.py ---
+153 /home/nolan/ping/lineage_worker.py
+#!/usr/bin/env python3
+"""
+Lineage Worker
+Processes WITNESS_CREATED events and stores lineage information.
+Emits LINEAGE_CREATED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_postgres_config
+
+
+class LineageWorker:
+    """Lineage Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def build_lineage_chain(self, document_id: str) -> list:
+        """Build lineage chain for document"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Fetch all events for this document in order
+        cursor.execute("""
+            SELECT event_id, event_type, timestamp
+            FROM events
+            WHERE aggregate_id = %s
+            ORDER BY timestamp ASC
+        """, (document_id,))
+        
+        lineage_chain = []
+        for row in cursor.fetchall():
+            lineage_chain.append({
+                "event_id": row[0],
+                "event_type": row[1],
+                "timestamp": row[2]
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return lineage_chain
+    
+    def store_lineage(self, document_id: str, lineage_chain: list, witness_root: str):
+        """Store lineage in lineage table"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Store lineage as JSON
+        cursor.execute("""
+            INSERT INTO lineage (id, parent_id, child_id, edge_type, created_at)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (str(uuid.uuid4()), document_id, witness_root, "witness_link", datetime.utcnow()))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    
+    def emit_lineage_crea
+--- observation_worker.py ---
+162 /home/nolan/ping/observation_worker.py
+#!/usr/bin/env python3
+"""
+Observation Worker
+Processes DOCUMENT_IMPORTED events and extracts observations.
+Emits OBSERVATION_CREATED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_postgres_config
+
+
+class ObservationWorker:
+    """Observation Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def extract_observations(self, document_data: Dict[str, Any]) -> list:
+        """Extract observations from document"""
+        observations = []
+        
+        # Extract basic document observations
+        if "title" in document_data:
+            observations.append({
+                "observation_type": "title",
+                "observation_data": {"title": document_data["title"]}
+            })
+        
+        if "content" in document_data:
+            content = document_data["content"]
+            observations.append({
+                "observation_type": "content_length",
+                "observation_data": {"length": len(content)}
+            })
+            
+            # Extract paragraphs as observations
+            paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
+            for i, paragraph in enumerate(paragraphs):
+                observations.append({
+                    "observation_type": "paragraph",
+                    "observation_data": {"index": i, "text": paragraph}
+                })
+        
+        if "source" in document_data:
+            observations.append({
+                "observation_type": "source",
+                "observation_data": {"source": document_data["source"]}
+            })
+        
+        return observations
+    
+    def create_observations(self, event_id: str
+--- claim_worker.py ---
+175 /home/nolan/ping/claim_worker.py
+#!/usr/bin/env python3
+"""
+Claim Worker
+Processes OBSERVATION_CREATED events and extracts claims.
+Emits CLAIM_GENERATED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_postgres_config
+
+
+class ClaimWorker:
+    """Claim Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def extract_claims_from_observations(self, event_id: str) -> list:
+        """Extract claims from observations for a given event"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT observation_id, observation_type, observation_data
+            FROM observations
+            WHERE event_id = %s
+        """, (event_id,))
+        
+        claims = []
+        
+        for row in cursor.fetchall():
+            observation_id = row[0]
+            observation_type = row[1]
+            observation_data = row[2]
+            
+            # Simple claim extraction based on observation type
+            if observation_type == "title":
+                claims.append({
+                    "claim_text": f"Document title is {observation_data.get('title', 'unknown')}",
+                    "confidence": 1.0,
+                    "source_observation_id": observation_id
+                })
+            elif observation_type == "content_length":
+                claims.append({
+                    "claim_text": f"Document has {observation_data.get('length', 0)} characters",
+                    "confidence": 1.0,
+                    "source_observation_id": observation_id
+                })
+            elif observation_type == "paragraph":
+                claims.append({
+                    "claim_text":
+--- filesystem_worker.py ---
+224 /home/nolan/ping/filesystem_worker.py
+"""
+PING Filesystem Constitutional Worker
+Phases 1-2: Repository Snapshot + Differential Tracking
+
+Outputs SQL INSERT statements to stdout for piping into postgres container.
+No AI. No embeddings. No Qdrant. Only events.
+"""
+
+import os
+import sys
+import json
+import uuid
+import hashlib
+import logging
+from pathlib import Path
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("filesystem_worker")
+
+SQL_FILE = Path(__file__).parent / ".constitutional_events.sql"
+
+PING_ROOT = Path(__file__).parent.resolve()
+SNAPSHOT_PATH = PING_ROOT / ".constitutional_snapshot.json"
+
+EXCLUDE_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", ".opencode"}
+EXCLUDE_FILES = {".constitutional_snapshot.json"}
+
+
+def make_aggregate_id(file_path: str) -> str:
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"file:///{file_path.replace(os.sep, '/')}"))
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    try:
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                h.update(chunk)
+        return h.hexdigest()
+    except (OSError, PermissionError) as e:
+        logger.warning("Cannot hash %s: %s", path, e)
+        return ""
+
+
+def scan_files(root: Path) -> List[Dict]:
+    files = []
+    scan_queue = [root]
+    while scan_queue:
+        current = scan_queue.pop()
+        try:
+            with os.scandir(current) as it:
+                for entry in it:
+                    try:
+                        if entry.is_dir(follow_symlinks=False):
+                            if entry.name not in EXCLUDE_DIRS and entry.name != ".git":
+                                scan_queue.append(Path(entry.path))
+                        elif entry.is_file(follow_symlinks=False):
+                            if entry.name in EXCLUDE_FILES:
+    
+--- constitutional_projection_worker.py ---
+162 /home/nolan/ping/constitutional_projection_worker.py
+#!/usr/bin/env python3
+"""
+Constitutional Projection Worker
+Processes LINEAGE_CREATED events and projects to Qdrant.
+Emits PROJECTION_CREATED events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import uuid
+from datetime import datetime
+from typing import Dict, Any
+from pathlib import Path
+
+from runtime.configuration import get_configuration
+
+
+class ConstitutionalProjectionWorker:
+    """Constitutional Projection Worker"""
+    
+    def __init__(self, postgres_config: Dict[str, Any], qdrant_url: str = None):
+        self.postgres_config = postgres_config
+        self.configuration = get_configuration()
+        self.qdrant_url = qdrant_url or self.configuration.get_qdrant_config()["url"]
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def project_to_qdrant(self, document_id: str, lineage_chain: list) -> bool:
+        """Project document to Qdrant (simplified - stores metadata only)"""
+        # For now, this is a placeholder for Qdrant projection
+        # In a full implementation, this would:
+        # 1. Connect to Qdrant
+        # 2. Generate embeddings
+        # 3. Upsert points to constitutional_memory collection
+        
+        print(f"Projecting document {document_id} to Qdrant (placeholder)")
+        return True
+    
+    def store_projection(self, aggregate_id: str, event_id: str, projection_data: Dict[str, Any]):
+        """Store projection in projections table"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO projections (projection_id, projection_type, projection_name, source_aggregate_id, projection_data, last_event_id, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            str(uuid.uuid4()),
+            "QDRANT_PROJECTION",
+            f"aggregate_{aggregate_id}",
+            aggregate_id,
+            json.dumps(projection_data),
+          
+--- simple_projection_worker.py ---
+120 /home/nolan/ping/simple_projection_worker.py
+"""
+Simple Projection Worker
+Creates projections from PostgreSQL events to Qdrant without requiring sentence_transformers
+Uses random embeddings for testing purposes
+Uses docker exec to connect to PostgreSQL
+"""
+
+import sys
+import os
+import uuid
+import json
+import random
+import hashlib
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+# Add runtime path
+sys.path.insert(0, str(Path(__file__).parent / 'runtime'))
+
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
+
+
+def canonical_json(obj):
+    """Canonical JSON serialization for consistent hashing."""
+    return json.dumps(obj, sort_keys=True, separators=(',', ':'))
+
+# Connect to Qdrant
+try:
+    client = QdrantClient(host="localhost", port=6333)
+    print("Connected to Qdrant")
+except Exception as e:
+    print(f"ERROR: Failed to connect to Qdrant: {e}")
+    sys.exit(1)
+
+# Fetch unprojected events using docker exec
+cmd = 'docker exec brain-postgres psql -U postgres -d crx_runtime -c "SELECT id, event_id, event_type, timestamp, aggregate_id, aggregate_type, event_data FROM events WHERE projected_to_qdrant = false;"'
+result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+if result.returncode != 0:
+    print(f"ERROR: Failed to fetch events: {result.stderr}")
+    sys.exit(1)
+
+# Parse events from psql output
+lines = result.stdout.strip().split('\n')
+events = []
+for line in lines:
+    if line and not line.startswith(' id') and not line.startswith('---') and not line.startswith('('):
+        # Parse event data (simplified parsing)
+        try:
+            parts = line.split('|')
+            if len(parts) >= 7:
+                event_id = parts[1].strip()
+                event_data_json = parts[6].strip()
+                event_data = json.loads(event_data_json)
+                events.append({
+                    'event_id': event_id,
+                    'event_data': event_data
+                })
+        except Exception as e:
+            continue
+
+pri
+--- projection_replay.py ---
+311 /home/nolan/ping/projection_replay.py
+#!/usr/bin/env python3
+"""
+Projection Replay
+
+Version 0: Read events → Rebuild Qdrant projections
+
+This is a minimal replay engine that verifies the system can rebuild Qdrant from events.
+No witness. No governance. No constitutional incidents.
+No canonical state reconstruction (objects, lineage, entities, relationships, claims).
+Just: Can system rebuild Qdrant from events?
+"""
+
+import json
+import logging
+from typing import Dict, List, Optional, Any
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+
+from runtime.authorities.embedding_authority import EmbeddingAuthority
+from runtime.authorities.execution_authority import ExecutionAuthority
+from runtime.config.configuration_authority import ConfigurationAuthority
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+CONFIGURATION = ConfigurationAuthority.current()
+EMBEDDING_AUTHORITY = EmbeddingAuthority(CONFIGURATION)
+EXECUTION_AUTHORITY = ExecutionAuthority()
+
+POSTGRES_CONFIG = CONFIGURATION.get_postgres_config()
+QDRANT_CONFIG = CONFIGURATION.get_qdrant_config()
+INFERENCE_CONFIG = CONFIGURATION.get_inference_config()
+
+POSTGRES_CONTAINER = POSTGRES_CONFIG.get('host', 'brain-postgres')
+POSTGRES_DB = POSTGRES_CONFIG.get('database', 'crx_runtime')
+POSTGRES_USER = POSTGRES_CONFIG.get('user', 'postgres')
+
+QDRANT_URL = QDRANT_CONFIG.get('url', 'http://localhost:6333')
+QDRANT_API_KEY = QDRANT_CONFIG.get('api_key', '')
+QDRANT_COLLECTION = QDRANT_CONFIG.get('collection', 'constitutional_memory')
+
+EMBED_MODEL = INFERENCE_CONFIG.get('embedding_model', 'nomic-embed-text')
+
+
+class ProjectionReplay:
+    """Minimal Qdrant projection replay engine."""
+
+    def __init__(self):
+        self.qdrant_client = None
+        self.embedding_model = None
+
+    def initialize(self):
+        """Initialize connections."""
+        logger.info("Initializing Projection Replay
+=== FIND projection_replay.py anywhere in core ===
+/home/nolan/ping/projection_replay.py
+=== sha256: root vs workers/ duplicates ===
+claim_worker: DIFFER (root 175 lines vs workers 104 lines)
+lineage_worker: DIFFER (root 153 lines vs workers 118 lines)
+observation_worker: DIFFER (root 162 lines vs workers 96 lines)
+replay_worker: DIFFER (root 155 lines vs workers 98 lines)
+witness_worker: DIFFER (root 141 lines vs workers 115 lines)
+=== workers/ dir listing ===
+total 76
+drwxr-xr-x  2 nolan nolan  4096 Sep 16 11:46 .
+drwxr-xr-x 52 nolan nolan 36864 Sep 21 12:44 ..
+-rw-r--r--  1 nolan nolan  3501 Sep 16 09:41 claim_worker.py
+-rw-r--r--  1 nolan nolan  3900 Sep 16 09:41 lineage_worker.py
+-rw-r--r--  1 nolan nolan  3112 Sep 16 09:41 observation_worker.py
+-rw-r--r--  1 nolan nolan  3795 Sep 16 09:41 projection_worker.py
+-rw-r--r--  1 nolan nolan  3048 Sep 16 09:41 replay_worker.py
+-rw-r--r--  1 nolan nolan  1990 Sep 16 09:41 repository_client.py
+-rw-r--r--  1 nolan nolan  3730 Sep 16 09:41 witness_worker.py
+-rw-r--r--  1 nolan nolan  4567 Sep 16 09:41 worker_runtime.py
+=== worktrees git status (are worktrees dirty?) ===
+/home/nolan/ping                                               cc6856c3b [refactor/runtime-authority-convergence]
+/home/nolan/ping-gauntlet                                      cc6856c3b [orca-finish/gauntlet]
+/home/nolan/ping-orca-safety                                   cc6856c3b [orca-finish/safety]
+/home/nolan/ping-orca-state                                    30a750fad [orca-finish/state]
+/home/nolan/ping-wave-gateway-mc-honesty                       cc6856c3b [tenanos-wave-gateway/mc-honesty-082-087]
+/home/nolan/ping/worktrees/agent-exec                          5b102c664 [sprint/agent-exec]
+/home/nolan/ping/worktrees/agent-smoke-abc123def456            3e0c3ddd1 [recovery/agent-smoke-2026-09-16]
+/home/nolan/ping/worktrees/jev-surgical                        fffe99f7a [jev/verdict-authority-hardening]
+/home/nolan/ping/worktrees/oracle-assembly                     5b102c664 [main]
+/home/nolan/ping/worktrees/playbook                            5b102c664 [sprint/playbook]
+/home/nolan/ping/worktrees/python-prod                         5b102c664 [sprint/python-prod]
+/home/nolan/worktrees/constitutional-convergence               5aa33dcca [constitutional-convergence-v2]
+/home/nolan/worktrees/constitutional-convergence-authority-law 1995f0a59 [constitutional-convergence-authority-law]
+/home/nolan/worktrees/orca-autonomy                            ae55b77ff [feature/orca-autonomy]
+/home/nolan/worktrees/ping-codex-convergence                   08c3036d9 [codex/context-workorder-convergence]
+/home/nolan/worktrees/ping-event-runtime                       1f40cf432 [event-runtime-deduplication]
+/home/nolan/worktrees/ping-harvest-12h                         8fe3b8060 [sprint/harvest-12h]
+/home/nolan/worktrees/ping-oracle-deploy                       6b4222467 [oracle/deploy-2026-09-18]
+/tmp/bisect-eval006                                            ff9751221 (detached HEAD) prunable
+/tmp/jev-broken-checkout                                       5bb2d08b5 (detached HEAD)

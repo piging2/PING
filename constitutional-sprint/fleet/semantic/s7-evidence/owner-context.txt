@@ -1,0 +1,197 @@
+__tests__
+jest.config.cjs
+owner-context.ts
+patch-loop.ts
+route.ts
+---
+src/app/api/fyd/customize/route.ts
+src/app/api/fyd/objects/[objectId]/overrides/owner-context.ts
+---
+     1	/**
+     2	 * OwnerContext: the single owner-context seam for the owner overrides
+     3	 * route. FYD directive (DECISIONS-LOCKED 2026-09-22, OWNER GATE):
+     4	 *
+     5	 *   OwnerContext interface
+     6	 *   -> DemoOwnerContext today
+     7	 *   -> PING identity/capability implementation later.
+     8	 *
+     9	 * No scattered if(demoOwner) through product code: the route speaks ONLY
+    10	 * this interface. Tenant scoping, the acting owner actor, capability +
+    11	 * policy evaluation, and demo disclosure labeling all flow through it.
+    12	 *
+    13	 * Replacing DemoOwnerContext with a PING identity/capability
+    14	 * implementation changes this file (one class) and nothing else: no call
+    15	 * site touches the tenant module, the demo chain, or a demo label
+    16	 * directly.
+    17	 *
+    18	 * Demo honesty is structural, not decorative: every response stamped
+    19	 * through the seam carries the demo disclosure, and the actor is always
+    20	 * the seeded demo actor, never a verified owner identity. Demo auth is
+    21	 * never presented as production auth.
+    22	 */
+    23	
+    24	import {
+    25	  chainAuditView,
+    26	  resolveOwnerCorrectionChain,
+    27	  type OwnerCorrectionChain,
+    28	} from "@/fyd/owner-mode/demo-chain";
+    29	import { requireTenantContext } from "@/fyd/tenant/tenant-context";
+    30	import {
+    31	  demoActorContext,
+    32	  type OwnerActor,
+    33	  type OwnerActorContext,
+    34	} from "./patch-loop";
+    35	
+    36	/** One capability + policy evaluation, as seen by the route. */
+    37	export interface OwnerCapabilityEvaluation {
+    38	  capability: string;
+    39	  allowed: boolean;
+    40	  reason: string;
+    41	}
+    42	
+    43	/**
+    44	 * The owner context seam. A future PING-backed implementation satisfies
+    45	 * this contract with real identity and capability semantics; the route
+    46	 * cannot tell the difference except through the disclosure it stamps.
+    47	 */
+    48	export interface OwnerContext {
+    49	  /** The tenant this context acts for (server-verified). */
+    50	  readonly tenantId: string;
+    51	  /**
+    52	   * The acting owner actor, future-neutral. Demo: the seeded demo actor,
+    53	   * labeled as such (an OwnerActorContext with demoOwnerContext: true).
+    54	   * A PING-backed implementation supplies a verified owner identity with
+    55	   * no demo marker.
+    56	   */
+    57	  readonly actor: OwnerActor;
+    58	  /** Human-readable statement of what this context is and is not. */
+    59	  readonly disclosure: string;
+    60	  /**
+    61	   * Label stamped on EVERY response served through this context, success
+    62	   * or refusal. It is impossible to get a response through the seam that
+    63	   * does not disclose the context's nature.
+    64	   */
+    65	  responseLabel(): Record<string, unknown>;
+    66	  /**
+    67	   * INTENT -> IDENTITY -> CAPABILITY + POLICY evaluation for one owner
+    68	   * action on one object. Pure: performs no mutation and writes nothing.
+    69	   * Approval is never a capability grant: a denied evaluation refuses the
+    70	   * effect regardless of any approval presented.
+    71	   */
+    72	  evaluateCapability(
+    73	    objectId: string,
+    74	    capability: string,
+    75	  ): Promise<OwnerCapabilityEvaluation>;
+    76	  /**
+    77	   * Human impact sentence for the propose-stage preview, describing the
+    78	   * evaluation that would gate the apply step.
+    79	   */
+    80	  capabilityImpactLine(evaluation: OwnerCapabilityEvaluation): string;
+    81	  /** JSON-safe audit view for route responses and server logs. */
+    82	  auditView(): Record<string, unknown>;
+    83	}
+    84	
+    85	/**
+    86	 * The single construction point for the route's OwnerContext. The route
+    87	 * calls this factory and nothing else: replacing the demo implementation
+    88	 * with a PING identity/capability implementation means changing this
+    89	 * factory's body, not the route and not the call sites. Until real owner
+    90	 * auth exists it returns the demo implementation, and every response it
+    91	 * stamps discloses that.
+    92	 */
+    93	export async function createOwnerContext(
+    94	  tenantId: string,
+    95	): Promise<OwnerContext> {
+    96	  return DemoOwnerContext.forTenant(tenantId);
+    97	}
+    98	
+    99	/**
+   100	 * The refusal label for failures that happen before any context exists
+   101	 * (e.g. an invalid tenant id). No response from the route may leave
+   102	 * unlabeled; the label comes from the seam, never from the route.
+   103	 */
+   104	export function ownerContextRefusalLabel(): {
+   105	  demoOwnerContext: true;
+   106	  demoNote: string;
+   107	} {
+   108	  return DemoOwnerContext.label();
+   109	}
+   110	
+   111	/**
+   112	 * DemoOwnerContext: the only OwnerContext implementation until real owner
+   113	 * auth exists. Tenant scoping comes from requireTenantContext (refused
+   114	 * before any I/O); the capability verdict comes from the seeded demo
+   115	 * chain (authentication alone never grants mutation); every label says
+   116	 * DEMO OWNER CONTEXT.
+   117	 */
+   118	export class DemoOwnerContext implements OwnerContext {
+   119	  private constructor(
+   120	    readonly tenantId: string,
+   121	    readonly actor: OwnerActorContext,
+   122	    private readonly chain: OwnerCorrectionChain,
+   123	  ) {}
+   124	
+   125	  /**
+   126	   * Build the context for the tenant served by this request. The tenant
+   127	   * id is verified FIRST (fail closed); the demo chain is then resolved
+   128	   * for it. Throws TenantContextError on an invalid tenant; the caller
+   129	   * must still label that refusal via DemoOwnerContext.label().
+   130	   */
+   131	  static async forTenant(tenantId: string): Promise<DemoOwnerContext> {
+   132	    const verified = requireTenantContext({ tenantId });
+   133	    const chain = await resolveOwnerCorrectionChain(verified);
+   134	    const actor = demoActorContext(chain.actor.id, chain.actor.label);
+   135	    return new DemoOwnerContext(verified, actor, chain);
+   136	  }
+   137	
+   138	  get disclosure(): string {
+   139	    return this.actor.disclosure;
+   140	  }
+   141	
+   142	  /**
+   143	   * The demo label, usable even before a context exists (e.g. an invalid
+   144	   * tenant refusal): no response from this route may leave unlabeled.
+   145	   */
+   146	  static label(): { demoOwnerContext: true; demoNote: string } {
+   147	    return {
+   148	      demoOwnerContext: true as const,
+   149	      demoNote:
+   150	        "DEMO OWNER CONTEXT: mutations on this route run as a seeded demo " +
+   151	        "actor. No owner identity was verified. Not a production owner API.",
+   152	    };
+   153	  }
+   154	
+   155	  responseLabel(): Record<string, unknown> {
+   156	    return DemoOwnerContext.label();
+   157	  }
+   158	
+   159	  async evaluateCapability(
+   160	    _objectId: string,
+   161	    _capability: string,
+   162	  ): Promise<OwnerCapabilityEvaluation> {
+   163	    // Demo: the verdict comes from the seeded demo chain, which evaluates
+   164	    // owner.correct-fact for the seeded actor. The capability argument is
+   165	    // part of the interface for the future PING implementation; the demo
+   166	    // chain knows only owner.correct-fact.
+   167	    return {
+   168	      capability: this.chain.verdict.capability,
+   169	      allowed: this.chain.verdict.allowed,
+   170	      reason: this.chain.verdict.reason,
+   171	    };
+   172	  }
+   173	
+   174	  capabilityImpactLine(evaluation: OwnerCapabilityEvaluation): string {
+   175	    return (
+   176	      "Capability " +
+   177	      evaluation.capability +
+   178	      ": " +
+   179	      (evaluation.allowed ? "ALLOWED" : "DENIED") +
+   180	      " under DEMO OWNER CONTEXT. " +
+   181	      evaluation.reason
+   182	    );
+   183	  }
+   184	
+   185	  auditView(): Record<string, unknown> {
+   186	    return chainAuditView(this.chain);
+   187	  }
+   188	}

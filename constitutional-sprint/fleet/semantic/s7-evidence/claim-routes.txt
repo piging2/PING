@@ -1,0 +1,285 @@
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/verify
+     3	 *
+     4	 * CLAIMED -> VERIFIED-CONTROLLED. Body: { "method": "operator-attestation",
+     5	 * "basis": "human-readable basis", "operatorLabel"?: "name" }.
+     6	 *
+     7	 * Only implemented verification methods are accepted; the rest return 501
+     8	 * with the full method list so the UI can say what is coming, honestly.
+     9	 *
+    10	 * DEMO OWNER MODE GATE: this route WRITES claim state (operator
+    11	 * attestation), so it requires DEV/DEMO OWNER MODE:
+    12	 * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or private-network
+    13	 * host. Anything else gets a typed 403
+    14	 * { ok:false, code:"demo_owner_mode_required" } and nothing is written.
+    15	 * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION: no identity is
+    16	 * verified here; operator attestation is a labeled statement, not a
+    17	 * cryptographic proof of domain control.
+    18	 */
+    19	import { NextRequest, NextResponse } from "next/server";
+    20	import { isValidResourceId, verifyControl } from "@/fyd/claim/machine";
+    21	import { ClaimError, type VerificationMethod } from "@/fyd/claim/types";
+    22	import {
+    23	  attestOperatorControl,
+    24	  isVerificationMethodImplemented,
+    25	  listVerificationMethods,
+    26	} from "@/fyd/claim/verification-seam";
+    27	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    28	import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+    29	
+    30	export const runtime = "nodejs";
+    31	export const dynamic = "force-dynamic";
+    32	
+    33	const NOT_REAL_AUTH =
+    34	  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+    35	  "this mode is for localhost/private-network demonstration only.";
+    36	
+    37	/**
+    38	 * Demo-owner-mode gate (same contract as the customize approval API and
+    39	 * the object overrides route): refuse with a typed 403 unless
+    40	 * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
+    41	 * localhost/private-network host. Default off; absent/false => fail closed.
+    42	 */
+    43	function demoDenied(req: NextRequest) {
+    44	  const enabled = isDemoOwnerModeEnabled();
+    45	  const host = req.headers.get("host") ?? "";
+    46	  const privateNet = isPrivateHost(host);
+    47	  if (!enabled || !privateNet) {
+    48	    return NextResponse.json(
+    49	      {
+    50	        ok: false,
+    51	        code: "demo_owner_mode_required",
+    52	        error:
+    53	          "Claim verification requires DEV/DEMO OWNER MODE " +
+    54	          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+    55	          NOT_REAL_AUTH,
+    56	        demoOwnerMode: enabled,
+    57	        hostPrivate: privateNet,
+    58	      },
+    59	      { status: 403 },
+    60	    );
+    61	  }
+    62	  return null;
+    63	}
+    64	
+    65	const METHODS: VerificationMethod[] = [
+    66	  "dns-txt",
+    67	  "well-known-file",
+    68	  "html-meta-tag",
+    69	  "cms-integration",
+    70	  "provider-evidence",
+    71	  "operator-attestation",
+    72	];
+    73	
+    74	export async function POST(
+    75	  req: NextRequest,
+    76	  ctx: { params: Promise<{ resourceId: string }> },
+    77	): Promise<NextResponse> {
+    78	  // Gate before any parsing or I/O: verification writes claim state.
+    79	  const gate = demoDenied(req);
+    80	  if (gate) return gate;
+    81	
+    82	  const { resourceId } = await ctx.params;
+    83	  if (!isValidResourceId(resourceId)) {
+    84	    return NextResponse.json(
+    85	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    86	      { status: 400 },
+    87	    );
+    88	  }
+    89	
+    90	  let body: { method?: unknown; basis?: unknown; operatorLabel?: unknown };
+    91	  try {
+    92	    body = (await req.json()) as typeof body;
+    93	  } catch {
+    94	    return NextResponse.json(
+    95	      { ok: false, code: "invalid-body", message: "Request body must be JSON." },
+    96	      { status: 400 },
+    97	    );
+    98	  }
+    99	  const method = body.method;
+   100	  if (typeof method !== "string" || !METHODS.includes(method as VerificationMethod)) {
+   101	    return NextResponse.json(
+   102	      {
+   103	        ok: false,
+   104	        code: "unknown-method",
+   105	        message: "Unknown verification method.",
+   106	        methods: listVerificationMethods(),
+   107	      },
+   108	      { status: 400 },
+   109	    );
+   110	  }
+   111	  if (!isVerificationMethodImplemented(method as VerificationMethod)) {
+   112	    return NextResponse.json(
+   113	      {
+   114	        ok: false,
+   115	        code: "method-unimplemented",
+   116	        message: "This verification method is not built yet.",
+   117	        methods: listVerificationMethods(),
+   118	      },
+   119	      { status: 501 },
+   120	    );
+   121	  }
+   122	
+   123	  const current = readClaim(resourceId);
+   124	  if (!current) {
+   125	    return NextResponse.json(
+   126	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+   127	      { status: 404 },
+   128	    );
+   129	  }
+   130	
+   131	  try {
+   132	    const operatorLabel =
+   133	      typeof body.operatorLabel === "string" && body.operatorLabel.trim()
+   134	        ? body.operatorLabel.trim()
+   135	        : (current.claimedBy?.actorLabel ?? "operator");
+   136	    const proof = attestOperatorControl({
+   137	      resourceId,
+   138	      operatorLabel,
+   139	      basis: typeof body.basis === "string" ? body.basis : "",
+   140	    });
+   141	    const next = verifyControl(current, proof);
+   142	    writeClaim(next);
+   143	    return NextResponse.json({ ok: true, claim: next });
+   144	  } catch (e) {
+   145	    if (e instanceof ClaimError) {
+   146	      const status = e.code === "bad-transition" ? 409 : 400;
+   147	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status });
+   148	    }
+   149	    throw e;
+   150	  }
+   151	}
+===FILE: src/app/api/fyd/claims/[resourceId]/verify/route.ts
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/release
+     3	 *
+     4	 * CLAIMED or VERIFIED-CONTROLLED -> OBSERVED. Only the identity that holds
+     5	 * the claim can release it. The audit history is preserved.
+     6	 */
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { isValidResourceId, release } from "@/fyd/claim/machine";
+     9	import { ClaimError } from "@/fyd/claim/types";
+    10	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    11	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    12	
+    13	export const runtime = "nodejs";
+    14	export const dynamic = "force-dynamic";
+    15	
+    16	export async function POST(
+    17	  _req: NextRequest,
+    18	  ctx: { params: Promise<{ resourceId: string }> },
+    19	): Promise<NextResponse> {
+    20	  const { resourceId } = await ctx.params;
+    21	  if (!isValidResourceId(resourceId)) {
+    22	    return NextResponse.json(
+    23	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    24	      { status: 400 },
+    25	    );
+    26	  }
+    27	  const identity = resolveClaimIdentity();
+    28	  if (!identity) {
+    29	    return NextResponse.json(
+    30	      { ok: false, code: "identity-required", message: "Releasing a claim needs an authenticated identity." },
+    31	      { status: 401 },
+    32	    );
+    33	  }
+    34	  const current = readClaim(resourceId);
+    35	  if (!current) {
+    36	    return NextResponse.json(
+    37	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+    38	      { status: 404 },
+    39	    );
+    40	  }
+    41	  if (current.claimedBy && current.claimedBy.actorId !== identity.actorId) {
+    42	    return NextResponse.json(
+    43	      { ok: false, code: "not-claimant", message: "Only the identity holding the claim can release it." },
+    44	      { status: 403 },
+    45	    );
+    46	  }
+    47	  try {
+    48	    const next = release(current, identity.actorLabel);
+    49	    writeClaim(next);
+    50	    return NextResponse.json({ ok: true, claim: next });
+    51	  } catch (e) {
+    52	    if (e instanceof ClaimError) {
+    53	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status: 409 });
+    54	    }
+    55	    throw e;
+    56	  }
+    57	}
+===FILE: src/app/api/fyd/claims/[resourceId]/release/route.ts
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/claim
+     3	 *
+     4	 * OBSERVED -> CLAIMED. Requires an authenticated identity from the claim
+     5	 * identity bridge. 401 when none is available (fail closed, never invent).
+     6	 * 403 for demo-context objects. 409 when the resource is not observed.
+     7	 */
+     8	import { NextRequest, NextResponse } from "next/server";
+     9	import { claim, createObserved, DEMO_CONTEXT_IDS, isValidResourceId } from "@/fyd/claim/machine";
+    10	import { ClaimError } from "@/fyd/claim/types";
+    11	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    12	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    13	
+    14	export const runtime = "nodejs";
+    15	export const dynamic = "force-dynamic";
+    16	
+    17	export async function POST(
+    18	  req: NextRequest,
+    19	  ctx: { params: Promise<{ resourceId: string }> },
+    20	): Promise<NextResponse> {
+    21	  const { resourceId } = await ctx.params;
+    22	  if (!isValidResourceId(resourceId)) {
+    23	    return NextResponse.json(
+    24	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    25	      { status: 400 },
+    26	    );
+    27	  }
+    28	  if (DEMO_CONTEXT_IDS.has(resourceId)) {
+    29	    return NextResponse.json(
+    30	      {
+    31	        ok: false,
+    32	        code: "demo-context",
+    33	        message:
+    34	          "This is a source-derived demo object in a labeled demo/testing context. It cannot be claimed.",
+    35	      },
+    36	      { status: 403 },
+    37	    );
+    38	  }
+    39	
+    40	  const identity = resolveClaimIdentity();
+    41	  if (!identity) {
+    42	    return NextResponse.json(
+    43	      {
+    44	        ok: false,
+    45	        code: "identity-required",
+    46	        message:
+    47	          "Claiming needs an authenticated identity. Anonymous previews cannot claim.",
+    48	      },
+    49	      { status: 401 },
+    50	    );
+    51	  }
+    52	
+    53	  let sourceUrl: string | undefined;
+    54	  try {
+    55	    const body: unknown = await req.json().catch(() => null);
+    56	    const u = (body as { sourceUrl?: unknown } | null)?.sourceUrl;
+    57	    if (typeof u === "string" && u.startsWith("http")) sourceUrl = u;
+    58	  } catch {
+    59	    // Body is optional; ignore parse failures.
+    60	  }
+    61	
+    62	  try {
+    63	    const current = readClaim(resourceId) ?? createObserved(resourceId, sourceUrl);
+    64	    const next = claim(current, identity);
+    65	    writeClaim(next);
+    66	    return NextResponse.json({ ok: true, claim: next });
+    67	  } catch (e) {
+    68	    if (e instanceof ClaimError) {
+    69	      const status = e.code === "bad-transition" ? 409 : 400;
+    70	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status });
+    71	    }
+    72	    throw e;
+    73	  }
+    74	}
+===FILE: src/app/api/fyd/claims/[resourceId]/claim/route.ts

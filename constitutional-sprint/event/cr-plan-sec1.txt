@@ -1,0 +1,51 @@
+**Current Networks:**
+1. `brain_internal` (172.21.0.x) - brain-postgres, brain-qdrant
+2. `crx_crx-network` (172.19.0.x) - crx-gateway
+3. `crx-digestion-worker_default` (172.20.0.x) - open-webui
+
+**Problem:** No cross-network routing. Containers cannot communicate.
+
+**Solution:** Single `ping_internal` network for all services.
+
+### Volume Fragmentation
+
+**Current Volumes:**
+- `postgres_data` (brain-postgres)
+- `qdrant_data` (brain-qdrant)
+- `ollama_data` (brain-ollama)
+- `crx_crx-postgres-volume` (crx-postgres)
+- `openwebui_data` (open-webui)
+- Plus: neo4j_data, kafka_data, zookeeper_data, duckdb_data, opensearch_data
+
+**Solution:** Consolidate to `ping_*` prefix:
+- `ping_postgres`
+- `ping_qdrant`
+- `ping_ollama`
+- `ping_vault`
+- `ping_repositories`
+- `ping_artifacts`
+- `ping_events`
+
+---
+
+## Proposed Architecture
+
+### Three-Layer Architecture
+
+```
+Infrastructure
+│
+├── Docker
+├── WSL2
+├── PostgreSQL (ping-postgres)
+├── Qdrant (ping-qdrant)
+└── Vault (ping-vault)
+
+Platform
+│
+├── Repository Runtime (ping-repo-runtime)
+├── Constitutional Runtime
+├── Mission Control (ping-mission-control)
+└── Ollama (ping-ollama)
+
+Workers

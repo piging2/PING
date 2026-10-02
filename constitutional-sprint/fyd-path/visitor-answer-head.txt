@@ -1,0 +1,121 @@
+ *   nothing. This module never claims owner capabilities it does not have.
+ *
+ * Evidence contract: never invent business facts. When the composed answer
+ * cites no evidence, the outcome is a refusal (ok: true, refusal: true) with
+ * visitor-facing wording, not a guess. A projection that cannot be loaded or
+ * verified is the same honest unknown (projection_unavailable), never an
+ * exception-shaped hole.
+ *
+ * 3-class contract (Ask FYD answer classes): every citation carries a
+ * claimClass ("supported" | "derived") and the route layer reduces the
+ * answer to "supported" | "derived" | "unknown" (unknown = refusal, no cited
+ * evidence). DERIVED_FACT, INFERENCE, and GENERATED_COPY claims are always
+ * labeled "derived": generated presentation must never introduce an
+ * unsupported factual predicate as a plain fact.
+ */
+import { createHash } from "node:crypto";
+import type { SiteBundle } from "../media/site-bundle";
+import { buildAskFydContext } from "./context-builder";
+import { composeAskFyd } from "./answer";
+import { canonicalize } from "../../lib/ping/ask-composer";
+import { applyFieldVisibility } from "../sitespec/field-visibility";
+import { resolveQuery } from "../components/renderer";
+import { selectRelatedCircles } from "../object/related";
+import type { SiteSpecSummary } from "./site-spec";
+import type {
+  AskClaimClassification,
+  AskProposal,
+  AskEvidenceRef,
+  PlannedAction,
+  PingObject,
+  PingRelationship,
+} from "../../lib/ping/types";
+import type { FYDSiteSpec, FYDPage, ObjectGraph } from "../sitespec/types";
+
+export type AskFydMode = "visitor" | "owner";
+
+/**
+ * Per-citation epistemic class for the Ask FYD 3-class contract.
+ * - "supported": the claim is backed by cited evidence from the site data:
+ *   a recorded fact, a recorded relationship, an owner-set value,
+ *   owner-authored content, or the site's own statement, each attributed
+ *   to its source in the citation.
+ * - "derived": the claim was derived, inferred, or generated from site
+ *   data (DERIVED_FACT, INFERENCE, GENERATED_COPY). Always labeled as
+ *   such; never presented as a verified fact.
+ */
+export type AskClaimClass = "supported" | "derived";
+
+/**
+ * Map an AskClaimClassification classification string onto the 3-class
+ * contract. Unrecognized or missing classifications land on "supported"
+ * because the citation still names real evidence (the basis text stays
+ * neutral, "Site record"); only derivation/inference/generation land on
+ * "derived".
+ */
+export function claimClassFor(classification: string | undefined): AskClaimClass {
+  switch (classification) {
+    case "DERIVED_FACT":
+    case "derived":
+    case "INFERENCE":
+    case "GENERATED_COPY":
+      return "derived";
+    case "DEMO_SYNTHETIC":
+      // Demo-operator content is evidence-backed (the journal event
+      // that added it) and its source is labeled in the citation:
+      // "supported" with honest attribution, never a recorded fact.
+      return "supported";
+    default:
+      return "supported";
+  }
+}
+
+export interface AnswerAskFydInput {
+  siteId: string;
+  /**
+   * Optional object-scoped ask: the PING object id the question is about.
+   * The tenant is still selected by siteId alone (never crossed); the
+   * object is resolved inside this tenant's public graph with the same
+   * honesty gates as loadObjectViewById (unknown id or non-public object
+   * -> unknown_object). Context is the 1-hop related graph around the
+   * object (selectRelatedCircles restricted to directly incident edges);
+   * related objects' evidence is cited as their own, never merged into
+   * the target's record.
+   */
+  objectId?: string;
+  question: string;
+  mode: AskFydMode;
+}
+
+/** Injectable seam so tests can supply a synthetic bundle. Defaults to the real loader. */
+export interface AnswerAskFydDeps {
+  loadBundle: (siteId: string) => SiteBundle | null;
+}
+
+/**
+ * Visitor-facing citation: the cited object and field in plain language,
+ * plus the source, the basis, and the last-checked date for the Why this?
+ * disclosure. The n matches the [n] marker in the answer text.
+ */
+export interface AskFydCitation {
+  n: number;
+  /** Evidence ref id, carried for debugging only; the widget shows label. */
+  id: string;
+  label: string;
+  source: string;
+  basis: string;
+  lastChecked: string | null;
+  /** 3-class label: "supported" (cited evidence) or "derived" (derived / inferred / generated, explicitly labeled). */
+  claimClass: AskClaimClass;
+}
+
+export interface AskFydSuccess {
+  ok: true;
+  answer: string;
+  refusal: boolean;
+  citations: AskFydCitation[];
+  /** What the question asked about that has no supporting evidence. */
+  unknowns: string[];
+  /** Internal name for the available actions the viewer may take. */
+  suggestedActions: PlannedAction[];
+  /** Draft only; null when the answer proposes nothing. */

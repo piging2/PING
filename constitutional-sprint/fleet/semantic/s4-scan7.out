@@ -1,0 +1,111 @@
+=== do all root worker mains use sample/test events? ===
+replay_worker.py: 4 witness_worker.py: 4 lineage_worker.py: 4 observation_worker.py: 4 claim_worker.py: 4 constitutional_projection_worker.py: 4 
+=== projection_replay.py main() ===
+281-
+282-
+283:def main():
+284-    """Main entry point."""
+285-    replay = ProjectionReplay()
+286-
+287-    try:
+288-        if not replay.initialize():
+289-            logger.error("Initialization failed")
+290-            sys.exit(1)
+291-
+292-        # Run replay with limit for testing
+293-        # Remove limit for full replay
+294-        success = replay.run_replay(limit=100)
+295-
+296-        if success:
+297-            logger.info("Replay successful")
+298-            sys.exit(0)
+299-        else:
+300-            logger.error("Replay failed")
+301-            sys.exit(1)
+302-
+303-    except KeyboardInterrupt:
+=== who calls rebuild_certification / runtime.constitutional_runtime? ===
+=== who imports projection_replay / simple_projection_worker? ===
+./simple_projection_worker.py
+=== runtime/constitutional_runtime.py: rest of driver (loop + mark processed) ===
+        authority = ExecutionAuthority()
+        result = authority.run_docker(
+            ['exec', POSTGRES_CONTAINER, 'psql', '-U', POSTGRES_USER, '-d', POSTGRES_DB, '-t', '-c', query],
+            timeout=30,
+        )
+        if result.returncode != 0:
+            logger.error(f"Query failed: {result.stderr}")
+            return None
+        return result.stdout.strip()
+    except Exception as e:
+        logger.error(f"Error running query: {e}")
+        return None
+
+
+def fetch_unprocessed_events(limit: int = BATCH_SIZE) -> List[Event]:
+    """Fetch unprocessed events from PostgreSQL."""
+    try:
+        # Get events that are not in event_processing table
+        query = f"""
+        SELECT e.event_id, e.event_type, e.timestamp, e.aggregate_id, e.aggregate_type, e.event_data
+        FROM events e
+        LEFT JOIN event_processing ep ON e.event_id = ep.event_id
+        WHERE ep.event_id IS NULL
+        ORDER BY e.timestamp ASC
+        LIMIT {limit}
+        """
+
+        output = run_psql_query(query)
+        if not output:
+            return []
+
+        events = []
+        for line in output.split('\n'):
+            line = line.strip()
+            if line and '|' in line:
+                parts = [p.strip() for p in line.split('|')]
+                if len(parts) >= 6 and parts[0] != 'event_id':
+                    try:
+                        event_data = json.loads(parts[5]) if parts[5] else {}
+                        events.append(Event(
+                            event_id=parts[0],
+                            event_type=parts[1],
+                            timestamp=parts[2],
+                            aggregate_id=parts[3],
+                            aggregate_type=parts[4],
+                            event_data=event_data
+                        ))
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to parse event_data for event {parts[0]}")
+
+        logger.info(f"Fetched {len(events)} unprocessed events")
+        return events
+
+    except Exception as e:
+        logger.error(f"Error fetching unprocessed events: {e}")
+        return []
+
+
+def mark_event_processed(event_id: str, worker: str = "constitutional_runtime"):
+    """Mark event as processed in event_processing table."""
+    try:
+        query = f"""
+        INSERT INTO event_processing (event_id, processed, processed_at, worker, retries)
+        VALUES ('{event_id}', TRUE, NOW(), '{worker}', 0)
+        ON CONFLICT (event_id) DO UPDATE SET
+            processed = TRUE,
+            processed_at = NOW(),
+            worker = '{worker}',
+            retries = event_processing.retries
+        """
+
+        result = run_psql_query(query)
+        if result:
+            logger.info(f"Marked event {event_id} as processed")
+            return True
+        return False
+
+    except Exception as e:
+        logger.error(f"Error marking event {event_id} as processed: {e}")
+        return False
+

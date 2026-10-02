@@ -1,0 +1,76 @@
+===== 2a: auth bypass / backdoor patterns (names only, no values) =====
+===== 2b: middleware exclusions / public routes =====
+src/middleware.ts
+src/middleware.ts:18:  matcher: ["/((?!_next/static|_next/image|favicon.ico|brand|fyd-media).*)"],
+===== 2c: dev-mode / env-gated auth decisions =====
+src/lib/ping/ask-composer.ts:142: * is classified DEMO_SYNTHETIC, never a recorded fact. This keeps
+src/lib/ping/ask-composer.ts:148:  if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
+src/lib/slot-registry.ts:29:// Dev is permissive (matches the existing NODE_ENV==='development' auth bypass);
+src/fyd/data/fyd-tenant-graph.ts:337:              "DEMO OWNER MODE",
+src/fyd/identity/__tests__/demo-owner-path.test.ts:2: * Regression: the existing DEMO OWNER MODE path keeps working and stays
+src/fyd/identity/__tests__/demo-owner-path.test.ts:11:import { isDemoOwnerModeEnabled, isPrivateHost, DEMO_OWNER_MODE_ENV_VAR } from "../../owner-mode/gate";
+src/fyd/identity/__tests__/demo-owner-path.test.ts:13:describe("demo owner mode path (unchanged)", () => {
+src/fyd/identity/__tests__/demo-owner-path.test.ts:14:  const OLD = process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:17:    if (OLD === undefined) delete process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:18:    else process.env[DEMO_OWNER_MODE_ENV_VAR] = OLD;
+src/fyd/identity/__tests__/demo-owner-path.test.ts:22:    process.env[DEMO_OWNER_MODE_ENV_VAR] = "1";
+src/fyd/identity/__tests__/demo-owner-path.test.ts:27:    delete process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:32:    process.env[DEMO_OWNER_MODE_ENV_VAR] = "true";
+src/fyd/identity/config.ts:10: * DEMO OWNER MODE (src/fyd/owner-mode) is unchanged and stays the only
+src/fyd/ask/visitor-answer.ts:82:    case "DEMO_SYNTHETIC":
+src/fyd/ask/visitor-answer.ts:252:    case "DEMO_SYNTHETIC":
+src/fyd/ask/__tests__/graph-read-route.test.ts:146:        approvedBy: "demo-owner (seeded, unverified)",
+src/fyd/ask/__tests__/graph-read-route.test.ts:148:        note: "DEMO OWNER MODE - not real authentication",
+src/fyd/ask/__tests__/demo-classification.test.ts:8: *   DEMO_SYNTHETIC (never DIRECT_FACT)
+src/fyd/ask/__tests__/demo-classification.test.ts:9: * - visitor-answer claimClassFor("DEMO_SYNTHETIC") -> "supported"
+src/fyd/ask/__tests__/demo-classification.test.ts:96:  test("composer classifies overlay-authored objects as DEMO_SYNTHETIC", () => {
+src/fyd/ask/__tests__/demo-classification.test.ts:109:    // The service-name claim must be DEMO_SYNTHETIC, never DIRECT_FACT.
+src/fyd/ask/__tests__/demo-classification.test.ts:110:    expect(classes).toContain("DEMO_SYNTHETIC");
+src/fyd/ask/__tests__/demo-classification.test.ts:114:  test("claimClassFor keeps DEMO_SYNTHETIC supported with honest attribution", () => {
+src/fyd/ask/__tests__/demo-classification.test.ts:115:    expect(claimClassFor("DEMO_SYNTHETIC")).toBe("supported");
+src/fyd/customize/types.ts:88:    /** Demo only: "demo-owner (seeded, unverified)". Never a real identity. */
+src/fyd/customize/types.ts:91:    /** "DEMO OWNER MODE - not real authentication" marker. */
+src/fyd/customize/__tests__/apply-layer.test.ts:117:      approvedBy: "demo-owner (seeded, unverified)",
+src/fyd/customize/__tests__/apply-layer.test.ts:119:      note: "DEMO OWNER MODE - not real authentication. No identity was verified.",
+src/fyd/customize/server.ts:137:      approvedBy: "demo-owner (seeded, unverified)",
+src/fyd/customize/server.ts:139:      note: "DEMO OWNER MODE - not real authentication. No identity was verified.",
+src/fyd/object/__tests__/owner-capability.test.ts:27:  DEMO_OWNER_ACTOR,
+src/fyd/object/__tests__/owner-capability.test.ts:43:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:58:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:59:    const verdict = evaluateCapability(DEMO_OWNER_ACTOR, rel, "owner.correct-fact");
+src/fyd/object/__tests__/owner-capability.test.ts:79:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:80:    expect(evaluateCapability(DEMO_OWNER_ACTOR, rel, "owner.publish").allowed).toBe(
+src/fyd/object/__tests__/owner-capability.test.ts:86:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:87:    const all = evaluateAllCapabilities(DEMO_OWNER_ACTOR, rel);
+src/fyd/object/__tests__/owner-capability.test.ts:103:    expect(chain.actor.id).toBe(DEMO_OWNER_ACTOR.id);
+===== 2d: demo-owner-mode (from git log: 'Gate owner mutation behind demo-owner-mode') =====
+src/fyd/identity/__tests__/demo-owner-path.test.ts:11:import { isDemoOwnerModeEnabled, isPrivateHost, DEMO_OWNER_MODE_ENV_VAR } from "../../owner-mode/gate";
+src/fyd/identity/__tests__/demo-owner-path.test.ts:14:  const OLD = process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:17:    if (OLD === undefined) delete process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:18:    else process.env[DEMO_OWNER_MODE_ENV_VAR] = OLD;
+src/fyd/identity/__tests__/demo-owner-path.test.ts:22:    process.env[DEMO_OWNER_MODE_ENV_VAR] = "1";
+src/fyd/identity/__tests__/demo-owner-path.test.ts:23:    expect(isDemoOwnerModeEnabled()).toBe(true);
+src/fyd/identity/__tests__/demo-owner-path.test.ts:27:    delete process.env[DEMO_OWNER_MODE_ENV_VAR];
+src/fyd/identity/__tests__/demo-owner-path.test.ts:28:    expect(isDemoOwnerModeEnabled()).toBe(false);
+src/fyd/identity/__tests__/demo-owner-path.test.ts:32:    process.env[DEMO_OWNER_MODE_ENV_VAR] = "true";
+src/fyd/identity/__tests__/demo-owner-path.test.ts:33:    expect(isDemoOwnerModeEnabled()).toBe(false);
+src/fyd/object/__tests__/owner-capability.test.ts:27:  DEMO_OWNER_ACTOR,
+src/fyd/object/__tests__/owner-capability.test.ts:43:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:58:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:59:    const verdict = evaluateCapability(DEMO_OWNER_ACTOR, rel, "owner.correct-fact");
+src/fyd/object/__tests__/owner-capability.test.ts:79:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:80:    expect(evaluateCapability(DEMO_OWNER_ACTOR, rel, "owner.publish").allowed).toBe(
+src/fyd/object/__tests__/owner-capability.test.ts:86:    const rel = resolveDemoRelationship("site-1", DEMO_OWNER_ACTOR);
+src/fyd/object/__tests__/owner-capability.test.ts:87:    const all = evaluateAllCapabilities(DEMO_OWNER_ACTOR, rel);
+src/fyd/object/__tests__/owner-capability.test.ts:103:    expect(chain.actor.id).toBe(DEMO_OWNER_ACTOR.id);
+src/fyd/object/__tests__/owner-capability.test.ts:115:    expect(audit.actor.id).toBe(DEMO_OWNER_ACTOR.id);
+src/fyd/owner-mode/demo-chain.ts:34:  DEMO_OWNER_ACTOR,
+src/fyd/owner-mode/demo-chain.ts:77:  const actor = DEMO_OWNER_ACTOR;
+src/fyd/owner-mode/capability.ts:59:export const DEMO_OWNER_ACTOR: DemoActor = {
+src/fyd/owner-mode/capability.ts:74:  if (actor.id === DEMO_OWNER_ACTOR.id) {
+src/fyd/owner-mode/gate.ts:18: * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 (see ./gate.ts).
+src/fyd/owner-mode/gate.ts:21:export const DEMO_OWNER_MODE_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
+src/fyd/owner-mode/gate.ts:28:export function isDemoOwnerModeEnabled(): boolean {
+src/fyd/owner-mode/gate.ts:29:  return process.env[DEMO_OWNER_MODE_ENV_VAR] === "1";
+src/fyd/owner-mode/customize-panel.tsx:4: * Renders inside DemoOwnerMode, which only mounts when
+src/fyd/owner-mode/customize-panel.tsx:5: * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 (localhost/private). The conversational

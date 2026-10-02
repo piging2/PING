@@ -1,0 +1,81 @@
+   LocalBusiness / business-subtype candidates: prefers the entity whose
+   `@id` matches the page URL, then the one with a `sameAs` backlink,
+   then the one with the most facts, then lexicographic key order.
+   Deterministic, no heuristics from content ranking.
+
+## 3. Fact classes (Grill 7)
+
+`proceduralizer.ts` now requires on every `ParsedFact`:
+`factClass: DIRECT_FACT | DERIVED_FACT | INFERENCE | GENERATED_COPY | USER_OVERRIDE`
+and `visibility: "public" | "private"`. JSON-LD and OG/meta facts are
+`DIRECT_FACT`; composed fields (`locality`, RSS `content_item_count`)
+are `DERIVED_FACT`. The projected graph carries a per-object
+`fieldClasses` sidecar (`graph.fieldClasses[objectId][field] =
+factClass`) so the renderer and the compiler can see the epistemic
+status of every field they consume.
+
+## 4. Source tiers (Grill 3, 17)
+
+Every fact carries a per-fact `sourceType` (the actual tier), not the
+fetch that carried it: `json-ld` outranks `opengraph`, which outranks
+`meta`, `structured`, `rss`, `heuristic`. The old bug
+(`resolve` preferring og:title over the business name) is fixed by
+`SOURCE_TIER` weights; JSON-LD `name` beats og:title even when both
+arrive in the same HTML fetch. `@GRAPH VERIFIED` is reported per run
+as `stats.nodesVisited` / `stats.nodeIds`: every node the expansion
+visited, named.
+
+## 5. Identity authority verdict: KEEP
+
+The canonical PING IdentityAuthority
+(`/home/nolan/ping/runtime/authorities/identity_authority.py`) mints
+UUIDv7 for canonical identities. FYD's website-derived projection keys
+(`biz:<sha256>`, `loc:<sha256>`, relationship IDs) are NOT canonical
+PING identities: they must be stable across replay of the same source
+material, which UUIDv7 is not. Verdict: **KEEP** the bespoke
+deterministic IDs for the projection layer. When a projected entity is
+promoted into canonical PING space, identity MUST be minted through the
+runtime IdentityAuthority at the promotion boundary. That boundary does
+not exist yet; when it is built, this note must be re-grilled.
+
+## 6. Harvested vs hand-written
+
+- Harvested (library): JSON-LD expansion, `@graph` traversal, `@id`
+  resolution, multi-type merge, blank-node handling, nested object
+  materialization. ~0 new LOC; `jsonld@9.0.0` (exact pin) +
+  `@types/jsonld` (dev, exact pin).
+- Rejected from library: none needed; `jsonld.toRDF`/framing were
+  evaluated and not required.
+- Hand-written: discovery, offline context rewriting, site-chrome
+  filtering, blank-node content hashing, property->fact tables,
+  privacy tagging, primary-entity selection, relationship predicates,
+  projection of entities to ping.social objects, pipeline merge,
+  determinism tests. Measured 2026-09-21: `structured-data.ts`
+  (611 LOC, new), `proceduralizer.ts` delta (831 changed lines against
+  the pre-existing file), fixtures (253 LOC: 237 locked fixtures +
+  16 verbatim Coppersmith block), tests (605 LOC across the three new
+  suites + probe, plus edits to the two pre-existing suites).
+- Vendored: URL normalization from the resolve spike (import fails
+  under this lane's Jest resolver due the spike's `.ts` extension
+  import; vendored verbatim with attribution comment).
+
+## 7. Unsupported semantics (honest gaps)
+
+Recorded as `unsupported` evidence per run, kinds: `malformed-block`,
+`expansion-failed` (incl. remote-context refusal), `unsupported-type`
+(e.g. FAQPage, HowTo, Review, AggregateRating are visited but not
+projected), `unsupported-property` (e.g. `geo`, `review`, `aggregateRating`,
+`makesOffer` terms we have no PING field for yet), `site-chrome-node`,
+`unknown-relation`, `unmapped-entity`. Anything on this list that the
+SiteSpec compiler needs becomes an AI-escalation mapping task; the rest
+stays evidence.
+
+## 8. Determinism contract
+
+Same source bytes + same `observedAt` -> byte-identical facts, entity
+keys, object IDs, relationships, and reports, across: repeated runs in
+one process, different prior ingestions, different fixture orders,
+different source orders, a fresh module registry, and separate OS
+processes. Proven by `__tests__/structured-determinism.test.ts`
+(hostile) and the corpus tests (byte-identical reruns). `observedAt`
+is an explicit input; wall-clock time never enters IDs.

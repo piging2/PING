@@ -1,0 +1,194 @@
+     1	/**
+     2	 * H3 lane: the explicit owner-action seam for DEMO OWNER MODE.
+     3	 *
+     4	 * The seam, in order, with nothing hidden:
+     5	 *
+     6	 *   1. ACTOR: a demo label (see DemoActor). Not a verified identity.
+     7	 *   2. RELATIONSHIP: resolveDemoRelationship maps the actor to an owner /
+     8	 *      controller relationship for a site. The mapping is hard-coded and
+     9	 *      visible below; it proves nothing about the real world.
+    10	 *   3. CAPABILITY EVALUATION: evaluateCapability answers "may this actor
+    11	 *      perform this operation on this site?" with an allow/deny verdict
+    12	 *      plus a human-readable reason. Deny is the default; allow is granted
+    13	 *      only by the rules below.
+    14	 *   4. OPERATION: the caller must check verdict.allowed BEFORE acting, and
+    15	 *      owner attestations additionally pass the attestation gate
+    16	 *      (./attestation-gate.ts), which rejects on missing evidence.
+    17	 *
+    18	 * THIS IS NOT AUTHENTICATION. See ./gate.ts. Every verdict carries its
+    19	 * reason so a reviewer can see exactly why an action was permitted in the
+    20	 * demo. Nothing here may back a production authorization decision.
+    21	 */
+    22	
+    23	/** A demo actor: a label, not an identity. */
+    24	export interface DemoActor {
+    25	  id: string;
+    26	  label: string;
+    27	}
+    28	
+    29	/**
+    30	 * The relationship the demo grants an actor to a site.
+    31	 * "controller" mirrors the object-graph controllerId concept; in the demo
+    32	 * it is assigned by the mapping below, not discovered or verified.
+    33	 */
+    34	export interface OwnerRelationship {
+    35	  siteId: string;
+    36	  kind: "controller" | "none";
+    37	  /** Human-readable basis for the assignment. Always explicit. */
+    38	  basis: string;
+    39	}
+    40	
+    41	/** Operations the demo owner panel can attempt. */
+    42	export type OwnerCapability =
+    43	  | "owner.attest-regen"
+    44	  | "owner.edit-visibility"
+    45	  | "owner.publish"
+    46	  | "owner.customize-approve"
+    47	  | "owner.correct-fact";
+    48	
+    49	export interface CapabilityVerdict {
+    50	  capability: OwnerCapability;
+    51	  allowed: boolean;
+    52	  /** Typed human reason, e.g. "demo: controller may attest". */
+    53	  reason: string;
+    54	  actorId: string;
+    55	  relationshipKind: OwnerRelationship["kind"];
+    56	}
+    57	
+    58	/** The one seeded demo actor the panel offers. */
+    59	export const DEMO_OWNER_ACTOR: DemoActor = {
+    60	  id: "demo-owner",
+    61	  label: "Demo Owner (seeded, unverified)",
+    62	};
+    63	
+    64	/**
+    65	 * Demo relationship mapping. Explicit and total:
+    66	 * - the seeded demo actor is treated as controller of every demo site;
+    67	 * - any other actor id has no relationship to any site.
+    68	 * This mapping is the demo. It verifies nothing.
+    69	 */
+    70	export function resolveDemoRelationship(
+    71	  siteId: string,
+    72	  actor: DemoActor,
+    73	): OwnerRelationship {
+    74	  if (actor.id === DEMO_OWNER_ACTOR.id) {
+    75	    return {
+    76	      siteId,
+    77	      kind: "controller",
+    78	      basis:
+    79	        "demo mapping: the seeded demo actor is treated as the site " +
+    80	        "controller. No identity was verified.",
+    81	    };
+    82	  }
+    83	  return {
+    84	    siteId,
+    85	    kind: "none",
+    86	    basis:
+    87	      "demo mapping: actor '" +
+    88	      actor.id +
+    89	      "' is not the seeded demo actor, so it holds no demo relationship.",
+    90	  };
+    91	}
+    92	
+    93	const ALL_CAPABILITIES: OwnerCapability[] = [
+    94	  "owner.attest-regen",
+    95	  "owner.edit-visibility",
+    96	  "owner.publish",
+    97	  "owner.customize-approve",
+    98	  "owner.correct-fact",
+    99	];
+   100	
+   101	export function listOwnerCapabilities(): OwnerCapability[] {
+   102	  return ALL_CAPABILITIES.slice();
+   103	}
+   104	
+   105	/**
+   106	 * Evaluate one capability. Deny-by-default; allow only by the rules below.
+   107	 * The verdict reason always names the rule that fired.
+   108	 */
+   109	export function evaluateCapability(
+   110	  actor: DemoActor,
+   111	  relationship: OwnerRelationship,
+   112	  capability: OwnerCapability,
+   113	): CapabilityVerdict {
+   114	  const base = {
+   115	    capability,
+   116	    actorId: actor.id,
+   117	    relationshipKind: relationship.kind,
+   118	  };
+   119	  if (relationship.kind !== "controller") {
+   120	    return {
+   121	      ...base,
+   122	      allowed: false,
+   123	      reason:
+   124	        "demo: deny " +
+   125	        capability +
+   126	        " - actor has no controller relationship to site '" +
+   127	        relationship.siteId +
+   128	        "' (" +
+   129	        relationship.basis +
+   130	        ")",
+   131	    };
+   132	  }
+   133	  switch (capability) {
+   134	    case "owner.attest-regen":
+   135	      return {
+   136	        ...base,
+   137	        allowed: true,
+   138	        reason:
+   139	          "demo: allow - controller may attest regen outcomes; the " +
+   140	          "attestation gate still rejects on missing evidence.",
+   141	      };
+   142	    case "owner.edit-visibility":
+   143	      return {
+   144	        ...base,
+   145	        allowed: true,
+   146	        reason:
+   147	          "demo: allow - controller may propose field-visibility edits " +
+   148	          "(proposal only; nothing is persisted by this demo).",
+   149	      };
+   150	    case "owner.publish":
+   151	      return {
+   152	        ...base,
+   153	        allowed: false,
+   154	        reason:
+   155	          "demo: deny - the demo grants no publish path; publishing would " +
+   156	          "be a real-world effect and this demo performs none.",
+   157	      };
+   158	    case "owner.customize-approve":
+   159	      return {
+   160	        ...base,
+   161	        allowed: true,
+   162	        reason:
+   163	          "demo: allow - controller may approve a digest-bound " +
+   164	          "presentation-intent proposal. Approval only journals a " +
+   165	          "presentation-intent overlay for the demo journal; facts are " +
+   166	          "untouched and the approval itself carries the " +
+   167	          "\"DEMO OWNER MODE - not real authentication\" marker.",
+   168	      };
+   169	    case "owner.correct-fact":
+   170	      // Low-risk owner corrections stay streamlined: contact-field
+   171	      // corrections, service order/visibility, and address visibility.
+   172	      // Each correction is journaled as a provenance-backed event and the
+   173	      // source record is never rewritten, so the allow is bounded to
+   174	      // facts. External effects (publish, message, purchase) stay on
+   175	      // their own capabilities and remain deny-by-default.
+   176	      return {
+   177	        ...base,
+   178	        allowed: true,
+   179	        reason:
+   180	          "demo: allow - controller may correct low-risk facts; every " +
+   181	          "correction is journaled as a provenance-backed event with the " +
+   182	          "source value preserved, and source state is never rewritten. " +
+   183	          "External effects remain on their own denied capabilities.",
+   184	      };
+   185	  }
+   186	}
+   187	
+   188	/** Evaluate every known capability for an actor/relationship pair. */
+   189	export function evaluateAllCapabilities(
+   190	  actor: DemoActor,
+   191	  relationship: OwnerRelationship,
+   192	): CapabilityVerdict[] {
+   193	  return ALL_CAPABILITIES.map((c) => evaluateCapability(actor, relationship, c));
+   194	}

@@ -1,0 +1,84 @@
+diff --git a/src/fyd/claim/identity.ts b/src/fyd/claim/identity.ts
+index e6d950c5..38878233 100644
+--- a/src/fyd/claim/identity.ts
++++ b/src/fyd/claim/identity.ts
+@@ -1,10 +1,13 @@
+ /**
+  * Identity bridge for the claim flow (onboarding order J).
+  *
+- * Demo-owner mode is the ONLY identity source in this build. The auth lane
+- * is building the real Google-ready adapter in parallel (src/fyd/identity);
+- * this bridge deliberately does NOT depend on it. When that adapter lands,
+- * it adds a new ClaimedIdentity kind here; the state machine is unchanged.
++ * Demo-owner mode is the ONLY identity source in this build. A Google-ready
++ * adapter exists in-tree (src/fyd/identity: provider, callback flow,
++ * session routes, file store, audit); this bridge deliberately does NOT
++ * consume it yet. When that adapter is wired in, it adds a new
++ * ClaimedIdentity kind here; the state machine is unchanged. (Comment
++ * corrected 2026-09-23: the adapter had already landed at the
++ * referenced path.)
+  *
+  * Returns null when no authenticated identity is available. Callers must
+  * fail closed on null, never invent an identity.
+diff --git a/src/fyd/social/attestation-gate.ts b/src/fyd/social/attestation-gate.ts
+index 4fc64536..519333e7 100644
+--- a/src/fyd/social/attestation-gate.ts
++++ b/src/fyd/social/attestation-gate.ts
+@@ -99,7 +99,11 @@ export async function attestRelationshipState(input: {  subject: string;
+     return { attested: false, reason: "ATTESTATION_REJECTED", missing };
+   }
+ 
+-  // Latest-wins by (sequence, created_at, event_id), mirroring the projector.
++  // Latest-wins by (sequence, created_at, event_id), mirroring the
++  // readers' adapter-local ordering (readers.ts). NOTE: ping_events has
++  // no sequence column (the gateway never allocates one), so in practice
++  // this degrades to (created_at DESC, event_id DESC). No core-side
++  // projector enforces this order.
+   matching.sort((a, b) => {
+     const sa = a.sequence ?? -1;
+     const sb = b.sequence ?? -1;
+diff --git a/src/fyd/social/readers.ts b/src/fyd/social/readers.ts
+index 10bbb1c5..79c9f777 100644
+--- a/src/fyd/social/readers.ts
++++ b/src/fyd/social/readers.ts
+@@ -3,9 +3,13 @@
+  *
+  * Every read below is computed live from the PING journal
+  * (GET /events/<TYPE> on the repo-booted gateway). Canonical truth is
+- * ping_events; these readers derive net relationship state with the same
+- * last-wins ordering the projector uses: (sequence DESC, created_at DESC,
+- * event_id DESC) per (subject, predicate, object).
++ * ping_events; these readers derive net relationship state with an
++ * adapter-local last-wins ordering: (sequence DESC, created_at DESC,
++ * event_id DESC) per (subject, predicate, object). NOTE: ping_events has
++ * no sequence column (the gateway never allocates one), so in practice
++ * the ordering degrades to (created_at DESC, event_id DESC). No
++ * core-side projector enforces this order; the attestation gate
++ * (attestation-gate.ts) implements the same ordering by convention.
+  *
+  * No fake counts, no hardcoded follow state. A count is a projection over
+  * journaled events; an absent relationship reads as absent, never as zero
+@@ -70,6 +74,7 @@ export interface NetRelationship {
+   object: string;
+   status: "active" | "inactive";
+   sequence: number | null;
++  created_at: string;
+   event_id: string;
+ }
+ 
+@@ -102,6 +107,7 @@ export async function readNetRelationships(filter?: {
+       object: p.object,
+       status: p.status === "inactive" ? "inactive" : "active",
+       sequence: e.sequence,
++      created_at: e.created_at,
+       event_id: e.event_id,
+     };
+     const cur = net.get(key);
+@@ -120,6 +126,7 @@ function winsOver(a: NetRelationship, b: NetRelationship): boolean {
+   const sa = a.sequence ?? -1;
+   const sb = b.sequence ?? -1;
+   if (sa !== sb) return sa > sb;
++  if (a.created_at !== b.created_at) return a.created_at > b.created_at;
+   if (a.event_id !== b.event_id) return a.event_id > b.event_id;
+   return false;
+ }

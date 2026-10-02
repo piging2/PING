@@ -1,0 +1,61 @@
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, code: "site_not_found", error: e instanceof Error ? e.message : String(e), demo: true },
+      { status: 404 },
+    );
+  }
+  const parsed = parseCustomizationIntent(text);
+  if (isUnsupported(parsed)) {
+    return NextResponse.json(
+      { ok: false, code: "unsupported", error: parsed.reason, demo: true },
+      { status: 400 },
+    );
+  }
+  const resolved = resolveCustomizationIntent(site.spec, site.graph, parsed.intent);
+  if (!resolved.resolved) {
+    return NextResponse.json(
+      { ok: false, code: "unresolved", error: resolved.reason, demo: true },
+      { status: 422 },
+    );
+  }
+  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+  if (!outcome.ok) {
+    return NextResponse.json(
+      { ok: false, code: "no_op", error: outcome.error, demo: true },
+      { status: 422 },
+    );
+  }
+  const fresh = outcome.proposal;
+  if (
+    !clientProposal ||
+    clientProposal.proposalDigest !== fresh.proposalDigest
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "stale_digest",
+        error:
+          "The proposal the owner approved does not match a proposal freshly " +
+          "derived from the current spec. The spec moved (or the proposal was " +
+          "altered) since drafting: re-run parse and review the new proposal. " +
+          "Nothing was applied.",
+        expectedDigest: fresh.proposalDigest,
+        receivedDigest: clientProposal?.proposalDigest,
+        demo: true,
+      },
+      { status: 409 },
+    );
+  }
+  // Belt and suspenders: full body must equal the fresh body, not just the digest.
+  if (JSON.stringify(clientProposal) !== JSON.stringify(fresh)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "proposal_altered",
+        error: "Proposal body differs from the freshly derived proposal. Nothing was applied.",
+        demo: true,
+      },
+      { status: 409 },
+    );
+  }
+

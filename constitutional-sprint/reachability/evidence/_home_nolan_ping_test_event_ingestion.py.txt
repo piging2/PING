@@ -1,0 +1,67 @@
+"""
+Test Event Ingestion Script
+Populates PostgreSQL events table with test data for projection sovereignty audit.
+Uses docker exec to connect to PostgreSQL container.
+"""
+
+import subprocess
+import json
+import uuid
+from datetime import datetime
+
+# Generate test events
+test_events = []
+for i in range(10):
+    event_uuid = str(uuid.uuid4())
+    aggregate_uuid = str(uuid.uuid4())
+    event = {
+        'event_id': event_uuid,
+        'event_type': 'DOCUMENT_IMPORTED',
+        'timestamp': datetime.utcnow().isoformat(),
+        'aggregate_id': aggregate_uuid,
+        'aggregate_type': 'DOCUMENT',
+        'event_data': {
+            'document_id': f"doc_{i}",
+            'title': f"Test Document {i}",
+            'content': f"This is test content for document {i}",
+            'source': 'test_ingestion'
+        }
+    }
+    test_events.append(event)
+
+print(f"Generated {len(test_events)} test events")
+
+# Write SQL to file and execute
+sql_file = 'insert_events.sql'
+with open(sql_file, 'w') as f:
+    for event in test_events:
+        event_data_json = json.dumps(event['event_data']).replace("'", "''")
+        sql = f"INSERT INTO events (id, event_id, event_type, timestamp, aggregate_id, aggregate_type, event_data, projected_to_qdrant) VALUES ('{event['event_id']}', '{event['event_id']}', '{event['event_type']}', '{event['timestamp']}', '{event['aggregate_id']}', '{event['aggregate_type']}', '{event_data_json}'::jsonb, false);"
+        f.write(sql + '\n')
+
+# Copy SQL file to container and execute
+copy_cmd = f'docker cp {sql_file} brain-postgres:/tmp/insert_events.sql'
+subprocess.run(copy_cmd, shell=True, capture_output=True, text=True)
+
+exec_cmd = f'docker exec brain-postgres psql -U postgres -d crx_runtime -f /tmp/insert_events.sql'
+result = subprocess.run(exec_cmd, shell=True, capture_output=True, text=True)
+
+if result.returncode == 0:
+    print(f"Inserted {len(test_events)} events")
+    print(result.stdout)
+else:
+    print(f"ERROR: Failed to insert events: {result.stderr}")
+
+# Verify insertion
+verify_cmd = 'docker exec brain-postgres psql -U postgres -d crx_runtime -c "SELECT COUNT(*) FROM events;"'
+try:
+    result = subprocess.run(verify_cmd, shell=True, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"Verification result: {result.stdout}")
+    else:
+        print(f"ERROR: Verification failed: {result.stderr}")
+except Exception as e:
+    print(f"ERROR: Exception during verification: {e}")
+
+print("Test event ingestion complete")
+

@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""Emit one FYD_SITE_OVERLAY event to the PING gateway.
+
+The event is a REAL PING backend state change: it lands in ping_events via
+POST /events and is picked up by tools/fyd-site-projection/dump.py on the
+next projection regen. The Bearer <redacted> is resolved at runtime from the
+ping-gateway container env (never stored, never echoed).
+
+Usage:
+  emit-overlay.py <site-slug> <ops-json-file>
+  emit-overlay.py --add-service <site-slug> <service-title> <service-description>
+
+ops JSON file shape:
+  { "ops": [ {"op":"set_field","objectId":"...","field":"phone","value":"..."},
+             {"op":"add_object","object":{...}},
+             {"op":"add_relationship","relationship":{...}},
+             {"op":"deactivate_object","objectId":"..."} ] }
+
+Prints the accepted event_id. Exit 0 only on gateway acceptance.
+"""
+import base64
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+# FYD_GATEWAY_URL overrides the target (demo: http://127.0.0.1:18199/events).
+# FYD_GATEWAY_NO_AUTH=1 skips the Bearer header (the repo-booted demo
+# gateway has no auth on its event route; the 8080 deployment does).
+GATEWAY_URL = os.environ.get("FYD_GATEWAY_URL", "http://127.0.0.1:8080/events")
+GATEWAY_NO_AUTH = bool(os.environ.get("FYD_GATEWAY_NO_AUTH"))
+AGGREGATE_TYPE = "fyd_site"
+EVENT_TYPE = "FYD_SITE_OVERLAY"
+BRIDGE = os.path.expanduser("~/workspace/pig/pigwsl-run.sh")
+
+OWNER_IDS = {
+    "happy-place": "website-business-6fa5ebd99d72c4cb",
+    "coppersmith-plumbing": "website-business-2f1327c09d622175",
+}
+
+
+def emit(site, ops):
+    envelope = {
+        "event_type": EVENT_TYPE,
+        "aggregate_id": "fyd-site:" + site,
+        "aggregate_type": AGGREGATE_TYPE,
+        "event_data": {"siteId": site, "ops": ops},
+    }
+    body_b64 = base64.b64encode(json.dumps(envelope).encode("utf-8")).decode()
+    # Runs on the Pig via the bridge. The Bearer <redacted> is resolved inside the
+    # Pig-side script from the gateway container env; it never leaves the Pig,
+    # never touches disk, never appears in output.
+    if GATEWAY_NO_AUTH:
+        auth_setup = ""
+        auth_header = ""
+    else:
+        auth_setup = ("TOKEN=$(docker exec ping-gateway printenv MUSE_LEVEL_1_KEY) && "
+                      "[ -n \"$TOKEN\" ] && ")
+        auth_header = "-H \"Authorization: Bearer $TOKEN\" "
+    pig_template = (
+        "echo '%s' | base64 -d > /tmp/emit-body.json && "
+        + auth_setup +
+        "curl -s -m 20 -X POST '%s' "
+        + auth_header +
+        "-H 'Content-Type: application/json' "
+        "--data @/tmp/emit-body.json; ec=$?; "
+        "rm -f /tmp/emit-body.json; echo; exit $ec"
+    )
+    pig_cmd = pig_template % (body_b64, GATEWAY_URL)
+    p = subprocess.run([BRIDGE, pig_cmd], stdin=subprocess.DEVNULL,
+                       capture_output=True, text=True, timeout=90)
+    out = (p.stdout or "").strip()
+    if p.returncode != 0 or "EMIT_ERROR" in out:
+        sys.stderr.write("emit failed (rc=%d): %s %s\n" % (p.returncode, out, p.stderr))
+        return 1
+    try:
+        resp = json.loads(out)
+    except Exception:

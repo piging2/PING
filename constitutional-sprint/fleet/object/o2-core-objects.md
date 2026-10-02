@@ -1,0 +1,151 @@
+# O2 - Core Canonical Object Model (CORE /home/nolan/ping)
+
+**Block:** core canonical object model. Envelope, minting authorities, identity schemes, graph/relationship authorities, storage, readers, projections.
+**Bases:** (a) ADAPTER /home/nolan/projects/ping-constitutional @ a69bb68f; (b) CORE /home/nolan/ping @ refactor/runtime-authority-convergence (cc6856c3b, PRIMARY). Live code only; stale top-level audit .md treated as pointers.
+**Transport:** read-only SSH; no writes, no process touches, secrets metadata-only. No commits created.
+**Read first:** EVIDENCE-OBJECT-INTENT.md (phases 5/6/8 forensic), AUTHORITY-MAP.md (adapter authority census).
+
+## Verdict
+
+There is NOT one object envelope. There are **three live envelope implementations** minting overlapping kinds, plus **two hand-rolled envelope builders** and **one class-based legacy object**, despite `canonical_object.js` claiming consolidation of ~15 implementations. There is NOT one relationship/graph authority: there are **four relationship shapes**, a dormant graph compiler, a harness-only symbol graph, and **zero edges with IDs**. Identity has **seven schemes** across objects and events. The only durable object stores are the `symbols` table (upsert-overwrite, field queries provably broken) and journal payloads in `ping_events`. The "Global Object Registry" registers nothing durably and reads a superseded schema. Business nouns are correctly NOT constitutionalized in the core (they stay in journal payloads); all constitutionalized nouns are code/infra nouns.
+
+---
+
+## Noun table
+
+Columns: DOMAIN / NOUN / SCHEMA / MINTER / ID SCHEME / STORE / READERS / CONSTITUTIONAL KIND / CLASSIFICATION / CONFIDENCE / BROKEN BOUNDARY / AFFECTS AGENTS
+
+### R1
+core / Canonical envelope (the sanctioned one) / `ping-runtime/canonicalization/canonical_object.js:70` `createCanonicalObject`: id, kind, authority, canonical_hash, canonical_bytes, identity{namespace, version, created_at, created_by}, lineage{source_id, source_kind, derivation_path, provenance_chain}, relationships[], health, confidence, metadata, payload, witness, certificate, schema/canonical/constitution versions / `createCanonicalObject` itself; called by `gateway/canonical_object_authority.js:41` `create()`, `ping-runtime/canonicalization/canonicalization_service.js:130` `canonicalizeAndEmit()` (kind=eventType), dormant `gateway/canonical_object_generator.js` / `<kind>_<sha256(canonical_bytes)[0:16]>` via `runtime/kernel/authorities/identity_authority.js:46` `generateFromCanonicalHash` / no dedicated object table; envelopes are transient, embedded in `ping_events` metadata/payload (`canonical_object_id`, `canonical_hash`) or `symbols.symbol_data` / `verifyCanonicalObject`, `constitutional_verification_authority`, downstream workers / CONSTITUTIONAL OBJECT / CANONICAL_LIVE / HIGH / none at envelope layer; minters break it (F1, F3, F5) / object workers, ingest lane
+
+### R2
+code-ingest / Symbol via factory path / post-overwrite envelope: kind 'Symbol', payload{canonical_name, language, visibility, signature, generic_parameters, documentation, hash, span, module, repository}, identity OVERWRITTEN to {identity_id, created_at, version}, lineage OVERWRITTEN to {source_id, source_kind} (derivation_path and provenance_chain dropped) / `gateway/constitutional_object_factory.js:74` `createSymbol` via `gateway/symbol_object_authority.js:26` `createSymbol` / `symbol_<sha256({canonical_name,language,kind,signature}+type/version fields)[0:16]>` via kernel `identity_authority.js:132` `generateSymbolId` (lowercase `symbol_` prefix, different hash input than R3) / `symbols` table via `gateway/symbol_repository.js:30` `persist` (INSERT ON CONFLICT DO UPDATE, last-writer-wins); ObjectRegistry 60s in-memory cache / `getById` works; `getByCanonicalName/getByKind/getByLanguage/getByVisibility/getByModule/searchByName` all use chained `symbol_data->>'payload'->>'field'` which is invalid Postgres (operator `->>` on text) and silently return null/[]; `getRelatedSymbols` filters `r.relation` but maps `r.target_id` which generator shapes lack, always [] / CONSTITUTIONAL OBJECT (claimed) / CANONICAL_LIVE path, DEGRADED / HIGH / F1 (provenance dropped by overwrite), F6 (dual Symbol ID scheme vs R3; span-in-payload makes IDs unstable across edits, orphaning old `symbols` rows) / symbol graph consumers, code-intel workers
+
+### R3
+code-ingest / Symbol via generator path / full canonical envelope, kind 'Symbol', payload{canonical_name, canonical_kind, canonical_signature, span, visibility, modifiers, parameters, return_type, parent, provenance{language, original_kind, original_name}}, lineage intact with derivation_path and provenance_chain / `gateway/canonical_object_generator.js:177` `_toCanonicalSymbol` / `Symbol_<sha256(FULL payload incl. span, language, modifiers, parameters)[0:16]>` (capital `Symbol_` prefix; contradicts the file's own header comment "Identity derives only from canonical kind, name, signature, relationships", F9) / transient (no live persister; only its own test file imports it) / `gateway/test_canonical_object_generator.js` only / CONSTITUTIONAL OBJECT (claimed) / DORMANT / HIGH / F6 (same kind 'Symbol' as R2, different ID scheme and different identity semantics), F9 (doc falsehood) / none live; test harness only
+
+### R4
+code-ingest / File (dual minting) / (a) full canonical envelope via generator `generateFileObject` (kind 'File', `File_<hash16>`); (b) bypass envelope via `gateway/operational_envelope.js:166` `ConstitutionalObjectFactory.createFileObject` (kind 'File', NO identity block, NO canonical_bytes, lineage {source_id, source_kind:'Repository'} with no provenance chain) / (a) `canonical_object_generator.js:104` (dormant); (b) `gateway/filesystem_authority.js:67` instantiates the operational_envelope factory / (a) `File_<hash16>`; (b) `obj-<sha256(constitutional fields)[full hex]>` (third ID scheme) / (b) transient / (b) callers of filesystem_authority (none in bootstrap/routes; dormant) / CONSTITUTIONAL OBJECT (claimed) / SPLIT (two envelopes, same kind) / HIGH / F3 (bypass factory is a second class with the same name `ConstitutionalObjectFactory` in a different module) / filesystem/ingest workers
+
+### R5
+code-ingest / Repository / full canonical envelope, kind 'Repository', payload{name, url, default_branch, file_count, symbol_count, language_counts, files[]}, derivation_path ['Repository'] / `gateway/canonical_object_generator.js:130` `generateRepositoryObject` / `Repository_<hash16>` / transient / test only / CONSTITUTIONAL OBJECT (claimed) / DORMANT / HIGH / none live / none live
+
+### R6
+knowledge / Function/Class/Interface/API/Dependency/Concept knowledge objects / hand-built envelope field-by-field (id, kind, authority, identity{namespace,version,created_at,created_by}, canonical_hash, canonical_bytes, lineage{source_id, derivation_path, provenance_chain}, health, confidence, relationships[{target_id, relation_type, strength, metadata}], metadata, payload, schema/constitution versions, witness, certificate); does NOT call `createCanonicalObject` / `gateway/knowledge_objects.js:30` builders via `gateway/knowledge_runtime.js:39` `transform` / `<Kind>Knowledge_<hash16>` via `generateFromCanonicalHash` directly / transient / `constitutionalVerificationAuthority.verifyArtifact` (kernel verification_authority) / CONSTITUTIONAL OBJECT (claimed) / DUPLICATE (re-implements the envelope; any envelope change silently diverges here) / HIGH / F5 (bypasses the single-envelope constraint the header claims was consolidated) / knowledge pipeline, replay_runtime harnesses
+
+### R7
+knowledge / KnowledgeObject (class-based legacy) / `gateway/knowledge_object.js:6`: {id, kind, source, snapshot, identity{authority,id}, canonical_hash, evidence, relationships{parent, children[], related[]}, embedding, authority{owner}, witness, health, created_at}; NO payload field; relationships as object not array / `gateway/knowledge_object.js` / external `assignIdentity` / unknown durable store / `gateway/knowledge_compiler.js` (890 lines; referenced by orchestration worker_registry) / LEGACY OBJECT / DORMANT-ISH (no live route importers found) / MEDIUM-HIGH / listed as consolidated in the envelope header but still exists independently / none live
+
+### R8
+graph / GraphRoot / bypass envelope kind 'Graph' via operational_envelope factory: payload{graph_type, node_ids, edge_ids, node_root, edge_root, node_count, edge_count, graph_root}, `obj-<hash>` ID, no identity block / `gateway/canonical_graph_authority.js:56` `compile` via `createGraphObject`; wraps in OperationalEnvelope; `objectRegistry.register` (cache-only) / `obj-<sha256>` / `graph_cache` table stores ONLY spec_hash, constitutional_id, constitutional_hash, operational_metadata (the graph itself is never persisted); `_loadGraphCache` rebuilds hollow {id, canonical_hash} stubs / `_loadGraphCache` (hollow), `_graphCache` Map / CONSTITUTIONAL OBJECT (claimed) / DORMANT (only audit/validation harness importers) / HIGH / F8b (write-mostly: persisted rows cannot reconstruct the graph) / none live
+
+### R9
+graph / Relationship / FOUR shapes, none authoritative: (a) `{relation, target: <name string>}` from generator `_classRelationships` (target is a name, not an ID); (b) `{target_id, relation_type, strength, metadata}` from `canonical_object_authority.createRelationship` and knowledge_objects builders; (c) `{parent, children[], related[]}` in knowledge_object.js; (d) legacy `relationships` table (source_object uuid, target_object uuid, relationship_type) / no single minter; `createRelationship` is a plain-dict helper (no ID, no envelope, no evidence ref) / NO identity scheme (edges have no IDs) / embedded in envelope `relationships` arrays; legacy `relationships` table (uuid endpoints, stale schema gen) / `universal_symbol_graph.getRelatedSymbols` filters `r.relation === relationType` then maps `r.target_id`: incompatible with (a) (no target_id) and with (b) (no `relation` field); always [] on real data; ObjectRegistry.lookupChildren/Parents match `[{target_id}]` against legacy `events` table / NOT A CONSTITUTIONAL OBJECT (edges are unenveloped) / CONFLICTING / HIGH / F7 (FAKE graph edges: endpoints are name strings or mismatched fields; reader cannot consume any writer's shape) / graph/symbol consumers, Ask-adjacent code intel
+
+### R10
+identity / object and event ID schemes (census) / (a) `<kind>_<hash16>` content IDs (canonical envelope, identity_authority); (b) `obj-<hash>` (operational_envelope factory); (c) `symbol_<hash16>` 4-field hash (factory createSymbol) vs `Symbol_<hash16>` full-payload hash (generator); (d) `event_<hash16>` per eventType with NO timestamp/payload (dormant `gateway/event_write_authority.js:46`, `ON CONFLICT DO NOTHING` = silent drop of every same-type event after the first, F8); (e) sha256 over {eventType, source, [namespace], [logical_id|payload]} via `JSON.stringify` (UnifiedEventRuntime, live); (f) UUIDv5(tenantId:eventType:timestamp:sequence) (canonical_event_envelope); (g) uuid PKs (legacy events/objects tables); (h) `identity_<16hex>` gateway identities; (i) uuidv5 OIDC identities (adapter, per AUTHORITY-MAP Overlap 1) / respective minters / respective stores / respective readers / MIXED / SPLIT / HIGH for (a)-(f) mechanism; live impact of (d) BLOCKED (dormant) / F2 (scheme (e) is not key-order canonical; `_logicalIdentity` uses order-sensitive `JSON.stringify`; collision check uses shallow top-level-only key sort), F6 (c vs a), F8 (d) / all agents touching identity
+
+### R11
+registry / ObjectRegistry ("Global Object Registry", "All object access must go through the registry") / `gateway/object_registry.js`: lookupById/Hash/Kind/Lineage/Version/Authority/Children/Parents/Lifecycle / constructor takes postgresPool; `register(obj)` writes ONLY to a 60s-TTL in-memory Map (no durability); all lookups query legacy `events` table (`event_data`, `aggregate_type`, uuid `event_id`) which belongs to a superseded schema generation (pg_dump.sql has no `ping_events`; live journal `ping_events` is created by code in unified_event_runtime.js) / none durable / lookup* methods (broken against live DB: wrong table/schema; lookupById has no try/catch so a missing table throws) / REGISTRY / BROKEN / HIGH (mechanism); MEDIUM (DB state not probed, read-only mandate) / F4 / canonical_graph_authority, universal_symbol_graph (both dormant)
+
+### R12
+social/bff / Profile/Post objects (OBJECT_CREATED payloads) / BFF envelope payloads normalized by `gateway/social_ingest_adapter.js:288` `normalizeBffEnvelope`; NO canonical object minted; payload_hash computed; proof attached / adapter routes (practice/fyd social) via `UnifiedEventRuntime.emit` / sha256 identity-struct event_id (R10e) / `ping_events` (append-only, fail-closed collision per EVIDENCE 4.1) / adapter `ping-object-reader`, attestation gate, Ask pipeline / JOURNAL PAYLOAD (not a constitutional object) / CANONICAL_LIVE / HIGH / none: core correctly does NOT constitutionalize business nouns; FYD PingObject (id, schema, controllerId, visibility...) stays in payloads / social/ask agents
+
+### R13
+orchestration / Capability/Workflow/Event registry entries / generated JSON files (`ping-runtime/orchestration/CapabilityRegistry.json`, UUIDRegistry.json, ArchitectureManifest.json, generated 2026-07-04) / `generate_capability_registry.js` etc. / file paths / JSON files / `system_authority` census, dashboards / SNAPSHOT ARTIFACT / LEGACY / HIGH / stale by ~3 months; the envelope header cites "generated/*.json registries" as consolidated but they are static files, not envelope producers / none live
+
+### R14
+ingest / canonical tenant events / `gateway/canonical_event_envelope.js:66` deterministic UUIDv5 over tenantId:eventType:timestamp:sequence; INSERT INTO canonical_events ON CONFLICT (tenant_id, sequence) DO NOTHING / `executeEmitEvent` / UUIDv5 / `canonical_events` table, bridged to `ping_events` by `ping-runtime/events/event_bridge.js:227` (cursor in `ping_bridge_cursors`) / routes/canonical_events, event_bridge / JOURNAL EVENT / CANONICAL_LIVE / HIGH / none found at mechanism level / bridge/ingest agents
+
+### R15
+runtime identity / machine + replay identity / `runtime_identity_authority.js` (machine fingerprint, provenance only, `_identityVersion 2.0.0`), `replay_identity_authority.js` (replay-affecting identity), content `identity_authority.js` / respective / n/a / n/a / PROVENANCE / CANONICAL_LIVE (separation is the documented design) / HIGH / none: three authorities with distinct jobs is defensible, not a conflict / replay/verification agents
+
+---
+
+## Findings (PROPOSE ONLY, no patches applied)
+
+### F1. Factory post-delegation overwrite destroys identity and provenance
+- WHY: `gateway/constitutional_object_factory.js:51` `createObject()` delegates to `createCanonicalObject()` then unconditionally overwrites `envelope.identity` and `envelope.lineage`. The canonical identity block {namespace, version, created_at, created_by} is replaced by `generateIdentityEnvelope` output {identity_id, created_at, version}; the lineage {source_id, source_kind, derivation_path, provenance_chain} is replaced by {source_id, source_kind}. Provenance chain and derivation path are destroyed on every factory-minted object. Consumers reading `identity.namespace` or `lineage.provenance_chain` per the canonical contract get `undefined`.
+- EVIDENCE: factory file lines 44-58 (overwrite block); canonical_object.js:93-106 (canonical blocks); kernel identity_authority.js:147 `generateIdentityEnvelope`. Live path: symbol_object_authority -> factory.createSymbol -> universal_symbol_graph (harness-only today, but the factory is the documented symbol minter).
+- MINIMUM CHANGE: delete the two overwrite lines in `createObject()` and pass `identity`/`namespace` through `options` into `createCanonicalObject` instead; keep the factory's source_id/source_kind naming by mapping them to options.source_id/source_kind BEFORE delegation.
+- TEST: mint a Symbol through `symbolObjectAuthority.createSymbol`, assert `envelope.lineage.provenance_chain` is an array and `envelope.identity.namespace` is a string; assert `verifyCanonicalObject` still passes.
+- RESULT: factory-minted objects keep provenance; identity block shape matches the canonical contract.
+
+### F2. Event identity hashing is not key-order canonical
+- WHY: `ping-runtime/events/unified_event_runtime.js:87` `eventId = sha256(JSON.stringify(identity))` where identity embeds the raw `payload` object. `JSON.stringify` preserves insertion key order, so two semantically identical payloads with different key order hash to different event_ids: duplicate events for the same logical emission. `canonicalization_service.js:110` `_logicalIdentity` uses order-sensitive `JSON.stringify` too, defeating the stated "retries never produce duplicate IDs" guarantee. The collision check's `canon()` sorts only TOP-LEVEL keys, so a true duplicate differing only in nested key order is misclassified as a collision and fail-closed.
+- EVIDENCE: unified_event_runtime.js:80-87 (comment claims determinism; code uses JSON.stringify), :160-174 (shallow canon); canonicalization_service.js:104-111.
+- MINIMUM CHANGE: hash `CanonicalBytes.serialize(identity)` instead of `JSON.stringify(identity)` in `emit()`; make `_logicalIdentity` return `CanonicalAuthority.hash(strippedPayload)` (hex) instead of a JSON string; make `canon()` recursive.
+- TEST: emit the same logical event twice with payload keys in different insertion order; assert one row in `ping_events` and the second returns deduplicated. Emit with a new volatile field name; assert idempotent (documents the volatile-field list gap).
+- RESULT: idempotent retries actually idempotent; no false collision rejections.
+
+### F3. Second `ConstitutionalObjectFactory` bypasses the single envelope entirely
+- WHY: `gateway/operational_envelope.js:166` defines ANOTHER class named `ConstitutionalObjectFactory` (name collision with `gateway/constitutional_object_factory.js`). Its `createConstitutionalObject` builds a plain object: `id = spec.id || 'obj-'+hash`, NO identity block ("Note: No identity.created_at" per its own docstring), NO canonical_bytes, NO version fields, default lineage {source_id: null, source_kind: 'Unknown'} with no provenance chain. It mints the SAME kind names ('File' via createFileObject, 'Symbol' via createSymbolObject, 'Graph' via createGraphObject) as the canonical paths, with a third ID scheme. Used by 10 gateway authorities (filesystem_authority, repository_authority, canonical_graph_authority, etc.).
+- EVIDENCE: operational_envelope.js:166-230; filesystem_authority.js:15,22,67 (live instantiation, createFileObject); canonical_graph_authority.js:15 (createGraphObject).
+- MINIMUM CHANGE: rename the operational_envelope class to `OperationalObjectMint` (or delete if unused live); route its `create*Object` methods through `createCanonicalObject` with kind preserved; retire the `obj-<hash>` ID scheme.
+- TEST: `grep -rn "from './operational_envelope'"` shows zero importers of the old name; mint File via filesystem_authority; assert envelope has identity block and canonical_bytes and `verifyCanonicalObject` passes.
+- RESULT: one envelope, one ID scheme; the name collision is gone.
+
+### F4. ObjectRegistry registers nothing and reads a superseded schema
+- WHY: `gateway/object_registry.js:150` `register()` only writes a 60s-TTL in-memory Map. No durability: "registration" is invisible after TTL and never reaches Postgres. All `lookup*` methods query the legacy `events` table (columns `event_data`, `aggregate_type`, uuid `event_id`); the live journal is `ping_events` (different columns, text event_id). pg_dump.sql contains no `ping_events` table, confirming the dump/schema generation the registry targets is stale.
+- EVIDENCE: object_registry.js:44-148 (queries), :150-154 (register); unified_event_runtime.js:152 (`INSERT INTO ping_events`); pg_dump.sql table list (no ping_events).
+- MINIMUM CHANGE: make `register()` persist the envelope to a canonical object store (or to `ping_events` metadata) and repoint `lookup*` at the live journal schema; or mark ObjectRegistry DORMANT and remove its "all access must go through the registry" constraint comment.
+- TEST: register an object, clear the process cache (or wait 60s), `lookupById` returns it; `lookupByKind` returns rows from the live journal.
+- RESULT: the registry is either real or honestly dormant; no phantom authority.
+
+### F5. Knowledge builders hand-roll the envelope
+- WHY: `gateway/knowledge_objects.js` Function/Class/Interface/API/Dependency/Concept builders construct the full envelope literal by hand instead of calling `createCanonicalObject()`. The envelope header lists `knowledge_objects.js` as consolidated; it is not. Any envelope field change silently diverges these six builders.
+- EVIDENCE: knowledge_objects.js:30-140 (FunctionKnowledgeObject.build hand-rolled literal; zero `createCanonicalObject` references in the file).
+- MINIMUM CHANGE: replace the literal with `createCanonicalObject({kind: 'FunctionKnowledge', payload: canonicalData, authority: 'KnowledgeRuntime', options: {relationships, source_id, derivation_path, provenance_chain, metadata}})`.
+- TEST: build a FunctionKnowledgeObject; assert `verifyCanonicalObject` passes and the ID equals the previous scheme's output for the same input (or record the deliberate ID migration).
+- RESULT: the "single envelope" constraint actually holds for the knowledge lane.
+
+### F6. Two Symbol identity schemes; span-poisoned IDs orphan rows
+- WHY: factory path mints `symbol_<hash16(4 fields)>` (R2); generator path mints `Symbol_<hash16(full payload)>` (R3). Same kind name, different prefixes, different hash inputs: the same logical symbol gets two IDs, and neither path can resolve the other's. Worse, both hash inputs include volatile position data (generator: `span`; factory payload: `span`), so re-ingesting a file after an edit above the symbol changes its ID; `SymbolRepository.persist` upserts on the NEW id, leaving the OLD row orphaned forever (no cleanup, no tombstone). Readers are broken on top: all field-filtered queries use invalid chained `->>` (F6b), `getRelatedSymbols` can never match (F7).
+- EVIDENCE: constitutional_object_factory.js:76-91 (generateSymbolId + payload with span); canonical_object_generator.js:177-200 (full-payload hash); symbol_repository.js:30-38 (upsert), :52-160 (chained `->>` queries, silent catch); universal_symbol_graph.js:128-143.
+- MINIMUM CHANGE: pick ONE Symbol minter (recommend the factory path via symbol_object_authority, it is the wired one); remove `span` (and `language`, per the file's own "language disappears" rule) from the ID hash input while keeping them in the payload; fix the SQL to `symbol_data->'payload'->>'field'`; fix `getRelatedSymbols` to the canonical relationship shape (see F7); add a re-ingest sweep that tombstones superseded symbol IDs.
+- TEST: ingest a file, insert a line above a symbol, re-ingest; assert ONE row for the symbol (same ID) and zero orphans; assert `getByCanonicalName` returns it; assert `getRelatedSymbols(id,'extends')` returns the parent.
+- RESULT: stable symbol identity; working symbol queries; no orphan accumulation.
+
+### F7. Relationship shapes: four writers, zero compatible readers (FAKE edges)
+- WHY: (a) generator edges `{relation, target: <name string>}` have name-string endpoints, not IDs; (b) `createRelationship` edges `{target_id, relation_type, ...}` use different field names; (c) legacy `{parent, children, related}`; (d) legacy `relationships` table with uuid endpoints. The only graph reader, `getRelatedSymbols`, filters `r.relation` and maps `r.target_id`: matches (a)'s filter key but not its endpoint key, matches (b)'s endpoint key but not its filter key. It returns [] on all real data. Edges are never canonical objects (no IDs, no envelopes, no evidence refs), so they cannot be witnessed, versioned, or deduplicated.
+- EVIDENCE: canonical_object_generator.js:527-549; canonical_object_authority.js:87-95; universal_symbol_graph.js:128-143; knowledge_object.js:24; pg_dump.sql `relationships` table.
+- MINIMUM CHANGE: define ONE relationship record `{id, source_id, target_id, relation_type, strength, evidence_ref, created_at}` minted through `createCanonicalObject` with kind 'Relationship'; migrate (a) by resolving name targets to symbol IDs at mint time (fail closed when unresolvable, do not store name-string edges); rewrite `getRelatedSymbols` against the canonical shape.
+- TEST: mint extends/implements edges for a class; assert `getRelatedSymbols` returns resolved symbol objects; assert a name that resolves to nothing produces no edge (not a dangling string).
+- RESULT: edges are real, resolvable, and queryable; one graph authority becomes possible.
+
+### F8. Dormant collision-by-design event IDs (latent hazard)
+- WHY: `gateway/event_write_authority.js:46` `createEvent` mints `eventId = generateId('event', {type: eventType})`: deterministic per eventType with NO timestamp and NO payload. `persistEvent` uses `ON CONFLICT (event_id) DO NOTHING`. If this class is ever rewired into a live path, every event after the first of each type is silently dropped. No live importers today (only a comment mention in routes/events.js).
+- EVIDENCE: event_write_authority.js:40-78; importer grep (self only + comment).
+- MINIMUM CHANGE: include timestamp+payload digest in the ID input (or delete the class if UnifiedEventRuntime is the decided spine); add a test asserting distinct IDs for distinct payloads of the same type before any rewiring.
+- TEST: `createEvent('X', {a:1})` vs `createEvent('X', {a:2})` yield different IDs.
+- RESULT: the hazard is defused before it can go live.
+
+### F9. False identity documentation in the generator
+- WHY: `gateway/canonical_object_generator.js:1-17` header claims "Identity derives only from canonical kind, name, signature, relationships. Language disappears." The code hashes the FULL payload including `span`, `modifiers`, `parameters`, `return_type`, `parent`, and `provenance.language`. The documented identity rule is false, which misleads any convergence work that trusts it.
+- EVIDENCE: header comment vs `_toCanonicalSymbol` payload (lines 177-200) feeding `createCanonicalObject` -> `generateFromCanonicalHash(canonicalBytes, 'Symbol')`.
+- MINIMUM CHANGE: either change the code to hash only {kind, name, signature, relationships} (stable identity, language as provenance) or fix the comment to describe the actual hash input.
+- TEST: doc test asserting the ID input fields equal the documented set.
+- RESULT: docs match the identity law.
+
+### F10. Stale schema snapshot (pg_dump.sql) still anchors code
+- WHY: `pg_dump.sql` (19 tables: events, objects, relationships, repository_objects, observations, projections, entities, lineage, citations, topics, claims, authority_*) describes a superseded generation; it has no `ping_events`, `symbols`, `graph_cache`, `canonical_events`, or `repository_events`. Code still queries those tables (ObjectRegistry, replay_log, event_bus, witness_chain, migration_engine). Anyone reasoning from the dump about the live DB is reasoning about the wrong schema.
+- EVIDENCE: pg_dump.sql table list; absence of ping_events (grep, zero hits); unified_event_runtime.js CREATE TABLE IF NOT EXISTS ping_events.
+- MINIMUM CHANGE: regenerate the dump from the live DB (or label pg_dump.sql `STALE <date>` and move it under a `schema-history/` dir); add a CI check that every table a query references exists in the current schema file.
+- TEST: automated grep of `FROM <table>` / `INSERT INTO <table>` against the live schema; zero unmapped tables.
+- RESULT: one schema truth; no phantom-table queries.
+
+---
+
+## Summary for the parent
+
+- ONE envelope? No. Three envelope implementations (canonical_object.js; constitutional_object_factory.js which delegates then corrupts identity/lineage; operational_envelope.js which bypasses entirely with a colliding class name), plus hand-rolled envelopes (knowledge_objects.js) and a legacy class (knowledge_object.js). The "single envelope" header comment is aspirational, not true.
+- ONE relationship/graph authority? No. Four relationship shapes, no edge IDs, a dormant graph compiler, a harness-only symbol graph, and a reader (`getRelatedSymbols`) that is structurally incapable of returning results.
+- ONE identity scheme? No. Seven across objects/events, including a dormant per-eventType ID that collides by design and a live event-ID hash that is not key-order canonical.
+- ONE registry? The "Global Object Registry" registers only into a 60s cache and reads a superseded table.
+- ONE store? Objects live in: `symbols` (upsert-overwrite, broken field queries), `graph_cache` (hollow stubs), `ping_events` payloads/metadata (the healthy one), legacy `events`/`objects`/`relationships`/`repository_objects` (stale generation).
+- Good news: the core does NOT constitutionalize business nouns (no `kind: 'Business'` anywhere); FYD business objects stay as journal payloads via social_ingest_adapter, which is the right layering. The runtime/machine/replay identity separation (R15) is sound.
+- Live object-minting path today: `POST /ingest` -> CanonicalizationService -> createCanonicalObject -> UnifiedEventRuntime -> `ping_events`. Everything else symbol/graph/knowledge is dormant or harness-only, which bounds the blast radius of F1/F3/F5-F7 to future rewiring, but F2 (event ID key order) touches the LIVE journal path now.
+
+## Next adjacent gap I see
+
+The **projection/read side of `ping_events`**: who rebuilds state from the journal (projectors, the `event_bridge` cursors in `ping_bridge_cursors`, `projected_to_qdrant` flags, `runtime/constitutional/dist/ping-projector.js`), and whether the adapter's two "current graph" readers (dump-projection vs journal-overlay, D3 in EVIDENCE-OBJECT-INTENT) agree with what the core projector would produce. That is the natural follow-up block: O2 mapped minting; the projection/consume side (replay -> project -> serve) is unmapped on the core side. Secondarily, the `event_processing` table (markProcessed/markFailed) vs projector cursor ownership looks like another "two owners" seam.

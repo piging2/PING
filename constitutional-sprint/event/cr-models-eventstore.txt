@@ -1,0 +1,91 @@
+12:class Event(Base):
+13:    __tablename__ = "events"
+58:class Snapshot(Base):
+59:    __tablename__ = "snapshots"
+77:    __tablename__ = "projection_versions"
+89:    __tablename__ = "projection_checkpoints"
+109:    __tablename__ = "schemas"
+126:    __tablename__ = "aggregates"
+156:    __tablename__ = "commands"
+178:class OutboxMessage(Base):
+=== event_store.py head ===
+from typing import Any
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+from storage.postgres.models import Event as EventModel, Snapshot as SnapshotModel, OutboxMessage as OutboxMessageModel
+from constitution.models.event import EventEnvelope
+from constitution.models.projection import Snapshot
+from constitution.authority import CanonicalAuthority
+
+
+class EventStore:
+    """Append-only event store with hash verification"""
+    
+    def __init__(self, session: AsyncSession):
+        self.session = session
+    
+    async def append_event(self, event: EventEnvelope) -> None:
+        """Append an event to the event log (append-only, no updates, no deletes)"""
+        # Check if event already exists
+        existing = await self.session.execute(
+            select(EventModel).where(EventModel.event_id == event.event_id)
+        )
+        if existing.scalar_one_or_none():
+            raise ValueError(f"Event {event.event_id} already exists")
+        
+        # Compute event hash using constitutional authority
+        authority = CanonicalAuthority()
+        
+        # Serialize payload to canonical bytes
+        canonical_payload_bytes = authority.serialize_to_canonical_bytes(event.payload)
+        canonical_payload_hash = authority.hash_canonical_bytes(canonical_payload_bytes)
+        
+        # Serialize event to canonical bytes for event hash
+        event_data = {
+            'event_id': event.event_id,
+            'event_type': event.event_type,
+            'event_category': event.event_category,
+            'occurred_at': event.occurred_at.isoformat(),
+            'recorded_at': event.recorded_at.isoformat(),
+            'processed_at': event.processed_at.isoformat() if event.processed_at else None,
+            'correlation_id': event.correlation_id,
+            'causality_id': event.causality_id,
+            'producer_id': event.producer_id,
+            'caused_by_command_id': event.caused_by_command_id,
+            'schema_version': event.schema_version,
+            'aggregate_sequence': event.aggregate_sequence,
+            'aggregate_version': event.aggregate_version,
+            'stream_version': event.stream_version,
+            'payload': event.payload,
+        }
+        
+        canonical_event_bytes = authority.serialize_to_canonical_bytes(event_data)
+        event_hash = authority.hash_canonical_bytes(canonical_event_bytes)
+        
+        # Create event record with constitutional storage
+        event_record = EventModel(
+            event_id=event.event_id,
+            event_type=event.event_type,
+            event_category=event.event_category,
+            decoded_payload_cache=event.payload,  # Optional cache for queries
+            canonical_payload_bytes=canonical_payload_bytes,  # Constitutional storage
+            canonical_payload_hash=canonical_payload_hash,  # Constitutional hash
+            occurred_at=event.occurred_at,
+            recorded_at=event.recorded_at,
+            processed_at=event.processed_at,
+            correlation_id=event.correlation_id,
+            causality_id=event.causality_id,
+            producer_id=event.producer_id,
+            caused_by_command_id=event.caused_by_command_id,
+            schema_version=event.schema_version,
+            global_sequence=event.global_sequence,
+            aggregate_sequence=event.aggregate_sequence,
+            aggregate_version=event.aggregate_version,
+            stream_version=event.stream_version,
+            event_hash=event_hash,  # Constitutional hash, not placeholder
+        )
+        
+        self.session.add(event_record)
+        
+        # Add to outbox for NATS publication (transactional outbox pattern) with constitutional hashing
+        outbox_payload = event.model_dump(mode='json')

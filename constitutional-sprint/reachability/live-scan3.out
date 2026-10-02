@@ -1,0 +1,73 @@
+### served site identity: /home/nolan/projects/ping
+e48ef710cb889bf4d59b833ef9766067a9e2bbf0
+ M package.json
+ M src/app/build/[siteId]/page.tsx
+ M src/app/globals.css
+ M src/app/layout.tsx
+ M src/app/o/[objectId]/page.tsx
+2026-09-23 07:32:28 -0600
+/home/nolan/projects/ping/src/fyd/social/actions.ts
+HAS src/fyd/social/actions.ts
+### other deploys
+--- ping-deploy-head:
+0dec40f5c5823a8040bcd1f710e25c3103d499c3
+2026-09-22 09:00:49 -0600
+--- ping-fyd-deploy:
+ade4ee50127085d9be1fb3749cfec8d6de2e9719
+2026-09-22 19:12:55 -0600
+### diff served vs sprint worktree (quick)
+### gateway health route definitions
+/home/nolan/ping/gateway/api_controller.js:52:    this._app.get('/health', async (req, res) => {
+/home/nolan/ping/gateway/simple_server.js:71:app.get('/health', (req, res) => {
+### ping-rc-gateway identity
+ping-gateway:rc-4d522a6b started=2026-09-22T16:55:36.295941873Z
+### ping-gateway env: what port/db (metadata only, no values)
+### adapter reader: which gateway URL does the ADAPTER expect?
+/home/nolan/projects/ping-constitutional/src/lib/ping/ping-object-reader.ts:264:    const raw = process.env.FYD_JOURNAL_GATEWAY_URL;
+### ask-fyd grant assertions
+      targetIdentityId: ALICE,
+      followedByViewer: false,
+      likedByViewer: false,
+      website: null,
+      grants,
+    };
+  }
+
+  test("non-owner gets no site proposal action", () => {
+    const grants = grantsForViewer({ viewerId: BOB, controllerId: ALICE, isSite: true });
+    expect(grants).not.toContain("site.propose");
+    const plan = planActions(plannerInput(BOB, grants));
+    expect(plan.actions.some((a) => a.kind === "propose_site_patch")).toBe(false);
+    expect(plan.actions.some((a) => a.kind === "open_site")).toBe(false);
+  });
+
+  test("owner with the maintain_site bundle gets propose_site_patch and open_site", () => {
+    const grants = grantsForViewer({ viewerId: ALICE, controllerId: ALICE, isSite: true });
+    expect(grants).toEqual(expect.arrayContaining(["site.read", "site.propose", "object.reference"]));
+    const plan = planActions(plannerInput(ALICE, grants));
+    const kinds = plan.actions.map((a) => a.kind);
+    expect(kinds).toContain("propose_site_patch");
+    expect(kinds).toContain("open_site");
+    const propose = plan.actions.find((a) => a.kind === "propose_site_patch");
+    expect(propose?.reason).toMatch(/site\.propose/);
+    expect(plan.capabilities).toContain("propose_site_patch");
+  });
+
+  test("grants never replace capability reasoning: legacy callers keep legacy behavior", () => {
+    const plan = planActions(plannerInput(ALICE));
+    expect(plan.actions.some((a) => a.kind === "propose_site_patch")).toBe(false);
+    expect(plan.actions.some((a) => a.kind === "open_site")).toBe(false);
+  });
+
+  test("non-site objects never get site grants", () => {
+    const grants = grantsForViewer({ viewerId: ALICE, controllerId: ALICE, isSite: false });
+    expect(grants).not.toContain("site.propose");
+    expect(grants).not.toContain("site.read");
+  });
+});
+
+describe("agent boundary law", () => {
+  test("forbidden effects are never agent-authorized", () => {
+    for (const grant of FORBIDDEN_AGENT_EFFECTS) {
+      expect(canAgentAuthorize(grant)).toBe(false);
+      expect(() => assertAgentEffectAllowed(grant)).toThrow();

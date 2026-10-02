@@ -1,0 +1,516 @@
+########## src/app/api/fyd/social/identity/route.ts ##########
+     1	/**
+     2	 * FYD social: mint a dev identity.
+     3	 * POST { displayName, handle, bio? } -> 201 { identityId, displayName, handle, eventId, profileEventId }
+     4	 *
+     5	 * Real PING path: POST /identities on the repo-booted gateway (IdentityAuthority
+     6	 * mints identity_<16hex>), dev keypair escrowed server-side in FYD_DEV_KEY_DIR,
+     7	 * profile published as a signed ping.social.profile@1 OBJECT_CREATED envelope.
+     8	 * Dev identities only. Never Nolan's identity, never a real person's key.
+     9	 */
+    10	
+    11	import { NextRequest, NextResponse } from "next/server";
+    12	import { createFydIdentity } from "@/fyd/social/actions";
+    13	
+    14	export const dynamic = "force-dynamic";
+    15	export const runtime = "nodejs";
+    16	
+    17	export async function POST(request: NextRequest) {
+    18	  try {
+    19	    const body = (await request.json().catch(() => null)) as {
+    20	      displayName?: unknown;
+    21	      handle?: unknown;
+    22	      bio?: unknown;
+    23	    } | null;
+    24	    const result = await createFydIdentity({
+    25	      displayName: typeof body?.displayName === "string" ? body.displayName : "",
+    26	      handle: typeof body?.handle === "string" ? body.handle : "",
+    27	      bio: typeof body?.bio === "string" ? body.bio : "",
+    28	    });
+    29	    return NextResponse.json(result, { status: 201 });
+    30	  } catch (err) {
+    31	    const message = err instanceof Error ? err.message : "unknown error";
+    32	    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    33	  }
+    34	}
+########## src/app/api/fyd/social/post/route.ts ##########
+     1	/**
+     2	 * FYD social: publish a post.
+     3	 * POST { identityId, text, visibility? } -> 201 { ok:true, actionId, objectId, eventId, sequence }
+     4	 *
+     5	 * Real PING path: signed bff-envelope@1 OBJECT_CREATED (schema
+     6	 * ping.social.post@1) submitted to the repo-booted gateway. Attested before
+     7	 * success: the journal is re-read and the post's presence confirmed.
+     8	 */
+     9	
+    10	import { NextRequest, NextResponse } from "next/server";
+    11	import { createFydPost, EnvelopeRejectedError } from "@/fyd/social/actions";
+    12	
+    13	export const dynamic = "force-dynamic";
+    14	export const runtime = "nodejs";
+    15	
+    16	export async function POST(request: NextRequest) {
+    17	  try {
+    18	    const body = (await request.json().catch(() => null)) as {
+    19	      identityId?: unknown;
+    20	      text?: unknown;
+    21	      visibility?: unknown;
+    22	    } | null;
+    23	    const identityId = typeof body?.identityId === "string" ? body.identityId : "";
+    24	    const text = typeof body?.text === "string" ? body.text : "";
+    25	    const visibility =
+    26	      body?.visibility === "followers" || body?.visibility === "private"
+    27	        ? body.visibility
+    28	        : "public";
+    29	    if (!identityId || !text.trim()) {
+    30	      return NextResponse.json(
+    31	        { ok: false, error: "identityId and non-empty text are required." },
+    32	        { status: 400 },
+    33	      );
+    34	    }
+    35	    const result = await createFydPost(identityId, text, { visibility });
+    36	    return NextResponse.json(result, { status: 201 });
+    37	  } catch (err) {
+    38	    const message = err instanceof Error ? err.message : "unknown error";
+    39	    const status = err instanceof EnvelopeRejectedError ? 502 : 400;
+    40	    return NextResponse.json({ ok: false, error: message }, { status });
+    41	  }
+    42	}
+########## src/app/api/fyd/social/follow/route.ts ##########
+     1	/**
+     2	 * FYD social: follow / unfollow.
+     3	 * POST   { actorId, targetId } -> 201 { ok:true, deduped, actionId, relationshipId, status, eventId, sequence }
+     4	 * DELETE ?actorId=&targetId=   -> 200 { ok:true, ... }  (canonical revocation: status 'inactive')
+     5	 *
+     6	 * Real PING path: signed bff-envelope@1 RELATIONSHIP_CREATED (predicate
+     7	 * 'follows') submitted to the repo-booted gateway. Every success is
+     8	 * attested: the journal is re-read and the named preconditions checked
+     9	 * before ok:true is returned. A failed follow returns ok:false with the
+    10	 * missing evidence named (HTTP 502) — never a false success.
+    11	 */
+    12	
+    13	import { NextRequest, NextResponse } from "next/server";
+    14	import { followIdentity, unfollowIdentity, EnvelopeRejectedError } from "@/fyd/social/actions";
+    15	
+    16	export const dynamic = "force-dynamic";
+    17	export const runtime = "nodejs";
+    18	
+    19	export async function POST(request: NextRequest) {
+    20	  try {
+    21	    const body = (await request.json().catch(() => null)) as {
+    22	      actorId?: unknown;
+    23	      targetId?: unknown;
+    24	    } | null;
+    25	    const actorId = typeof body?.actorId === "string" ? body.actorId : "";
+    26	    const targetId = typeof body?.targetId === "string" ? body.targetId : "";
+    27	    if (!actorId || !targetId) {
+    28	      return NextResponse.json(
+    29	        { ok: false, error: "actorId and targetId are required." },
+    30	        { status: 400 },
+    31	      );
+    32	    }
+    33	    const result = await followIdentity(actorId, targetId);
+    34	    if (!result.ok) {
+    35	      return NextResponse.json(result, { status: 502 });
+    36	    }
+    37	    return NextResponse.json(result, { status: 201 });
+    38	  } catch (err) {
+    39	    const message = err instanceof Error ? err.message : "unknown error";
+    40	    const status = err instanceof EnvelopeRejectedError ? 502 : 400;
+    41	    return NextResponse.json({ ok: false, error: message }, { status });
+    42	  }
+    43	}
+    44	
+    45	export async function DELETE(request: NextRequest) {
+    46	  try {
+    47	    const actorId = request.nextUrl.searchParams.get("actorId") || "";
+    48	    const targetId = request.nextUrl.searchParams.get("targetId") || "";
+    49	    if (!actorId || !targetId) {
+    50	      return NextResponse.json(
+    51	        { ok: false, error: "actorId and targetId are required." },
+    52	        { status: 400 },
+    53	      );
+    54	    }
+    55	    const result = await unfollowIdentity(actorId, targetId);
+    56	    if (!result.ok) {
+    57	      return NextResponse.json(result, { status: 502 });
+    58	    }
+    59	    return NextResponse.json(result);
+    60	  } catch (err) {
+    61	    const message = err instanceof Error ? err.message : "unknown error";
+    62	    const status = err instanceof EnvelopeRejectedError ? 502 : 400;
+    63	    return NextResponse.json({ ok: false, error: message }, { status });
+    64	  }
+    65	}
+########## src/app/api/fyd/social/feed/route.ts ##########
+     1	/**
+     2	 * FYD social: visibility-aware feed for one identity.
+     3	 * GET ?identityId=&limit= -> { posts: [{ objectId, authorId, text, createdAt, likeCount, source }] }
+     4	 *
+     5	 * Read live from the PING journal: own public posts plus public posts by
+     6	 * actively followed identities, newest-first with object-id tiebreak. Like
+     7	 * counts are projections from net 'likes' edges. No ranking, no synthesis,
+     8	 * no fake posts.
+     9	 */
+    10	
+    11	import { NextRequest, NextResponse } from "next/server";
+    12	import { readFeed } from "@/fyd/social/readers";
+    13	
+    14	export const dynamic = "force-dynamic";
+    15	export const runtime = "nodejs";
+    16	
+    17	export async function GET(request: NextRequest) {
+    18	  try {
+    19	    const identityId = request.nextUrl.searchParams.get("identityId") || "";
+    20	    if (!identityId) {
+    21	      return NextResponse.json(
+    22	        { ok: false, error: "identityId is required." },
+    23	        { status: 400 },
+    24	      );
+    25	    }
+    26	    const limitRaw = request.nextUrl.searchParams.get("limit");
+    27	    const limit = Math.min(Math.max(parseInt(limitRaw || "50", 10) || 50, 1), 200);
+    28	    const posts = await readFeed(identityId, limit);
+    29	    return NextResponse.json({ posts, source: "ping_events" });
+    30	  } catch (err) {
+    31	    const message = err instanceof Error ? err.message : "unknown error";
+    32	    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+    33	  }
+    34	}
+########## src/app/api/fyd/social/state/route.ts ##########
+     1	/**
+     2	 * FYD social: read one identity's social state.
+     3	 * GET ?identityId= -> { identityId, identity, profile, following, followers,
+     4	 *                        followingCount, followerCount, source }
+     5	 *
+     6	 * Every value is read live from the PING journal (ping_events) on the
+     7	 * repo-booted gateway. Counts are projections over journaled
+     8	 * RELATIONSHIP_CREATED events with last-wins netting; nothing here is
+     9	 * hardcoded and no fake activity is synthesized. Absence reads as absence.
+    10	 */
+    11	
+    12	import { NextRequest, NextResponse } from "next/server";
+    13	import { readSocialState } from "@/fyd/social/readers";
+    14	
+    15	export const dynamic = "force-dynamic";
+    16	export const runtime = "nodejs";
+    17	
+    18	export async function GET(request: NextRequest) {
+    19	  try {
+    20	    const identityId = request.nextUrl.searchParams.get("identityId") || "";
+    21	    if (!identityId) {
+    22	      return NextResponse.json(
+    23	        { ok: false, error: "identityId is required." },
+    24	        { status: 400 },
+    25	      );
+    26	    }
+    27	    const state = await readSocialState(identityId);
+    28	    if (!state.identity.found && !state.profile.found) {
+    29	      return NextResponse.json(
+    30	        { ok: false, error: `unknown identity "${identityId}"`, source: "ping_events" },
+    31	        { status: 404 },
+    32	      );
+    33	    }
+    34	    return NextResponse.json(state);
+    35	  } catch (err) {
+    36	    const message = err instanceof Error ? err.message : "unknown error";
+    37	    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+    38	  }
+    39	}
+########## src/app/api/fyd/like/route.ts ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { LikeError, isLiked, setLiked } from "@/fyd/object/likes";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	const OBJECT_ID_PATTERN = /^[a-z0-9-]+$/;
+     8	
+     9	type Action = "like" | "unlike";
+    10	
+    11	/**
+    12	 * GET /api/fyd/like?objectId=xxx
+    13	 *
+    14	 * Answers about ONE object only: has the local viewer liked it?
+    15	 * The endpoint never exposes other viewers and never lists all likes.
+    16	 *
+    17	 * Response: { ok: true, liked: boolean }
+    18	 * Errors: 400 missing/invalid objectId, 404 unknown object.
+    19	 */
+    20	export async function GET(request: NextRequest): Promise<NextResponse> {
+    21	  const objectId = request.nextUrl.searchParams.get("objectId") ?? "";
+    22	  if (!objectId || !OBJECT_ID_PATTERN.test(objectId)) {
+    23	    return NextResponse.json(
+    24	      { ok: false, error: "objectId is required and must be lowercase letters, digits, or dashes." },
+    25	      { status: 400 },
+    26	    );
+    27	  }
+    28	  try {
+    29	    return NextResponse.json({ ok: true, liked: isLiked(objectId) });
+    30	  } catch (e) {
+    31	    if (e instanceof LikeError) {
+    32	      return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+    33	    }
+    34	    throw e;
+    35	  }
+    36	}
+    37	
+    38	/**
+    39	 * POST /api/fyd/like
+    40	 *
+    41	 * Body: { objectId: string, action: "like" | "unlike" }
+    42	 * Response: { ok: true, liked: boolean }
+    43	 * Errors: 400 bad action/shape, 404 unknown object.
+    44	 */
+    45	export async function POST(request: NextRequest): Promise<NextResponse> {
+    46	  let body: unknown = null;
+    47	  try {
+    48	    body = await request.json();
+    49	  } catch {
+    50	    body = null;
+    51	  }
+    52	  const record = typeof body === "object" && body !== null ? body : {};
+    53	  const r = record as Record<string, unknown>;
+    54	  const objectId = typeof r.objectId === "string" ? r.objectId : "";
+    55	  const action: Action | unknown = r.action;
+    56	
+    57	  if (!objectId || !OBJECT_ID_PATTERN.test(objectId)) {
+    58	    return NextResponse.json(
+    59	      { ok: false, error: "objectId is required and must be lowercase letters, digits, or dashes." },
+    60	      { status: 400 },
+    61	    );
+    62	  }
+    63	  if (action !== "like" && action !== "unlike") {
+    64	    return NextResponse.json(
+    65	      { ok: false, error: 'action must be "like" or "unlike".' },
+    66	      { status: 400 },
+    67	    );
+    68	  }
+    69	  try {
+    70	    const liked = setLiked(objectId, action === "like");
+    71	    return NextResponse.json({ ok: true, liked });
+    72	  } catch (e) {
+    73	    if (e instanceof LikeError) {
+    74	      return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+    75	    }
+    76	    throw e;
+    77	  }
+    78	}
+########## src/app/api/fyd/follow/route.ts ##########
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { FollowError, isFollowing, setFollowing } from "@/fyd/object/follows";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	const OBJECT_ID_PATTERN = /^[a-z0-9-]+$/;
+     8	
+     9	type Action = "follow" | "unfollow";
+    10	
+    11	/**
+    12	 * GET /api/fyd/follow?objectId=xxx
+    13	 *
+    14	 * Answers about ONE object only: is the local viewer following it?
+    15	 * The endpoint never exposes other viewers and never lists all follows.
+    16	 *
+    17	 * Response: { ok: true, following: boolean }
+    18	 * Errors: 400 missing/invalid objectId, 404 unknown object.
+    19	 */
+    20	export async function GET(request: NextRequest): Promise<NextResponse> {
+    21	  const objectId = request.nextUrl.searchParams.get("objectId") ?? "";
+    22	  if (!objectId || !OBJECT_ID_PATTERN.test(objectId)) {
+    23	    return NextResponse.json(
+    24	      { ok: false, error: "objectId is required and must be lowercase letters, digits, or dashes." },
+    25	      { status: 400 },
+    26	    );
+    27	  }
+    28	  try {
+    29	    return NextResponse.json({ ok: true, following: isFollowing(objectId) });
+    30	  } catch (e) {
+    31	    if (e instanceof FollowError) {
+    32	      return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+    33	    }
+    34	    throw e;
+    35	  }
+    36	}
+    37	
+    38	/**
+    39	 * POST /api/fyd/follow
+    40	 *
+    41	 * Body: { objectId: string, action: "follow" | "unfollow" }
+    42	 * Response: { ok: true, following: boolean }
+    43	 * Errors: 400 bad action/shape, 404 unknown object.
+    44	 */
+    45	export async function POST(request: NextRequest): Promise<NextResponse> {
+    46	  let body: unknown = null;
+    47	  try {
+    48	    body = await request.json();
+    49	  } catch {
+    50	    body = null;
+    51	  }
+    52	  const record =
+    53	    typeof body === "object" && body !== null ? body : {};
+    54	  const r = record as Record<string, unknown>;
+    55	  const objectId = typeof r.objectId === "string" ? r.objectId : "";
+    56	  const action: Action | unknown = r.action;
+    57	
+    58	  if (!objectId || !OBJECT_ID_PATTERN.test(objectId)) {
+    59	    return NextResponse.json(
+    60	      { ok: false, error: "objectId is required and must be lowercase letters, digits, or dashes." },
+    61	      { status: 400 },
+    62	    );
+    63	  }
+    64	  if (action !== "follow" && action !== "unfollow") {
+    65	    return NextResponse.json(
+    66	      { ok: false, error: "action must be follow or unfollow." },
+    67	      { status: 400 },
+    68	    );
+    69	  }
+    70	  try {
+    71	    const result = setFollowing(objectId, action === "follow");
+    72	    return NextResponse.json({ ok: true, following: result.following });
+    73	  } catch (e) {
+    74	    if (e instanceof FollowError) {
+    75	      return NextResponse.json({ ok: false, error: "Unknown object." }, { status: 404 });
+    76	    }
+    77	    throw e;
+    78	  }
+    79	}
+########## src/app/api/fyd/media/route.ts ##########
+     1	import { NextResponse } from "next/server";
+     2	import { getMediaProvenance, listMediaProvenance } from "@/fyd/media/provenance";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * GET /api/fyd/media?siteId=<slug>&digest=<sha256>
+     9	 *
+    10	 * Provenance query surface for the managed FYD media pipeline
+    11	 * (fyd-media@2). Returns the full provenance record for one asset:
+    12	 * original source URL, observed_at, content digest (sha256), media type,
+    13	 * dimensions, rights/source classification, and the derived-asset
+    14	 * relationship (each variant names the original digest it was produced
+    15	 * from). This is the record Ask FYD and WHY THIS cite; it never serves
+    16	 * bytes and never hotlinks.
+    17	 *
+    18	 * GET /api/fyd/media?siteId=<slug> lists the provenance summaries for
+    19	 * every acquired asset of the site.
+    20	 *
+    21	 * Failure honesty: unknown site or digest is a 404, never a plausible
+    22	 * stand-in. Unclear-reference-only assets are reference-only by pipeline
+    23	 * construction and never appear here.
+    24	 */
+    25	export async function GET(request: Request): Promise<NextResponse> {
+    26	  const params = new URL(request.url).searchParams;
+    27	  const siteId = params.get("siteId")?.trim() ?? "";
+    28	  const digest = params.get("digest")?.trim() ?? "";
+    29	  if (!siteId) {
+    30	    return NextResponse.json(
+    31	      { ok: false, error: "siteId query parameter is required." },
+    32	      { status: 400 },
+    33	    );
+    34	  }
+    35	  if (digest) {
+    36	    const record = getMediaProvenance(siteId, digest);
+    37	    if (!record) {
+    38	      return NextResponse.json(
+    39	        {
+    40	          ok: false,
+    41	          error:
+    42	            "No acquired media asset with that digest for this site. " +
+    43	            "Unknown digests and reference-only assets are never served.",
+    44	        },
+    45	        { status: 404 },
+    46	      );
+    47	    }
+    48	    return NextResponse.json({ ok: true, ...record });
+    49	  }
+    50	  const records = listMediaProvenance(siteId);
+    51	  if (!records) {
+    52	    return NextResponse.json(
+    53	      { ok: false, error: "Unknown siteId: no media manifest." },
+    54	      { status: 404 },
+    55	    );
+    56	  }
+    57	  return NextResponse.json({ ok: true, siteId, assets: records });
+    58	}
+########## src/app/api/health/route.ts ##########
+     1	import { NextResponse } from 'next/server';
+     2	
+     3	export const dynamic = 'force-dynamic';
+     4	
+     5	export async function GET() {
+     6	  return NextResponse.json({ status: 'ok', timestamp: Date.now() });
+     7	}
+########## src/app/api/health/authority/route.ts ##########
+     1	/**
+     2	 * Authority Readiness Check API Route
+     3	 *
+     4	 * Verifies that all required infrastructure for authoritative operations is present.
+     5	 * Returns environment variable presence without exposing values.
+     6	 *
+     7	 * Checks:
+     8	 * - KV (Redis for sessions/authorizations)
+     9	 * - Encryption (for secure credential storage)
+    10	 * - Google OAuth (for Drive authentication)
+    11	 * - Workbench (for administrative access)
+    12	 * - Blob (for media storage)
+    13	 *
+    14	 * This is separate from basic health check - this verifies authority readiness.
+    15	 */
+    16	
+    17	import { NextResponse } from 'next/server';
+    18	
+    19	export const dynamic = 'force-dynamic';
+    20	
+    21	export async function GET() {
+    22	  const authorityCheck = {
+    23	    // KV (Redis for sessions/authorizations)
+    24	    kv_redis: {
+    25	      configured: !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN,
+    26	      url_present: !!process.env.KV_REST_API_URL,
+    27	      token_present: !!process.env.KV_REST_API_TOKEN,
+    28	    },
+    29	    
+    30	    // Encryption (for secure credential storage)
+    31	    encryption: {
+    32	      configured: !!process.env.ENCRYPTION_KEY,
+    33	      key_present: !!process.env.ENCRYPTION_KEY,
+    34	    },
+    35	    
+    36	    // Google OAuth (for Drive authentication)
+    37	    google_oauth: {
+    38	      configured: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET && !!process.env.GOOGLE_REDIRECT_URI,
+    39	      client_id_present: !!process.env.GOOGLE_CLIENT_ID,
+    40	      client_secret_present: !!process.env.GOOGLE_CLIENT_SECRET,
+    41	      redirect_uri_present: !!process.env.GOOGLE_REDIRECT_URI,
+    42	    },
+    43	    
+    44	    // Workbench (for administrative access)
+    45	    workbench: {
+    46	      configured: !!process.env.WORKBENCH_PASSWORD,
+    47	      password_present: !!process.env.WORKBENCH_PASSWORD,
+    48	    },
+    49	    
+    50	    // Blob (for media storage)
+    51	    blob: {
+    52	      configured: !!process.env.BLOB_READ_WRITE_TOKEN,
+    53	      token_present: !!process.env.BLOB_READ_WRITE_TOKEN,
+    54	    },
+    55	  };
+    56	
+    57	  const allConfigured = 
+    58	    authorityCheck.kv_redis.configured &&
+    59	    authorityCheck.encryption.configured &&
+    60	    authorityCheck.google_oauth.configured &&
+    61	    authorityCheck.workbench.configured &&
+    62	    authorityCheck.blob.configured;
+    63	
+    64	  return NextResponse.json({
+    65	    ready: allConfigured,
+    66	    timestamp: new Date().toISOString(),
+    67	    authority: authorityCheck,
+    68	    vercel_env: process.env.VERCEL_ENV || 'unknown',
+    69	  });
+    70	}

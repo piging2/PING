@@ -1,0 +1,104 @@
+===== 6: capability/role elevation =====
+src/components/ping/identity-selector.tsx:226:        selector only chooses which identity signs. It grants no capabilities.
+src/components/theme-provider.tsx:36:    const root = window.document.documentElement;
+src/components/theme-provider.tsx:38:    root.classList.remove("light", "dark");
+src/components/theme-provider.tsx:46:      root.classList.add(systemTheme);
+src/components/theme-provider.tsx:50:    root.classList.add(theme);
+src/components/architecture/replay-evidence.tsx:9:  { id: "A3", label: "AGENT A3", detail: "The agent assigned, with explicit capability grants.", color: "#1A1729" },
+src/components/architecture/agent-authority.tsx:14:  { label: "CAPABILITY AUTHORITY", detail: "What this agent may do. Explicit grants, not vibes." },
+src/components/architecture/agent-authority.tsx:15:  { label: "AGENT", detail: "Acts only within granted capabilities." },
+src/components/architecture/agent-authority.tsx:42:    <div className="w-full" role="img" aria-label="Agent authority flow: mission goes through capability authority which grants or restricts capabilities, then the agent acts, producing result with evidence and witness lineage.">
+src/lib/ping/ping-object-reader.ts:46:import { grantsForViewer, isSiteCapableSchema } from "./grants";
+src/lib/ping/ping-object-reader.ts:1178:    // Explicit grants from the user-facing grant authority. The planner is
+src/lib/ping/ping-object-reader.ts:1179:    // still the capability authority; these grants only open the FYD site
+src/lib/ping/ping-object-reader.ts:1181:    const grants = grantsForViewer({
+src/lib/ping/ping-object-reader.ts:1193:      grants,
+src/lib/ping/ping-object-reader.ts:1329:      const siteGrants = grantsForViewer({
+src/lib/ping/ping-object-reader.ts:1334:      if (!siteGrants.includes("site.propose")) {
+src/lib/ping/grants.ts:12: * exact granular grants at consent time.
+src/lib/ping/grants.ts:23: * The exact granular grants behind the human-readable "Help maintain my
+src/lib/ping/grants.ts:27:export const MAINTAIN_SITE_GRANTS: readonly FydGrant[] = [
+src/lib/ping/grants.ts:33:export interface GrantSubject {
+src/lib/ping/grants.ts:42: * Deterministic grants for one viewer on one target. Pure function.
+src/lib/ping/grants.ts:47:export function grantsForViewer(subject: GrantSubject): FydGrant[] {
+src/lib/ping/grants.ts:48:  const grants: FydGrant[] = ["object.reference"];
+src/lib/ping/grants.ts:50:    grants.push(...MAINTAIN_SITE_GRANTS);
+src/lib/ping/grants.ts:52:  return [...new Set(grants)];
+src/lib/ping/action-planner.ts:18: *   grants never replace it. site.read enables opening the site, site.propose
+src/lib/ping/action-planner.ts:42:   * FYD grants from the deterministic grant authority. Absent for legacy
+src/lib/ping/action-planner.ts:45:  grants?: FydGrant[];
+src/lib/ping/action-planner.ts:58:  const grants: FydGrant[] = input.grants ?? [];
+src/lib/ping/action-planner.ts:72:  if (grants.includes("site.read")) {
+src/lib/ping/action-planner.ts:144:    if (grants.includes("site.propose")) {
+src/lib/interview-engine-v3.ts:256:      return "A close-up of the peeling or damaged area, plus one wide shot of the whole wall or elevation, plus anything nearby that might be a water source (gutter, downspout, roofline).";
+src/lib/interview-questions-v3.ts:15:  // Root — fence_intent
+src/lib/interview-questions-v3.ts:192:  // Root — deck_intent
+src/lib/interview-questions-v3.ts:231:      "*": "deck_new_elevation"
+src/lib/interview-questions-v3.ts:235:    id: "deck_new_elevation",
+src/lib/interview-questions-v3.ts:236:    label: "What's the deck elevation?",
+src/lib/interview-questions-v3.ts:342:  // Root — painting_target
+src/fyd/boundary/__tests__/data-boundary.test.ts:25:const ROOT = path.resolve(__dirname, "../../..");
+src/fyd/boundary/__tests__/data-boundary.test.ts:41:  const abs = path.join(ROOT, dir);
+src/fyd/boundary/__tests__/data-boundary.test.ts:66:          if (src.includes(marker)) violations.push(`${path.relative(ROOT, f)} imports "${marker}"`);
+src/fyd/boundary/__tests__/data-boundary.test.ts:80:          if (src.includes(marker)) violations.push(`${path.relative(ROOT, f)} mentions "${marker}"`);
+src/fyd/boundary/__tests__/data-boundary.test.ts:93:        if (src.includes(marker)) violations.push(`${path.relative(ROOT, f)} imports "${marker}"`);
+src/fyd/components/object-rail.tsx:76: *   does not verify, so they are never granted here.
+src/fyd/components/__tests__/object-rail.test.ts:106:  test("grants only the always-available capabilities, no invented data", () => {
+src/fyd/components/fyd-motion-fallback.tsx:40:      { threshold: 0.08, rootMargin: "0px 0px -6% 0px" },
+src/fyd/components/renderer.tsx:296:// presentation tokens only: type scale, rhythm, card elevation. Facts
+src/fyd/components/renderer.tsx:310:    /** Card elevation style. */
+src/fyd/components/renderer.tsx:311:    cardElevation: "flat" | "layered";
+src/fyd/components/renderer.tsx:324:  EDITORIAL: { sectionRhythmPx: 56, headingTracking: "-0.015em", cardElevation: "flat", heroScale: 1.12, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "contained", objectEmphasis: "balanced" },
+===== 5: direct DB writes (INSERT/execute/insert/write paths) =====
+src/lib/deployment-transaction.ts:282:      table.insert(mergedKeys, existingKey)
+src/lib/deployment-transaction.ts:289:        table.insert(mergedKeys, newKey)
+src/lib/editor/command-pattern.ts:511:      await this.execute(inverseCommand);
+src/lib/editor/command-pattern.ts:526:      await this.execute(command);
+src/lib/editor/canonical-editor-service.ts:70:      await commandExecutor.execute(command);
+src/fyd/identity/principal.ts:168:    store.putAccount(existing);
+src/fyd/identity/principal.ts:184:  store.putAccount(account);
+src/fyd/identity/principal.ts:228:    store.putAccount(existing);
+src/fyd/identity/principal.ts:239:  store.putAccount(account);
+src/fyd/proceduralize/__tests__/support/determinism-probe.ts:31:  process.stdout.write(createHash("sha256").update(stable(ex)).digest("hex") + "\n");
+src/fyd/sitespec/__tests__/determinism-probe.ts:30:  process.stderr.write(`determinism-probe: ${message}\n`);
+===== 5b: storage clients in use =====
+src/lib/deployment-transaction.ts:42:import { Redis } from '@upstash/redis';
+src/lib/deployment-transaction.ts:64:  return new Redis({ url, token });
+src/lib/deployment-transaction.ts:448:      throw new Error(`Failed to create/merge transaction: ${normalizeRedisError((result as any).err)}`);
+src/lib/deployment-transaction.ts:533:      throw new Error(`Failed to claim transaction: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:604:        throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:610:        throw new Error(`Invalid state transition: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:612:      throw new Error(`Failed to persist commitSha: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:675:        throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:681:        throw new Error(`Invalid state transition: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:684:        throw new Error(`commitSha must be set before committing: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:686:      throw new Error(`Failed to commit transaction: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:742:        throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:747:      throw new Error(`Failed to consume transaction: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:808:      throw new Error(`Failed to fail transaction: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:812:    // Lua script increments retryCount, so we must read it back from Redis
+src/lib/deployment-transaction.ts:824: * Allows recovery from Git/Redis split-brain failures
+src/lib/deployment-transaction.ts:869:        // P0 FIX: Re-read transaction from Redis to get authoritative state after transition
+src/lib/deployment-transaction.ts:919:        throw new Error(`Cannot retry transaction: ${normalizeRedisError(err)}`);
+src/lib/deployment-transaction.ts:921:      throw new Error(`Failed to retry transaction: ${normalizeRedisError(err)}`);
+src/lib/blob-storage.ts:15:import { Redis } from '@upstash/redis';
+src/lib/blob-storage.ts:57:  return new Redis({ url, token });
+src/lib/effective-project-gallery.ts:19:import { Redis } from '@upstash/redis';
+src/lib/effective-project-gallery.ts:211:    return new Redis({ url, token });
+src/lib/assignment-store.ts:18:import { Redis } from '@upstash/redis';
+src/lib/assignment-store.ts:200:  const client = new Redis({ url, token });
+src/lib/assignment-store.ts:959: * Atomic CAS would require conditional delete primitive not available in @upstash/redis client.
+src/lib/visual-asset-registry.ts:418:    // Previously this loop performed a dynamic import, a Redis client
+src/lib/dataset-snapshots.ts:10:import { Redis } from '@upstash/redis';
+src/lib/dataset-snapshots.ts:66:    return new Redis({
+src/lib/__tests__/atomic-promotion.test.ts:25: * NOTE: This test requires actual Redis/KV connection.
+src/lib/__tests__/atomic-promotion.test.ts:123:      // Note: cleanup would require Redis client access
+src/lib/__tests__/idempotency-redis-decoder.test.ts:15: * Generic Redis value decoder (copied from use-drive-asset route for testing)
+src/lib/__tests__/deployment-transaction-bulk.test.ts:15: * NOTE: This test requires actual Redis/KV connection.
+src/lib/__tests__/deployment-transaction-bulk.test.ts:20:import { createDeploymentTransaction, getDeploymentTransaction, claimDeploymentTransaction, atomicPromoteAssignments, retryDeploymentTransaction, failDeploymentTransaction, getRedisClient } from '../deployment-transaction';
+src/lib/__tests__/deployment-transaction-bulk.test.ts:42:      'CI environment requires KV_REST_API_URL and KV_REST_API_TOKEN for Redis-backed integration tests. ' +
+src/lib/__tests__/deployment-transaction-bulk.test.ts:59:        // Note: cleanup would require Redis client access
+src/lib/__tests__/brand-assignment-resolution.test.ts:123:      mockGetServiceCardAssignment.mockRejectedValue(new Error('Redis connection failed'));
+src/lib/__tests__/brand-assignment-resolution.test.ts:225:      mockGetServiceCardAssignment.mockRejectedValue(new Error('Redis connection failed'));
+src/lib/media-kv-store.ts:9:import { Redis } from '@upstash/redis';
+src/lib/media-kv-store.ts:107:  const client = new Redis({ url, token });

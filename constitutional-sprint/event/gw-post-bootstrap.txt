@@ -1,0 +1,46 @@
+13:function createEventRoutes(eventReadAuthority, eventRuntime, pool) {
+87:  router.post('/', asyncHandler('/events', async (req) => {
+141:  router.post('/processed', asyncHandler('/events/processed', async (req) => {
+149:  router.post('/failed', asyncHandler('/events/failed', async (req) => {
+198:module.exports = createEventRoutes;
+=== bootstrap ===
+19:const createEventRoutes = require('../routes/events');
+72:const { UnifiedEventRuntime } = require('../../ping-runtime/events/unified_event_runtime');
+99:const { CanonicalizationService } = require('../../ping-runtime/canonicalization/canonicalization_service');
+120:    // Remove wildcard CORS for server-to-server exterior-agent API
+149:      this._pool = new Pool({
+183:    const manifestLoader = new GenerationManifestLoader(repoRoot);
+185:    const artifactLoader = new GeneratedArtifactLoader(repoRoot);
+190:    const compilerCompat = new CompilerCompatibility();
+199:    const workflowExecutor = new WorkflowExecutor(repoRoot);
+201:    const eventValidator = new EventValidator(repoRoot);
+203:    const capabilityResolver = new CapabilityResolver(repoRoot);
+205:    const deploymentLoader = new DeploymentLoader(repoRoot);
+207:    const stateMachineExecutor = new StateMachineExecutor(repoRoot);
+211:    const driftDetector = new DriftDetector(repoRoot);
+229:    const fingerprint = new RuntimeFingerprint({
+241:    const analyticsPolicy = new AnalyticsPolicy();
+242:    const integrationManager = new IntegrationManager({ policy: analyticsPolicy });
+243:    integrationManager.registerIntegration('posthog', new PostHogIntegration());
+244:    integrationManager.registerIntegration('email', new EmailIntegration());
+245:    integrationManager.registerIntegration('sms', new SmsIntegration());
+248:    const eventGovernance = new EventGovernance(repoRoot);
+252:    const aiRuntime = new AIRuntime({ defaultProvider: 'ollama' });
+253:    const ollamaProvider = new OllamaProvider();
+262:    const googleAuth = new GoogleAuth();
+263:    const businessProfileAdapter = new BusinessProfileAdapter(null, googleAuth, null);
+264:    const peopleAdapter = new GooglePeopleAdapter(googleAuth);
+265:    const gmailAdapter = new GmailAdapter(googleAuth);
+266:    const calendarAdapter = new GoogleCalendarAdapter(googleAuth);
+267:    const googleConnector = new GoogleConnector({
+277:    const connectorRegistry = new ConnectorRegistry();
+284:      connectorRegistry.register('github', new GitHubConnector(), {
+289:      connectorRegistry.register('posthog', new PostHogConnector(), {
+294:      connectorRegistry.register('email', new EmailConnector(), {
+299:      connectorRegistry.register('sms', new SMSConnector(), {
+310:    const tokenStore = new (require('../../ping-runtime/connectors/oauth_provider').TokenStore)();
+311:    const oauthManager = new OAuthFlowManager({
+318:    const capabilityRegistry = new CapabilityRegistry({ oauthManager, connectorRegistry });
+362:      executionEngine = new ExecutionEngine();
+416:    capabilityAuthority = new CapabilityAuthority(this._pool, runtimeRegistry, '/app/workspace');
+420:    exteriorAuthMiddleware = new ExteriorAuthMiddleware(this._pool);

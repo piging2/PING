@@ -1,0 +1,33 @@
+                stream_version=event.stream_version,
+                event_hash=event_hash,
+                build_witness_hash=None,
+            )
+            
+            session.add(event_record)
+            await session.commit()
+            await session.refresh(event_record)
+        
+        # PostHog mirror (projection, not source of truth)
+        try:
+            from integrations.posthog import PostHogMirror
+            mirror = PostHogMirror()
+            await mirror.deliver({
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "payload": event.payload,
+                "occurred_at": event.occurred_at.isoformat() if event.occurred_at else None,
+                "recorded_at": event_record.recorded_at.isoformat() if event_record.recorded_at else None,
+            })
+        except Exception:
+            # PostHog delivery failure should not block event persistence
+            pass
+        
+        return EventResponseDTO(
+            event_id=event_record.event_id,
+            event_type=event_record.event_type,
+            event_category=event_record.event_category,
+            payload=event_record.decoded_payload_cache,
+            occurred_at=event_record.occurred_at,
+            recorded_at=event_record.recorded_at,
+            global_sequence=event_record.global_sequence or 0,
+        )

@@ -1,0 +1,66 @@
+### (1) adapter jest config
+/**
+ * Jest config for the src-root middleware regression tests
+ * (FYD builder product blockers: /sites must stay reachable).
+ * Scoped to this test only. Run with:
+ * npx jest --config src/jest.config.cjs
+ *
+ * Shape harvested from src/fyd/identity/jest.config.cjs.
+ */
+module.exports = {
+  testEnvironment: "node",
+  rootDir: "..",
+  testMatch: ["<rootDir>/src/__tests__/middleware-sites.test.ts"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+  transform: {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        tsconfig: {
+          target: "ES2017",
+          module: "commonjs",
+          moduleResolution: "node",
+          jsx: "react-jsx",
+          esModuleInterop: true,
+          strict: true,
+          skipLibCheck: true,
+        },
+      },
+    ],
+  },
+};
+### (2) CI-referenced files existence
+MISSING test/replay_corpus_test.js
+MISSING test/verify_corpus.js
+MISSING test/generate_certificates.js
+MISSING test/compare_certificates.js
+MISSING test/fuzz_test.js
+MISSING test/verify_determinism.js
+OK tools/dependency-guard/dependency-validator.ts
+OK scripts/constitutional_query.py
+### (3) next-server cwd mapping
+pid 87920 cwd=/home/nolan/projects/ping cmd=next-server (v15.5.24)                                              
+pid 3288 cwd=/home/nolan/projects/ping-deploy-head cmd=next-server (v15.5.24)                                                  
+pid 16302 cwd=/home/nolan/projects/ping-fyd-deploy cmd=next-server (v15.5.24)                                                 
+### (4) gateway /health route?
+/home/nolan/ping/gateway/witness_recorder.js
+/home/nolan/ping/gateway/knowledge_graph.js
+/home/nolan/ping/gateway/runtime/integrations/webhook_integration.js
+/home/nolan/ping/gateway/tests/adapter.mock.test.js
+/home/nolan/ping/gateway/automatic_mission_generator.js
+### (5) unhealthy containers: health log tails (metadata)
+{"Status":"unhealthy","FailingStreak":11559,"Log":[{"Start":"2026-09-24T01:43:20.805695651Z","End":"2026-09-24T01:43:20.87891285Z","ExitCode":-1,"Output":"OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"},{"Start":"2026-09-24T01:43:30.880156991Z","End":"2026-09-24T01:43:30.950731174Z","ExitCode":-1,"Output":"OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"},{"Start":"2026-09-24T01:43:40.949642578Z","End":"2026-09-24T01:43:41.020990591Z","ExitCode":-1,"Output":"OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"},{"Start":"2026-09-24T01:43:51.022282409Z","End":"2026-09-
+{"Status":"unhealthy","FailingStreak":11518,"Log":[{"Start":"2026-09-24T01:43:25.537694276Z","End":"2026-09-24T01:43:25.646758349Z","ExitCode":1,"Output":"Error checking seal status: Get \"https://127.0.0.1:8200/v1/sys/seal-status\": http: server gave HTTP response to HTTPS client\n"},{"Start":"2026-09-24T01:43:35.648466723Z","End":"2026-09-24T01:43:35.738371154Z","ExitCode":1,"Output":"Error checking seal status: Get \"https://127.0.0.1:8200/v1/sys/seal-status\": http: server gave HTTP response to HTTPS client\n"},{"Start":"2026-09-24T01:43:45.7368154Z","End":"2026-09-24T01:43:45.843137427Z","ExitCode":1,"Output":"Error checking seal status: Get \"https://127.0.0.1:8200/v1/sys/seal-status\": http: server gave HTTP response to HTTPS client\n"},{"Start":"2026-09-24T01:43:55.84450878Z","End"
+### (6) var/ dir + gateway log tail
+fyd-dogfood-renders
+fyd-projections
+fyd-structural-diff-2026-09-22.md
+[EventBridge] Poll cycle complete. Stats: repo=0, canonical=0, errors=0
+[EventBridge] _poll() START
+[EventBridge] DEBUG canonical_events unprocessed count: 0
+[EventBridge] DEBUG canonical query returned 0 rows
+[EventBridge] Poll cycle complete. Stats: repo=0, canonical=0, errors=0
+### (7) what gateway image / compose defines ping-gateway
+ping-gateway:devin-boundary2 started=2026-09-22T16:54:48.095948498Z

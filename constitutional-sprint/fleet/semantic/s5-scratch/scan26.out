@@ -1,0 +1,66 @@
+=== intent/ vs intents/ compare ===
+intent: Capability Routing
+owner: CapabilityAuthority
+spec: specs/capability-engine
+implements:
+  - runtime/authorities/authority_router.py
+produces:
+  - CapabilityResolution
+consumes:
+  - RepositoryAuthority
+depends_on:
+  - GovernanceAuthority
+forbidden:
+  - duplicate_capability_registration
+proofs:
+  - proofs/capability-proof.json
+---
+intent: capability
+mission: "Resolve and verify capability chains across the codebase."
+authority: CapabilityAuthority
+capabilities:
+  - CapabilityResolution
+  - CapabilityVerification
+  - CapabilityRegistry
+owns:
+  - runtime/kernel/capability/ICapabilityAuthority.ts
+consumes:
+  - IdentityAuthority
+  - ConstitutionalIR
+produces:
+  - CapabilityChain
+  - CapabilityMap
+specifications:
+  - specs/capability-engine
+adr: []
+tests: []
+evidence:
+  - "PROVEN — interface only, no concrete implementation"
+  - "6 competing capability systems across Python+TS"
+status: missing_implementation
+action: "Implement concrete CapabilityAuthority in kernel."
+=== BaseWorker ===
+ping-runtime/agents/base_worker.js
+ping-runtime/workers/canonical_workers.js
+ping-runtime/workers/intelligence_worker.js
+=== 12 dead mission impls? ===
+ping-runtime/orchestration/event_to_mission_bridge.js
+ping-runtime/orchestration/mission_scheduler.js
+ping-runtime/orchestration/mission_runtime.js
+ping-runtime/orchestration/execution/artifact_authorities.js
+ping-runtime/orchestration/execution/mission_compiler.js
+gateway/automatic_mission_generator.js
+gateway/mission_generator.js
+gateway/constitutional_refactoring_missions.js
+gateway/mission_execution_graph.js
+gateway/mission_authority.js
+gateway/proposal_objects.js
+gateway/mission_authority_v2.js
+gateway/mission_repository_port.js
+gateway/test_lease_renewal.js
+gateway/test_decision_graph.js
+gateway/mission_planner.js
+gateway/mission_execution_authority.js
+gateway/mission_rule_authority.js
+gateway/repositories/mission_repository.js
+gateway/mission_event_bus.js

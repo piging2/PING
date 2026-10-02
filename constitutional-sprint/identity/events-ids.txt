@@ -1,0 +1,25 @@
+104:        event_id: bffResult.eventId,
+105:        id: bffResult.eventId, // BFF-reader compatibility: the website BFF reads `id`
+126:    return { event_id: result.eventId, event_type, status: 'ok' };
+130:    const { event_id, worker } = req.body;
+131:    if (!event_id) throw new Error('event_id is required');
+132:    const ok = await eventReadAuthority.markProcessed(event_id, worker || 'worker_runtime');
+133:    if (!ok) throw new Error(`Failed to mark event processed: ${event_id}`);
+134:    return { processed: true, event_id };
+138:    const { event_id, worker, error } = req.body;
+139:    if (!event_id) throw new Error('event_id is required');
+140:    const ok = await eventReadAuthority.markFailed(event_id, worker || 'worker_runtime', error || 'unknown');
+141:    if (!ok) throw new Error(`Failed to mark event failed: ${event_id}`);
+142:    return { failed: true, event_id };
+154:  router.get('/:eventId/children', asyncHandler('/events/:eventId/children', async (req) => {
+155:    const { eventId } = req.params;
+156:    if (!eventId) throw new Error('eventId is required');
+158:    return await eventRuntime.getChildren(eventId, limit);
+161:  router.get('/:eventId/descendants', asyncHandler('/events/:eventId/descendants', async (req) => {
+162:    const { eventId } = req.params;
+163:    if (!eventId) throw new Error('eventId is required');
+166:    return await eventRuntime.getDescendants(eventId, maxDepth, limit);
+169:  router.get('/:eventId/ancestors', asyncHandler('/events/:eventId/ancestors', async (req) => {
+170:    const { eventId } = req.params;
+171:    if (!eventId) throw new Error('eventId is required');
+173:    return await eventRuntime.getAncestors(eventId, maxDepth);

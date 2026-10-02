@@ -1,0 +1,71 @@
+
+---
+
+## File Structure
+
+### Consolidated Compose Files
+
+```
+PING/
+├── compose.yaml                 # Base configuration (infrastructure + platform)
+├── compose.dev.yaml           # Development overrides
+├── compose.prod.yaml          # Production overrides
+├── compose.gpu.yaml           # GPU overrides
+├── compose.cpu.yaml           # CPU overrides
+├── compose.debug.yaml         # Debug overrides
+├── compose.minimal.yaml       # Minimal overrides
+└── compose.brain.yaml         # Optional Brain services
+```
+
+### Volume Naming Convention
+
+```
+ping_postgres          # PostgreSQL data
+ping_qdrant            # Qdrant vector storage
+ping_ollama            # Ollama models
+ping_vault             # Vault secrets
+ping_repositories      # Repository mounts
+ping_artifacts         # Artifacts storage
+ping_events            # Event logs
+ping_knowledge         # Knowledge base
+```
+
+---
+
+## Migration Steps
+
+### Phase 1: Stop and Remove Duplicate Containers
+
+```bash
+# Stop all containers
+docker compose down
+
+# Remove obsolete containers
+docker rm -f brain-ollama
+docker rm -f open-webui
+docker rm -f brain-openwebui
+
+# Remove obsolete volumes
+docker volume rm openwebui_data
+```
+
+### Phase 2: Rename Canonical Containers
+
+```bash
+# Rename brain-postgres to ping-postgres
+docker rename brain-postgres ping-postgres
+
+# Rename brain-qdrant to ping-qdrant
+docker rename brain-qdrant ping-qdrant
+
+# Rename crx-ollama-worker to ping-ollama
+docker rename crx-ollama-worker ping-ollama
+
+# Rename ping-mission-control (keep name)
+# Rename crx-gateway to ping-gateway
+docker rename crx-gateway ping-gateway
+
+# Rename crx-ui-next to ping-ui
+docker rename crx-ui-next ping-ui
+```
+

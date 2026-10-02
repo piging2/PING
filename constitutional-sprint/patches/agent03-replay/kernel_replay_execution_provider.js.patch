@@ -1,0 +1,37 @@
+--- kernel_replay_execution_provider.js.orig	2026-09-24 03:24:12.318399099 +0000
++++ kernel_replay_execution_provider.js.patched	2026-09-24 03:25:53.629398318 +0000
+@@ -77,7 +77,7 @@
+ 
+       // Deterministic artifact_hash from event content (kernel invariant requires non-empty)
+       const artifactHash = event.canonical_hash || event.metadata?.canonical_hash
+-        || this._computeHash(JSON.stringify(event.payload || {}));
++        || this._computeHash(this._stableStringify(event.payload || {}));
+ 
+       const envelopeData = {
+         event_id: eventId,
+@@ -217,6 +217,25 @@
+   }
+ 
+   /**
++   * Stable (canonical) JSON stringify for hashing: object keys are sorted
++   * recursively so that semantically identical payloads hash identically
++   * regardless of key insertion order. Mirrors the RFC-8785 canonicalization
++   * used by the kernel hash authority, at the boundary where the envelope is
++   * built (the kernel canonicalizes later, but artifact_hash is fixed here).
++   */
++  _stableStringify(value) {
++    if (value === null || typeof value !== 'object') {
++      return JSON.stringify(value);
++    }
++    if (Array.isArray(value)) {
++      return '[' + value.map((v) => this._stableStringify(v)).join(',') + ']';
++    }
++    return '{' + Object.keys(value).sort()
++      .map((k) => JSON.stringify(k) + ':' + this._stableStringify(value[k]))
++      .join(',') + '}';
++  }
++
++  /**
+    * Deterministic hash for artifact_hash generation.
+    * Uses same algorithm as _hashId but returns a hex-like string.
+    */

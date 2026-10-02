@@ -1,0 +1,124 @@
+
+    await this._persistSnapshot(snapshotId, snapshot);
+
+    console.log(`[EventStorePersistence] Created snapshot ${snapshotId} for stream ${streamId}`);
+    return snapshot;
+  }
+
+  /**
+   * Read snapshot for stream
+   * 
+   * @param {string} streamId - Stream identifier
+   * @returns {Object} Latest snapshot
+   */
+  async readSnapshot(streamId) {
+    try {
+      const result = await this._postgres.query(`
+        SELECT snapshot_data
+        FROM event_snapshots
+        WHERE stream_id = $1
+        ORDER BY version DESC
+        LIMIT 1
+      `, [streamId]);
+
+      if (result.rows.length > 0) {
+        return result.rows[0].snapshot_data;
+      }
+      return null;
+    } catch (error) {
+      console.error(`[EventStorePersistence] Failed to read snapshot for stream ${streamId}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Persist event stream
+   */
+  async _persistEventStream(streamId, stream) {
+    try {
+      await this._postgres.query(`
+        INSERT INTO event_streams (stream_id, stream_data, created_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (stream_id) DO UPDATE SET
+          stream_data = $2,
+          updated_at = NOW()
+      `, [streamId, JSON.stringify(stream)]);
+    } catch (error) {
+      console.error(`[EventStorePersistence] Failed to persist event stream ${streamId}:`, error.message);
+    }
+  }
+
+  /**
+   * Persist event
+   */
+  async _persistEvent(eventId, event) {
+    try {
+      await this._postgres.query(`
+        INSERT INTO events (event_id, event_data, created_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (event_id) DO UPDATE SET
+          event_data = $2,
+          updated_at = NOW()
+      `, [eventId, JSON.stringify(event)]);
+    } catch (error) {
+      console.error(`[EventStorePersistence] Failed to persist event ${eventId}:`, error.message);
+    }
+  }
+
+  /**
+   * Persist snapshot
+   */
+  async _persistSnapshot(snapshotId, snapshot) {
+    try {
+      await this._postgres.query(`
+        INSERT INTO event_snapshots (snapshot_id, snapshot_data, created_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (snapshot_id) DO UPDATE SET
+          snapshot_data = $2,
+          updated_at = NOW()
+      `, [snapshotId, JSON.stringify(snapshot)]);
+    } catch (error) {
+      console.error(`[EventStorePersistence] Failed to persist snapshot ${snapshotId}:`, error.message);
+    }
+  }
+
+  /**
+   * Get event stream
+   */
+  getEventStream(streamId) {
+    return this._eventStreams.get(streamId);
+  }
+
+  /**
+   * Get event
+   */
+  getEvent(eventId) {
+    return this._events.get(eventId);
+  }
+
+  /**
+   * Get statistics
+   */
+  getStatistics() {
+    return {
+      total_streams: this._eventStreams.size,
+      total_events: this._events.size,
+      by_stream: this._getStatsByStream(),
+    };
+  }
+
+  /**
+   * Get statistics by stream
+   */
+  _getStatsByStream() {
+    const stats = {};
+
+    for (const event of this._events.values()) {
+      stats[event.stream_id] = (stats[event.stream_id] || 0) + 1;
+    }
+
+    return stats;
+  }
+}
+
+module.exports = { EventStorePersistence };

@@ -1,0 +1,40 @@
+commit a69bb68fc84620a5635e071030cf49a633df7394
+Author: Pigi <pigi@ping.local>
+Date:   Wed Sep 23 10:01:29 2026 -0600
+
+    Gate owner mutation behind demo-owner-mode
+    
+    Product/security blocker: POST /api/fyd/objects/[objectId]/overrides
+    evaluated the seeded demo owner chain with no env/host gate (its own
+    docstring admitted no production authentication). Both stages (propose
+    and approve) now require DEV/DEMO OWNER MODE: the same demoDenied
+    contract as the customize approval API (NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1
+    AND a localhost/private-network host via isPrivateHost). Anything else
+    fails closed with a typed 403 { ok:false, code:"demo_owner_mode_required" }
+    before any object I/O; nothing is written. Visitors may still read via the
+    GET object routes and Ask FYD.
+    
+    Audit of the other mutation routes:
+    - claims/[resourceId]/verify: was ungated (operator-attestation wrote
+      claim state with no check). Gated with the same demoDenied contract.
+    - customize: already gated via demoDenied on approve/clear; parse stays
+      open (stateless, commits nothing). Verified, not regressed.
+    - claims/claim, claims/release: already fail closed 401 without the
+      demo-owner env flag (resolveClaimIdentity returns null unless the env
+      flag is on; demo-context objects refused). Left as is.
+    - ask, ask/[siteId]: POST but read-only query endpoints. Left open.
+    - auth/signout: session-scoped self-action (clears own cookie + audit).
+      Left open.
+    - auth/unlink: session + CSRF protected. Left as is.
+    - follow, like: demo-local single-viewer state (data/fyd-*/local.json);
+      visitor actions by design. Left open.
+    - onboarding/preview: anonymous preview, no consequential action,
+      SSRF-gated. Left open.
+    - social/follow, social/identity, social/post: writes go only through
+      PINGs canonical signed-envelope path to the repo-booted gateway
+      (separate authority; FYD owns no social runtime); dev-identities-only
+      demo feature. Left open.
+    - objects/[objectId]: GET only. Read-only.
+    
+    Tests: overrides lane tests now run with the demo env opted in on
+    localhost; new gate tests cover visitor-denied (env unset, both stages),

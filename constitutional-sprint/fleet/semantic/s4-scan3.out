@@ -1,0 +1,159 @@
+=== TAILS of root workers (__main__ bodies) ===
+--- replay_worker.py (tail from __main__) ---
+154: if __name__ == "__main__":
+155:     main()
+--- witness_worker.py (tail from __main__) ---
+140: if __name__ == "__main__":
+141:     main()
+--- lineage_worker.py (tail from __main__) ---
+152: if __name__ == "__main__":
+153:     main()
+--- observation_worker.py (tail from __main__) ---
+161: if __name__ == "__main__":
+162:     main()
+--- claim_worker.py (tail from __main__) ---
+174: if __name__ == "__main__":
+175:     main()
+--- filesystem_worker.py (tail from __main__) ---
+223: if __name__ == "__main__":
+224:     main()
+--- constitutional_projection_worker.py (tail from __main__) ---
+161: if __name__ == "__main__":
+162:     main()
+--- projection_replay.py (tail from __main__) ---
+310: if __name__ == '__main__':
+311:     main()
+
+=== who references constitutional_runtime (any ext) ===
+./runtime/constitutional_runtime.py
+./ping-runtime/orchestration/RepositoryHygieneReport.json
+./ping-runtime/orchestration/LawRouter.json
+./ping-runtime/orchestration/knowledge_report.json
+./ping-runtime/orchestration/ArchitectureManifest.json
+./ping-runtime/orchestration/ExecutionRouter.json
+./ping-runtime/orchestration/RoutingCache.json
+./ping-runtime/orchestration/RepositoryKnowledgeIndex_DependencyGraph.json
+./ping-runtime/orchestration/RepositoryConstitutionManifest.json
+./ping-runtime/orchestration/RepositoryKnowledgeIndex_ExecutionGraphs.json
+./ping-runtime/orchestration/dormant_classifications/gateway_constitutional_runtime.json
+./ping-runtime/orchestration/dormant_classifications/gateway_bootstrap_constitutional_runtime.json
+./ping-runtime/orchestration/ContextPackets.json
+./ping-runtime/orchestration/RepositoryKnowledgeIndex_Filesystem.json
+./ping-runtime/orchestration/UUIDRegistry.json
+./ping-runtime/orchestration/CapabilityRegistry.json
+./ping-runtime/orchestration/RoutingIndex.json
+./RepositoryKnowledgeIndex/kernel_module_extraction_report.json
+./RepositoryKnowledgeIndex/kernel_migration_plan.json
+./RepositoryKnowledgeIndex/patch_execution_expansion.json
+
+=== kernel/event_dispatcher.py: worker refs ===
+74:    from workers.observation_worker import handle_document_imported
+75:    from workers.claim_worker import handle_observation_created
+76:    from workers.replay_worker import handle_claim_generated
+77:    from workers.witness_worker import handle_replay_executed
+78:    from workers.lineage_worker import handle_witness_created
+79:    from workers.projection_worker import handle_lineage_created
+=== does kernel/event_dispatcher.py import ROOT workers or workers/ variants? ===
+8:import logging
+9:from typing import Dict, Callable, Any, Optional
+10:from dataclasses import dataclass
+73:    # Import handlers here to avoid circular imports
+74:    from workers.observation_worker import handle_document_imported
+75:    from workers.claim_worker import handle_observation_created
+76:    from workers.replay_worker import handle_claim_generated
+77:    from workers.witness_worker import handle_replay_executed
+78:    from workers.lineage_worker import handle_witness_created
+79:    from workers.projection_worker import handle_lineage_created
+82:    dispatcher.register_handler("DOCUMENT_IMPORTED", handle_document_imported)
+
+=== gateway bootstrap: does it spawn python workers? ===
+
+=== JS gateway: /events/unprocessed /events/processed /events/failed routes? ===
+/home/nolan/ping/gateway/routes/canonical_events.js:9: * GET /canonical-events/unprocessed — Unprocessed events
+/home/nolan/ping/gateway/routes/canonical_events.js:68:  router.get('/unprocessed', asyncHandler('GET /canonical-events/unprocessed', async (req) => {
+/home/nolan/ping/gateway/routes/events.js:129:  router.post('/processed', asyncHandler('/events/processed', async (req) => {
+/home/nolan/ping/gateway/routes/events.js:137:  router.post('/failed', asyncHandler('/events/failed', async (req) => {
+/home/nolan/ping/gateway/routes/events.js:145:  router.get('/unprocessed', asyncHandler('/events/unprocessed', async (req) => {
+/home/nolan/ping/gateway/routes/mission_control.js:339:      const result = await unifiedEventRuntime.query({ unprocessed: true, limit });
+
+=== CREATE TABLE for python 'events' vs ping_events in migrations ===
+/home/nolan/ping/event_processing.sql
+/home/nolan/ping/database/canonical_events.sql
+/home/nolan/ping/database/fix_pipeline_blockers.sql
+/home/nolan/ping/database/ping_objects.sql
+/home/nolan/ping/database/events.sql
+/home/nolan/ping/archive/obsolete/artifact_registry.sql
+/home/nolan/ping/archive/obsolete/object_relationships.sql
+/home/nolan/ping/archive/obsolete/authority_lineage.sql
+/home/nolan/ping/archive/obsolete/constitutional_freeze_registry.sql
+/home/nolan/ping/archive/obsolete/events_retention.sql
+--- which tables does the JS gateway create? ---
+/home/nolan/ping/gateway/document_tracker.js:69:      CREATE TABLE IF NOT EXISTS documents (
+/home/nolan/ping/gateway/document_tracker.js:83:      CREATE TABLE IF NOT EXISTS deleted_documents (
+/home/nolan/ping/gateway/embedding_cache.js:61:      CREATE TABLE IF NOT EXISTS embeddings (
+/home/nolan/ping/gateway/memory_persistence_authority.js:39:      CREATE TABLE IF NOT EXISTS memory_facts (
+/home/nolan/ping/gateway/memory_persistence_authority.js:53:      CREATE TABLE IF NOT EXISTS memory_goals (
+/home/nolan/ping/gateway/memory_persistence_authority.js:67:      CREATE TABLE IF NOT EXISTS memory_projects (
+/home/nolan/ping/gateway/memory_persistence_authority.js:80:      CREATE TABLE IF NOT EXISTS memory_repositories (
+/home/nolan/ping/gateway/memory_persistence_authority.js:92:      CREATE TABLE IF NOT EXISTS memory_people (
+/home/nolan/ping/gateway/memory_persistence_authority.js:105:      CREATE TABLE IF NOT EXISTS memory_apis (
+/home/nolan/ping/gateway/memory_persistence_authority.js:119:      CREATE TABLE IF NOT EXISTS memory_errors (
+
+=== runtime/projection_worker/rebuild_certification.py:115 context ===
+            pre_destroy_info = self.get_collection_info()
+            pre_destroy_points = self.get_sample_points(100)
+            
+            print(f"Pre-destroy: {pre_destroy_info.get('points_count', 0)} points")
+            
+            # Delete collection
+            self.qdrant_client.delete_collection(COLLECTION_NAME)
+            print(f"Destroyed collection: {COLLECTION_NAME}")
+            
+            return True, pre_destroy_info, pre_destroy_points
+        except Exception as e:
+            print(f"Failed to destroy collection: {e}")
+            return False, {}, []
+    
+    def rebuild_collection(self) -> bool:
+        """Rebuild collection using projection worker."""
+        try:
+            # Import projection worker
+            import sys
+            sys.path.append(os.path.dirname(__file__))
+            from constitutional_projection_worker import ConstitutionalProjectionWorker
+            
+            # Run projection worker
+            worker = ConstitutionalProjectionWorker()
+            worker.run()
+            
+            print("Rebuild complete")
+            return True
+        except Exception as e:
+            print(f"Failed to rebuild collection: {e}")
+            return False
+    
+    def verify_rebuild(self, pre_destroy_info: Dict, pre_destroy_points: List) -> Dict[str, Any]:
+        """Verify rebuild results."""
+        # Get post-rebuild info
+        post_rebuild_info = self.get_collection_info()
+        post_rebuild_points = self.get_sample_points(100)
+        
+        verification = {
+            'pre_destroy_points_count': pre_destroy_info.get('points_count', 0),
+            'post_rebuild_points_count': post_rebuild_info.get('points_count', 0),
+            'points_count_match': pre_destroy_info.get('points_count', 0) == post_rebuild_info.get('points_count', 0),
+            'vault_hash_match': True,  # Would need to compute and compare
+            'lineage_match': True,  # Would need to compare lineage references
+            'certification': 'PENDING'
+        }
+
+=== core AGENTS.md mention of filesystem_worker ===
+2493-**14:15** | **Migration gap CONFIRMED**: only `migration_001_bidirectional_memory.sql` (projected_at + 22-type CHECK up to CITATION_DISCOVERED) + `database/fix_pipeline_blockers.sql` (TEXT aggregate_id + 35-type CHECK + event_processing; Phase 43) ALTER `events` in-tree. No tree file produces the live 28-type shape, the 6 REPOSITORY_*/COMMIT_* types, `projected_to_qdrant`, or the 3rd live `event_processing` variant (uuid event_id, no PK, has updated_at — matches NEITHER `migration_engine.js:249-261` TEXT-PK nor `fix_pipeline_blockers.sql:28-36` TEXT-PK nor `event_repository.js:55-63` TEXT-PK+FK). Fix_pipeline_blockers was NOT applied to the dumped DB (aggregate_id still uuid). | Writers.
+2494-
+2495:**14:25** | **Writer classification COMPLETE** (28-type CHECK is the gate): LIVE-DUMP-PROVEN writers: `constitutional_retrieval.py:107` (7-col + projected_to_qdrant, ON CONFLICT) — pg_dump rows 11-15 match its shape AND payload (`_generated_by: constitutional_retrieval.ingest`); `constitutional/event_emitter.py:106` (9-col incl. causation_id/correlation_id — matches live columns; rss/newsletter use `from src.constitutional import emit_event`). REACHABLE_WRITER (static): all standard 7-col writers (claim_worker:104, constitutional_projection_worker:73, destructive_recovery_certification:135, replay_worker:85, lineage_worker:79, observation_worker:93, filesystem_worker:98, github_worker.py:116, mission_control_knowledge_apis:84), gateway event_bus:67, event_write_authority:70, witness_chain:126,198, replay_log:106,134, lifecycle_visualizer:355, constitutional_runtime:282, continuous_background_analyst:487, eventstore_persistence:356, constitutional_ollama_integration:446. **BLOCKED_BY_SCHEMA**: `web_retrieval.py:77` + `google_drive_ingestion.py:121` insert `payload_hash` (absent from ALL variants — structural, not CHECK); `postgres_event_store.ts:89` (event_hash/payload columns don't exist). **CHECK-BLOCKED on live dump**: rss/newsletter types (CYCLE_STARTED, WORKER_HEARTBEAT, INGESTION_CYCLE_STARTED, PROCESSING_CYCLE_STARTED), workers/witness_worker.py (WITNESS_CREATED, REPLAY_WITNESSED), repository_scanner.py (REPOSITORY_FILE_DISCOVERED/UPDATED/DELETED), gateway witness_chain/replay_log/event_bus types, stage_registry (CONSTITUTIONAL_OBJECT_CREATED). NO writer granted LIVE_WRITER_CONFIRMED (no runtime probe, Docker down). | Entrypoint audit.
+2496-
+2497-**14:35** | **Entrypoint collision findings**: compose.yaml postgres service (ping-postgres) mounts canonical_state/schema.sql as 01-schema.sql, `env_file: .env.base` (POSTGRES_DB=crx_runtime, postgres/postgres), ports 5432:5432. mission-control imports all 4 BrainOS writers (app.py:826,1358,1376,1395,1411,1430,1507-1526; constitutional_integration.py:17). rss/newsletter workers → same event_emitter. Dockerfile.mission-control copies `src` + runtime/constitutional + adapters. **Shared-creds collision**: gateway (compose :174) hardcodes `POSTGRES_DB: ping_runtime` while .env.base and event_emitter default to `crx_runtime` and pg_dump is from `crx_runtime` — divergent target DBs across the fleet. docker daemon down → no live probe. | P1 matrix.
+2498-
+2499-**14:45** | P1 (canonicalization matrix), consumer dependency audit, identity equivalence (UUID v5 vs SHA-256 vs evt-*, CanonicalBytes.encode()) NOT started this session — scoped out after writer classification reached falsification-complete. | Update AGENTS.md + present verdict.
+
+=== systemd timers: what do they run? ===

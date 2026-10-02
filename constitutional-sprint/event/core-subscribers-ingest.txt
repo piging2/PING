@@ -1,0 +1,18 @@
+ping-runtime/embeddings/embedding_service.js:120:   * @param {object} eventRuntime — UnifiedEventRuntime exposing .on(type, handler)
+ping-runtime/embeddings/embedding_service.js:132:        eventRuntime.on(type, async (event) => {
+ping-runtime/orchestration/event_to_mission_bridge.js:95:      this._eventRuntime.on(eventType, async (event) => {
+gateway/bootstrap/gateway_runtime.js:598:          unifiedEventRuntime.on(type, async (event) => {
+=== ingest route wiring ===
+103:const createIngestRoutes = require('../routes/ingest');
+374:    let canonicalizationService = null;
+447:        canonicalizationService = new CanonicalizationService({
+568:        reviewEmitter = new ReviewEmitter(canonicalizationService);
+569:        customerEmitter = new CustomerEmitter(canonicalizationService);
+570:        projectEmitter = new ProjectEmitter(canonicalizationService);
+571:        connectorEmitter = new ConnectorEmitter(canonicalizationService);
+572:        systemEmitter = new SystemEmitter(canonicalizationService);
+587:        // is ms-fast; this is not on the ingestion path.
+664:      canonicalizationService, embeddingService,
+691:      this._app.use('/ingest', createIngestRoutes(services.canonicalizationService));
+702:      this._app.use('/ingest', (req, res) => res.status(503).json({ error: 'Postgres unavailable', degraded: true }));
+751:      if (!services.canonicalizationService) return { status: 'not_initialized' };

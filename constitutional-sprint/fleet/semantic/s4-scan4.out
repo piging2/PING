@@ -1,0 +1,276 @@
+=== who starts workers/worker_runtime.py? ===
+./ping-runtime/orchestration/mission_scheduler.js
+./evals/constitutional-runtime/EVAL-007_worker_failure_propagation.js
+./compose.yaml
+./gateway/test_commissioning.js
+./gateway/routes/events.js
+./gateway/test_kernel_pipeline.js
+./gateway/test_slice3a_convergence.js
+./gateway/test_confidence_convergence.js
+./gateway/test_phase0_fixes.js
+./gateway/test_phase_d_namespace.js
+./gateway/test_decision_graph.js
+./gateway/test_pg_init.js
+./gateway/test_durability_invariants.js
+./gateway/test_durable_mission_lifecycle.js
+./gateway/test_dormant_worker_gate.js
+=== compose files: worker services? ===
+/home/nolan/ping/compose.brain.yaml
+/home/nolan/ping/compose.cpu.yaml
+/home/nolan/ping/compose.debug.yaml
+/home/nolan/ping/compose.dev.yaml
+/home/nolan/ping/compose.gpu.yaml
+/home/nolan/ping/compose.minimal.yaml
+/home/nolan/ping/compose.prod.yaml
+/home/nolan/ping/compose.yaml
+197:  digestion-worker:
+201:    container_name: ping-digestion-worker
+224:  newsletter-worker:
+228:    container_name: ping-newsletter-worker
+252:  projection-worker:
+256:    container_name: ping-projection-worker
+277:  witness-worker:
+281:    container_name: ping-witness-worker
+299:  replay-worker:
+303:    container_name: ping-replay-worker
+321:  worker-runtime:
+324:      dockerfile: Dockerfile.worker-runtime
+325:    container_name: ping-worker-runtime
+333:      WORKER_NAME: worker_runtime
+=== gateway_runtime.js requires: constitutional_runtime? spawn? python? ===
+=== root constitutional_runtime.py vs runtime/constitutional_runtime.py ===
+#!/usr/bin/env python3
+"""
+Constitutional Runtime Kernel
+Polls events table continuously and processes unprocessed events.
+"""
+
+import os
+import sys
+import psycopg2
+import json
+import time
+from datetime import datetime
+from typing import Dict, Any, Optional
+from pathlib import Path
+from observation_worker import ObservationWorker
+from claim_worker import ClaimWorker
+from replay_worker import ReplayWorker
+from witness_worker import WitnessWorker
+from lineage_worker import LineageWorker
+from constitutional_projection_worker import ConstitutionalProjectionWorker
+
+from runtime.configuration import get_postgres_config
+
+
+class ConstitutionalRuntime:
+    """Constitutional Runtime Kernel"""
+    
+    def __init__(self, postgres_config: Dict[str, Any]):
+        self.postgres_config = postgres_config
+        self.running = False
+        self.handlers = {}
+        
+    def get_connection(self):
+        """Get PostgreSQL connection"""
+        return psycopg2.connect(**self.postgres_config)
+    
+    def register_handler(self, event_type: str, handler):
+        """Register event handler"""
+        self.handlers[event_type] = handler
+        
+    def fetch_unprocessed_events(self, limit: int = 100) -> list:
+        """Fetch unprocessed events"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT event_id, event_type, timestamp, aggregate_id, aggregate_type, event_data
+            FROM events
+            WHERE processed_at IS NULL
+            ORDER BY timestamp ASC
+            LIMIT %s
+        """, (limit,))
+        
+        events = []
+        for row in cursor.fetchall():
+            events.append({
+                "event_id": row[0],
+                "event_type": row[1],
+                "timestamp": row[2],
+                "aggregate_id": row[3],
+-----
+#!/usr/bin/env python3
+"""
+Constitutional Runtime
+
+Continuous event consumer that processes events through the constitutional pipeline.
+
+Pipeline:
+DOCUMENT_IMPORTED → OBSERVATION_CREATED → CLAIM_GENERATED → REPLAY_EXECUTED → WITNESS_CREATED → LINEAGE_CREATED → PROJECTION_CREATED
+"""
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import logging
+import json
+import time
+import uuid
+from typing import List, Dict, Any, Optional
+from kernel.event_dispatcher import Event, get_dispatcher, register_event_handlers
+from runtime.authorities.execution_authority import ExecutionAuthority
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
+POSTGRES_CONTAINER = "brain-postgres"
+POSTGRES_DB = "crx_runtime"
+POSTGRES_USER = "postgres"
+SLEEP_INTERVAL = 0.5  # seconds
+BATCH_SIZE = 10
+
+
+def run_psql_query(query):
+    """Run psql query via docker exec through the execution authority."""
+    try:
+        authority = ExecutionAuthority()
+=== root constitutional_runtime.py main() ===
+126:def main():
+127-    """Main execution"""
+128-    postgres_config = get_postgres_config()
+129-    
+130-    runtime = ConstitutionalRuntime(postgres_config)
+131-    
+132-    # Initialize workers
+133-    observation_worker = ObservationWorker(postgres_config)
+134-    claim_worker = ClaimWorker(postgres_config)
+135-    replay_worker = ReplayWorker(postgres_config)
+136-    witness_worker = WitnessWorker(postgres_config)
+137-    lineage_worker = LineageWorker(postgres_config)
+138-    projection_worker = ConstitutionalProjectionWorker(postgres_config)
+139-    
+140-    # Register handlers
+141-    runtime.register_handler("DOCUMENT_IMPORTED", observation_worker.handle_document_imported)
+142-    runtime.register_handler("OBSERVATION_CREATED", claim_worker.handle_observation_created)
+143-    runtime.register_handler("CLAIM_GENERATED", replay_worker.handle_claim_generated)
+144-    runtime.register_handler("REPLAY_EXECUTED", witness_worker.handle_replay_executed)
+145-    runtime.register_handler("WITNESS_CREATED", lineage_worker.handle_witness_created)
+146-    runtime.register_handler("LINEAGE_CREATED", projection_worker.handle_lineage_created)
+147-    
+148-    runtime.run()
+149-
+150-
+151-if __name__ == "__main__":
+=== JS gateway /events/unprocessed handler: which table? ===
+    const result = await eventRuntime.emit(event_type, 'api', event_data, {
+      metadata: { aggregate_id, aggregate_type }
+    });
+    if (result.status !== 'ok') {
+      throw new Error(result.error || 'Event rejected');
+    }
+    return { event_id: result.eventId, event_type, status: 'ok' };
+  }));
+
+  router.post('/processed', asyncHandler('/events/processed', async (req) => {
+    const { event_id, worker } = req.body;
+    if (!event_id) throw new Error('event_id is required');
+    const ok = await eventReadAuthority.markProcessed(event_id, worker || 'worker_runtime');
+    if (!ok) throw new Error(`Failed to mark event processed: ${event_id}`);
+    return { processed: true, event_id };
+  }));
+
+  router.post('/failed', asyncHandler('/events/failed', async (req) => {
+    const { event_id, worker, error } = req.body;
+    if (!event_id) throw new Error('event_id is required');
+    const ok = await eventReadAuthority.markFailed(event_id, worker || 'worker_runtime', error || 'unknown');
+    if (!ok) throw new Error(`Failed to mark event failed: ${event_id}`);
+    return { failed: true, event_id };
+  }));
+
+  router.get('/unprocessed', asyncHandler('/events/unprocessed', async (req) => {
+    const limit = parseInt(req.query.limit) || 100;
+    const events = await eventReadAuthority.getUnprocessedEvents(limit);
+    return { events, count: events.length };
+  }));
+
+  // Causal traversal endpoints — query the causal tree in ping_events
+  // via UnifiedEventRuntime's indexed traversal methods.
+
+  router.get('/:eventId/children', asyncHandler('/events/:eventId/children', async (req) => {
+    const { eventId } = req.params;
+    if (!eventId) throw new Error('eventId is required');
+    const limit = parseInt(req.query.limit) || 50;
+    return await eventRuntime.getChildren(eventId, limit);
+  }));
+
+  router.get('/:eventId/descendants', asyncHandler('/events/:eventId/descendants', async (req) => {
+    const { eventId } = req.params;
+    if (!eventId) throw new Error('eventId is required');
+    const maxDepth = parseInt(req.query.maxDepth) || 10;
+    const limit = parseInt(req.query.limit) || 200;
+=== runtime/projection_worker/constitutional_projection_worker.py vs root: identical? ===
+DIFFER
+257 /home/nolan/ping/runtime/projection_worker/constitutional_projection_worker.py
+constitutional_projection_worker.py
+create_constitutional_memory_collection.py
+rebuild_certification.py
+=== workers/repository_client.py: backend ===
+import os
+import json
+import logging
+import urllib.request
+import urllib.parse
+
+logger = logging.getLogger(__name__)
+
+GATEWAY_URL = os.environ.get('GATEWAY_URL', 'http://gateway:8080')
+
+def _request(method, path, body=None):
+    url = f'{GATEWAY_URL}{path}'
+    data = json.dumps(body).encode('utf-8') if body else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header('Content-Type', 'application/json')
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        logger.error(f'HTTP {e.code} on {method} {path}: {e.read().decode()}')
+        raise
+    except Exception as e:
+        logger.error(f'Request failed {method} {path}: {e}')
+        raise
+
+def emit_event(event_type, aggregate_id, aggregate_type, event_data):
+    import uuid
+    event_id = str(uuid.uuid4())
+    result = _request('POST', '/events', {
+        'event_id': event_id,
+        'event_type': event_type,
+        'aggregate_id': aggregate_id,
+        'aggregate_type': aggregate_type,
+        'event_data': event_data,
+    })
+    logger.info(f'Emitted {event_type} event: {event_id}')
+    return result.get('event_id')
+
+def store_object(kind, data, metadata=None, object_id=None):
+    result = _request('POST', '/api/v1/repository/objects', {
+        'object_id': object_id,
+        'kind': kind,
+        'data': data,
+        'metadata': metadata or {},
+    })
+    return result.get('o
+=== workers/ variant main()s: do they have __main__? ===
+claim_worker: 0
+lineage_worker: 0
+observation_worker: 0
+replay_worker: 0
+witness_worker: 0
+projection_worker: 0

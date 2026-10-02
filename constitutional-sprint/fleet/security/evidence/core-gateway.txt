@@ -1,0 +1,269 @@
+refactor/runtime-authority-convergence
+cc6856c3b
+=== gateway routes ===
+ai.js
+ai_workspace.js
+canonical_events.js
+connectors.js
+constitution.js
+context.js
+customers.js
+deployments.js
+events.js
+fingerprint.js
+governance.js
+health.js
+identities.js
+ingest.js
+knowledge.js
+mission_control.js
+missions.js
+ollama.js
+ops.js
+orchestration.js
+projects.js
+repository.js
+reviews.js
+runtime.js
+system.js
+tenants.js
+=== POST route list + auth tokens ===
+########## gateway/routes/ai.js ##########
+12:  router.get('/providers', (req, res) => {
+17:  router.get('/health', async (req, res) => {
+28:  router.post('/chat', async (req, res) => {
+39:  router.post('/embed', async (req, res) => {
+50:  router.post('/select', (req, res) => {
+########## gateway/routes/ai_workspace.js ##########
+7: * All persistence flows through ai_workspace_authority → storage adapter.
+22:  router.post('/sentiment', asyncHandler('/ai-workspace/sentiment', async (req) => {
+35:  router.post('/tag', asyncHandler('/ai-workspace/tag', async (req) => {
+51:  router.post('/parse', asyncHandler('/ai-workspace/parse', async (req) => {
+64:  router.post('/translate', asyncHandler('/ai-workspace/translate', async (req) => {
+77:  router.post('/summarize', asyncHandler('/ai-workspace/summarize', async (req) => {
+90:  router.get('/project/:projectId', asyncHandler('/ai-workspace/project/:projectId', async (req) => {
+104:  router.get('/project/:projectId/stats', asyncHandler('/ai-workspace/project/:projectId/stats', async (req) => {
+########## gateway/routes/canonical_events.js ##########
+19:  router.post('/', asyncHandler('POST /canonical-events', async (req) => {
+43:  router.get('/', asyncHandler('GET /canonical-events', async (req) => {
+62:  router.get('/stats', asyncHandler('GET /canonical-events/stats', async (req) => {
+68:  router.get('/unprocessed', asyncHandler('GET /canonical-events/unprocessed', async (req) => {
+78:  router.post('/:id/processed', asyncHandler('POST /canonical-events/:id/processed', async (req) => {
+85:  router.post('/:id/failed', asyncHandler('POST /canonical-events/:id/failed', async (req) => {
+########## gateway/routes/connectors.js ##########
+7:function createConnectorRoutes(connectorRegistry, capabilityRegistry, oauthManager) {
+13:  router.get('/capabilities', async (req, res) => {
+25:  router.get('/capabilities/:category', async (req, res) => {
+38:  router.get('/capabilities/reasoning/summary', async (req, res) => {
+50:  router.get('/capabilities/operation/:operation', async (req, res) => {
+64:  router.get('/', async (req, res) => {
+82:  router.get('/:name/discover', async (req, res) => {
+92:  router.get('/:name/health', async (req, res) => {
+102:  router.post('/:name/sync', async (req, res) => {
+113:  router.get('/:name/events/:service', async (req, res) => {
+123:  router.get('/:name/search', async (req, res) => {
+135:  router.get('/:name/oauth/url', async (req, res) => {
+137:      if (!oauthManager) {
+140:      const result = oauthManager.getAuthorizationUrl(req.params.name, {
+150:  router.get('/:name/oauth/callback', async (req, res) => {
+152:      if (!oauthManager) {
+155:      const result = await oauthManager.handleCallback(req.params.name, req.query);
+162:  router.post('/:name/oauth/refresh', async (req, res) => {
+164:      if (!oauthManager) {
+167:      const result = await oauthManager.refreshToken(req.params.name);
+174:  router.post('/:name/oauth/revoke', async (req, res) => {
+176:      if (!oauthManager) {
+179:      const result = await oauthManager.revokeToken(req.params.name);
+186:  router.get('/:name/oauth/status', async (req, res) => {
+188:      if (!oauthManager) {
+########## gateway/routes/constitution.js ##########
+13:const { computeCanonicalHash } = require('../../ping-runtime/authorities/constitutional_validation');
+14:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+46:  router.get('/', async (req, res) => {
+63:            authority_id: contract.authority_id,
+64:            authority_version: contract.authority_version,
+112:        authority_count: Object.keys(contracts).length,
+113:        generated_runtime_authoritative: !!(consumers && consumers.eventValidator && consumers.capabilityResolver && consumers.workflowExecutor && consumers.deploymentLoader && consumers.stateMachineExecutor),
+151:  router.get('/contracts', async (req, res) => {
+177:  router.get('/graph', async (req, res) => {
+########## gateway/routes/context.js ##########
+11:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+14:  router.get('/recent-events', asyncHandler('/context/recent-events', async (req) => {
+20:  router.get('/worker-status', asyncHandler('/context/worker-status', async (req) => {
+25:  router.get('/runtime-digest', asyncHandler('/context/runtime-digest', async (req) => {
+31:  router.get('/latest-summaries', asyncHandler('/context/latest-summaries', async (req) => {
+37:  router.get('/recent-failures', asyncHandler('/context/recent-failures', async (req) => {
+43:  router.get('/model-metrics', asyncHandler('/context/model-metrics', async (req) => {
+48:  router.get('/daily-activity', asyncHandler('/context/daily-activity', async (req) => {
+########## gateway/routes/customers.js ##########
+24:  router.post('/import', asyncHandler('POST /customers/import', async (req) => {
+25:    const { tenant_id, page_size, page_token, sync_token } = req.body;
+35:        pageToken: page_token,
+36:        syncToken: sync_token,
+47:  router.post('/:id/sync-email', asyncHandler('POST /customers/:id/sync-email', async (req) => {
+73:  router.post('/:id/sync-calendar', asyncHandler('POST /customers/:id/sync-calendar', async (req) => {
+99:  router.get('/stats', asyncHandler('GET /customers/stats', async (req) => {
+114:  router.get('/', asyncHandler('GET /customers', async (req) => {
+145:  router.get('/:id', asyncHandler('GET /customers/:id', async (req) => {
+164:  router.post('/', asyncHandler('POST /customers', async (req) => {
+########## gateway/routes/deployments.js ##########
+21:  router.post('/', asyncHandler('POST /deployments', async (req) => {
+44:  router.get('/:id', asyncHandler('GET /deployments/:id', async (req) => {
+51:  router.get('/tenant/:tenantId', asyncHandler('GET /deployments/tenant/:tenantId', async (req) => {
+61:  router.put('/:id/status', asyncHandler('PUT /deployments/:id/status', async (req) => {
+69:  router.post('/:id/complete', asyncHandler('POST /deployments/:id/complete', async (req) => {
+77:  router.post('/:id/fail', asyncHandler('POST /deployments/:id/fail', async (req) => {
+85:  router.post('/:id/rollback', asyncHandler('POST /deployments/:id/rollback', async (req) => {
+92:  router.get('/tenant/:tenantId/active', asyncHandler('GET /deployments/tenant/:tenantId/active', async (req) => {
+########## gateway/routes/events.js ##########
+11:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+14:  router.get('/', asyncHandler('/events', async (req) => {
+25:  router.get('/recent', asyncHandler('/events/recent', async (req) => {
+40:  router.get('/stats', asyncHandler('/events/stats', async (req) => {
+59:  router.get('/:stream', asyncHandler('/events/:stream', async (req) => {
+71:  router.post('/', asyncHandler('/events', async (req, res) => {
+93:        const client = /^(INVALID_|UNKNOWN_|MISSING_|UNSUPPORTED_|PREDICATE_|SECRET_|SIGNER_)/.test(code);
+129:  router.post('/processed', asyncHandler('/events/processed', async (req) => {
+137:  router.post('/failed', asyncHandler('/events/failed', async (req) => {
+145:  router.get('/unprocessed', asyncHandler('/events/unprocessed', async (req) => {
+154:  router.get('/:eventId/children', asyncHandler('/events/:eventId/children', async (req) => {
+161:  router.get('/:eventId/descendants', asyncHandler('/events/:eventId/descendants', async (req) => {
+169:  router.get('/:eventId/ancestors', asyncHandler('/events/:eventId/ancestors', async (req) => {
+176:  router.get('/correlation/:correlationId', asyncHandler('/events/correlation/:correlationId', async (req) => {
+########## gateway/routes/fingerprint.js ##########
+9:  router.get('/', asyncHandler('GET /runtime/fingerprint', async () => {
+########## gateway/routes/governance.js ##########
+9:  router.get('/policy', (req, res) => {
+19:  router.get('/policy/:eventType', (req, res) => {
+27:  router.get('/namespaces', (req, res) => {
+34:  router.get('/namespaces/:namespace', (req, res) => {
+43:  router.get('/violations', (req, res) => {
+51:  router.get('/stats', (req, res) => {
+55:  router.get('/validate/:eventType', (req, res) => {
+58:      authority_owner: req.query.owner || undefined,
+########## gateway/routes/health.js ##########
+12:  router.get('/', async (req, res) => {
+########## gateway/routes/identities.js ##########
+29:const { IdentityAuthority } = require('../constitutional-dist/identity-authority.js');
+30:const { HashAuthority } = require('../constitutional-dist/hash-authority.js');
+72:  router.get(
+101:  router.post(
+########## gateway/routes/ingest.js ##########
+10: *   source: string,         // producing source/authority ID (required)
+31:  router.post('/', async (req, res) => {
+45:      // Boundary authorization: a producer may claim its per-source namespace or
+46:      // an explicit override. Unauthorized claims (invalid namespace) are rejected
+48:      const auth = canonicalizationService.authorizeNamespace(body.source, body.namespace);
+49:      if (!auth.authorized) {
+50:        return res.status(400).json({ status: 'error', error: auth.reason });
+########## gateway/routes/knowledge.js ##########
+11:  router.get('/stats', async (req, res) => {
+22:  router.post('/search', async (req, res) => {
+46:  router.get('/nodes', async (req, res) => {
+64:  router.post('/nodes', async (req, res) => {
+75:  router.get('/nodes/:nodeId/neighborhood', async (req, res) => {
+86:  router.post('/edges', async (req, res) => {
+########## gateway/routes/mission_control.js ##########
+13:  const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+62:  router.get('/dashboard', requirePG, async (req, res) => {
+112:  router.get('/business/who-needs-followup', requirePG, async (req, res) => {
+154:  router.get('/business/stalled-estimates', requirePG, async (req, res) => {
+181:  router.get('/business/pending-reviews', requirePG, async (req, res) => {
+206:  router.get('/business/ai-recommendations', requirePG, async (req, res) => {
+236:  router.get('/business/today-work', requirePG, async (req, res) => {
+253:  router.get('/business/unpaid-invoices', requirePG, async (req, res) => {
+277:  router.get('/business/at-risk-projects', requirePG, async (req, res) => {
+305:  router.get('/business/marketing', requirePG, async (req, res) => {
+336:  router.get('/inbox', requirePG, async (req, res) => {
+349:  router.get('/queues', requirePG, async (req, res) => {
+368:  router.get('/queues/:eventType', requirePG, async (req, res) => {
+381:  router.get('/missions/active', requirePG, async (req, res) => {
+390:  router.get('/missions/pending', requirePG, async (req, res) => {
+400:  router.get('/missions/stats', requirePG, async (req, res) => {
+412:  router.get('/missions/:id/trace', requirePG, async (req, res) => {
+427:  router.get('/knowledge', requirePG, async (req, res) => {
+443:  router.get('/system', async (req, res) => {
+474:  router.get('/activity', requirePG, async (req, res) => {
+488:  router.get('/bridge', (req, res) => {
+494:  router.get('/event-mission-bridge', (req, res) => {
+500:  router.get('/scheduler', (req, res) => {
+506:  router.get('/workers', (req, res) => {
+520:  router.get('/replay/stats', requirePG, async (req, res) => {
+########## gateway/routes/missions.js ##########
+12:  router.get('/stats', async (req, res) => {
+22:  router.post('/', async (req, res) => {
+33:  router.get('/pending', async (req, res) => {
+44:  router.get('/active', async (req, res) => {
+########## gateway/routes/ollama.js ##########
+12:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+43:  router.post('/chat', async (req, res) => {
+62:  router.get('/models', async (req, res) => {
+79:  router.post('/autocomplete', async (req, res) => {
+########## gateway/routes/ops.js ##########
+3:// Every response includes generated_runtime_authoritative and runtime_artifact_hash.
+6:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+15:  router.get('/status', async (req, res) => {
+28:        generated_runtime_authoritative: true,
+50:  router.get('/health', async (req, res) => {
+63:  router.get('/drift', (req, res) => {
+82:  router.get('/dashboard', async (req, res) => {
+100:        generated_runtime_authoritative: true,
+110:  router.get('/system', async (req, res) => {
+118:        generated_runtime_authoritative: true,
+########## gateway/routes/orchestration.js ##########
+21:const { constitutionalTimeAuthority } = require('../../ping-runtime/authorities/constitutional_time_authority.js');
+39:  router.post('/missions', asyncHandler('POST /orchestration/missions', async (req, res) => {
+83:  router.get('/missions', asyncHandler('GET /orchestration/missions', async (req, res) => {
+112:  router.get('/missions/:id', asyncHandler('GET /orchestration/missions/:id', async (req, res) => {
+140:  router.post('/missions/:id/dispatch', asyncHandler('POST /orchestration/missions/:id/dispatch', async (req, res) => {
+175:  router.post('/missions/:id/output', asyncHandler('POST /orchestration/missions/:id/output', async (req, res) => {
+204:  router.get('/workers', asyncHandler('GET /orchestration/workers', async (req, res) => {
+232:  router.get('/engine', asyncHandler('GET /orchestration/engine', async (req, res) => {
+240:  router.get('/engine/report', asyncHandler('GET /orchestration/engine/report', async (req, res) => {
+248:  router.post('/engine/compile', asyncHandler('POST /orchestration/engine/compile', async (req, res) => {
+272:  router.post('/engine/loop', asyncHandler('POST /orchestration/engine/loop', async (req, res) => {
+298:  router.post('/engine/git-diff', asyncHandler('POST /orchestration/engine/git-diff', async (req, res) => {
+########## gateway/routes/projects.js ##########
+20:  router.post('/', asyncHandler('POST /projects', async (req, res) => {
+25:  router.put('/:id', asyncHandler('PUT /projects/:id', async (req, res) => {
+33:  router.get('/stats', asyncHandler('GET /projects/stats', async (req, res) => {
+40:  router.get('/', asyncHandler('GET /projects', async (req, res) => {
+52:  router.get('/:id', asyncHandler('GET /projects/:id', async (req, res) => {
+61:  router.post('/:id/artifacts', asyncHandler('POST /projects/:id/artifacts', async (req, res) => {
+69:  router.get('/:id/artifacts', asyncHandler('GET /projects/:id/artifacts', async (req, res) => {
+########## gateway/routes/repository.js ##########
+13:  router.post('/objects', asyncHandler('/repository/objects', async (req) => {
+22:  router.get('/objects/:id', asyncHandler('/repository/objects/:id', async (req) => {
+28:  router.get('/objects', asyncHandler('/repository/objects', async (req) => {
+37:  router.delete('/objects/:id', asyncHandler('/repository/objects/:id', async (req) => {
+########## gateway/routes/reviews.js ##########
+18:  router.post('/sync', asyncHandler('POST /reviews/sync', async (req) => {
+33:  router.get('/', asyncHandler('GET /reviews', async (req) => {
+49:  router.get('/stats', asyncHandler('GET /reviews/stats', async (req) => {
+64:  router.get('/:id', asyncHandler('GET /reviews/:id', async (req) => {
+81:  router.post('/:id/reply', asyncHandler('POST /reviews/:id/reply', async (req) => {
+########## gateway/routes/runtime.js ##########
+20:  router.post('/', asyncHandler('POST /runtime', async (req) => {
+24:      health_endpoint, metrics_endpoint, authority_version, event_version,
+44:      authorityVersion: authority_version,
+54:  router.get('/:id', asyncHandler('GET /runtime/:id', async (req) => {
+61:  router.get('/tenant/:tenantId', asyncHandler('GET /runtime/tenant/:tenantId', async (req) => {
+71:  router.put('/tenant/:tenantId/type/:type/name/:name/status', asyncHandler('PUT /runtime/tenant/:tenantId/type/:type/name/:name/status', async (req) => {
+79:  router.post('/tenant/:tenantId/type/:type/name/:name/heartbeat', asyncHandler('POST /runtime/tenant/:tenantId/type/:type/name/:name/heartbeat', async (req) => {
+86:  router.delete('/tenant/:tenantId/type/:type/name/:name', asyncHandler('DELETE /runtime/tenant/:tenantId/type/:type/name/:name', async (req) => {
+92:  router.get('/tenant/:tenantId/unhealthy', asyncHandler('GET /runtime/tenant/:tenantId/unhealthy', async (req) => {
+########## gateway/routes/system.js ##########
+10:const { SystemAuthority } = require('../../ping-runtime/runtime/system_authority');
+21:  router.get('/cache/drive_index.json', asyncHandler('/cache/drive_index.json', async (req, res) => {
+29:  router.get('/config/placements.json', asyncHandler('/config/placements.json', async (req, res) => {
+37:  router.get('/content/manifest.json', asyncHandler('/content/manifest.json', async (req, res) => {
+45:  router.get('/logs/sync.log', asyncHandler('/logs/sync.log', async (req, res) => {
+53:  router.get('/logs/audit.json', asyncHandler('/logs/audit.json', async (req, res) => {
+61:  router.get('/state', asyncHandler('/system/state', async (req) => {
+########## gateway/routes/tenants.js ##########
+19:  router.post('/', asyncHandler('POST /tenants', async (req) => {
+45:  router.get('/', asyncHandler('GET /tenants', async (req) => {
+51:  router.get('/:id', asyncHandler('GET /tenants/:id', async (req) => {
+58:  router.put('/:id', asyncHandler('PUT /tenants/:id', async (req) => {
+66:  router.delete('/:id', asyncHandler('DELETE /tenants/:id', async (req) => {
+72:  router.post('/:id/heartbeat', asyncHandler('POST /tenants/:id/heartbeat', async (req) => {

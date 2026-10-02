@@ -1,0 +1,112 @@
+=== kernel event_repository ===
+/**
+ * Event Repository
+ * 
+ * Constitutional repository for event history (replay support).
+ * 
+ * Handles repository_events table for event sourcing and replay.
+ * 
+ * PATCH_002: Moved to runtime/kernel/
+ */
+
+const { CanonicalBytes, CanonicalAuthority } = require('./authorities/canonical_authority');
+const { runtimeIdentityAuthority } = require('./authorities/runtime_identity_authority');
+const { constitutionalTimeAuthority } = require('./authorities/constitutional_time_authority');
+
+class EventRepository {
+  constructor(pool) {
+    this.pool = pool;
+  }
+
+  async initialize() {
+    const client = await this.pool.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS repository_events (
+          event_id TEXT PRIMARY KEY,
+          object_id TEXT NOT NULL,
+          event_type TEXT NOT NULL,
+          aggregate_type TEXT NOT NULL,
+          sequence INTEGER NOT NULL,
+          payload JSONB NOT NULL,
+          witness JSONB,
+          timestamp BIGINT NOT NULL,
+          authority TEXT NOT NULL,
+          authority_version TEXT NOT NULL,
+          causation_id TEXT,
+          correlation_id TEXT,
+          created_at TIMESTAMPTZ NOT NULL,
+          -- Phase 36 PATCH 2 Refinement: Uppercase constitutional field names
+          RuntimeID TEXT NOT NULL,
+          PreviousEventHash TEXT,
+          CanonicalEventHash TEXT NOT NULL,
+          ReducerHash TEXT,
+          WitnessHash TEXT,
+          ReplayHash TEXT,
+          chain_root TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_repo_events_object ON repository_events(object_id);
+        CREATE INDEX IF NOT EXISTS idx_repo_events_sequence ON repository_events(object_id, sequence);
+        CREATE INDEX IF NOT EXISTS idx_repo_events_type ON repository_events(event_type);
+        CREATE INDEX IF NOT EXISTS idx_repo_events_timestamp ON repository_events(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_repo_events_runtime ON repository_events(RuntimeID);
+        CREATE INDEX IF NOT EXISTS idx_repo_events_chain ON repository_events(object_id, sequence, CanonicalEventHash);
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS event_processing (
+          event_id TEXT PRIMARY KEY REFERENCES repository_events(event_id),
+          processed BOOLEAN NOT NULL DEFAULT FALSE,
+          processed_at TIMESTAMPTZ,
+          worker TEXT NOT NULL DEFAULT 'unknown',
+          retries INTEGER NOT NULL DEFAULT 0,
+=== bridge head ===
+/**
+ * Event Bridge — PING Core v1
+ *
+ * Polls repository_events and canonical_events tables,
+ * re-emits them through UnifiedEventRuntime into ping_events.
+ *
+ * Flow:
+ *   repository_events (worker events)  ──┐
+ *                                        ├──→ UnifiedEventRuntime.emit() → ping_events
+ *   canonical_events  (business events) ──┘
+ *
+ * Design:
+ *   - Polls on interval (default 5s)
+ *   - Uses last-processed-ID cursor per source to avoid re-processing
+ *   - Skips events already bridged (dedup via event_id)
+ *   - Gracefully no-ops when pool is null (degraded mode)
+ *   - Single source of truth: UnifiedEventRuntime
+ */
+
+class EventBridge {
+  /**
+   * @param {object} options
+   * @param {object} options.pool — pg.Pool
+   * @param {object} options.eventRuntime — UnifiedEventRuntime instance
+   * @param {number} options.pollIntervalMs — poll interval (default 5000)
+   * @param {number} options.batchSize — max events per poll (default 50)
+   */
+  constructor(options = {}) {
+    this._pool = options.pool || null;
+    this._eventRuntime = options.eventRuntime || null;
+    this._pollIntervalMs = options.pollIntervalMs || 5000;
+    this._batchSize = options.batchSize || 50;
+    this._timer = null;
+    this._running = false;
+
+    // Cursor: last event_id seen per source
+    this._lastRepoEventId = null;
+    this._lastCanonicalEventId = null;
+
+    // Stats
+    this._stats = {
+      repositoryBridged: 0,
+      canonicalBridged: 0,
+      errors: 0,
+    };
+  }
+
+  async initialize() {
+    if (!this._pool) return;
+    // Create cursor persistence table

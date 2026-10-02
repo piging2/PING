@@ -1,0 +1,98 @@
+research/website-truth-matrix.md:21:| 1 | "Events are canonical. Knowledge derives from events." | ping-runtime/events (standard_event_schema.js, unified_event_runtime.js, event_validator.js, event_governance.js, event_read_authority.js); gateway/routes/events.js | POST /events with Bearer auth and canonical-envelope validation; GET /events, /events/recent, /events/stats read paths; commissioning report 2026-07-28 (captured): 14 scenarios, 770 events. Tonight 2026-09-16/17: POST /events patched live to route through CanonicalizationService (authorizeNamespace then canonicalizeAndEmit; malformed namespace 403, unauthenticated 401, live event 5e24e593f6a9f7b762ecedfed45a447faba57b6d1d9dded1dacd28feab3fe443 persisted under api:muse-level-2); DB trigger trg_ping_events_append_only live (UPDATE/DELETE rejected with zero row change, INSERT and idempotency unaffected; DDL copy at event-boundary/trigger-append-only.sql). Residual: trigger does not cover TRUNCATE (no code path uses it); authorizeNamespace validates namespace syntax only, per-principal namespace ACLs remain future work. | ping-gateway container healthy; GET /constitution 200 (constitution 1.0.0, platform_hash present); GET /events/stats returns 401 `MISSING_AUTH` without a token, so read access is enforced; /ingest unaffected by the /events patch (valid 201, invalid namespace 400, zero rows). Captured 2026-09-16/17. | **PROVEN** | None for the claim as stated. To keep it proven: re-run the read-only probes on a schedule; re-apply the trigger DDL after any from-scratch DB rebuild. |
+research/website-truth-matrix.md:29:| 9 | Agent authority: "explicit capability grants, not vibes" | runtime/authorities/*.py; gateway/event_write_authority.js; LIVE: /app/gateway/capability_authority.js in the container (870+ lines, live since 2026-09-15); external-agent/authorizeWorkOrder() (isolated worktree, uncommitted) | Fail-closed execution-time capability authorization found live: authorize() decides "may agent A invoke capability C with parameters P in workspace W?", fail-closed on unknown agents, profile allowlist check, workspace/repo containment, canonical-repo write denial, path containment, write-capability gating; wired live at gateway_runtime.js:416-418. Minimum PING-initiated delegation authority implemented and tested: authorizeWorkOrder() fail-closed (unknown agent, unlisted capability, external block, non-canonical namespace, loosened constraints, or missing event/mission-state prohibitions all deny), issueWorkOrder() deterministic ID, verifyResultEnvelope(); 18/18 assertions PASS on the Pig (captured 2026-09-17). Caveat: implementation is ABSENT from the constitutional-convergence-v2 branch tree; authorities/registry.yaml still classifies it missing_implementation (tree-relative correction pending, recommended by Agent D). | Gateway Bearer auth enforced live (401s); live container authority verified in place this week (captured 2026-09-16/17). | **PROVEN** | None for the claim as stated at the HTTP layer. Next receipt: one captured grant plus one recorded denial from live traffic. Correct authorities/registry.yaml to tree-relative wording. |
+research/website-truth-matrix.md:33:| 13 | Deterministic replay: "re-execute, compare, match or divergence" | runtime/kernel/replay/*.ts (34 files: canonical_certificate.ts, byte_authority.ts, authority_registry.ts, canonical_event_envelope.ts) | Real replay machinery in the kernel | No replay run (match or divergence) evidenced against the kernel machinery | **EXPERIMENTAL** | A recorded replay run: input event, runtime/version/context, verdict (MATCH or DIVERGENCE). |
+research/website-truth-matrix.md:36:| 16 | Python workers: "data and ML workloads under the same authority model" | supervisor.py, runtime/constitutional_event_loop.py, retrieval/retrieval_service.py, witness_worker.py; production PythonProdAdapter (isolated worktree, uncommitted) | PythonProdAdapter executed python.canonical_hash (sha256 over canonical JSON bytes via the repo's own envelope.canonical_bytes; stdin/stdout only) through the unmodified tools/execution/runner.py against live Oracle Postgres, driven by the production mission scheduler; result returned as a structured result; canonical TASK_COMPLETED and EVIDENCE_RECORDED recorded by the JS side. Zero Python-emitted events (verified by grep and by row sources). Receipts: mission bfe815990337e45d, result sha 1945b844ac504c8fbd631b668b4ede93291b432c573f7263f631e7f63ae521ab, captured 2026-09-16/17. Honest limit: the adapter is uncommitted code in the sprint/python-prod worktree, not a persistent live Python worker runtime. | Captured 2026-09-16/17. | **BUILT_NOT_LIVE** | A registered, persistent Python worker runtime on the live plane. |
+src/app/api/fyd/ask/__tests__/ask-classes-tenant.test.ts:261:    controllerId: "identity_fyd_test",
+src/app/api/fyd/ask/__tests__/object-scope.test.ts:297:      controllerId: "identity_fyd_compiler_test",
+src/app/api/fyd/ask/__tests__/route.test.ts:122:      controllerId: "identity_fyd_compiler_test",
+src/app/api/fyd/ask/__tests__/stub-journal.ts:60:            controllerId: "identity_fyd_demo_operator",
+src/app/api/fyd/ask/__tests__/stub-journal.ts:161:        // ping_events rows ({ event_id, timestamp, event_data }).
+src/app/api/fyd/ask/__tests__/stub-journal.ts:164:            event_id: e.id,
+src/app/api/fyd/ask/__tests__/stub-journal.ts:166:            event_type: "FYD_SITE_OVERLAY",
+src/app/api/fyd/ask/__tests__/stub-journal.ts:167:            event_data: { siteId: e.siteId, ops: e.ops },
+src/app/api/fyd/social/identity/route.ts:6: * mints identity_<16hex>), dev keypair escrowed server-side in FYD_DEV_KEY_DIR,
+src/app/page.tsx:366:                ["event_type", "LEAD_CREATED", "What happened, in the canonical vocabulary."],
+src/app/page.tsx:367:                ["event_id", "e9591d7277246b27eb090abb2acece5864c58d8dcaf94701286c6f40ccd33153", "The permanent identifier. Quote it and the record can be found."],
+src/components/architecture/hero-evidence-card.tsx:20:      ["event_type", "LEAD_CREATED"],
+src/components/architecture/hero-evidence-card.tsx:21:      ["event_id", "e9591d72…ce5864c5"],
+src/components/speculation-rules.tsx:53:        event_category: 'performance',
+src/components/speculation-rules.tsx:98:        event_category: 'performance',
+src/fyd/ask/__tests__/graph-read-route.test.ts:78:            controllerId: "identity_fyd_demo_operator",
+src/fyd/components/__tests__/projection-boundary.test.ts:42:    controllerId: "identity_projection_test",
+src/fyd/customize/server.ts:75: * FYD demo journal. Returns the accepted event_id. Throws on rejection:
+src/fyd/customize/server.ts:83:    event_type: "FYD_SITE_OVERLAY",
+src/fyd/customize/server.ts:86:    event_data: { siteId, ops },
+src/fyd/customize/server.ts:115:      ? ((doc as Record<string, unknown>)["event_id"] ??
+src/fyd/customize/server.ts:119:    throw new Error("customize: gateway accepted the event but returned no event_id.");
+src/fyd/data/fyd-tenant-graph.ts:30: *   "ping-event:<event_id>" },
+src/fyd/data/fyd-tenant-graph.ts:31: * - overlay-touched objects accumulate "ping-event:<event_id>" in
+src/fyd/harvest/PUBLIC-SOCIAL-DATA-FABRIC.md:260:IdentityRow   { identity_key, id_kind, display, sources[], first_seen, last_seen, last_verified, status }
+src/fyd/object/__tests__/fixtures/projections/coppersmith-plumbing.json:19:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/coppersmith-plumbing.json:46:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/coppersmith-plumbing.json:66:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/coppersmith-plumbing.json:89:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/happy-place.json:24:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/happy-place.json:51:        "controllerId": "identity_fyd_compiler_test",
+src/fyd/object/__tests__/fixtures/projections/happy-place.json:87:        "controllerId": "identity_fyd_compiler_test"
+src/fyd/proceduralize/STRUCTURED-DATA.md:130:(`/home/nolan/ping/runtime/authorities/identity_authority.py`) mints
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:14: * controllerId: identity_fyd_compiler_test
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:27:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:54:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:74:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:97:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:116:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:137:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:158:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts:179:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:12: * controllerId: identity_fyd_compiler_test
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:25:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:52:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:74:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:95:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:116:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:137:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-graph.ts:158:      "controllerId": "identity_fyd_compiler_test",
+src/fyd/proceduralize/__fixtures__/happy-place-rich-graph.ts:31:const CONTROLLER = "identity_cc3383c868f96fc1";
+src/fyd/proceduralize/__tests__/regression-corpus.test.ts:74:      controllerId: "identity_fyd_corpus",
+src/fyd/proceduralize/__tests__/regression-corpus.test.ts:130:      controllerId: "identity_fyd_corpus",
+src/fyd/proceduralize/__tests__/regression-corpus.test.ts:143:      controllerId: "identity_fyd_corpus",
+src/fyd/proceduralize/__tests__/regression-corpus.test.ts:181:      controllerId: "identity_fyd_corpus",
+src/fyd/social/actions.ts:31:const IDENTITY_RE = /^identity_[0-9a-f]{16}$/;
+src/fyd/social/actions.ts:35:    throw new Error(`invalid ${name}: expected identity_<16hex>, got "${value}"`);
+src/fyd/social/actions.ts:102:    profileEventId: submitted.event_id,
+src/fyd/social/actions.ts:151:      eventId: current.event_id,
+src/fyd/social/actions.ts:170:    expectEventId: submitted.event_id,
+src/fyd/social/actions.ts:178:      eventId: submitted.event_id,
+src/fyd/social/actions.ts:242:    eventId: submitted.event_id,
+src/fyd/social/attestation-gate.ts:16:  event_id: string;
+src/fyd/social/attestation-gate.ts:52:      event_id: String(ev.event_id || ""),
+src/fyd/social/attestation-gate.ts:102:  // Latest-wins by (sequence, created_at, event_id), mirroring the projector.
+src/fyd/social/attestation-gate.ts:108:    return a.event_id < b.event_id ? 1 : -1;
+src/fyd/social/attestation-gate.ts:114:      `journal_row_status:${input.wantStatus} (latest is ${latest.status}, event ${latest.event_id})`,
+src/fyd/social/attestation-gate.ts:119:  if (input.expectEventId && latest.event_id !== input.expectEventId) {
+src/fyd/social/attestation-gate.ts:121:      `journal_latest_event:${input.expectEventId} (latest is ${latest.event_id})`,
+src/fyd/social/attestation-gate.ts:129:    eventId: latest.event_id,
+src/fyd/social/attestation-gate.ts:161:    .find((e) => String(e.event_id || "") === input.eventId);
+src/fyd/social/attestation-gate.ts:166:      missing: [`journal_row:OBJECT_CREATED(event_id=${input.eventId})`],
+src/fyd/social/attestation-gate.ts:185:    eventId: String(hit.event_id || ""),
+src/fyd/social/envelope.ts:28:  event_id: string;
+src/fyd/social/envelope.ts:29:  event_type: string;
+src/fyd/social/envelope.ts:89:    event_id: String(body.event_id || ""),
+src/fyd/social/envelope.ts:90:    event_type: String(body.event_type || env.type),
+src/fyd/social/key-custody.ts:37:  if (!/^identity_[0-9a-f]{16}$/.test(identityId)) {
+src/fyd/social/readers.ts:8: * event_id DESC) per (subject, predicate, object).
+src/fyd/social/readers.ts:18:  event_id: string;
+src/fyd/social/readers.ts:19:  event_type: string;
+src/fyd/social/readers.ts:54:      event_id: String(ev.event_id || ""),
+src/fyd/social/readers.ts:55:      event_type: String(ev.event_type || eventType),
+src/fyd/social/readers.ts:73:  event_id: string;
+src/fyd/social/readers.ts:105:      event_id: e.event_id,
+src/fyd/social/readers.ts:123:  if (a.event_id !== b.event_id) return a.event_id > b.event_id;
+src/fyd/social/readers.ts:165:      i.identity_id === identityId ||
+src/lib/editor/durable-event-store.ts:76:    const expectedId = `evt_${event.sequence}`;
+src/lib/editor/event-system.ts:471:    return `evt_${sequence}`;
+src/lib/editor/sequence-authority.ts:103:    const expectedId = `evt_${sequence}`;
+src/lib/ping/ping-object-reader.ts:192:  // The live gateway returns raw ping_events rows: { event_id, timestamp,
+src/lib/ping/ping-object-reader.ts:193:  // event_data }. event_data is the journal payload shape (see
+src/lib/ping/ping-object-reader.ts:199:    asRecord(ev.event_data) ??
+src/lib/ping/ping-object-reader.ts:206:  return str(ev.id) || str(ev.eventId) || str(ev.event_id);

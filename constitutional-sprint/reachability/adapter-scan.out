@@ -1,0 +1,152 @@
+### JEST CONFIG
+
+    "test": "jest",
+    "test:compiler": "jest --testPathPattern=compiler",
+    "test:media-invariant": "tsx scripts/test-media-invariant.ts",
+    "test:oauth": "jest --testPathPatterns=oauth",
+    "images": "node scripts/image-pipeline.mjs",
+    "qa:images": "node scripts/image-qa.mjs",
+    "bootstrap:kv": "tsx scripts/bootstrap-kv-staging.ts",
+    "reconcile:hashes": "tsx scripts/reconcile-media-hashes.ts"
+  },
+--
+    "jest": "^30.4.2",
+    "playwright": "^1.63.0",
+    "tailwindcss": "^4",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}
+### TOTAL TEST FILES
+126
+### TESTS MENTIONING REPLAY
+src/fyd/object/__tests__/owner-capability.test.ts
+src/fyd/object/__tests__/owner-events.test.ts
+src/app/api/fyd/objects/[objectId]/overrides/__tests__/overrides-patch-loop.test.ts
+### FYD/SOCIAL TESTS (write authority lane)
+NONE - no __tests__ dir under src/fyd/social
+### PER-FILE SCAN
+--- src/fyd/object/__tests__/owner-events.test.ts
+lines=339 its=11 expects=52 asserts=0 mocks=0
+imports-of-real-modules:
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { canonicalizeJson } from "../../../lib/ping/dev-signer";
+import {
+import {
+--- src/fyd/object/__tests__/owner-store.test.ts
+lines=132 its=11 expects=22 asserts=0 mocks=0
+imports-of-real-modules:
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+--- src/fyd/identity/__tests__/principal.test.ts
+lines=188 its=15 expects=36 asserts=0 mocks=0
+imports-of-real-modules:
+import {
+import { isUuid, uuidv5, FYD_IDENTITY_NAMESPACE } from "../uuid";
+import type { VerifiedAccount } from "../provider";
+--- src/fyd/identity/__tests__/session.test.ts
+lines=147 its=18 expects=27 asserts=0 mocks=0
+imports-of-real-modules:
+import {
+import { FYD_IDENTITY_NAMESPACE, uuidv5 } from "../uuid";
+--- src/fyd/identity/__tests__/file-store.test.ts
+lines=58 its=4 expects=6 asserts=0 mocks=0
+imports-of-real-modules:
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { FileIdentityBindingStore } from "../file-store";
+import { signInOrSignUp } from "../principal";
+import type { VerifiedAccount } from "../provider";
+--- src/fyd/ui/__tests__/capability-runtime.test.ts
+lines=158 its=12 expects=25 asserts=0 mocks=0
+imports-of-real-modules:
+import {
+import type { PortalProjection } from "@/fyd/preview/types";
+--- src/fyd/object/__tests__/owner-capability.test.ts
+lines=123 its=9 expects=26 asserts=0 mocks=1
+imports-of-real-modules:
+import {
+import {
+--- src/lib/ping/__tests__/lane-a.test.ts
+lines=263 its=14 expects=28 asserts=0 mocks=0
+imports-of-real-modules:
+import { planActions } from "../action-planner";
+import { kindWeight, rankDiscoveryItems, recencyScore } from "../feed-rank";
+import { RankableItem } from "../feed-rank";
+import {
+import { ProposalBody } from "../ask-composer";
+import { getWebsiteObjects, WEBSITE_BUSINESS_ID } from "../website-objects";
+import { AskProposal, PingObject } from "../types";
+--- src/fyd/tenant/__tests__/d-worker.test.ts
+lines=114 its=6 expects=15 asserts=0 mocks=0
+imports-of-real-modules:
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import { readOverrides } from "@/fyd/object/owner-store";
+import {
+  requireTenantContext,
+import { installDirOverrides, makeTempDir } from "./helpers";
+--- src/fyd/wiring/__tests__/action-verifier.test.ts
+lines=102 its=8 expects=28 asserts=0 mocks=0
+imports-of-real-modules:
+import {
+--- src/fyd/claim/__tests__/machine.test.ts
+lines=176 its=15 expects=39 asserts=0 mocks=0
+imports-of-real-modules:
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+import { readClaim, writeClaim } from "../store";
+import { attestOperatorControl } from "../verification-seam";
+import type { ClaimedIdentity, VerificationProof } from "../types";
+import { ClaimError } from "../types";
+--- src/app/api/fyd/ask/__tests__/route.test.ts
+lines=350 its=15 expects=70 asserts=0 mocks=0
+imports-of-real-modules:
+import { answerAskFyd, type AnswerAskFydDeps } from "../../../../../fyd/ask/visitor-answer";
+import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
+import { AskFydWidget } from "../../../../../fyd/components/ask-fyd-widget";
+import type { PingObject } from "../../../../../lib/ping/types";
+import { POST } from "../route";
+import type { NextRequest } from "next/server";
+import { startStubJournal, type StubJournal } from "./stub-journal";
+### ASSERTION-COUNT DISTRIBUTION (expects per file, sorted)
+0 src/fyd/refresh/__tests__/conflict.test.ts
+0 src/fyd/refresh/__tests__/dependency-index.test.ts
+0 src/fyd/refresh/__tests__/diff.test.ts
+0 src/fyd/refresh/__tests__/website-observe.test.ts
+0 src/fyd/resolve/spike/__tests__/resolve.test.ts
+4 src/fyd/builder/__tests__/structural-proof.test.ts
+4 src/fyd/spatial/__tests__/slot-manager.test.ts
+5 src/fyd/sitespec/__tests__/spec-compat.test.ts
+6 src/fyd/components/__tests__/claim-badge.test.ts
+6 src/fyd/identity/__tests__/file-store.test.ts
+6 src/fyd/sitespec/__tests__/graph.test.ts
+7 src/fyd/builder/__tests__/structural-diff.test.ts
+7 src/fyd/rank/__tests__/object-ranker.test.ts
+7 src/lib/__tests__/assignment-store-kv.test.ts
+7 src/lib/__tests__/kit.test.ts
+8 src/fyd/object/__tests__/services.test.ts
+8 src/fyd/sitespec/__tests__/validator.test.ts
+9 src/fyd/proceduralize/__tests__/structured-determinism.test.ts
+9 src/fyd/tenant/__tests__/e-scoped-stores.test.ts
+10 src/app/api/fyd/claims/[resourceId]/__tests__/verify-gate.test.ts
+10 src/fyd/ask/__tests__/services-evidence.test.ts
+10 src/fyd/claim/__tests__/resource-id.test.ts
+10 src/fyd/placement/__tests__/engagement-reconcile.test.ts
+10 src/fyd/tenant/__tests__/b-projection.test.ts
+11 src/__tests__/middleware-sites.test.ts
+### FILES WITH ZERO expect() CALLS
+src/fyd/refresh/__tests__/diff.test.ts
+src/fyd/refresh/__tests__/conflict.test.ts
+src/fyd/refresh/__tests__/dependency-index.test.ts
+src/fyd/refresh/__tests__/website-observe.test.ts
+src/fyd/resolve/spike/__tests__/resolve.test.ts

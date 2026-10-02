@@ -1,0 +1,94 @@
+=== supervisor.py ===
+103 runtime/supervisor.py
+#!/usr/bin/env python3
+"""
+Simple supervisor runtime.
+Input JSON: {"question":"...", "artifact_id": "..."}
+Output JSON: {"answer": "...", "context_pack": {...}, "tool_outputs": {...}}
+
+This supervisor is a deterministic orchestrator: it decides which tools to call,
+invokes the `runtime/tool_router.py` to run them, assembles a context pack, and
+returns the combined result. It does NOT call Ollama itself.
+"""
+import sys
+import os
+import json
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, ROOT)
+
+from runtime.authorities.execution_authority import ExecutionAuthority
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+TOOL_ROUTER = os.path.join(ROOT, 'runtime', 'tool_router.py')
+
+DEFAULT_TOOLSET = ['authority_search', 'contradiction_search', 'graph_expand', 'lineage_search', 'repository_symbols', 'repository_relationships']
+
+
+def call_tool(tool, args):
+    payload = {'tool': tool, 'args': args}
+    authority = ExecutionAuthority()
+    result = authority.run_command('python', [TOOL_ROUTER], timeout=30, input_data=json.dumps(payload).encode('utf-8'))
+    if result.returncode != 0:
+        return {'error': result.stderr}
+    try:
+        out = json.loads(result.stdout)
+    except Exception:
+        return {'error': 'invalid router response'}
+    if not out.get('success'):
+        return {'error': out.get('error')}
+    return out.get('data')
+
+
+def build_context_from_tools(question, artifact_id):
+    tool_outputs = {}
+    # decide which tools to run
+    run_tools = list(DEFAULT_TOOLSET)
+    if not artifact_id:
+        # skip artifact-specific tools
+        if 'graph_expand' in run_tools:
+            run_tools.remove('graph_expand')
+        if 'lineage_search' in run_tools:
+            run_tools.remove('lineage_search')
+
+    for t in run_tools:
+        args = {}
+        if t in ('authority_search',):
+            args = {'query': question}
+            if artifact_id:
+                args['artifact_id'] = artifact_id
+        elif t == 'contradiction_search':
+            args = {'claim': question}
+        elif t == 'graph_expand':
+            args = {'node': artifact_id, 'depth': 2}
+        elif t == 'lineage_search':
+            args = {'artifact_id': artifact_id}
+        elif t == 'repository_symbols':
+            args = {'symbol': question.split()[0]}
+        elif t == 'repository_relationships':
+            args = {'symbol': question.split()[0]}
+        res = call_tool(t, args)
+        tool_outputs[t] = res
+    # assemble context pack quickly
+    context_pack = {
+        'question': question,
+        'highest_authority': tool_outputs.get('authority_search', {}).get('highest_authority', {}),
+        'authority_chain': tool_outputs.get('authority_search', {}).get('authority_chain', []),
+        'supersession_chain': tool_outputs.get('authority_search', {}).get('supersession_chain', []),
+        'lineage': tool_outputs.get('lineage_search', {}).get('lineage', []),
+        'graph_expansion': tool_outputs.get('graph_expand', {}),
+        'supporting_documents': tool_outputs.get('lineage_search', {}).get('events', []) + tool_outputs.get('lineage_search', {}).get('projections', []),
+        'contradictions': tool_outputs.get('contradiction_search', {}),
+        'citations': [],
+=== supervisor callers ===
+./runtime/cognitive/supervisor.py:66:            {"step": 7, "worker": "supervisor", "action": "synthesize", "description": "Synthesize final answer from Context Pack"}
+./runtime/cognitive/supervisor.py:202:                "You are a constitutional reasoning supervisor. "
+./runtime/cognitive/__init__.py:13:from .supervisor import Supervisor
+./runtime/cognitive/reasoning_gateway.py:21:from .supervisor import Supervisor
+=== which intent registry scripts read ===
+11:from scripts.intent_graph_builder import generate_indexes, query_graph
+---
+27:            "intent": "Replay Verification",
+37:            "intent": "Semantic Embedding",
+47:            "intent": "Projection Delivery",
+61:                "intent": spec["intent"],

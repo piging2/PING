@@ -1,0 +1,19 @@
+#!/bin/bash
+# ensure-cdp-threads.sh -- STAGED (not active). Preflight for the dedicated
+# threads-profile headed Chrome (CDP :9228). Mirrors ensure-cdp-ig.sh.
+# To activate: copy to ~/workspace/pig-fb/ensure-cdp-threads.sh and point
+# run_th_pass.sh at it after Nolan has logged into Threads in the new profile
+# (see ../CHECKLIST.md).
+set -u
+source "$(dirname "$0")/pig-ssh.sh"
+probe() {
+  PIG_TIMEOUT=15 pig_ssh \
+    "powershell -NoProfile -Command \"try { (Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:9228/json/version' -TimeoutSec 5).StatusCode } catch { 'DOWN' }\"" 2>/dev/null | tr -d '\r'
+}
+[ "$(probe)" = "200" ] && exit 0
+pig_ssh "schtasks /run /tn PigiThreadsLogin" >/dev/null 2>&1
+for _ in $(seq 1 18); do
+  sleep 5
+  [ "$(probe)" = "200" ] && exit 0
+done
+exit 1

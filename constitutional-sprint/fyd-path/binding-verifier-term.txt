@@ -1,0 +1,181 @@
+
+/* ---------------------------------------------------------------------------
+ * Verified Render Model (FYD-24H-BUILDER-DECISIONS-2026-09-22: CONTENT
+ * CONTRACT + TRUTH BOUNDARY).
+ *
+ * Required boundary:
+ *
+ *   EVIDENCE GRAPH -> BINDING VERIFIER -> VERIFIED RENDER MODEL
+ *     -> SITE SPEC / RENDERER
+ *
+ * The verifier emits the verified render model; the renderer consumes only
+ * that model. No claim checking happens in React components, and no
+ * ClaimAuthority is created: the existing evidence/object machinery plus
+ * this verifier owns the invariant.
+ *
+ * Render-atom classification vocabulary (exact, per the decision):
+ *   OWNER_ASSERTED / DIRECT_EVIDENCE / DETERMINISTIC_DERIVATION /
+ *   GENERATED_PRESENTATION / UNKNOWN
+ * This is the RENDER-atom vocabulary. The ask-answer vocabulary
+ * (DIRECT / DERIVED / INFERRED / OWNER_ASSERTED / CONFLICTING / UNKNOWN)
+ * is owned by the ask lane; the two are never conflated. The mapping from
+ * the projection's binding classifications to render atoms is:
+ *   direct         -> DIRECT_EVIDENCE
+ *   derived        -> DETERMINISTIC_DERIVATION
+ *   owner_authored -> OWNER_ASSERTED (requires a real recorded assertion)
+ *   generated      -> GENERATED_PRESENTATION (requires a generator mark AND
+ *                     an evidence ref: generated factual atoms must bind to
+ *                     evidence)
+ * Every factual render atom carries VALUE + CLASSIFICATION + EVIDENCE_REF
+ * or OWNER_ASSERTION_REF. Unsupported factual atoms classify UNKNOWN and
+ * fail the emission gate: they are never published as fact.
+ *
+ * Determinism: the model is a pure function of (bindings, graph,
+ * ownerAssertions, rendererVersion, viewerId). Atoms are sorted by stable
+ * id, so input ordering never affects the model. The model carries no
+ * timestamps: generatedAt and other volatile stamps belong outside the
+ * semantic digest.
+ * ------------------------------------------------------------------------- */
+
+/** Version of the verified-render-model envelope. */
+export const VERIFIED_RENDER_MODEL_VERSION = "fyd-verified-render-model@1";
+
+/**
+ * Render-atom classification vocabulary. Exact per the 24-hour builder
+ * decisions; used for render atoms only.
+ */
+export type RenderAtomClassification =
+  | "OWNER_ASSERTED"
+  | "DIRECT_EVIDENCE"
+  | "DETERMINISTIC_DERIVATION"
+  | "GENERATED_PRESENTATION"
+  | "UNKNOWN";
+
+/**
+ * One factual render atom: the smallest verifiable unit of published
+ * factual content. VALUE + CLASSIFICATION + EVIDENCE_REF or
+ * OWNER_ASSERTION_REF, per the truth boundary.
+ */
+export interface RenderAtom {
+  /** Stable id: objectId + "#" + field + "#" + classification. */
+  id: string;
+  value: string;
+  classification: RenderAtomClassification;
+  /** The object's provenance ref. Required for every factual atom except OWNER_ASSERTED. */
+  evidenceRef?: string;
+  /** Stable ref to the recorded owner assertion. Required for OWNER_ASSERTED. */
+  ownerAssertionRef?: string;
+  /** The generator mark, carried on GENERATED_PRESENTATION atoms. */
+  generatorRef?: string;
+  /** Present only when classification is UNKNOWN: why the atom failed. */
+  unknownReason?: string;
+}
+
+/**
+ * The verifier's output at the projection seam. The renderer consumes
+ * only this model. digest is the semantic identity: canonical atoms +
+ * rendererVersion + viewerId + envelope version. No timestamps.
+ */
+export interface VerifiedRenderModel {
+  version: typeof VERIFIED_RENDER_MODEL_VERSION;
+  rendererVersion: string;
+  viewerId: string | null;
+  /** Canonical order: sorted by atom id. */
+  atoms: RenderAtom[];
+  /** Semantic digest (FNV-1a over the canonical JSON, hex). */
+  digest: string;
+}
+
+/**
+ * Stable owner-assertion ref for an atom: traceable back to the object
+ * and field the owner attested, without embedding store internals.
+ */
+export function ownerAssertionRefFor(assertion: OwnerAssertion): string {
+  return "owner-assertion:" + assertion.objectId + "#" + assertion.field;
+}
+
+function renderAtomId(
+  binding: PresentationBinding,
+  classification: RenderAtomClassification,
+): string {
+  return binding.objectId + "#" + binding.field + "#" + classification;
+}
+
+function unknownAtom(
+  binding: PresentationBinding,
+  reason: string,
+): RenderAtom {
+  return {
+    id: renderAtomId(binding, "UNKNOWN"),
+    value: "",
+    classification: "UNKNOWN",
+    unknownReason: reason,
+  };
+}
+
+/**
+ * Classify one binding into a render atom. Pure and deterministic.
+ * Unsupported factual content classifies UNKNOWN (with the reason); the
+ * emission gate refuses to publish UNKNOWN atoms.
+ */
+export function classifyRenderAtom(
+  binding: PresentationBinding,
+  graph: ObjectGraph,
+  ownerAssertions: readonly OwnerAssertion[] = [],
+): RenderAtom {
+  const verdict = verifyBinding(binding, graph, ownerAssertions);
+  if (verdict.status === "UNBOUND") {
+    return unknownAtom(binding, verdict.reason);
+  }
+  const objects = new Map(graph.objects.map((o) => [o.id, o]));
+  const obj = objects.get(binding.objectId);
+  const evidenceRef = obj && obj.provenance ? obj.provenance.ref : "";
+  switch (verdict.source) {
+    case "evidence-ref":
+      return {
+        id: renderAtomId(binding, "DIRECT_EVIDENCE"),
+        value: verdict.value,
+        classification: "DIRECT_EVIDENCE",
+        evidenceRef,
+      };
+    case "object-field":
+      return {
+        id: renderAtomId(binding, "DETERMINISTIC_DERIVATION"),
+        value: verdict.value,
+        classification: "DETERMINISTIC_DERIVATION",
+        evidenceRef,
+      };
+    case "owner-assertion": {
+      const match = findOwnerAssertion(
+        ownerAssertions,
+        binding.objectId,
+        binding.field,
+        verdict.value,
+      );
+      // verifyBinding already required the match; recompute for the ref.
+      return {
+        id: renderAtomId(binding, "OWNER_ASSERTED"),
+        value: verdict.value,
+        classification: "OWNER_ASSERTED",
+        ownerAssertionRef: match ? ownerAssertionRefFor(match) : undefined,
+      };
+    }
+    case "generated-presentation": {
+      // Builder decision: generated factual atoms must bind to evidence.
+      if (evidenceRef === "") {
+        return unknownAtom(binding, "no evidence ref");
+      }
+      return {
+        id: renderAtomId(binding, "GENERATED_PRESENTATION"),
+        value: verdict.value,
+        classification: "GENERATED_PRESENTATION",
+        evidenceRef,
+        generatorRef: binding.generatorRef,
+      };
+    }
+    default:
+      return unknownAtom(binding, "unknown classification");
+  }
+}
+
+/** Recursively sort object keys for canonical JSON. Arrays keep order. */

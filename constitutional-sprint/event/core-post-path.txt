@@ -1,0 +1,28 @@
+71:  router.post('/', asyncHandler('/events', async (req, res) => {
+97:      const bffResult = await eventRuntime.emit(norm.eventType, 'api', norm.eventData, {
+120:    const result = await eventRuntime.emit(event_type, 'api', event_data, {
+129:  router.post('/processed', asyncHandler('/events/processed', async (req) => {
+137:  router.post('/failed', asyncHandler('/events/failed', async (req) => {
+=== repo_events refs ===
+gateway/routes/events.js:118:    // not through the kernel pipeline (repository_events). The kernel's reducer/projection
+gateway/bootstrap/gateway_runtime.js:461:        // Event Bridge — polls repository_events + canonical_events → UnifiedEventRuntime
+=== event_repository.js head ===
+/**
+ * Event Repository
+ * 
+ * Constitutional repository for event history (replay support).
+ * 
+ * Handles repository_events table for event sourcing and replay.
+ * 
+ * PATCH_002: Moved to runtime/kernel/
+ * This file is now a gateway shim that re-exports from kernel
+ */
+
+const { EventRepository: KernelEventRepository } = require('../runtime/kernel/event_repository');
+
+// PATCH_002: Gateway shim - delegates to kernel implementation
+class EventRepository extends KernelEventRepository {
+  // No additional methods needed - pure delegation
+}
+
+module.exports = { EventRepository };

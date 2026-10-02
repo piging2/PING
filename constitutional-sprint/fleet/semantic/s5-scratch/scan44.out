@@ -1,0 +1,41 @@
+=== execution_authority run_command body ===
+class ExecutionAuthority:
+    """Single authority for all execution transport decisions."""
+
+    def __init__(self, adapter: Optional[ExecutionAdapter] = None):
+        self.adapter = adapter or SubprocessExecutionAdapter()
+
+    def run(self, args: List[str], cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+        request = ExecutionRequest(command=args[0], args=args[1:], cwd=cwd, timeout=timeout, input_data=input_data)
+        return self.adapter.execute(request)
+
+    def run_command(self, command: str, args: Optional[List[str]] = None, cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+        request = ExecutionRequest(command=command, args=args or [], cwd=cwd, timeout=timeout, input_data=input_data)
+        return self.adapter.execute(request)
+
+    def run_docker(self, args: List[str], cwd: Optional[str] = None, timeout: Optional[float] = None, input_data: Optional[bytes] = None) -> Any:
+        """Run a docker command through the constitutional execution authority."""
+        return self.run_command("docker", args=args, cwd=cwd, timeout=timeout, input_data=input_data)
+=== intents/execution manifest ===
+intent: execution
+mission: "Provide deterministic execution context for constitutional operations."
+authority: ExecutionContextBuilder
+capabilities:
+  - ContextConstruction
+  - DeterministicTime
+  - ExecutionScope
+owns:
+  - runtime/kernel/execution/ExecutionContextBuilder.ts
+  - runtime/kernel/execution/CanonicalClock.ts
+consumes:
+  - IdentityAuthority
+produces:
+  - ExecutionContext
+specifications:
+  - specs/execution-context
+adr: []
+tests: []
+evidence:
+  - "PROVEN — implemented in kernel"
+  - "35 consumers of CanonicalClock singleton"
+status: mostly_intact

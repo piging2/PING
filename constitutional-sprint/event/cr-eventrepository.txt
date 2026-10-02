@@ -1,0 +1,30 @@
+17:class EventRepository(ABC):
+26:    async def append_event(self, event: EventEnvelope) -> None:
+31:    async def load_events(
+41:    async def load_stream(
+53:    async def load_all(self) -> List[EventModel]:
+58:    async def verify_hash(self, event_id: str) -> bool:
+70:    def __init__(self, session: AsyncSession):
+73:    async def append_event(self, event: EventEnvelope) -> None:
+114:    async def load_events(
+133:    async def load_stream(
+164:    async def load_all(self) -> List[EventModel]:
+172:    async def verify_hash(self, event_id: str) -> bool:
+--- EventRepository refs ---
+storage/repositories.py:4:Phase 15 Item 4: Introduce Repository Interfaces - EventRepository, PostgresRepository abstraction.
+storage/repositories.py:17:class EventRepository(ABC):
+storage/repositories.py:63:class PostgresEventRepository(EventRepository):
+storage/repositories.py:65:    PostgreSQL implementation of EventRepository.
+docs/phase15_summary.md:76:- Created `EventRepository` abstract interface
+docs/phase15_summary.md:77:- Created `PostgresEventRepository` implementation
+docs/phase15_summary.md:193:- Runtime contains: EventRepository, ArtifactStore, Transport, Metrics, Logger, Kernel
+docs/phase15_summary.md:258:   - EventRepository abstract interface
+docs/phase15_summary.md:259:   - PostgresEventRepository implementation
+docs/phase15_architectural_audit.md:43:   - **Problem:** `PostgresEventRepository.load_events()` returns `EventModel` (SQLAlchemy)
+docs/phase15_architectural_audit.md:639:- Improve EventRepository interface
+docs/phase16_final_architecture.md:80:│  (EventRepository, SnapshotRepository, ArtifactRepository,        │
+docs/phase16_final_architecture.md:241:- `repositories/event_repository.py` - EventRepository (implements EventStream)
+PING_CONSTITUTIONAL_LEDGER.md:14:| Event Store | storage/event_store.py | api/main.py (direct database access), storage/repositories.py (PostgresEventRepository) | NO | YES | NO | NO | NO | YES | NONE |
+PING_CONSTITUTIONAL_LEDGER.md:15:| Event Repository | storage/repositories.py (EventRepository interface) | storage/repositories.py (PostgresEventRepository implementation) | NO | NO | YES (api/main.py imports PostgresEventRepository) | NO | NO | YES | NONE |
+PING_CONSTITUTIONAL_LEDGER.md:128:**Executed Capabilities:** 12 (api/main.py directly uses: EventEnvelope, Command, PostgresEventRepository, compute_business_facts, compute_business_signals, compute_health_models, prioritize_health, Observability, NATS Transport, Database Session, Settings, Logging, DTO Models, PostHog Mirror)
+runtime/contracts/src/events/index.ts:66:export interface EventRepository {

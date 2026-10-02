@@ -1,0 +1,148 @@
+=====FILE:ask/types.ts=====
+/**
+ * Ask FYD agent-layer types. The agent context, intents, and review card.
+ * Graph and proposal primitives stay in lib/ping/types.
+ */
+
+import type {
+  AskAnswer,
+  AskContext,
+  CapabilityPlan,
+  FydGrant,
+  PingObject,
+  PingRelationship,
+} from "../../lib/ping/types";
+import type { SiteSpecSummary } from "./site-spec";
+
+export type { SiteSpecSummary };
+export type { FydGrant };
+
+export interface AskFydContextInput {
+  viewer: { id: string | null; displayName: string | null };
+  target: PingObject | null;
+  relatedObjects: PingObject[];
+  relationships: PingRelationship[];
+  plan: CapabilityPlan | null;
+  grants: FydGrant[];
+  siteSpec: SiteSpecSummary | null;
+  question: string;
+}
+
+/**
+ * The bounded agent context: the object-graph context plus the SiteSpec
+ * summary, the digest binding, and the capability line the agent reasons
+ * under. Built by exactly one builder (context-builder.ts).
+ */
+export interface AskFydContext {
+  base: AskContext;
+  siteSpec: SiteSpecSummary | null;
+  /** Digest of the spec the agent reasoned over; proposals bind it. */
+  siteSpecDigest: string | null;
+  /** Grants for this viewer on this target (human/UI view). */
+  grants: FydGrant[];
+  /** Grants as the agent sees them: forbidden effects stripped. */
+  agentGrantList: FydGrant[];
+  /** Deterministic capability line for the agent context. */
+  capabilitiesLine: string;
+  /** Effects the agent may never authorize. */
+  forbiddenEffects: readonly FydGrant[];
+  request: { question: string };
+}
+
+/**
+ * Site-change intents Ask FYD can draft. Detection is keyword-anchored and
+ * deterministic; authority is checked separately.
+ */
+export type SitePatchIntent =
+  | { kind: "reorder_services_first"; serviceName: string }
+  | { kind: "professionalize" }
+  | { kind: "feature_object"; objectId: string; objectTitle: string };
+
+/** Human review card for a site_patch proposal. Rendered before approval. */
+export interface SitePatchCard {
+  title: string;
+  before: string[];
+  after: string[];
+  evidenceReason: string;
+  affectedObjects: { id: string; title: string }[];
+  operationCount: number;
+  siteSpecDigest: string;
+}
+
+/** Ask FYD answer: the base answer plus the site-patch review card. */
+export interface AskFydAnswer extends AskAnswer {
+  sitePatchCard: SitePatchCard | null;
+}
+=====FILE:ask/capabilities.ts=====
+/**
+ * Ask FYD agent capability boundary.
+ *
+ * Builds on the user-facing grant authority (lib/ping/grants) and adds the
+ * agent-side law: the agent sees only agentGrants, the forbidden effects
+ * stripped. Agent suggestions never authorize publishing, messages,
+ * purchases, advertising, provider actions, or business-data mutations.
+ * The check is fail-closed: unknown grants are denied, not allowed.
+ */
+
+import { MAINTAIN_SITE_GRANTS } from "../../lib/ping/grants";
+import type { FydGrant } from "../../lib/ping/types";
+
+/**
+ * Effects an agent suggestion can NEVER authorize. This list is the
+ * enforcement point; agentGrants strips these before the agent sees them.
+ */
+export const FORBIDDEN_AGENT_EFFECTS: readonly FydGrant[] = [
+  "site.publish",
+  "message.send",
+  "purchase.make",
+  "ad.buy",
+  "provider.call",
+  "business.mutate",
+];
+
+/** True when an agent suggestion may authorize this grant. Fail-closed. */
+export function canAgentAuthorize(grant: FydGrant): boolean {
+  return !FORBIDDEN_AGENT_EFFECTS.includes(grant);
+}
+
+/** Throw when an agent path touches a forbidden effect. Defense in depth. */
+export function assertAgentEffectAllowed(grant: FydGrant): void {
+  if (!canAgentAuthorize(grant)) {
+    throw new Error(`Ask FYD agent boundary: '${grant}' is never agent-authorized.`);
+  }
+}
+
+/** Grants as the agent sees them: forbidden effects stripped, stable order. */
+export function agentGrants(grants: FydGrant[]): FydGrant[] {
+  return grants.filter(canAgentAuthorize);
+}
+
+/** Human-readable permission set shown at consent time. */
+export interface PermissionSet {
+  id: string;
+  title: string;
+  summary: string;
+  /** Exact granular grants; expansion is closed (nothing more, nothing less). */
+  grants: FydGrant[];
+}
+
+/**
+ * "Help maintain my site": the bundle an owner grants. Expands to site.read,
+ * site.propose, and object.reference. It never includes site.publish.
+ */
+export const PERMISSION_SETS: Record<string, PermissionSet> = {
+  maintain_site: {
+    id: "maintain_site",
+    title: "Help maintain my site",
+    summary:
+      "Let Ask FYD read your site and draft site changes for your approval. It cannot publish anything on its own.",
+    grants: [...MAINTAIN_SITE_GRANTS],
+  },
+};
+
+/** Expand a permission set to its exact granular grants. Unknown ids throw. */
+export function expandPermissionSet(id: string): FydGrant[] {
+  const set = PERMISSION_SETS[id];
+  if (!set) throw new Error(`capabilities: unknown permission set '${id}'.`);
+  return [...set.grants];
+}

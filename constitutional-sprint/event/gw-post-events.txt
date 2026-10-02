@@ -1,0 +1,55 @@
+  router.post('/', asyncHandler('/events', async (req) => {
+    const { event_type, aggregate_id, aggregate_type, event_data, tenant_id, business_id } = req.body;
+    if (!event_type || !aggregate_id || !aggregate_type || !event_data) {
+      throw new Error('event_type, aggregate_id, aggregate_type, and event_data are required');
+    }
+    // Tenant isolation at the ingestion boundary: a claimed tenant must be a
+    // known, active tenant in the registry, and a claimed business must match
+    // the registry's business for that tenant. Unknown tenants are rejected
+    // here, never stored. The namespace (tenant::<id>) is then enforced by
+    // governance inside UnifiedEventRuntime.emit.
+    const metadata = { aggregate_id, aggregate_type };
+    let namespace;
+    if (tenant_id !== undefined && tenant_id !== null && tenant_id !== '') {
+      if (typeof tenant_id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(tenant_id)) {
+        throw new Error('Invalid tenant_id');
+      }
+      if (!pool) {
+        throw new Error('Tenant validation unavailable (no database)');
+      }
+      const t = await pool.query(
+        'SELECT tenant_id, business_id, is_active FROM tenants WHERE tenant_id = $1',
+        [tenant_id]
+      );
+      if (t.rows.length === 0 || !t.rows[0].is_active) {
+        throw new Error(`Unknown or inactive tenant: ${tenant_id}`);
+      }
+      if (business_id !== undefined && business_id !== null && business_id !== '') {
+        if (t.rows[0].business_id !== business_id) {
+          throw new Error(`business_id mismatch for tenant ${tenant_id}`);
+        }
+      }
+      namespace = `tenant::${tenant_id}`;
+      metadata.tenant_id = tenant_id;
+      metadata.business_id = t.rows[0].business_id;
+    } else if (business_id !== undefined && business_id !== null && business_id !== '') {
+      throw new Error('business_id requires tenant_id');
+    }
+    // Canonical spine: emit directly through UnifiedEventRuntime (ping_events),
+    // not through the kernel pipeline (repository_events). The kernel's reducer/projection
+    // registries are empty and EventBridge adds a 5s delay for no benefit.
+    // Provenance: exterior auth middleware attaches the verified agent identity.
+    // The source carries channel + agent so every emitted event is attributable.
+    const _agent = req.authenticatedAgent;
+    const _source = _agent ? ('api:' + _agent.agentId) : 'api';
+    const result = await eventRuntime.emit(event_type, _source, event_data, {
+      metadata,
+      ...(namespace ? { namespace } : {}),
+    });
+    if (result.status !== 'ok') {
+      throw new Error(result.error || 'Event rejected');
+    }
+    return { event_id: result.eventId, event_type, status: 'ok', ...(namespace ? { namespace } : {}) };
+  }));
+
+  router.post('/processed', asyncHandler('/events/processed', async (req) => {

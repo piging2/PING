@@ -1,0 +1,211 @@
+### CORE package.json scripts + test config
+  "scripts": {
+    "dev": "pnpm --filter \"./gateway\" dev",
+    "dev:commit-service": "pnpm --filter \"./runtime/kernel/commit-service\" dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "test:constitutional-pipeline": "node test/run_constitutional_pipeline.js"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
+}
+--- pytest config:
+### GATEWAY dir (adapter_compiler?)
+A1_DEPENDENCY_GRAPH.md
+A1_EXECUTION_ORDER.md
+A1_IMPLEMENTATION_CONTRACT.md
+A1_RISK_REGISTER.md
+ADVISORY_LOCKING_IMPLEMENTATION.md
+AGENTS.md
+ARCHITECTURAL_DISCOVERY.md
+ARCHITECTURAL_REVIEW.md
+AUTHORITY_PROTOCOL_AUDIT.md
+COMMISSIONING_REPORT.json
+CONSTITUTIONAL_AUDIT.md
+CONSTITUTIONAL_DEPENDENCY_GRAPH.md
+CONSTITUTIONAL_PRIMITIVES_INVENTORY.md
+CONSTITUTIONAL_RESULT_MIGRATION.md
+CRX_INVENTORY.md
+Dockerfile
+IDEMPOTENCY_IMPLEMENTATION.md
+IMPLEMENTATION_PLAN.md
+INDEPENDENT_ARCHITECTURAL_REVIEW.md
+KERNEL_PIPELINE_REPORT.json
+LAYER_0_USAGE_REPORT.md
+OUTBOX_ARCHITECTURE.md
+PATCH_IMPACT_MATRIX.md
+PHASE36_CONSTITUTIONAL_FREEZE_AUDIT_REPORT.md
+PHASE36_WIRING_VERIFICATION_REPORT.md
+PHASE_11_1_COMPLETION_AUDIT.md
+PHASE_11_1_CONSTITUTIONAL_REASSESSMENT.md
+PHASE_11_1_DEPENDENCY_GRAPH.md
+PHASE_11_1_REMAINING_BOUNDARY_VIOLATIONS.md
+PHASE_2_7_OWNERSHIP_MATRIX.md
+### tests/certification + tests/corpus
+adapter_contract.test.js
+artifact_immutability.test.js
+authority_purity.test.js
+certification_validation.test.js
+event_validation.test.js
+generate-corpus-vectors.ts
+infrastructure_swap.test.js
+lineage_validation.test.js
+publication_validation.test.js
+replay-determinism-1000x.test.ts
+replay-mutation.test.ts
+replay-ordering-fuzz.test.ts
+replay-unicode.test.ts
+replay-witness-regeneration.test.ts
+replay_determinism.test.js
+---
+lineage_replay.json
+minimal_replay.json
+multi_event_replay.json
+unicode_replay.json
+violation_replay.json
+### evals dir
+constitutional-runtime
+### _test_auth.py head
+#!/usr/bin/env python3
+"""Quick test of authority_search postgres and qdrant fallback."""
+import sys, json
+sys.path.insert(0, '/app/runtime')
+from tools import authority_search
+
+# Test 1: Postgres search with "test" (matches "Test Document X" titles)
+res = authority_search.try_postgres_search('test')
+if res:
+    pg_cands, pg_sup = res
+    print(f"PG: {len(pg_cands)} candidates, {len(pg_sup)} superseded")
+    for c in pg_cands[:3]:
+        print(f"  - {c.get('title','')[:60]} (level={c.get('authority_level')})")
+else:
+    print("PG: None (connection or query error)")
+
+# Test 2: Qdrant fallback with "constitution"
+qres = authority_search.try_qdrant_fallback('constitution')
+if qres:
+    q_cands, q_sup = qres
+    print(f"Qdrant: {len(q_cands)} candidates")
+    for c in q_cands[:3]:
+        print(f"  - {c.get('title','')[:60]} (source={c.get('_source')})")
+else:
+    print("Qdrant: None (connection or query error)")
+### _test_lineage.py head
+#!/usr/bin/env python3
+"""Test lineage_search with the new data."""
+import sys, json, subprocess
+
+# Test lineage_search with PING CONSTITUTION event_id
+p = subprocess.run(['python', '/app/runtime/tools/lineage_search.py'],
+    input=json.dumps({'artifact_id': 'c8f12987-5915-5f3f-be9a-c35cdf1f451d'}),
+    capture_output=True, text=True, timeout=15)
+try:
+    r = json.loads(p.stdout)
+    print("=== LINEAGE SEARCH (PING CONSTITUTION) ===")
+    print(f"Artifact: {r.get('artifact')}")
+    print(f"Events: {len(r.get('events', []))}")
+    print(f"Projections: {len(r.get('projections', []))}")
+    print(f"Authorities: {len(r.get('authorities', []))}")
+    for a in r.get('authorities', [])[:3]:
+        print(f"  Lineage: ancestor={str(a.get('ancestor',''))[:8]} descendant={str(a.get('descendant',''))[:8]} relation={a.get('relation','')}")
+except Exception as e:
+    print(f"Error: {e}")
+    print(f"Stdout: {p.stdout[:500]}")
+    print(f"Stderr: {p.stderr[:500]}")
+### constitutional_replay.test.js body (tail)
+  const inputs = {
+    technologyManifest: TECHNOLOGY_MANIFEST,
+    adapterContract: ADAPTER_CONTRACT,
+    capabilityContract: CAPABILITY_CONTRACT,
+    vendor: 'PostgreSQL'
+  };
+
+  const artifact = await compiler.compileAdapter(inputs);
+
+  // Attempt to modify artifact (should not affect frozen copy)
+  const originalSource = artifact.adapter_source;
+  artifact.adapter_source = 'MODIFIED';
+
+  // Verify the artifact was frozen (modification should not persist in a new copy)
+  const newCopy = JSON.parse(JSON.stringify(artifact));
+  assert.strictEqual(
+    newCopy.adapter_source,
+    'MODIFIED',
+    'Artifact should be modifiable after return'
+  );
+
+  // But the original reference should have been frozen
+  // In JavaScript, we can't truly freeze without Object.freeze,
+  // but the compiler returns a deep copy which is effectively frozen
+  console.log('✓ Artifact is a deep copy (effectively frozen)');
+
+  console.log('Artifact Immutability Test: PASSED\n');
+}
+
+/**
+ * Run all tests
+ */
+async function runAllTests() {
+  console.log('=== Constitutional Replay Tests ===\n');
+
+  try {
+    await testDeterministicReplay();
+    await testHashConsistency();
+    await testArtifactImmutability();
+
+    console.log('=== All Tests PASSED ===');
+    process.exit(0);
+  } catch (error) {
+    console.error('Test FAILED:', error.message);
+    console.error(error.stack);
+    process.exit(1);
+  }
+}
+
+// Run tests if executed directly
+if (require.main === module) {
+  runAllTests();
+}
+
+module.exports = {
+  testDeterministicReplay,
+  testHashConsistency,
+  testArtifactImmutability,
+  runAllTests
+};
+### ADAPTER: jest config block in package.json?
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.24",
+    "jest": "^30.4.2",
+    "playwright": "^1.63.0",
+    "tailwindcss": "^4",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}
+### ADAPTER: .github/workflows
+### CORE: .github/workflows
+constitutional-learning-loop.yml
+constitutional-operating-mode.yml
+constitutional-ops.yml
+constitutional-pipeline.yml
+constitutional_ci.yml
+freeze.yml
+intent-graph.yml
+replay-integrity.yml
+### grants.ts test check
+/home/nolan/projects/ping-constitutional/src/fyd/ask/__tests__/ask-fyd.test.ts
+### ADAPTER refresh zero-expect files: do they use node:assert?
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/conflict.test.ts
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/dependency-index.test.ts
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/diff.test.ts
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/website-observe.test.ts
+(none above = truly assertion-free)
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/diff.test.ts:4
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/conflict.test.ts:6
+/home/nolan/projects/ping-constitutional/src/fyd/refresh/__tests__/dependency-index.test.ts:7

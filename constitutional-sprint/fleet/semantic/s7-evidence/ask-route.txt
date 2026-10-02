@@ -1,0 +1,38 @@
+     1	import { NextRequest, NextResponse } from "next/server";
+     2	import { handleAskRequest } from "./ask-pipeline";
+     3	
+     4	export const dynamic = "force-dynamic";
+     5	export const runtime = "nodejs";
+     6	
+     7	/**
+     8	 * POST /api/fyd/ask (legacy flat route).
+     9	 *
+    10	 * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+    11	 *
+    12	 * Body: { siteId: string, objectId?: string, question: string, mode?: "visitor" | "owner" }
+    13	 *
+    14	 * - mode "visitor" (default): anonymous, public objects only, no grants.
+    15	 * - mode "owner": accepted for a future authenticated lane; until that lane
+    16	 *   exists it is treated as visitor-safe and grants nothing.
+    17	 *
+    18	 * The subject tenant is constructed server-side into a TenantContext from
+    19	 * the validated body siteId (G3 hardening: previously no tenant context
+    20	 * existed on this route). New callers should prefer the trusted-path route
+    21	 * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
+    22	 * and any body-supplied tenant identity is refused on mismatch.
+    23	 *
+    24	 * Response: { ok: true, answer, answerClass, refusal, citations,
+    25	 *   unknowns, suggestedActions, proposal, tenantId }
+    26	 *   unknowns is string[]; suggestedActions is the available-actions list
+    27	 *   ([] when none); proposal is a draft AskProposal or null.
+    28	 *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
+    29	 *   Every citation carries claimClass ("supported" | "derived").
+    30	 * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /
+    31	 * invalid_tenant, 503 projection unavailable (answer unknown), 500 bundle
+    32	 * invalid or unexpected internal failure. Every failure is structured JSON
+    33	 * naming the failure kind; the answer is unknown in every failure case
+    34	 * (answerUnknown: true), never an empty body.
+    35	 */
+    36	export async function POST(request: NextRequest): Promise<NextResponse> {
+    37	  return handleAskRequest(null, request);
+    38	}

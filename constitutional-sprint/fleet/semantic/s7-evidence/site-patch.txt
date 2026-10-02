@@ -1,0 +1,346 @@
+[siteId]
+__tests__
+ask-pipeline.ts
+jest.config.cjs
+route.ts
+     1	/**
+     2	 * Site-patch proposal drafting for Ask FYD.
+     3	 *
+     4	 * The agent NEVER mutates the site or the graph. It drafts a site_patch
+     5	 * proposal: an ordered list of SiteSpec transitions bound to the exact
+     6	 * spec digest it reasoned over. The human approves the exact proposal
+     7	 * digest; the approved transition is applied through the governed event
+     8	 * path (OBJECT_UPDATED carrying the digest-bound patch), never by the agent.
+     9	 *
+    10	 * Deterministic: same context plus same question always yields the same
+    11	 * proposal and the same digest.
+    12	 */
+    13	
+    14	import { proposalDigest, verifyProposalDigest } from "../../lib/ping/ask-composer";
+    15	import { signEnvelope, verifyEnvelope } from "./envelope";
+    16	import type { Signer } from "./envelope";
+    17	import type {
+    18	  AskProposal,
+    19	  PingObject,
+    20	  SitePatchOperation,
+    21	  SitePatchPayload,
+    22	} from "../../lib/ping/types";
+    23	import type { AskFydContext, SitePatchCard, SitePatchIntent } from "./types";
+    24	
+    25	function hasWord(q: string, ...words: string[]): boolean {
+    26	  return words.some((w) => new RegExp(`\\b${w}\\b`).test(q));
+    27	}
+    28	
+    29	/** Service-ish objects among the related set, in a stable order. */
+    30	function serviceObjects(ctx: AskFydContext): PingObject[] {
+    31	  return ctx.base.relatedObjects
+    32	    .filter((o) => /service|product|offer/i.test(o.schema))
+    33	    .sort((a, b) => a.id.localeCompare(b.id));
+    34	}
+    35	
+    36	function objectTitle(ctx: AskFydContext, id: string): string {
+    37	  if (ctx.base.target?.id === id) return ctx.base.target.title || id;
+    38	  const found = ctx.base.relatedObjects.find((o) => o.id === id);
+    39	  return found?.title || id;
+    40	}
+    41	
+    42	/** Evidence citation for an object id, using the composer's 1-based convention. */
+    43	function cite(ctx: AskFydContext, objectId: string): string {
+    44	  const idx = ctx.base.evidenceRefs.findIndex((r) => r.id === objectId);
+    45	  return idx >= 0 ? `[${idx + 1}]` : "";
+    46	}
+    47	
+    48	function cleanName(raw: string): string {
+    49	  return raw
+    50	    .replace(/\b(my|the|our|this|that)\b/g, " ")
+    51	    .replace(/\s+/g, " ")
+    52	    .replace(/["'.?!]+$/g, "")
+    53	    .trim();
+    54	}
+    55	
+    56	/**
+    57	 * Keyword-anchored service name matching: the request names the service
+    58	 * loosely ("electrical services" for the "Electrical" object), so a match
+    59	 * holds when either side contains the other or every request word appears
+    60	 * in the title.
+    61	 */
+    62	function serviceNameMatches(title: string, serviceName: string): boolean {
+    63	  const t = title.toLowerCase();
+    64	  const s = serviceName.toLowerCase();
+    65	  if (!t || !s) return false;
+    66	  if (t.includes(s) || s.includes(t)) return true;
+    67	  const tWords = new Set(t.split(/\s+/));
+    68	  const sWords = s.split(/\s+/).filter(Boolean);
+    69	  return sWords.length > 0 && sWords.every((w) => tWords.has(w));
+    70	}
+    71	
+    72	/**
+    73	 * Detect a site-patch intent in the question. Returns null when the
+    74	 * question is not a site-change request. Detection is keyword-anchored;
+    75	 * authority checks happen separately in sitePatchRefusal.
+    76	 */
+    77	export function detectSitePatchIntent(ctx: AskFydContext, question: string): SitePatchIntent | null {
+    78	  const q = question.toLowerCase().trim();
+    79	
+    80	  const reorderMatch =
+    81	    q.match(/\bput\b\s+(.+?)\s+\b(first|at the top)\b/) ?? q.match(/\bmove\b\s+(.+?)\s+\bto the top\b/);
+    82	  if (reorderMatch) {
+    83	    const serviceName = cleanName(reorderMatch[1]);
+    84	    if (serviceName) return { kind: "reorder_services_first", serviceName };
+    85	  }
+    86	
+    87	  const featureMatch =
+    88	    q.match(/\bfeature\b\s+(.+)/) ?? q.match(/\bhighlight\b\s+(.+)/) ?? q.match(/\bspotlight\b\s+(.+)/);
+    89	  if (featureMatch) {
+    90	    const name = cleanName(featureMatch[1]);
+    91	    if (name.length > 2) {
+    92	      const candidates = [ctx.base.target, ...ctx.base.relatedObjects].filter(
+    93	        (o): o is PingObject => !!o && !!o.title && o.title.toLowerCase().includes(name),
+    94	      );
+    95	      if (candidates.length > 0) {
+    96	        const best = candidates.sort((a, b) => (a.title ?? "").length - (b.title ?? "").length)[0];
+    97	        return { kind: "feature_object", objectId: best.id, objectTitle: best.title ?? best.id };
+    98	      }
+    99	    }
+   100	  }
+   101	
+   102	  if (
+   103	    hasWord(q, "professionalize") ||
+   104	    (hasWord(q, "professional", "polish", "formal") &&
+   105	      hasWord(q, "tone", "site", "page", "make", "more", "sound"))
+   106	  ) {
+   107	    return { kind: "professionalize" };
+   108	  }
+   109	
+   110	  return null;
+   111	}
+   112	
+   113	/**
+   114	 * Authority check for site-patch drafting. Returns the refusal text when
+   115	 * the agent must not draft, null when drafting may proceed. The agent
+   116	 * explains WHY instead of silently failing.
+   117	 */
+   118	export function sitePatchRefusal(ctx: AskFydContext): string | null {
+   119	  if (!ctx.siteSpec) {
+   120	    return "I do not have your site spec in context, so I cannot draft a site change. Open the site this question is about and ask again.";
+   121	  }
+   122	  if (!ctx.base.target) {
+   123	    return "I need the site object in context to draft a change. Open the site and ask again.";
+   124	  }
+   125	  if (!ctx.grants.includes("site.propose")) {
+   126	    return "Only the controlling identity can change this site. I can draft site changes for the owner, but I cannot draft them for anyone else.";
+   127	  }
+   128	  return null;
+   129	}
+   130	
+   131	interface DraftedPatch {
+   132	  operations: SitePatchOperation[];
+   133	  affectedObjects: { id: string; title: string }[];
+   134	  evidenceReason: string;
+   135	  summary: string;
+   136	}
+   137	
+   138	type DraftResult = { proposal: AskProposal } | { refusal: string };
+   139	
+   140	function servicesSectionId(ctx: AskFydContext): string | null {
+   141	  const sections = ctx.siteSpec?.page.sections ?? [];
+   142	  const byComponent = sections.find((s) => /service/i.test(s.component));
+   143	  return byComponent ? byComponent.id : (sections[0]?.id ?? null);
+   144	}
+   145	
+   146	function draftReorderServicesFirst(ctx: AskFydContext, serviceName: string): DraftedPatch | { refusal: string } {
+   147	  const spec = ctx.siteSpec;
+   148	  if (!spec) return { refusal: "Site-patch drafting needs the site spec in context." };
+   149	  const match = serviceObjects(ctx).find((o) => serviceNameMatches(o.title ?? "", serviceName));
+   150	  if (!match) {
+   151	    return {
+   152	      refusal: `I could not find a service matching "${serviceName}" among this site's offerings, so I cannot reorder them.`,
+   153	    };
+   154	  }
+   155	  const sectionId = servicesSectionId(ctx);
+   156	  if (!sectionId) return { refusal: "The site spec has no sections to reorder." };
+   157	  const current = spec.sectionObjects[sectionId] ?? [];
+   158	  const after = [match.id, ...current.filter((id) => id !== match.id)];
+   159	  if (after.join("|") === current.join("|")) {
+   160	    return { refusal: `"${match.title}" is already first, so there is nothing to change.` };
+   161	  }
+   162	  const titles = (ids: string[]) => ids.map((id) => objectTitle(ctx, id)).join(", ");
+   163	  return {
+   164	    operations: [{ op: "reorder_section_objects", pageSlug: spec.pageSlug, sectionId, before: current, after }],
+   165	    affectedObjects: after.map((id) => ({ id, title: objectTitle(ctx, id) })),
+   166	    evidenceReason: `Service "${match.title}" appears in the site spec section ${cite(ctx, match.id)} and in the related offerings. Moving it first matches the request; no other content changes.`,
+   167	    summary: `Move "${match.title}" first: [${titles(current)}] becomes [${titles(after)}].`,
+   168	  };
+   169	}
+   170	
+   171	function draftProfessionalize(ctx: AskFydContext): DraftedPatch | { refusal: string } {
+   172	  const spec = ctx.siteSpec;
+   173	  if (!spec) return { refusal: "Site-patch drafting needs the site spec in context." };
+   174	  const sectionId = spec.page.sections[0]?.id;
+   175	  if (!sectionId) return { refusal: "The site spec has no sections." };
+   176	  const before = spec.presentation[sectionId]?.["tone"] ?? null;
+   177	  if (before === "professional") {
+   178	    return { refusal: "The site tone is already professional, so there is nothing to change." };
+   179	  }
+   180	  return {
+   181	    operations: [
+   182	      { op: "set_presentation", pageSlug: spec.pageSlug, sectionId, field: "tone", before, after: "professional" },
+   183	    ],
+   184	    affectedObjects: [],
+   185	    evidenceReason: `The request asks for a more professional tone ${cite(ctx, ctx.base.target?.id ?? "")}. This changes only the declared presentation tone from ${before ?? "unset"} to professional; copy and structure are untouched.`,
+   186	    summary: `Set tone to professional (was ${before ?? "unset"}).`,
+   187	  };
+   188	}
+   189	
+   190	function draftFeatureObject(
+   191	  ctx: AskFydContext,
+   192	  objectId: string,
+   193	  title: string,
+   194	): DraftedPatch | { refusal: string } {
+   195	  const spec = ctx.siteSpec;
+   196	  if (!spec) return { refusal: "Site-patch drafting needs the site spec in context." };
+   197	  const sectionId =
+   198	    spec.page.sections.find((s) => /feature|highlight|project|work/i.test(s.component))?.id ??
+   199	    spec.page.sections[0]?.id;
+   200	  if (!sectionId) return { refusal: "The site spec has no sections." };
+   201	  const raw = spec.presentation[sectionId]?.["featuredIds"];
+   202	  const before: string[] = Array.isArray(raw) ? [...raw] : [];
+   203	  if (before.includes(objectId)) {
+   204	    return { refusal: `"${title}" is already featured, so there is nothing to change.` };
+   205	  }
+   206	  const after = [objectId, ...before];
+   207	  return {
+   208	    operations: [{ op: "set_presentation", pageSlug: spec.pageSlug, sectionId, field: "featuredIds", before, after }],
+   209	    affectedObjects: [{ id: objectId, title }],
+   210	    evidenceReason: `"${title}" is in the site's evidence ${cite(ctx, objectId)}. Featuring it changes only the section's featured list; nothing else moves.`,
+   211	    summary: `Feature "${title}" in section ${sectionId}.`,
+   212	  };
+   213	}
+   214	
+   215	/** One-line summary per operation, stored in the proposal changes map. */
+   216	export function describeOperation(op: SitePatchOperation, ctx: AskFydContext): string {
+   217	  const title = (id: string) => objectTitle(ctx, id);
+   218	  if (op.op === "reorder_section_objects") {
+   219	    return `section ${op.sectionId}: order [${op.before.map(title).join(", ")}] -> [${op.after.map(title).join(", ")}]`;
+   220	  }
+   221	  return `section ${op.sectionId}: ${op.field} ${JSON.stringify(op.before)} -> ${JSON.stringify(op.after)}`;
+   222	}
+   223	
+   224	/**
+   225	 * Draft the site_patch proposal for an intent. Deterministic: same context
+   226	 * plus same intent always yields the same body and digest. Returns a
+   227	 * refusal when the intent cannot be grounded in the spec.
+   228	 */
+   229	export function draftSitePatchProposal(ctx: AskFydContext, intent: SitePatchIntent): DraftResult {
+   230	  const spec = ctx.siteSpec;
+   231	  const target = ctx.base.target;
+   232	  if (!spec || !target)
+   233	    return { refusal: "Site-patch drafting needs the site spec and the site object in context." };
+   234	
+   235	  let drafted: DraftedPatch | { refusal: string };
+   236	  switch (intent.kind) {
+   237	    case "reorder_services_first":
+   238	      drafted = draftReorderServicesFirst(ctx, intent.serviceName);
+   239	      break;
+   240	    case "professionalize":
+   241	      drafted = draftProfessionalize(ctx);
+   242	      break;
+   243	    case "feature_object":
+   244	      drafted = draftFeatureObject(ctx, intent.objectId, intent.objectTitle);
+   245	      break;
+   246	  }
+   247	  if ("refusal" in drafted) return drafted;
+   248	
+   249	  const changes: Record<string, string> = {};
+   250	  drafted.operations.forEach((op, i) => {
+   251	    changes[`op${i + 1}`] = describeOperation(op, ctx);
+   252	  });
+   253	  const sitePatch: SitePatchPayload = {
+   254	    siteId: spec.siteId,
+   255	    pageSlug: spec.pageSlug,
+   256	    operations: drafted.operations,
+   257	    siteSpecDigest: spec.digest,
+   258	    affectedObjects: drafted.affectedObjects,
+   259	    evidenceReason: drafted.evidenceReason,
+   260	  };
+   261	  const body = {
+   262	    kind: "site_patch" as const,
+   263	    targetObjectId: target.id,
+   264	    schema: "ping.social.proposal@1",
+   265	    changes,
+   266	    sitePatch,
+   267	  };
+   268	  const proposal: AskProposal = {
+   269	    ...body,
+   270	    digest: proposalDigest(body),
+   271	    digestAlgorithm: "sha256-canonical-json-v1",
+   272	    note:
+   273	      drafted.summary +
+   274	      " Review the Before / After below. Approving applies this exact SiteSpec transition through the governed event path. I cannot apply it myself.",
+   275	    envelope: null,
+   276	  };
+   277	  return { proposal };
+   278	}
+   279	
+   280	/**
+   281	 * Sign a drafted site_patch proposal. The envelope body is exactly the
+   282	 * digest input, so the envelope's payload_hash must equal the proposal
+   283	 * digest (one serializer for digests and signatures); a mismatch throws
+   284	 * instead of producing a half-signed proposal.
+   285	 */
+   286	export function signSitePatchDraft(proposal: AskProposal, signer: Signer): AskProposal {
+   287	  if (proposal.kind !== "site_patch") {
+   288	    throw new Error("signSitePatchDraft: only site_patch proposals are signed here.");
+   289	  }
+   290	  const body = {
+   291	    kind: proposal.kind,
+   292	    targetObjectId: proposal.targetObjectId,
+   293	    schema: proposal.schema,
+   294	    changes: proposal.changes,
+   295	    sitePatch: proposal.sitePatch,
+   296	  };
+   297	  const signed = signEnvelope({ ...body }, signer);
+   298	  if (signed.payload_hash !== proposal.digest) {
+   299	    throw new Error("signSitePatchDraft: envelope payload hash does not match the proposal digest.");
+   300	  }
+   301	  return { ...proposal, envelope: signed };
+   302	}
+   303	
+   304	/**
+   305	 * Verify a signed draft: digest re-verification plus envelope signature and
+   306	 * hash binding. Unsigned drafts verify on the digest alone (the server-side
+   307	 * approval law); a present-but-broken envelope fails closed.
+   308	 */
+   309	export function verifySignedSitePatchDraft(proposal: AskProposal): boolean {
+   310	  if (!verifyProposalDigest(proposal)) return false;
+   311	  if (!proposal.envelope) return true;
+   312	  if (proposal.envelope.payload_hash !== proposal.digest) return false;
+   313	  return verifyEnvelope(proposal.envelope);
+   314	}
+   315	
+   316	/** Build the human review card: Before, After, Evidence reason, Affected objects. */
+   317	export function buildSitePatchCard(ctx: AskFydContext, proposal: AskProposal): SitePatchCard | null {
+   318	  if (proposal.kind !== "site_patch") return null;
+   319	  const patch = proposal.sitePatch;
+   320	  const title = (id: string) => objectTitle(ctx, id);
+   321	  const before: string[] = [];
+   322	  const after: string[] = [];
+   323	  for (const op of patch.operations) {
+   324	    if (op.op === "reorder_section_objects") {
+   325	      before.push(`Section ${op.sectionId} order: ${op.before.map(title).join(", ")}`);
+   326	      after.push(`Section ${op.sectionId} order: ${op.after.map(title).join(", ")}`);
+   327	    } else {
+   328	      before.push(`Section ${op.sectionId} ${op.field}: ${JSON.stringify(op.before)}`);
+   329	      after.push(`Section ${op.sectionId} ${op.field}: ${JSON.stringify(op.after)}`);
+   330	    }
+   331	  }
+   332	  return {
+   333	    title: `Site change proposal for ${ctx.base.target?.title ?? patch.siteId}`,
+   334	    before,
+   335	    after,
+   336	    evidenceReason: patch.evidenceReason,
+   337	    affectedObjects: patch.affectedObjects,
+   338	    operationCount: patch.operations.length,
+   339	    siteSpecDigest: patch.siteSpecDigest,
+   340	  };
+   341	}

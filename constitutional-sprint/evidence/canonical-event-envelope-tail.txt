@@ -1,0 +1,278 @@
+   * @param {Object} command.payload - Event payload
+   * @param {string} [command.causationId] - Event that caused this
+   * @param {string} [command.correlationId] - Business transaction ID
+   * @param {Object} [command.metadata] - Additional metadata
+   * @returns {Object} Persisted event
+   */
+  async executeEmitEvent(command) {
+    const {
+      tenantId,
+      eventType,
+      source,
+      actor,
+      payload,
+      causationId = null,
+      correlationId = null,
+      metadata = {}
+    } = command;
+
+    const sequence = await this.getNextSequence(tenantId);
+    const timestamp = constitutionalTimeAuthority.nowAsISOString();
+    const eventId = this.generateEventId(tenantId, eventType, timestamp, sequence);
+
+    const event = {
+      event_id: eventId,
+      event_type: eventType,
+      event_version: '1.0.0',
+      tenant_id: tenantId,
+      timestamp,
+      sequence,
+      source,
+      actor,
+      causation_id: causationId,
+      correlation_id: correlationId,
+      payload,
+      metadata: {
+        ...metadata,
+        created_at: timestamp,
+      },
+      processed: false,
+      processed_at: null,
+      worker: null,
+      retries: 0,
+      last_error: null,
+      created_at: timestamp,
+    };
+
+    // Validate
+    const validation = this.executeValidateEvent(event);
+    if (!validation.valid) {
+      throw new Error(`Invalid event: ${validation.errors.join(', ')}`);
+    }
+
+    // Persist
+    await this._storage.query(
+      `INSERT INTO canonical_events 
+       (event_id, event_type, event_version, tenant_id, timestamp, sequence, 
+        source, actor, causation_id, correlation_id, payload, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       ON CONFLICT (tenant_id, sequence) DO NOTHING`,
+      [
+        event.event_id, event.event_type, event.event_version, event.tenant_id,
+        event.timestamp, event.sequence, event.source, event.actor,
+        event.causation_id, event.correlation_id,
+        JSON.stringify(event.payload), JSON.stringify(event.metadata),
+      ]
+    );
+
+    return event;
+  }
+
+  /**
+   * Execute ValidateEventQuery
+   * 
+   * @param {Object} event
+   * @returns {Object} { valid: boolean, errors: string[] }
+   */
+  executeValidateEvent(event) {
+    const errors = [];
+
+    if (!event.event_id) errors.push('event_id required');
+    if (!event.event_type) errors.push('event_type required');
+    if (!event.event_version) errors.push('event_version required');
+    if (!event.tenant_id) errors.push('tenant_id required');
+    if (!event.timestamp) errors.push('timestamp required');
+    if (event.sequence === undefined || event.sequence === null) errors.push('sequence required');
+    if (!event.source) errors.push('source required');
+    if (!event.actor) errors.push('actor required');
+    if (!event.payload) errors.push('payload required');
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Execute QueryEventsQuery
+   * 
+   * @param {Object} params
+   * @param {string} [params.tenantId] - Filter by tenant
+   * @param {string} [params.eventType] - Filter by event type
+   * @param {string} [params.correlationId] - Filter by correlation ID
+   * @param {string} [params.from] - Start timestamp
+   * @param {string} [params.to] - End timestamp
+   * @param {number} [params.limit] - Max results
+   * @param {number} [params.offset] - Skip results
+   * @returns {Object[]} Events
+   */
+  async executeQueryEvents({
+    tenantId,
+    eventType,
+    correlationId,
+    from,
+    to,
+    limit = 100,
+    offset = 0,
+  } = {}) {
+    let query = 'SELECT * FROM canonical_events WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+
+    if (tenantId) {
+      query += ` AND tenant_id = $${paramIndex++}`;
+      params.push(tenantId);
+    }
+
+    if (eventType) {
+      query += ` AND event_type = $${paramIndex++}`;
+      params.push(eventType);
+    }
+
+    if (correlationId) {
+      query += ` AND correlation_id = $${paramIndex++}`;
+      params.push(correlationId);
+    }
+
+    if (from) {
+      query += ` AND timestamp >= $${paramIndex++}`;
+      params.push(from);
+    }
+
+    if (to) {
+      query += ` AND timestamp <= $${paramIndex++}`;
+      params.push(to);
+    }
+
+    query += ` ORDER BY tenant_id, sequence ASC`;
+    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    params.push(limit, offset);
+
+    const result = await this._storage.query(query, params);
+    return result.rows;
+  }
+
+  /**
+   * Execute GetEventStatsQuery
+   * 
+   * @param {string} [tenantId] - Filter by tenant
+   * @returns {Object} Stats
+   */
+  async executeGetStats(tenantId) {
+    let query = `
+      SELECT 
+        tenant_id,
+        COUNT(*) as total_events,
+        COUNT(DISTINCT event_type) as event_types,
+        MIN(timestamp) as first_event,
+        MAX(timestamp) as last_event,
+        COUNT(CASE WHEN NOT processed THEN 1 END) as unprocessed
+      FROM canonical_events`;
+    
+    const params = [];
+    if (tenantId) {
+      query += ' WHERE tenant_id = $1';
+      params.push(tenantId);
+    }
+    
+    query += ' GROUP BY tenant_id';
+    
+    const result = await this._storage.query(query, params);
+    return result.rows;
+  }
+
+  /**
+   * Execute MarkEventProcessedCommand
+   * 
+   * @param {string} eventId
+   * @param {string} worker
+   */
+  async executeMarkProcessed(eventId, worker) {
+    await this._storage.query(
+      `UPDATE canonical_events 
+       SET processed = TRUE, processed_at = NOW(), worker = $1 
+       WHERE event_id = $2`,
+      [worker, eventId]
+    );
+  }
+
+  /**
+   * Execute MarkEventFailedCommand
+   * 
+   * @param {string} eventId
+   * @param {string} worker
+   * @param {string} error
+   */
+  async executeMarkFailed(eventId, worker, error) {
+    await this._storage.query(
+      `UPDATE canonical_events 
+       SET retries = retries + 1, last_error = $1 
+       WHERE event_id = $2`,
+      [error, eventId]
+    );
+  }
+
+  /**
+   * Execute GetUnprocessedEventsQuery
+   * 
+   * @param {string} tenantId
+   * @param {number} limit
+   * @returns {Object[]} Events
+   */
+  async executeGetUnprocessed(tenantId, limit = 100) {
+    const result = await this._storage.query(
+      `SELECT * FROM canonical_events 
+       WHERE NOT processed AND tenant_id = $1 
+       ORDER BY tenant_id, sequence ASC 
+       LIMIT $2`,
+      [tenantId, limit]
+    );
+    return result.rows;
+  }
+
+  /**
+   * Health check
+   */
+  async health() {
+    try {
+      await this._storage.query('SELECT 1');
+      return { healthy: true, storage: { healthy: true } };
+    } catch (error) {
+      return { healthy: false, storage: { healthy: false, error: error.message } };
+    }
+  }
+
+  /**
+   * Publish contract with hash
+   */
+  publishContract() {
+    const contract = {
+      authority_id: 'canonical-event-envelope',
+      authority_name: 'CanonicalEventEnvelope',
+      version: this._authorityVersion,
+      owner: 'ping',
+      consumes: ['tenantId', 'eventType', 'source', 'actor', 'payload'],
+      produces: ['event'],
+      guarantees: ['deterministic_id', 'immutable', 'ordered', 'tenant_isolated'],
+      invariants: [
+        'event_id is deterministic UUID v5 from (tenant_id, event_type, timestamp, sequence)',
+        'event cannot be modified after creation',
+        'tenant A cannot read tenant B events',
+        'sequence is monotonically increasing per tenant',
+        'event_id is canonical URI: event://{eventId}',
+      ],
+      consumers: ['tenantRegistry', 'deploymentRegistry', 'runtimeRegistry', 'workerRuntime'],
+      requires: ['storage'],
+      failure_modes: ['invalid_input', 'postgres_unavailable', 'sequence_collision'],
+      rollback: 'none',
+      determinism: 'deterministic',
+      dependencies: this._dependencies,
+      schema_version: '1.0.0',
+      event_version: '1.0.0',
+      authority_version: this._authorityVersion,
+    };
+
+    contract.contract_hash = computeCanonicalHash(contract);
+
+    return contract;
+  }
+}
+
+module.exports = { CanonicalEventEnvelope };

@@ -1,0 +1,111 @@
+=== gateway_runtime imports from execution/ ===
+67:const { ExecutionEngine } = require('../../ping-runtime/orchestration/execution/engine');
+84:const { CapabilityRegistry } = require('../../ping-runtime/connectors/capability_registry');
+295:    const capabilityRegistry = new CapabilityRegistry({ oauthManager, connectorRegistry });
+339:      executionEngine = new ExecutionEngine();
+=== new ExecutionEngine anywhere ===
+./ping-runtime/orchestration/index.js:9:    this._engine = new ExecutionEngine();
+./ping-runtime/orchestration/execution/engine.js:686:  const engine = new ExecutionEngine();
+./gateway/bootstrap/gateway_runtime.js:339:      executionEngine = new ExecutionEngine();
+=== orchestration/index.js ===
+const { ExecutionEngine } = require('./execution/engine');
+const { IntelligenceGraph } = require('./intelligence_graph');
+const { MergeGate } = require('./merge_gate');
+const { DormantClassifier, ReplayCertifier } = require('./dormant_classifier');
+const { ExecutiveDashboard } = require('./dashboard');
+
+class ConstitutionalOrchestrator {
+  constructor() {
+    this._engine = new ExecutionEngine();
+    this._initialized = false;
+  }
+
+  async initialize() {
+    await this._engine.initialize();
+    this._initialized = true;
+    return this._engine._graphData;
+  }
+
+  listWorkers() {
+    return this._engine._registry.listWorkers();
+  }
+
+  listCapabilities() {
+    return this._engine._registry.listAllCapabilities();
+  }
+
+  compileMissions() {
+    return this._engine.compileMissions();
+  }
+
+  dispatchToAssignment(missionId, completionHandler) {
+    return this._engine.dispatchToAssignment(missionId, completionHandler);
+  }
+
+  collectWorkerOutput(workerId, missionId, output) {
+    return this._engine.collectWorkerOutput(workerId, missionId, output);
+  }
+
+  emitGitDiff(diff) {
+    return this._engine.emitGitDiff(diff);
+  }
+
+  generateDashboard() {
+    return this._engine.generateDashboard();
+  }
+
+  printDashboard() {
+    this._engine.printDashboard();
+  }
+
+  getReport() {
+    return this._engine.getReport();
+  }
+
+  getMergeGate() {
+    return this._engine._mergeGate;
+  }
+
+  getEventQueue() {
+    return this._engine._eventQueue;
+
+113 ping-runtime/orchestration/index.js
+=== capability_registry.json (dirty) ===
+{
+  "workers": [
+    {
+      "id": "opencode:local",
+      "model": "opencode-big-pickle",
+      "capabilities": [
+        "authority.audit.time",
+        "authority.audit.identity",
+        "authority.audit.hash",
+        "graph.audit.dependency",
+        "dead_code.analyze",
+        "replay.verify",
+        "documentation.generate",
+        "test.generate",
+        "certificate.generate",
+        "orchestration.plan",
+        "orchestration.review",
+        "orchestration.merge"
+      ],
+      "specialization": "orchestration",
+      "contextWindow": 128000,
+      "avgLatency": 0,
+      "avgTokens": 0,
+      "avgConfidence": null,
+      "acceptanceRate": null,
+      "qualityHistory": [],
+      "currentLoad": 0,
+      "maxLoad": 10,
+      "failurePatterns": [],
+      "replayCompatibility": true,
+      "registeredAt": "2026-09-21T19:26:21.445Z",
+      "lastActive": null,
+      "state": "idle",
+      "totalTasksCompleted": 0,
+      "totalTasksFailed": 0
+    }
+  ]
+}

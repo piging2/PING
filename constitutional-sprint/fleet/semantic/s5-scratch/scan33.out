@@ -1,0 +1,113 @@
+=== canonical_workers ReplayWorker ===
+        timestamp: constitutionalTimeAuthority.nowAsISOString(),
+        verified: false,
+        reason: 'no_replay_provider',
+        fingerprint: null,
+        witness_root: null,
+        violations: [],
+      };
+
+      const authority = this._buildAuthorityEvidence(event, replay);
+
+      await this._emit('REPLAY_COMPLETED', {
+        documentId,
+        replay,
+        authority,
+        upstreamEventId: event.event_id || event.mission_id,
+      }, {
+        causation_id: event.event_id,
+      });
+
+      return { status: 'ok', replay };
+    }
+
+    // Build transcript for the kernel engine
+    const transcript = {
+      state: {
+        replay_events: replayEvents,
+      },
+    };
+
+    // Execute replay through the deterministic kernel engine
+    let kernelResult;
+    try {
+      kernelResult = await this._replayProvider.executeReplay(transcript);
+    } catch (err) {
+      // Kernel threw — replay failed deterministically
+      const replay = {
+        documentId,
+        eventType: event.event_type,
+        timestamp: constitutionalTimeAuthority.nowAsISOString(),
+        verified: false,
+        reason: 'kernel_error',
+        error: err.message,
+        fingerprint: null,
+        witness_root: null,
+        violations: [],
+      };
+
+      const authority = this._buildAuthorityEvidence(event, replay, {
+        failure_reason: err.message,
+        failure_code: 'kernel_error',
+      });
+
+      await this._emit('REPLAY_COMPLETED', {
+        documentId,
+        replay,
+        authority,
+        upstreamEventId: event.event_id || event.mission_id,
+      }, {
+        causation_id: event.event_id,
+      });
+
+      return { status: 'ok', replay };
+    }
+
+    // Kernel result → replay verdict
+    // verified: true ONLY when status === 'ok' AND violations.length === 0
+    const violations = kernelResult.violations || [];
+    const isVerified = kernelResult.status === 'ok' && violations.length === 0;
+
+    const replay = {
+      documentId,
+      eventType: event.event_type,
+      timestamp: constitutionalTimeAuthority.nowAsISOString(),
+      verified: isVerified,
+      reason: isVerified ? 'kernel_verified' : (kernelResult.status || 'kernel_failed'),
+      fingerprint: kernelResult.fingerprint || null,
+      witness_root: kernelResult.witness_root || null,
+      violations,
+      event_count: kernelResult.event_count || 0,
+      artifact_count: kernelResult.artifact_count || 0,
+      state_version: kernelResult.state_version || null,
+    };
+
+    // Structured constitutional evidence at the replay boundary. Every field is
+    // derived from an actual value — the triggering event's trace fields, the
+    // kernel provider's deterministic result, and fixed authority identities.
+    // Nothing is fabricated; absent values are omitted (never defaulted).
+    const authority = this._buildAuthorityEvidence(event, replay, {
+      replay_id: kernelResult.replay_id,
+      event_count: kernelResult.event_count,
+      artifact_count: kernelResult.artifact_count,
+      state_version: kernelResult.state_version,
+      leaf_count: kernelResult.leaf_count,
+      tree_height: kernelResult.tree_height,
+    });
+
+    await this._emit('REPLAY_COMPLETED', {
+      documentId,
+      replay,
+      authority,
+      upstreamEventId: event.event_id || event.mission_id,
+    }, {
+      causation_id: event.event_id,
+    });
+
+    return { status: 'ok', replay };
+  }
+
+  /**
+   * Build structured constitutional evidence at the replay authority boundary.
+   *
+=== agents/replay_worker.js importers ===

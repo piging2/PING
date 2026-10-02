@@ -1,0 +1,31 @@
+267-
+268-/** Per-claim epistemic status for the factual claims in an AskAnswer. */
+269:export interface AskClaimClassification {
+270-  /** The claim text as stated in the answer. */
+271-  claim: string;
+272-  /**
+273-   * Epistemic status. Reuses the extraction pipeline's FactClass vocabulary
+274-   * (DIRECT_FACT, DERIVED_FACT, INFERENCE, GENERATED_COPY, USER_OVERRIDE)
+275-   * when the ask context carries field classes; otherwise the object's own
+276-   * claim kind (e.g. "website_statement").
+277-   */
+278-  classification: string;
+279-  /** Ids into the answer's evidenceRefs supporting this claim. */
+280-  evidenceRefIds: string[];
+281-}
+--
+390-  partial: boolean;
+391-  /** Per-claim epistemic status for the factual claims in `answer`. */
+392:  claimClassifications: AskClaimClassification[];
+393-  /** What the question asked about that has no supporting evidence. */
+394-  unknowns: string[];
+395-  /** Deduped source URLs behind the evidence (from object provenance refs). */
+396-  sourceUrls: string[];
+397-}
+398-
+399-export interface AskContext {
+400-  viewer: { id: string | null; displayName: string | null };
+401-  target: PingObject | null;
+402-  schemaLabel: string;
+403-  relatedObjects: PingObject[];
+404-  relationships: PingRelationship[];

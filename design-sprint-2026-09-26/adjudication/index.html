@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Sprint Adjudication — HPP vs Generated, Coppersmith</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 24px; }
+  h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 40px; color: #ffd75e; }
+  p.note { color: #aaa; font-size: 13px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .solo { display: grid; grid-template-columns: 1fr; gap: 16px; margin: 16px 0; }
+  figure { margin: 0; background: #1b1b1b; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+  figcaption { padding: 8px 12px; font-size: 13px; color: #ccc; background: #222; }
+  img { width: 100%; display: block; }
+  .missing { padding: 40px; text-align: center; color: #f66; font-size: 14px; }
+  table.rubric { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.rubric td, table.rubric th { border: 1px solid #444; padding: 8px 10px; text-align: left; }
+  table.rubric th { background: #222; }
+  .verdict { margin-top: 40px; padding: 20px; border: 2px solid #ffd75e; border-radius: 10px; }
+</style>
+</head>
+<body>
+<h1>Design Sprint Visual Adjudication</h1>
+<p class="note">Sprint clock ended ~18:55 MDT 2026-09-27. Frames: original HPP (fresh) vs generated HPP v3-polish vs Coppersmith v3-polish. Expected file layout: <code>shots/orig-hpp-fresh/*</code>, <code>shots/v3-polish/*</code>.</p>
+
+<h2>Happy Place: original vs generated (side by side)</h2>
+<div id="hpp-rows"></div>
+
+<h2>Coppersmith: generated v3 (same widths)</h2>
+<div id="copper-rows"></div>
+
+<h2>Falsifier rubric (mark each frame)</h2>
+<table class="rubric">
+<tr><th>Gate</th><th>What to check</th><th>Pass</th></tr>
+<tr><td>No invented claims</td><td>services, taxonomy, reviews, media all trace to the graph</td><td>__</td></tr>
+<tr><td>No invented reviews</td><td>no fabricated testimonials</td><td>__</td></tr>
+<tr><td>No invented media</td><td>every photo is a real asset with provenance</td><td>__</td></tr>
+<tr><td>Visitor purity</td><td>zero debug/governance copy, no SITE RECORD, no Why this?, no object pills</td><td>__</td></tr>
+<tr><td>Privacy</td><td>no raw E.164 duplication, no internal semantics as copy</td><td>__</td></tr>
+<tr><td>Determinism</td><td>regeneration is byte-identical for identical graph + intent + renderer</td><td>__</td></tr>
+<tr><td>Mobile 390</td><td>no hero overflow, no clipped lead, gallery usable</td><td>__</td></tr>
+<tr><td>Conversion</td><td>real tel: and mailto: anchors, business wordmark, no self-referential CTA</td><td>__</td></tr>
+</table>
+
+<div class="verdict">
+<h2>The test</h2>
+<p>"If the business owner clicked Generate once and saw this, would we be proud to tell them this is their new website?"</p>
+<p>HPP verdict: _______________ &nbsp;&nbsp; Coppersmith verdict: _______________</p>
+<p class="note">The five biggest generic improvements go here, not a report.</p>
+</div>
+
+<script>
+const widths = [320, 375, 390, 768, 1440];
+function row(id, a, b) {
+  const host = document.getElementById(id);
+  widths.forEach(w => {
+    const div = document.createElement('div');
+    div.className = b ? 'pair' : 'solo';
+    const figs = [[a, w]].concat(b ? [[b, w]] : []);
+    figs.forEach(([prefix, w]) => {
+      const src = `shots/${prefix}-${w}.png`;
+      const f = document.createElement('figure');
+      const img = new Image();
+      img.onload = () => f.insertBefore(img, f.firstChild);
+      img.onerror = () => { const d = document.createElement('div'); d.className = 'missing'; d.textContent = 'MISSING: ' + src; f.insertBefore(d, f.firstChild); };
+      img.src = src;
+      const c = document.createElement('figcaption');
+      c.textContent = prefix + ' @ ' + w + 'px';
+      f.appendChild(c);
+      div.appendChild(f);
+    });
+    host.appendChild(div);
+  });
+}
+row('hpp-rows', 'orig-hpp-fresh', 'hpp-v3-polish');
+row('copper-rows', 'copper-v3-polish', null);
+</script>
+</body>
+</html>

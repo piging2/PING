@@ -1,0 +1,30 @@
+     1	/**
+     2	 * Identity bridge for the claim flow (onboarding order J).
+     3	 *
+     4	 * Demo-owner mode is the ONLY identity source in this build. A Google-ready
+     5	 * adapter exists in-tree (src/fyd/identity: provider, callback flow,
+     6	 * session routes, file store, audit); this bridge deliberately does NOT
+     7	 * consume it yet. When that adapter is wired in, it adds a new
+     8	 * ClaimedIdentity kind here; the state machine is unchanged. (Comment
+     9	 * corrected 2026-09-23: the adapter had already landed at the
+    10	 * referenced path.)
+    11	 *
+    12	 * Returns null when no authenticated identity is available. Callers must
+    13	 * fail closed on null, never invent an identity.
+    14	 */
+    15	import { DEMO_OWNER_ACTOR } from "../owner-mode/capability";
+    16	import { isDemoOwnerModeEnabled } from "../owner-mode/gate";
+    17	import type { ClaimedIdentity } from "./types";
+    18	
+    19	export function resolveClaimIdentity(): ClaimedIdentity | null {
+    20	  if (!isDemoOwnerModeEnabled()) return null;
+    21	  return {
+    22	    kind: "demo-owner",
+    23	    actorId: DEMO_OWNER_ACTOR.id,
+    24	    actorLabel: DEMO_OWNER_ACTOR.label,
+    25	    authenticatedAt: new Date().toISOString(),
+    26	    authNote:
+    27	      "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+    28	      "this claim is labeled demo, audited, and confers no production ownership.",
+    29	  };
+    30	}

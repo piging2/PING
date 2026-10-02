@@ -1,0 +1,118 @@
+=== orchestration/execution/ ===
+total 152
+drwxr-xr-x 2 nolan nolan  4096 Sep 16 09:41 .
+drwxr-xr-x 8 nolan nolan  4096 Sep 21 12:44 ..
+-rw-r--r-- 1 nolan nolan  9150 Sep 16 09:41 artifact_authorities.js
+-rw-r--r-- 1 nolan nolan  6940 Sep 16 09:41 artifact_router.js
+-rw-r--r-- 1 nolan nolan  5361 Sep 16 09:41 artifact_store.js
+-rw-r--r-- 1 nolan nolan 10015 Sep 16 09:41 capability_registry.js
+-rw-r--r-- 1 nolan nolan   978 Sep 21 13:26 capability_registry.json
+-rw-r--r-- 1 nolan nolan  5498 Sep 16 09:41 consensus_engine.js
+-rw-r--r-- 1 nolan nolan  9831 Sep 16 09:41 context_authority.js
+-rw-r--r-- 1 nolan nolan 26310 Sep 16 09:41 engine.js
+-rw-r--r-- 1 nolan nolan  6321 Sep 16 09:41 event_queue.js
+-rw-r--r-- 1 nolan nolan  7168 Sep 16 09:41 mission_compiler.js
+-rw-r--r-- 1 nolan nolan  6569 Sep 16 09:41 ollama_provider.js
+-rw-r--r-- 1 nolan nolan  5195 Sep 16 09:41 scheduler.js
+-rw-r--r-- 1 nolan nolan 11883 Sep 16 09:41 worker_port.js
+-rw-r--r-- 1 nolan nolan  7690 Sep 16 09:41 worker_state_machine.js
+=== who imports execution engine ===
+gateway/constitutional_classifier.js
+gateway/constitutional_dependency_graph.js
+gateway/self_improvement_loop.js
+gateway/merkle_replay_graph.js
+gateway/authority_repository.js
+gateway/replay_time_authority.js
+gateway/test_wave3b_p7_governance.js
+gateway/replay_transcript.js
+gateway/replay_rule_set.js
+gateway/replay_audit_report.js
+gateway/generated/state_machine_generator.js
+gateway/test_p040_generated_authoritative.js
+gateway/bootstrap/gateway_runtime.js
+ping-runtime/runtime/workflow_executor.js
+ping-runtime/orchestration/generate_uuid_registry.js
+ping-runtime/orchestration/index.js
+ping-runtime/orchestration/generate_execution_graphs.js
+=== engine.js head ===
+716 ping-runtime/orchestration/execution/engine.js
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+const { CapabilityRegistry } = require('./capability_registry');
+const { EventQueue } = require('./event_queue');
+const { MissionCompiler } = require('./mission_compiler');
+const { Scheduler } = require('./scheduler');
+const { ArtifactRouter } = require('./artifact_router');
+const { ConsensusEngine } = require('./consensus_engine');
+const { WorkerStateMachine } = require('./worker_state_machine');
+const { ArtifactStore } = require('./artifact_store');
+const { OllamaProvider } = require('./ollama_provider');
+const { IntelligenceGraph } = require('../intelligence_graph');
+const { MergeGate } = require('../merge_gate');
+const { DormantClassifier, ReplayCertifier } = require('../dormant_classifier');
+const { ContextAuthority } = require('./context_authority');
+const {
+  ConsensusArtifact,
+  MergeDecisionArtifact,
+  ProposalArtifact,
+  ReplayArtifact,
+  WitnessArtifact
+} = require('./artifact_authorities');
+const {
+  WorkerPortRegistry,
+  OpenCodeWorkerPort,
+  OllamaWorkerPort
+} = require('./worker_port');
+
+class ExecutionEngine {
+  constructor() {
+    this._compiler = null;
+    this._eventQueue = null;
+    this._registry = null;
+    this._scheduler = null;
+    this._artifactRouter = null;
+    this._consensus = null;
+    this._stateMachine = null;
+    this._artifactStore = null;
+    this._ollamaProvider = null;
+    this._graph = null;
+    this._graphData = null;
+    this._mergeGate = null;
+    this._classifier = null;
+    this._certifier = null;
+
+    this._missions = [];
+    this._pendingProposals = [];
+    this._subscriptions = [];
+    this._workerPorts = null;
+
+    this._initialized = false;
+  }
+
+  async initialize(options = {}) {
+    console.log('[ExecutionEngine] Initializing subsystems...');
+
+    this._eventQueue = new EventQueue();
+    this._workerPorts = new WorkerPortRegistry(this._eventQueue);
+    this._registry = new CapabilityRegistry();
+    this._stateMachine = new WorkerStateMachine(this._eventQueue);
+    this._mergeGate = new MergeGate();
+
+    console.log('[ExecutionEngine] Building intelligence graph...');
+    const graphBuilder = new IntelligenceGraph();
+    this._graphData = await graphBuilder.build();
+    this._graph = graphBuilder;
+    console.log(`  Production: ${this._graphData.summary.production}, Dormant: ${this._graphData.summary.dormant}`);
+
+    this._compiler = new MissionCompiler(this._graph, this._eventQueue);
+    this._scheduler = new Scheduler(this._workerPorts, this._eventQueue);
+    this._artifactRouter = new ArtifactRouter(this._graph, this._eventQueue);
+    this._consensus = new ConsensusEngine(this._eventQueue);
+    this._artifactStore = new ArtifactStore(this._eventQueue);
+    this._contextAuth = new ContextAuthority(this._graph, this._artifactStore, this._eventQueue);
+
+    this._consensusAuthority = new ConsensusArtifact(this._artifactStore, this._eventQueue);
+    this._mergeDecisionAuthority = new MergeDecisionArtifact(this._artifactStore, this._eventQueue);
+    this._proposalAuthority = new ProposalArtifact(this._artifactStore, this._eventQueue);

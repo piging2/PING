@@ -1,0 +1,160 @@
+     1	/**
+     2	 * The verification seam (onboarding order J). Extensible by design:
+     3	 * VERIFICATION_METHODS names every proof the product will ever accept.
+     4	 * Exactly one is implemented today (operator-attestation); the rest are
+     5	 * declared with implemented: false and a reason, so no caller can mistake
+     6	 * a future method for a present one.
+     7	 *
+     8	 * To add a method later: implement its checker, flip its flag, keep the
+     9	 * VerificationProof shape. The state machine needs no changes.
+    10	 */
+    11	import { ClaimError, type VerificationMethod, type VerificationProof } from "./types";
+    12	
+    13	export interface VerificationMethodInfo {
+    14	  method: VerificationMethod;
+    15	  implemented: boolean;
+    16	  label: string;
+    17	  description: string;
+    18	}
+    19	
+    20	const METHODS: VerificationMethodInfo[] = [
+    21	  {
+    22	    method: "dns-txt",
+    23	    implemented: false,
+    24	    label: "DNS TXT record",
+    25	    description:
+    26	      "A TXT record at _fyd-challenge.<domain> holding a server-issued token. Not built yet.",
+    27	  },
+    28	  {
+    29	    method: "well-known-file",
+    30	    implemented: false,
+    31	    label: "Well-known file",
+    32	    description:
+    33	      "A token file served at /.well-known/fyd-verification.txt. Not built yet.",
+    34	  },
+    35	  {
+    36	    method: "html-meta-tag",
+    37	    implemented: false,
+    38	    label: "HTML meta tag",
+    39	    description:
+    40	      "A meta tag carrying a server-issued token on the site homepage. Not built yet.",
+    41	  },
+    42	  {
+    43	    method: "cms-integration",
+    44	    implemented: false,
+    45	    label: "CMS integration",
+    46	    description: "Proof via an installed CMS plugin or app handshake. Not built yet.",
+    47	  },
+    48	  {
+    49	    method: "provider-evidence",
+    50	    implemented: false,
+    51	    label: "Verified-domain provider",
+    52	    description:
+    53	      "Evidence from a domain-verified provider (for example Search Console). Not built yet.",
+    54	  },
+    55	  {
+    56	    method: "operator-attestation",
+    57	    implemented: true,
+    58	    label: "Operator attestation",
+    59	    description:
+    60	      "A human operator asserts control with a written basis. Honestly labeled: a statement, not a cryptographic proof of domain control.",
+    61	  },
+    62	];
+    63	
+    64	/** All known verification methods, implemented or not. Defensive copy. */
+    65	export function listVerificationMethods(): VerificationMethodInfo[] {
+    66	  return METHODS.map((m) => ({ ...m }));
+    67	}
+    68	
+    69	export function isVerificationMethodImplemented(method: VerificationMethod): boolean {
+    70	  return METHODS.some((m) => m.method === method && m.implemented);
+    71	}
+    72	
+    73	export interface OperatorAttestationInput {
+    74	  resourceId: string;
+    75	  operatorLabel: string;
+    76	  basis: string;
+    77	}
+    78	
+    79	/**
+    80	 * Build an operator-attestation proof. Fails closed on a missing basis.
+    81	 * The proof carries its limitation in proofNote so no surface can present
+    82	 * it as stronger evidence than it is.
+    83	 */
+    84	export function attestOperatorControl(input: OperatorAttestationInput): VerificationProof {
+    85	  const basis = (input.basis ?? "").trim();
+    86	  if (basis.length < 10) {
+    87	    throw new ClaimError(
+    88	      "Operator attestation needs a written basis (at least 10 characters).",
+    89	      "weak-proof",
+    90	    );
+    91	  }
+    92	  if (!input.operatorLabel || !input.operatorLabel.trim()) {
+    93	    throw new ClaimError("Operator attestation needs a named operator.", "weak-proof");
+    94	  }
+    95	  return {
+    96	    method: "operator-attestation",
+    97	    verifiedAt: new Date().toISOString(),
+    98	    verifiedBy: input.operatorLabel.trim(),
+    99	    basis,
+   100	    artifacts: {
+   101	      resourceId: input.resourceId,
+   102	      attestation: "operator-statement",
+   103	    },
+   104	    proofNote:
+   105	      "Operator attestation: a human operator asserts control. This is a statement, not a cryptographic proof of domain control.",
+   106	  };
+   107	}
+===FILE: src/fyd/claim/verification-seam.ts
+     1	/**
+     2	 * GET /api/fyd/claims/[resourceId]
+     3	 *
+     4	 * Read a resource claim. 404 when no record exists (missing data fails
+     5	 * honest; nothing is invented). 400 on a malformed resource id.
+     6	 */
+     7	import { NextRequest, NextResponse } from "next/server";
+     8	import { isValidResourceId } from "@/fyd/claim/machine";
+     9	import { readClaim } from "@/fyd/claim/store";
+    10	
+    11	export const runtime = "nodejs";
+    12	export const dynamic = "force-dynamic";
+    13	
+    14	export async function GET(
+    15	  _req: NextRequest,
+    16	  ctx: { params: Promise<{ resourceId: string }> },
+    17	): Promise<NextResponse> {
+    18	  const { resourceId } = await ctx.params;
+    19	  if (!isValidResourceId(resourceId)) {
+    20	    return NextResponse.json(
+    21	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    22	      { status: 400 },
+    23	    );
+    24	  }
+    25	  const claim = readClaim(resourceId);
+    26	  if (!claim) {
+    27	    return NextResponse.json(
+    28	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+    29	      { status: 404 },
+    30	    );
+    31	  }
+    32	  return NextResponse.json({ ok: true, claim });
+    33	}
+===FILE: src/app/api/fyd/claims/[resourceId]/route.ts
+     1	/**
+     2	 * GET /api/fyd/claims/identity
+     3	 *
+     4	 * Which identity, if any, is available for claiming in this build.
+     5	 * Demo-owner mode is the only source right now and is labeled as such.
+     6	 * Null identity means claiming is unavailable: the UI must not offer it.
+     7	 */
+     8	import { NextResponse } from "next/server";
+     9	import { resolveClaimIdentity } from "@/fyd/claim/identity";
+    10	
+    11	export const runtime = "nodejs";
+    12	export const dynamic = "force-dynamic";
+    13	
+    14	export async function GET(): Promise<NextResponse> {
+    15	  const identity = resolveClaimIdentity();
+    16	  return NextResponse.json({ ok: true, identity });
+    17	}
+===FILE: src/app/api/fyd/claims/identity/route.ts

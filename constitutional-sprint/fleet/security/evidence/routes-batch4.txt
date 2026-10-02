@@ -1,0 +1,568 @@
+########## src/app/api/fyd/claims/[resourceId]/verify/route.ts ##########
+     1	/**
+     2	 * POST /api/fyd/claims/[resourceId]/verify
+     3	 *
+     4	 * CLAIMED -> VERIFIED-CONTROLLED. Body: { "method": "operator-attestation",
+     5	 * "basis": "human-readable basis", "operatorLabel"?: "name" }.
+     6	 *
+     7	 * Only implemented verification methods are accepted; the rest return 501
+     8	 * with the full method list so the UI can say what is coming, honestly.
+     9	 *
+    10	 * DEMO OWNER MODE GATE: this route WRITES claim state (operator
+    11	 * attestation), so it requires DEV/DEMO OWNER MODE:
+    12	 * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or private-network
+    13	 * host. Anything else gets a typed 403
+    14	 * { ok:false, code:"demo_owner_mode_required" } and nothing is written.
+    15	 * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION: no identity is
+    16	 * verified here; operator attestation is a labeled statement, not a
+    17	 * cryptographic proof of domain control.
+    18	 */
+    19	import { NextRequest, NextResponse } from "next/server";
+    20	import { isValidResourceId, verifyControl } from "@/fyd/claim/machine";
+    21	import { ClaimError, type VerificationMethod } from "@/fyd/claim/types";
+    22	import {
+    23	  attestOperatorControl,
+    24	  isVerificationMethodImplemented,
+    25	  listVerificationMethods,
+    26	} from "@/fyd/claim/verification-seam";
+    27	import { readClaim, writeClaim } from "@/fyd/claim/store";
+    28	import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+    29	
+    30	export const runtime = "nodejs";
+    31	export const dynamic = "force-dynamic";
+    32	
+    33	const NOT_REAL_AUTH =
+    34	  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+    35	  "this mode is for localhost/private-network demonstration only.";
+    36	
+    37	/**
+    38	 * Demo-owner-mode gate (same contract as the customize approval API and
+    39	 * the object overrides route): refuse with a typed 403 unless
+    40	 * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
+    41	 * localhost/private-network host. Default off; absent/false => fail closed.
+    42	 */
+    43	function demoDenied(req: NextRequest) {
+    44	  const enabled = isDemoOwnerModeEnabled();
+    45	  const host = req.headers.get("host") ?? "";
+    46	  const privateNet = isPrivateHost(host);
+    47	  if (!enabled || !privateNet) {
+    48	    return NextResponse.json(
+    49	      {
+    50	        ok: false,
+    51	        code: "demo_owner_mode_required",
+    52	        error:
+    53	          "Claim verification requires DEV/DEMO OWNER MODE " +
+    54	          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+    55	          NOT_REAL_AUTH,
+    56	        demoOwnerMode: enabled,
+    57	        hostPrivate: privateNet,
+    58	      },
+    59	      { status: 403 },
+    60	    );
+    61	  }
+    62	  return null;
+    63	}
+    64	
+    65	const METHODS: VerificationMethod[] = [
+    66	  "dns-txt",
+    67	  "well-known-file",
+    68	  "html-meta-tag",
+    69	  "cms-integration",
+    70	  "provider-evidence",
+    71	  "operator-attestation",
+    72	];
+    73	
+    74	export async function POST(
+    75	  req: NextRequest,
+    76	  ctx: { params: Promise<{ resourceId: string }> },
+    77	): Promise<NextResponse> {
+    78	  // Gate before any parsing or I/O: verification writes claim state.
+    79	  const gate = demoDenied(req);
+    80	  if (gate) return gate;
+    81	
+    82	  const { resourceId } = await ctx.params;
+    83	  if (!isValidResourceId(resourceId)) {
+    84	    return NextResponse.json(
+    85	      { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
+    86	      { status: 400 },
+    87	    );
+    88	  }
+    89	
+    90	  let body: { method?: unknown; basis?: unknown; operatorLabel?: unknown };
+    91	  try {
+    92	    body = (await req.json()) as typeof body;
+    93	  } catch {
+    94	    return NextResponse.json(
+    95	      { ok: false, code: "invalid-body", message: "Request body must be JSON." },
+    96	      { status: 400 },
+    97	    );
+    98	  }
+    99	  const method = body.method;
+   100	  if (typeof method !== "string" || !METHODS.includes(method as VerificationMethod)) {
+   101	    return NextResponse.json(
+   102	      {
+   103	        ok: false,
+   104	        code: "unknown-method",
+   105	        message: "Unknown verification method.",
+   106	        methods: listVerificationMethods(),
+   107	      },
+   108	      { status: 400 },
+   109	    );
+   110	  }
+   111	  if (!isVerificationMethodImplemented(method as VerificationMethod)) {
+   112	    return NextResponse.json(
+   113	      {
+   114	        ok: false,
+   115	        code: "method-unimplemented",
+   116	        message: "This verification method is not built yet.",
+   117	        methods: listVerificationMethods(),
+   118	      },
+   119	      { status: 501 },
+   120	    );
+   121	  }
+   122	
+   123	  const current = readClaim(resourceId);
+   124	  if (!current) {
+   125	    return NextResponse.json(
+   126	      { ok: false, code: "not-found", message: "No claim record for this resource." },
+   127	      { status: 404 },
+   128	    );
+   129	  }
+   130	
+   131	  try {
+   132	    const operatorLabel =
+   133	      typeof body.operatorLabel === "string" && body.operatorLabel.trim()
+   134	        ? body.operatorLabel.trim()
+   135	        : (current.claimedBy?.actorLabel ?? "operator");
+   136	    const proof = attestOperatorControl({
+   137	      resourceId,
+   138	      operatorLabel,
+   139	      basis: typeof body.basis === "string" ? body.basis : "",
+   140	    });
+   141	    const next = verifyControl(current, proof);
+   142	    writeClaim(next);
+   143	    return NextResponse.json({ ok: true, claim: next });
+   144	  } catch (e) {
+   145	    if (e instanceof ClaimError) {
+   146	      const status = e.code === "bad-transition" ? 409 : 400;
+   147	      return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status });
+   148	    }
+   149	    throw e;
+   150	  }
+   151	}
+########## src/app/api/fyd/customize/route.ts ##########
+     1	/**
+     2	 * POST /api/fyd/customize — Lane D: customize-with-FYD approval API.
+     3	 *
+     4	 * Actions:
+     5	 *   { action: "parse", siteId, text }
+     6	 *       Plain English -> typed intent -> resolution -> digest-bound
+     7	 *       proposal -> review card. No owner action, no persistence.
+     8	 *   { action: "approve", siteId, text, proposal }
+     9	 *       Re-derives the whole chain from the text against the CURRENT
+    10	 *       spec, re-verifies every digest, and only then journals the
+    11	 *       directive. DEMO OWNER MODE ONLY (localhost/private + env flag),
+    12	 *       conspicuously labeled, never real authentication.
+    13	 *   { action: "clear", siteId, intentId }
+    14	 *       Removes an approved directive from the journal (demo only).
+    15	 *
+    16	 * GET ?siteId=<id>&view=inspect — current presentation-intent state,
+    17	 *   section order, digest of the spec the owner reviews.
+    18	 *
+    19	 * Failures are typed and honest: 400 (bad request / unsupported /
+    20	 * unresolved), 403 (no demo-owner mode, capability denied, public host),
+    21	 * 404 (site not found), 409 (stale digest — the spec moved since the
+    22	 * proposal was drafted), 422 (target missing from current evidence),
+    23	 * 502 (journal unreachable — nothing was recorded).
+    24	 */
+    25	
+    26	import { NextResponse } from "next/server";
+    27	import { isPrivateHost } from "@/fyd/owner-mode/gate";
+    28	import {
+    29	  DEMO_OWNER_ACTOR,
+    30	  evaluateCapability,
+    31	  resolveDemoRelationship,
+    32	} from "@/fyd/owner-mode/capability";
+    33	import { isUnsupported } from "@/fyd/customize/types";
+    34	import {
+    35	  parseCustomizationIntent,
+    36	  resolveCustomizationIntent,
+    37	} from "@/fyd/customize/intent";
+    38	import { proposeFromSiteIntent } from "@/fyd/customize/propose";
+    39	import {
+    40	  buildDirective,
+    41	  emitOverlayEvent,
+    42	  loadCustomizedSite,
+    43	} from "@/fyd/customize/server";
+    44	import type { SitePatchBody } from "@/fyd/proceduralize/patch";
+    45	
+    46	export const dynamic = "force-dynamic";
+    47	
+    48	const NOT_REAL_AUTH =
+    49	  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+    50	  "this mode is for localhost/private-network demonstration only.";
+    51	
+    52	function demoDenied(req: Request) {
+    53	  const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+    54	  const host = req.headers.get("host") ?? "";
+    55	  const privateNet = isPrivateHost(host);
+    56	  if (!enabled || !privateNet) {
+    57	    return NextResponse.json(
+    58	      {
+    59	        ok: false,
+    60	        code: "demo_owner_mode_required",
+    61	        error:
+    62	          "Customize-with-FYD approvals require DEV/DEMO OWNER MODE " +
+    63	          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+    64	          NOT_REAL_AUTH,
+    65	        demoOwnerMode: enabled,
+    66	        hostPrivate: privateNet,
+    67	      },
+    68	      { status: 403 },
+    69	    );
+    70	  }
+    71	  const verdict = evaluateCapability(
+    72	    DEMO_OWNER_ACTOR,
+    73	    resolveDemoRelationship("", DEMO_OWNER_ACTOR),
+    74	    "owner.customize-approve",
+    75	  );
+    76	  if (!verdict.allowed) {
+    77	    return NextResponse.json(
+    78	      {
+    79	        ok: false,
+    80	        code: "capability_denied",
+    81	        error: "Capability denied: " + verdict.reason,
+    82	        demoOwnerMode: enabled,
+    83	      },
+    84	      { status: 403 },
+    85	    );
+    86	  }
+    87	  return null;
+    88	}
+    89	
+    90	interface InspectView {
+    91	  siteId: string;
+    92	  specDigest: string;
+    93	  baseSpecDigest: string;
+    94	  pageOrder: { pageSlug: string; sections: { id: string; component: string; hidden: boolean }[] }[];
+    95	  directives: {
+    96	    intentId: string;
+    97	    siteIntent: unknown;
+    98	    proposalDigest: string;
+    99	    approvedBy: string;
+   100	    approvedAt: string;
+   101	    eventId?: string;
+   102	  }[];
+   103	  appliedIntentIds: string[];
+   104	  unresolved: { intentId: string; reason: string }[];
+   105	  demoOwnerMode: boolean;
+   106	  demo: true;
+   107	}
+   108	
+   109	export async function GET(req: Request) {
+   110	  const url = new URL(req.url);
+   111	  const siteId = (url.searchParams.get("siteId") ?? "").trim();
+   112	  const view = url.searchParams.get("view") ?? "";
+   113	  if (!siteId || view !== "inspect") {
+   114	    return NextResponse.json(
+   115	      { ok: false, error: "Usage: ?siteId=<id>&view=inspect" },
+   116	      { status: 400 },
+   117	    );
+   118	  }
+   119	  try {
+   120	    const site = await loadCustomizedSite(siteId);
+   121	    const body: InspectView = {
+   122	      siteId,
+   123	      specDigest: site.specDigest,
+   124	      baseSpecDigest: site.baseSpecDigest,
+   125	      pageOrder: site.spec.pages.map((p) => ({
+   126	        pageSlug: p.slug,
+   127	        sections: p.sections.map((s) => ({
+   128	          id: s.id,
+   129	          component: s.component,
+   130	          hidden: s.presentation.hidden === true,
+   131	        })),
+   132	      })),
+   133	      directives: (site.presentationIntent?.directives ?? []).map((d) => ({
+   134	        intentId: d.intentId,
+   135	        siteIntent: d.siteIntent,
+   136	        proposalDigest: d.proposal.proposalDigest,
+   137	        approvedBy: d.approval.approvedBy,
+   138	        approvedAt: d.approval.approvedAt,
+   139	        eventId: d.approval.eventId,
+   140	      })),
+   141	      appliedIntentIds: site.appliedIntentIds,
+   142	      unresolved: site.unresolved,
+   143	      demoOwnerMode: process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1",
+   144	      demo: true,
+   145	    };
+   146	    return NextResponse.json({ ok: true, ...body });
+   147	  } catch (e) {
+   148	    return NextResponse.json(
+   149	      {
+   150	        ok: false,
+   151	        error: e instanceof Error ? e.message : String(e),
+   152	        demo: true,
+   153	      },
+   154	      { status: 404 },
+   155	    );
+   156	  }
+   157	}
+   158	
+   159	interface ActionBody {
+   160	  action?: string;
+   161	  siteId?: string;
+   162	  text?: string;
+   163	  proposal?: SitePatchBody;
+   164	  intentId?: string;
+   165	}
+   166	
+   167	/** Parse -> resolve -> propose. Stateless; commits nothing. */
+   168	async function handleParse(siteId: string, text: string) {
+   169	  const parsed = parseCustomizationIntent(text);
+   170	  if (isUnsupported(parsed)) {
+   171	    return NextResponse.json(
+   172	      { ok: false, code: "unsupported", error: parsed.reason, demo: true },
+   173	      { status: 400 },
+   174	    );
+   175	  }
+   176	  let site;
+   177	  try {
+   178	    site = await loadCustomizedSite(siteId);
+   179	  } catch (e) {
+   180	    return NextResponse.json(
+   181	      { ok: false, code: "site_not_found", error: e instanceof Error ? e.message : String(e), demo: true },
+   182	      { status: 404 },
+   183	    );
+   184	  }
+   185	  const resolved = resolveCustomizationIntent(site.spec, site.graph, parsed.intent);
+   186	  if (!resolved.resolved) {
+   187	    return NextResponse.json(
+   188	      {
+   189	        ok: false,
+   190	        code: "unresolved",
+   191	        error: resolved.reason,
+   192	        intent: parsed.intent,
+   193	        intentDigest: parsed.intentDigest,
+   194	        demo: true,
+   195	      },
+   196	      { status: 422 },
+   197	    );
+   198	  }
+   199	  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+   200	  if (!outcome.ok) {
+   201	    return NextResponse.json(
+   202	      {
+   203	        ok: false,
+   204	        code: "no_op",
+   205	        error: outcome.error,
+   206	        intent: parsed.intent,
+   207	        intentDigest: parsed.intentDigest,
+   208	        demo: true,
+   209	      },
+   210	      { status: 422 },
+   211	    );
+   212	  }
+   213	  return NextResponse.json({
+   214	    ok: true,
+   215	    siteId,
+   216	    intent: parsed.intent,
+   217	    intentDigest: parsed.intentDigest,
+   218	    resolutionNote: resolved.resolutionNote,
+   219	    siteIntent: resolved.siteIntent,
+   220	    proposal: outcome.proposal,
+   221	    reviewCard: outcome.reviewCard,
+   222	    specDigest: outcome.specDigest,
+   223	    demo: true,
+   224	  });
+   225	}
+   226	
+   227	/**
+   228	 * Approve -> apply (journal only; render picks it up on next regen).
+   229	 * Re-derives the entire chain from the text against the CURRENT spec and
+   230	 * re-verifies every digest. A stale spec, a stale digest, or an altered
+   231	 * proposal is refused — never applied.
+   232	 */
+   233	async function handleApprove(req: Request, siteId: string, text: string, clientProposal: SitePatchBody) {
+   234	  const gate = demoDenied(req);
+   235	  if (gate) return gate;
+   236	
+   237	  let site;
+   238	  try {
+   239	    site = await loadCustomizedSite(siteId);
+   240	  } catch (e) {
+   241	    return NextResponse.json(
+   242	      { ok: false, code: "site_not_found", error: e instanceof Error ? e.message : String(e), demo: true },
+   243	      { status: 404 },
+   244	    );
+   245	  }
+   246	  const parsed = parseCustomizationIntent(text);
+   247	  if (isUnsupported(parsed)) {
+   248	    return NextResponse.json(
+   249	      { ok: false, code: "unsupported", error: parsed.reason, demo: true },
+   250	      { status: 400 },
+   251	    );
+   252	  }
+   253	  const resolved = resolveCustomizationIntent(site.spec, site.graph, parsed.intent);
+   254	  if (!resolved.resolved) {
+   255	    return NextResponse.json(
+   256	      { ok: false, code: "unresolved", error: resolved.reason, demo: true },
+   257	      { status: 422 },
+   258	    );
+   259	  }
+   260	  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+   261	  if (!outcome.ok) {
+   262	    return NextResponse.json(
+   263	      { ok: false, code: "no_op", error: outcome.error, demo: true },
+   264	      { status: 422 },
+   265	    );
+   266	  }
+   267	  const fresh = outcome.proposal;
+   268	  if (
+   269	    !clientProposal ||
+   270	    clientProposal.proposalDigest !== fresh.proposalDigest
+   271	  ) {
+   272	    return NextResponse.json(
+   273	      {
+   274	        ok: false,
+   275	        code: "stale_digest",
+   276	        error:
+   277	          "The proposal the owner approved does not match a proposal freshly " +
+   278	          "derived from the current spec. The spec moved (or the proposal was " +
+   279	          "altered) since drafting: re-run parse and review the new proposal. " +
+   280	          "Nothing was applied.",
+   281	        expectedDigest: fresh.proposalDigest,
+   282	        receivedDigest: clientProposal?.proposalDigest,
+   283	        demo: true,
+   284	      },
+   285	      { status: 409 },
+   286	    );
+   287	  }
+   288	  // Belt and suspenders: full body must equal the fresh body, not just the digest.
+   289	  if (JSON.stringify(clientProposal) !== JSON.stringify(fresh)) {
+   290	    return NextResponse.json(
+   291	      {
+   292	        ok: false,
+   293	        code: "proposal_altered",
+   294	        error: "Proposal body differs from the freshly derived proposal. Nothing was applied.",
+   295	        demo: true,
+   296	      },
+   297	      { status: 409 },
+   298	    );
+   299	  }
+   300	
+   301	  const op = buildDirective(siteId, resolved.siteIntent, fresh, new Date().toISOString());
+   302	  let eventId: string;
+   303	  try {
+   304	    eventId = await emitOverlayEvent(siteId, [op]);
+   305	  } catch (e) {
+   306	    return NextResponse.json(
+   307	      {
+   308	        ok: false,
+   309	        code: "journal_unavailable",
+   310	        error:
+   311	          "The approval was NOT recorded: " + (e instanceof Error ? e.message : String(e)),
+   312	        demo: true,
+   313	      },
+   314	      { status: 502 },
+   315	    );
+   316	  }
+   317	  return NextResponse.json({
+   318	    ok: true,
+   319	    siteId,
+   320	    intentId: op.op === "set_presentation_intent" ? op.intentId : undefined,
+   321	    eventId,
+   322	    proposalDigest: fresh.proposalDigest,
+   323	    specDigest: outcome.specDigest,
+   324	    note:
+   325	      "Directive journaled as a presentation-intent overlay (proposal " +
+   326	      fresh.proposalDigest.slice(0, 16) + "...). Re-run the projection dump: " +
+   327	      "the regenerated page must show the approved section order from the " +
+   328	      "review card. The proposal was drafted against spec digest " +
+   329	      outcome.specDigest.slice(0, 16) + ".... " + NOT_REAL_AUTH,
+   330	    demo: true,
+   331	    demoOwnerMode: true,
+   332	  });
+   333	}
+   334	
+   335	async function handleClear(req: Request, siteId: string, intentId: string) {
+   336	  const gate = demoDenied(req);
+   337	  if (gate) return gate;
+   338	  let eventId: string;
+   339	  try {
+   340	    eventId = await emitOverlayEvent(siteId, [
+   341	      { op: "clear_presentation_intent", intentId },
+   342	    ]);
+   343	  } catch (e) {
+   344	    return NextResponse.json(
+   345	      {
+   346	        ok: false,
+   347	        code: "journal_unavailable",
+   348	        error: "The clear was NOT recorded: " + (e instanceof Error ? e.message : String(e)),
+   349	        demo: true,
+   350	      },
+   351	      { status: 502 },
+   352	    );
+   353	  }
+   354	  return NextResponse.json({
+   355	    ok: true,
+   356	    siteId,
+   357	    intentId,
+   358	    eventId,
+   359	    note: "Directive removal journaled. Re-run the projection dump to render. " + NOT_REAL_AUTH,
+   360	    demo: true,
+   361	    demoOwnerMode: true,
+   362	  });
+   363	}
+   364	
+   365	export async function POST(req: Request) {
+   366	  let body: ActionBody;
+   367	  try {
+   368	    body = (await req.json()) as ActionBody;
+   369	  } catch {
+   370	    return NextResponse.json({ ok: false, error: "Body must be JSON.", demo: true }, { status: 400 });
+   371	  }
+   372	  const action = body.action ?? "";
+   373	  const siteId = (body.siteId ?? "").trim();
+   374	  if (!siteId) {
+   375	    return NextResponse.json({ ok: false, error: "siteId is required.", demo: true }, { status: 400 });
+   376	  }
+   377	  if (action === "parse") {
+   378	    const text = (body.text ?? "").trim();
+   379	    if (!text) {
+   380	      return NextResponse.json({ ok: false, error: "text is required.", demo: true }, { status: 400 });
+   381	    }
+   382	    return handleParse(siteId, text);
+   383	  }
+   384	  if (action === "approve") {
+   385	    const text = (body.text ?? "").trim();
+   386	    if (!text) {
+   387	      return NextResponse.json({ ok: false, error: "text is required.", demo: true }, { status: 400 });
+   388	    }
+   389	    if (!body.proposal) {
+   390	      return NextResponse.json(
+   391	        {
+   392	          ok: false,
+   393	          code: "no_proposal",
+   394	          error:
+   395	            "Approve requires the exact proposal the owner reviewed (from parse). " +
+   396	            "Nothing is applied without an explicit, digest-verified approval.",
+   397	          demo: true,
+   398	        },
+   399	        { status: 400 },
+   400	      );
+   401	    }
+   402	    return handleApprove(req, siteId, text, body.proposal);
+   403	  }
+   404	  if (action === "clear") {
+   405	    const intentId = (body.intentId ?? "").trim();
+   406	    if (!intentId) {
+   407	      return NextResponse.json({ ok: false, error: "intentId is required.", demo: true }, { status: 400 });
+   408	    }
+   409	    return handleClear(req, siteId, intentId);
+   410	  }
+   411	  return NextResponse.json(
+   412	    { ok: false, error: "Unknown action. Use parse, approve, or clear.", demo: true },
+   413	    { status: 400 },
+   414	  );
+   415	}

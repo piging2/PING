@@ -1,0 +1,255 @@
+     1	/**
+     2	 * H3 lane: DEMO OWNER MODE panel.
+     3	 *
+     4	 * "use client" because the attestation walkthrough is interactive demo
+     5	 * state (button -> gate -> verdict). Renders NOTHING unless the dev-only
+     6	 * gate (./gate.ts) is enabled via NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1.
+     7	 *
+     8	 * The banner is deliberately conspicuous: striped hazard border and the
+     9	 * exact words "DEMO OWNER MODE - not real authentication". Nothing about
+    10	 * this panel may be mistaken for a login, a session, or real access
+    11	 * control. See ./gate.ts and ./capability.ts for the full disclaimers.
+    12	 */
+    13	
+    14	"use client";
+    15	
+    16	import { useState } from "react";
+    17	import { isDemoOwnerModeEnabled } from "./gate";
+    18	import {
+    19	  DEMO_OWNER_ACTOR,
+    20	  evaluateAllCapabilities,
+    21	  resolveDemoRelationship,
+    22	  type CapabilityVerdict,
+    23	} from "./capability";
+    24	import { attest, preconditionsFor } from "./attestation-gate";
+    25	import { CustomizePanel } from "./customize-panel";
+    26	
+    27	const hazard =
+    28	  "repeating-linear-gradient(45deg, #3a2b00 0 16px, #14100a 16px 32px)";
+    29	
+    30	interface AttestAttempt {
+    31	  label: string;
+    32	  result: ReturnType<typeof attest>;
+    33	}
+    34	
+    35	export function DemoOwnerMode({ siteId }: { siteId: string }) {
+    36	  const [attempts, setAttempts] = useState<AttestAttempt[]>([]);
+    37	
+    38	  // Dev-only gate: the entire panel (banner included) renders null unless
+    39	  // the demo env var is explicitly set. There is no other way to enable it.
+    40	  if (!isDemoOwnerModeEnabled()) return null;
+    41	
+    42	  const actor = DEMO_OWNER_ACTOR;
+    43	  const relationship = resolveDemoRelationship(siteId, actor);
+    44	  const verdicts: CapabilityVerdict[] = evaluateAllCapabilities(
+    45	    actor,
+    46	    relationship,
+    47	  );
+    48	  const attestVerdict = verdicts.find(
+    49	    (v) => v.capability === "owner.attest-regen",
+    50	  );
+    51	
+    52	  const runAttest = (withEvidence: boolean) => {
+    53	    if (!attestVerdict?.allowed) return;
+    54	    const evidence = withEvidence
+    55	      ? {
+    56	          approved_transition_id: "demo-transition-001",
+    57	          rendered_sitespec_hash: "demo-sitespec-hash",
+    58	          bindings_verified: true,
+    59	        }
+    60	      : {};
+    61	    const result = attest("regen-complete", evidence, undefined, () =>
+    62	      new Date().toISOString(),
+    63	    );
+    64	    setAttempts((prev) =>
+    65	      prev.concat([
+    66	        {
+    67	          label: withEvidence
+    68	            ? "Attest with evidence"
+    69	            : "Attest with NO evidence",
+    70	          result,
+    71	        },
+    72	      ]),
+    73	    );
+    74	  };
+    75	
+    76	  return (
+    77	    <section
+    78	      aria-label="Demo owner mode"
+    79	      style={{ border: "6px solid transparent", borderImage: `${hazard} 1`, background: "#171208" }}
+    80	    >
+    81	      <div style={{ padding: "18px 22px" }}>
+    82	        <div
+    83	          style={{
+    84	            display: "inline-block",
+    85	            background: "#f5c518",
+    86	            color: "#171208",
+    87	            fontWeight: 800,
+    88	            letterSpacing: 1,
+    89	            padding: "6px 14px",
+    90	            fontSize: 15,
+    91	          }}
+    92	        >
+    93	          DEMO OWNER MODE - not real authentication
+    94	        </div>
+    95	        <p style={{ color: "#f5eeda", fontSize: 14, margin: "12px 0 0", maxWidth: 720 }}>
+    96	          Demo seam only: no identity is verified, no session exists, no
+    97	          credential is checked. The actor below is a label, the relationship
+    98	          is a hard-coded demo mapping, and every verdict shows its reason.
+    99	          Never confuse this panel with production access control.
+   100	        </p>
+   101	
+   102	        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 16 }}>
+   103	          <div
+   104	            style={{
+   105	              background: "#221b0e",
+   106	              border: "1px solid #6b5518",
+   107	              borderRadius: 8,
+   108	              padding: "12px 16px",
+   109	              minWidth: 260,
+   110	            }}
+   111	          >
+   112	            <div style={{ color: "#9c8a4d", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
+   113	              Actor
+   114	            </div>
+   115	            <div style={{ color: "#f5eeda", fontWeight: 700, marginTop: 4 }}>
+   116	              {actor.label}
+   117	            </div>
+   118	            <div style={{ color: "#9c8a4d", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginTop: 12 }}>
+   119	              Relationship to {siteId}
+   120	            </div>
+   121	            <div style={{ color: "#f5eeda", fontWeight: 700, marginTop: 4 }}>
+   122	              {relationship.kind}
+   123	            </div>
+   124	            <div style={{ color: "#c9b98a", fontSize: 13, marginTop: 4 }}>
+   125	              {relationship.basis}
+   126	            </div>
+   127	          </div>
+   128	
+   129	          <div
+   130	            style={{
+   131	              background: "#221b0e",
+   132	              border: "1px solid #6b5518",
+   133	              borderRadius: 8,
+   134	              padding: "12px 16px",
+   135	              minWidth: 300,
+   136	              flex: 1,
+   137	            }}
+   138	          >
+   139	            <div style={{ color: "#9c8a4d", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
+   140	              Capability evaluation (live)
+   141	            </div>
+   142	            <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
+   143	              {verdicts.map((v) => (
+   144	                <li key={v.capability} style={{ marginTop: 10 }}>
+   145	                  <span
+   146	                    style={{
+   147	                      display: "inline-block",
+   148	                      fontSize: 12,
+   149	                      fontWeight: 800,
+   150	                      padding: "2px 10px",
+   151	                      borderRadius: 9999,
+   152	                      background: v.allowed ? "#1d3a24" : "#3a1d1d",
+   153	                      color: v.allowed ? "#7fd08a" : "#e08a8a",
+   154	                      marginRight: 8,
+   155	                    }}
+   156	                  >
+   157	                    {v.allowed ? "ALLOW" : "DENY"}
+   158	                  </span>
+   159	                  <code style={{ color: "#f5eeda", fontSize: 13 }}>
+   160	                    {v.capability}
+   161	                  </code>
+   162	                  <div style={{ color: "#c9b98a", fontSize: 13, marginTop: 4 }}>
+   163	                    {v.reason}
+   164	                  </div>
+   165	                </li>
+   166	              ))}
+   167	            </ul>
+   168	          </div>
+   169	        </div>
+   170	
+   171	        <div
+   172	          style={{
+   173	            marginTop: 16,
+   174	            background: "#221b0e",
+   175	            border: "1px solid #6b5518",
+   176	            borderRadius: 8,
+   177	            padding: "12px 16px",
+   178	          }}
+   179	        >
+   180	          <div style={{ color: "#9c8a4d", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
+   181	            Owner action: attest regen-complete
+   182	          </div>
+   183	          <div style={{ color: "#c9b98a", fontSize: 13, marginTop: 6 }}>
+   184	            Requires capability owner.attest-regen (
+   185	            {attestVerdict?.allowed ? "granted above" : "denied above"}) AND
+   186	            evidence preconditions:{" "}
+   187	            {preconditionsFor("regen-complete").join(", ")}.
+   188	          </div>
+   189	          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+   190	            <button
+   191	              type="button"
+   192	              onClick={() => runAttest(false)}
+   193	              disabled={!attestVerdict?.allowed}
+   194	              style={{
+   195	                background: "#f5c518",
+   196	                color: "#171208",
+   197	                fontWeight: 700,
+   198	                border: "none",
+   199	                borderRadius: 8,
+   200	                padding: "10px 16px",
+   201	                cursor: attestVerdict?.allowed ? "pointer" : "not-allowed",
+   202	                opacity: attestVerdict?.allowed ? 1 : 0.5,
+   203	              }}
+   204	            >
+   205	              Attest with NO evidence
+   206	            </button>
+   207	            <button
+   208	              type="button"
+   209	              onClick={() => runAttest(true)}
+   210	              disabled={!attestVerdict?.allowed}
+   211	              style={{
+   212	                background: "transparent",
+   213	                color: "#f5c518",
+   214	                fontWeight: 700,
+   215	                border: "2px solid #f5c518",
+   216	                borderRadius: 8,
+   217	                padding: "8px 14px",
+   218	                cursor: attestVerdict?.allowed ? "pointer" : "not-allowed",
+   219	                opacity: attestVerdict?.allowed ? 1 : 0.5,
+   220	              }}
+   221	            >
+   222	              Attest with evidence
+   223	            </button>
+   224	          </div>
+   225	          {attempts.length > 0 ? (
+   226	            <div style={{ marginTop: 12 }}>
+   227	              {attempts.map((a, i) => (
+   228	                <pre
+   229	                  key={i}
+   230	                  style={{
+   231	                    background: "#100c06",
+   232	                    color: a.result.status === "ATTESTED" ? "#7fd08a" : "#e08a8a",
+   233	                    fontSize: 12,
+   234	                    padding: 10,
+   235	                    borderRadius: 8,
+   236	                    overflowX: "auto",
+   237	                    marginTop: 8,
+   238	                  }}
+   239	                >
+   240	                  {a.label} =&gt; {a.result.status}
+   241	                  {a.result.reason ? "\nreason: " + a.result.reason : ""}
+   242	                  {a.result.attestation
+   243	                    ? "\nattestedAt: " + a.result.attestation.attestedAt
+   244	                    : ""}
+   245	                </pre>
+   246	              ))}
+   247	            </div>
+   248	          ) : null}
+   249	        </div>
+   250	
+   251	        <CustomizePanel siteId={siteId} />
+   252	      </div>
+   253	    </section>
+   254	  );
+   255	}

@@ -1,0 +1,7 @@
+**Correctness review – live‑proposal approval chain (stages 1‑9)**  
+
+**Stage 1 – Proposal creation** – Evidence: `request_approval` returned a stable probe‑id, status `WAITING_APPROVAL`, tenant set, and the canonical journal now contains `MC_APPROVAL_REQUESTED`. This directly shows the proposal was persisted. ✔️ Supports verdict.
+
+**Stage 2 – Digest correctness** – Evidence: independent recomputation matches the stored digest; `sha256sum` of `proposal.json` equals the recorded digest. ✔️ Supports verdict.
+
+**Stage 3 – Exact‑proposal approval** – Evidence: `decide` with the exact digest yields `ok:true`,

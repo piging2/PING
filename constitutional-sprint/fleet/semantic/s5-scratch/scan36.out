@@ -1,0 +1,47 @@
+=== provider class definition ===
+./gateway/kernel_replay_execution_provider.js:18:class KernelReplayExecutionProvider {
+=== how bootstrap builds it ===
+104:const { KernelReplayExecutionProvider } = require('../kernel_replay_execution_provider');
+513:        const replayProvider = new KernelReplayExecutionProvider();
+=== provider wiring in canonical_workers ===
+
+/**
+ * ReplayWorker — processes REPLAY_VERIFY events.
+ * Verifies event replay integrity via the deterministic kernel engine.
+ *
+ * Authority chain:
+ *   ReplayWorker → ReplayAuthority → KernelReplayExecutionProvider → DeterministicReplayEngine
+ *
+ * verified: true ONLY when the kernel engine reports violations.length === 0.
+ * The old stub returned verified: true unconditionally — that was wrong.
+ */
+class ReplayWorker extends BaseWorker {
+  constructor(options = {}) {
+    super(options);
+    this._name = 'replay';
+    // The kernel replay execution provider — injected by registerCanonicalWorkers
+    // or by test harness. When absent, replay is a no-op (verified: false).
+    this._replayProvider = options.replayProvider || null;
+  }
+
+  async handle(event) {
+    // Preserve the triggering event so the constitutional trace contract
+    // (namespace / correlation_id / confidence inheritance) functions even when
+    // invoked directly — WorkerRuntime.dispatch also sets worker._event, but
+    // direct unit-test invocation must behave identically.
+    this._event = event;
+    const payload = event.payload || {};
+    const documentId = payload.documentId || payload._object_id;
+
+    console.log(`[ReplayWorker] Processing ${event.event_type} for ${documentId || 'unknown'}`);
+
+    // Build a transcript from the event chain for the kernel engine.
+    // The transcript contains replay_events[] — the events to re-execute.
+    const replayEvents = await this._buildReplayEvents(event);
+
+    // If no provider is available, replay is a structural no-op.
+    if (!this._replayProvider) {
+      const replay = {
+        documentId,
+        eventType: event.event_type,
+        timestamp: constitutionalTimeAuthority.nowAsISOString(),
