@@ -1,0 +1,11 @@
+tests(event-authority): phase 9/12/13/14 convergence law coverage
+
+Phase 9: model-B consistency proof (commit first, derive after, rebuild).
+Phase 12: collision and duplicate law (idempotent duplicates, fail-closed conflicts).
+Phase 13: fanout exactly-once boundaries (bridge, workers, witness, replay).
+Phase 14: ordering authority (sequence allocation, replay order, MAX audit).
+
+New harnesses: 129 pass, 3 fail. The 3 failures are honest defect records:
+envelope ON CONFLICT arbiter does not cover UNIQUE(tenant_id, sequence), so a
+same-event derivation race can raise spurious 23505 (C9, F6-STATIC, F6-RACE).
+Defects reported, not fixed. No product code modified.

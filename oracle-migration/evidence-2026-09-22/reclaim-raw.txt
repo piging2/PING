@@ -1,0 +1,47 @@
+##### BEFORE
+/dev/sda1        45G   36G  8.9G  80% /
+##### REF CHECK pg15
+/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/CLEANUP_COMMANDS.sh
+/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/compose.yaml
+/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/RUNTIME_STATE.md
+/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/brainos/newsletter/container_runtime_inventory.md
+/opt/ping/releases/bce92787b0da631ed9218e2255607562c9dff731/ping-oracle-clean-snapshot/brainos/newsletter/docs/constitutional/runtime_truth_map.md
+(pg15 ref check done)
+##### REF CHECK oci-cli
+(oci ref check done)
+##### DANGLING SIZE
+1.19GB
+1.76GB
+##### BUILDER PRUNE
+            https://docs.docker.com/go/buildx/
+
+Total reclaimed space: 0B
+##### JOURNAL VACUUM
+Vacuuming done, freed 0B of archived journals from /run/log/journal.
+Vacuuming done, freed 0B of archived journals from /var/log/journal.
+##### BTMP TRUNCATE
+BTMP_TRUNCATED
+##### TMP CLEANUP
+-rw-r--r-- 1 ubuntu ubuntu     71680 Sep 20 00:52 /tmp/gw-refactor-deploy.tar
+-rw------- 1 ubuntu ubuntu 406369280 Sep 21 00:14 /tmp/ping-gateway-512776de5-arm64.tar
+-rw------- 1 ubuntu ubuntu 406363648 Sep 21 00:10 /tmp/ping-gateway-6a8d5bf83-arm64.tar
+-rw------- 1 ubuntu ubuntu 406369280 Sep 21 00:19 /tmp/ping-gateway-84486f056-arm64.tar
+-rw------- 1 ubuntu ubuntu 406361600 Sep 21 00:05 /tmp/ping-gateway-9d3b22566-arm64.tar
+-rw-r--r-- 1 ubuntu ubuntu  20430184 Sep 20 01:34 /tmp/ping-head.tgz
+
+/tmp/ping-head:
+REMOVED /tmp/ping-gateway-9d3b22566-arm64.tar
+REMOVED /tmp/ping-gateway-84486f056-arm64.tar
+REMOVED /tmp/ping-gateway-6a8d5bf83-arm64.tar
+REMOVED /tmp/ping-gateway-512776de5-arm64.tar
+REMOVED /tmp/ping-head.tgz
+REMOVED /tmp/gw-refactor-deploy.tar
+REMOVED /tmp/ping-head
+##### AFTER
+/dev/sda1        45G   30G   15G  68% /
+##### DOCKER DF AFTER
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          22        7         24.55GB   8.383GB (34%)
+Containers      9         4         69.44MB   1.978MB (2%)
+Local Volumes   3         3         190.5MB   0B (0%)
+Build Cache     22        0         2.419GB   0B
