@@ -1,0 +1,1544 @@
+{
+  "manifest_version": "1",
+  "generated_at": "2026-10-02T11:45:00-06:00",
+  "generated_by": "piging2 harvest coordinator (subagent)",
+  "sources": {
+    "ping": {
+      "path": "/home/nolan/projects/ping",
+      "head": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "branch": "harvest/2026-10-02",
+      "note": "archaeology; read-only; byte-identical to fyd-converged on trust kernel"
+    },
+    "fyd-converged": {
+      "path": "/home/nolan/projects/ping-fyd-converged",
+      "head": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "branch": "fyd/convergence-2026-09-28"
+    },
+    "wr-integrate": {
+      "path": "/home/nolan/wr-integrate/ping-runtime/ping-runtime",
+      "head": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "note": "canonical ping-runtime lineage; read-only; pre-existing dirty build artifacts untouched"
+    }
+  },
+  "entry_count": 81,
+  "sha_filled": 61,
+  "entries": [
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/ping/digest.ts",
+      "SOURCE_SHA": "sha256:685a4037469bc182ecdfe3be782418e7d72573c52877bd4df6558927071c768b",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Canonical JSON serialization + pure-TS SHA-256 (pinned sha256-canonical-json-v1)",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/sitespec/public-projection.ts",
+        "lib/ping/ask-composer.ts"
+      ],
+      "TESTS": [
+        "src/lib/ping/__tests__/digest.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/digest.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Single proven canonical-bytes primitive; pinned test vectors vs node:crypto."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/identity/uuid.ts",
+      "SOURCE_SHA": "sha256:a4c1fb9db9e509b08638a52d539961c1c69c22374af775d5c97187f2add3b046",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Deterministic UUIDv5 minting with correct version/variant bits",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "node:crypto"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "fyd/identity/principal.ts"
+      ],
+      "TESTS": [
+        "src/fyd/identity/__tests__/principal.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/uuid.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Proven deterministic IDs; UUIDv7 explicitly rejected for re-projection dedup."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/ask/envelope.ts",
+      "SOURCE_SHA": "sha256:899b7fd4d3b11aae27d34e8fb10eb749c004e4ba7f44cca492e342579ddca03c",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Envelope signing interface + never-throws signature verification (payload_hash binding)",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "node:crypto"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "fyd/social/envelope.ts"
+      ],
+      "TESTS": [
+        "src/fyd/ask/__tests__/ask-fyd.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/envelope.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Proven verifyEnvelope; Signer interface never touches private keys."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/net/safe-fetch.ts",
+      "SOURCE_SHA": "sha256:694d2059de6047e0a5b5cefb4ce306e38534b2bcbfe8de313ddc77cf39435005",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "The ONE SSRF gate: DNS-resolved non-public-space rejection, redirect re-validation, content-type/size/timeout limits",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "node:dns/promises",
+        "node:net"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "fyd/proceduralize/*"
+      ],
+      "TESTS": [
+        "src/fyd/net/__tests__/safe-fetch.test.ts",
+        "src/fyd/net/__tests__/ssrf-adversarial.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/safe-fetch.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Adversarially tested SSRF gate; honest TOCTOU caveat documented."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/field-visibility.ts",
+      "SOURCE_SHA": "sha256:9a65de3a50173a75775f53373928d60334239e096063b83ee1b3a24dcb67954e",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Owner field-visibility policy (show|hide|coarse), non-mutating, address coarsening fail-closed",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "sitespec/public-projection.ts"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/field-visibility.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/field-visibility.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Pure, browser-safe, adversarially tested privacy primitive."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/public-projection.ts",
+      "SOURCE_SHA": "sha256:d739b066c3c9cd552b9880d34c06bf05f08dbe12fdcd05049a2241f489929915",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Verified public projection boundary (Q-C-01): deterministic 7-step composition with versioned digest receipt",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/digest",
+        "ask-composer",
+        "owner-store",
+        "field-visibility"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "app/sites/_shared/spec-pipeline.ts"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/public-projection.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/public-projection.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Most valuable kernel file after digest.ts; ADAPT to drop FYD-specific viewer kinds."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/tenant/tenant-context.ts",
+      "SOURCE_SHA": "sha256:ed2fb24d19eb3cea026484f5a3a8d4dbf9a53163dcdee2571de4168d0cebb569",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "TenantContext contract, DNS-safe tenant pattern, typed fail-closed tenant errors",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/tenant/scoped-stores.ts"
+      ],
+      "TESTS": [
+        "src/fyd/tenant/__tests__/g-route-isolation.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/tenant-context.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Fail-closed tenant boundary; cross-tenant errors name the boundary, not data."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/tenant/scoped-stores.ts",
+      "SOURCE_SHA": "sha256:4dd4f6fa893182bcd4be48193e008b7f4e6b576bad59c303d9b52b7cf1103f7a",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Sanctioned store wrappers asserting tenant key before every I/O",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "./tenant-context"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/tenant/__tests__/g-route-isolation.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/scoped-stores.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Companion to tenant-context; the consumption-side enforcement."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/proceduralize/sha256.ts",
+      "SOURCE_SHA": "sha256:0b1fd3dd1a66d1ba3d1af9bd54e283de6a05f31fd493dfee95cb34fad0c46e2d",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "9-line re-export shim of sha256Hex from digest",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/digest"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "fyd/proceduralize/*"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/sha256.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Keep the shim pattern; single hash owner."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/identity/audit.ts",
+      "SOURCE_SHA": "sha256:dc13ff017da1a06d493e45ec3f745fa48d2432b5a78ae2c9ef034a665fc819fa",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "redactEmail (***@domain); audit record helpers",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/redact.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Extract redactEmail as the seed of structured redaction (see REWRITE-SMALL redactSecrets)."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/safe-link.ts",
+      "SOURCE_SHA": "sha256:2aafaed89638b41d3e13ac5990b8efd38c34393df2ea351ffa7512902de214b6",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Parser-based URL neutralization: per-capability allowlists, control-char smuggling fail-closed",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/components/renderer.tsx"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/safe-link.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/safe-link.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Drop-in, zero deps, proven."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/ping/dev-signer.ts",
+      "SOURCE_SHA": "sha256:d28133236ce2f1dcc1459aa80258d83500582fc9724719db046f88cc7b76da0f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Ed25519 keypair custody: generate/store (0600/0700, path-traversal guard), signAsIdentity",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "node:crypto"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "fyd/social/envelope.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/key-custody.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Custody pattern proven via practice-BFF usage; ADAPT to injectable key-dir, drop BFF coupling. No dedicated test file \u2014 add one."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/schemas.ts",
+      "SOURCE_SHA": "sha256:7e17d75ed9821eb08af306cbd9fc4f2b62bf76e07e2f403b23e85fd7bb028e30",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "validateAgainstSchema: severity-tagged findings (error/warning/info) field-record validator",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/schemas.test.ts"
+      ],
+      "TARGET_PATH": "packages/trust/validate.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Genericize findings shape; keep domain schema defs out of kernel."
+    },
+    {
+      "SOURCE_REPO": null,
+      "SOURCE_HEAD": null,
+      "SOURCE_PATH": null,
+      "SOURCE_SHA": null,
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Ed25519 (OKP) JWK import/export via node:crypto + SPKI fingerprint helper",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [
+        "node:crypto"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/jwk.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Gap: no JWK handling exists; node 24 supports OKP JWK natively."
+    },
+    {
+      "SOURCE_REPO": null,
+      "SOURCE_HEAD": null,
+      "SOURCE_PATH": null,
+      "SOURCE_SHA": null,
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "redactSecrets(obj, patterns): general structured-log redactor",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/redact.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Gap: only redactEmail + broker invariant exist."
+    },
+    {
+      "SOURCE_REPO": null,
+      "SOURCE_HEAD": null,
+      "SOURCE_PATH": null,
+      "SOURCE_SHA": null,
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Display-context URL neutralization (rendered-link/markdown sanitizer)",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/neutralize-url.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Gap: safe-link covers resolution, not render contexts."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/ping/dev-signer.ts::canonicalizeJson",
+      "SOURCE_SHA": "sha256:d28133236ce2f1dcc1459aa80258d83500582fc9724719db046f88cc7b76da0f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected duplicate",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Divergent duplicate serializer (drops undefined); dev-labeled stand-in."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/social/key-custody.ts",
+      "SOURCE_SHA": "missing:src/fyd/social/key-custody.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected duplicate",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Line-for-line custody duplicate under different env var; fold into key-custody."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/social/transition-id.ts",
+      "SOURCE_SHA": "missing:src/fyd/social/transition-id.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected duplicate",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Action-ID minting belongs on digest.ts + uuid.ts, not a separate primitive."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/render-model.ts::sortKeys",
+      "SOURCE_SHA": "missing:src/fyd/sitespec/render-model.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected duplicate",
+      "AUTHORITY_OWNER": "trust-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Unpinned third serializer; converge to digest.canonicalize."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/lib/ping/types.ts",
+      "SOURCE_SHA": "sha256:1ecb1e689c1bc5721f854833fdf623aef836d92de55cddb3875972137a2f9307",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "PingObject/PingRelationship/ObjectProvenance/ObjectVisibility type vocabulary; 10 KNOWN_OBJECT_SCHEMAS",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "lib/ping/ping-object-reader.ts",
+        "fyd/object/owner-overlay.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/types.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Canonical substrate vocabulary everything keys off; take converged version."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/types.ts",
+      "SOURCE_SHA": "sha256:ee7f1b21b6b4d75b87205f259a06901af4eb54516a11354c6b025c89deb951ff",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "ObjectGraph, FYDSiteSpec, ViewerContext, FYDQuery type vocabulary",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/builder/planner.ts",
+        "fyd/sitespec/binding-verifier.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/sitespec-types.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Deterministic SiteSpec + graph types for the product lane."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/schemas.ts",
+      "SOURCE_SHA": "sha256:7e17d75ed9821eb08af306cbd9fc4f2b62bf76e07e2f403b23e85fd7bb028e30",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "3-schema registry (Business, Service, Post) + relationship rules + safe-evolution law",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/sitespec/validator.ts"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/schemas.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/schemas.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Schema registry with evolution law; drives validator \u2192 relationships \u2192 renderer."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/graph.ts",
+      "SOURCE_SHA": "sha256:2fbe2e339c080e8164b9ae83c4f5ebcd38a63c719742929865ebcd38a63c7197429",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "PresentationBinding: verifyPresentationBinding, resolveBoundField, BindingClassification",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "fyd/sitespec/binding-verifier.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/graph.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Binding companion to the verifier."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/binding-verifier.ts",
+      "SOURCE_SHA": "sha256:68e300f672bf29388d84f4de8d38bce5754cdfddfcda4089315fbb50f0381727",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Factual-binding gate: BOUND vs UNBOUND verdicts; UNBOUND fails closed; 365d evidence freshness horizon",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/types",
+        "@/lib/ping/digest",
+        "./graph"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "fyd/builder/planner.ts",
+        "app/sites/_shared/site-metadata.ts"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/binding-verifier.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/binding-verifier.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "The proven evidence-to-render fact gate; verifier/authority separation."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/builder/manifest.ts",
+      "SOURCE_SHA": "sha256:92155e6d75503a75c0bd84619b14784d29065a74df343836097a4e26c62987fb",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "DependencyManifest/BindingManifest: forwardWalk (Explain) + reverseWalk (change impact)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/builder/semantic-diff.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/binding-manifest.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Bidirectional binding lineage; dependency index for semantic diff."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/sitespec/field-visibility.ts",
+      "SOURCE_SHA": "sha256:9a65de3a50173a75775f53373928d60334239e096063b83ee1b3a24dcb67954e",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Owner visibility override (duplicate entry \u2014 canonical home is trust kernel)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/trust/field-visibility.ts",
+      "ACTION": "REFERENCE",
+      "RATIONALE": "Single copy lives in trust; object layer references it."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/object/owner-overlay.ts",
+      "SOURCE_SHA": "sha256:897b71cd151c8ab568b68182e72c2001cdbc83f657291c1d208fb600848bc1f1",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Owner field-correction read seam composed AFTER digest verification; SOURCE SAYS X / OWNER SAYS Y never collapsed",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "@/lib/ping/types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "app/api/fyd/ask/ask-pipeline.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/owner-overlay.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Owner-wins read seam with provenance preserved; take converged version."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/object/owner-events.ts",
+      "SOURCE_SHA": "sha256:5384e667f629e199dc4f2d72289d7603b681c3cc14c33c3419e36390f791ced2",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Append-only owner event log; state = pure fold; revert = append; content-hash event IDs (fyd-owner@1)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "node:crypto",
+        "dev-signer canonicalizeJson"
+      ],
+      "DEPENDENCY_COST": "node-builtin+internal",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/owner-events.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Cleanest event-sourcing pattern in tree; swap dev-signer canonicalizer for digest.ts."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/boundary/data-boundary.ts",
+      "SOURCE_SHA": "sha256:b0e2fa2803df5ae927363823ac211445967f1fbffb0c0a18fb1cbaa16602111c",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "CUSTOMER_OWNED vs FYD_OWNED boundary; export/import; boundaryStatement()",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/boundary/__tests__/projection-seam-attack.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/data-boundary.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Machine-readable customer-data ownership boundary."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/refresh/types.ts",
+      "SOURCE_SHA": "sha256:34f16dd43f831a3700ef4c45ef4208f7a25cb6d25ec36c7847fe256d1179fc72",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Observation/Claim/Conflict/Snapshot types; normalizeClaimValue",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "fyd/refresh/website-observe.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/observation-types.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Claim/observation contract for the ingest path."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/refresh/website-observe.ts",
+      "SOURCE_SHA": "sha256:92a7e0d38ecd2a52941d446939b34dfdea6e8092b301a44b6c53e964e6ec5257",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Fetch-bytes \u2192 provenance-labeled claims graded website_statement; pure, no network",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "./types"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/website-observe.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Observation adapter; network stays outside."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/builder/object-builder.ts",
+      "SOURCE_SHA": "sha256:8b6608021e4cfb1584c872e1b98fbbca21cdac813e29d63d4825d42e00544100",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "verifyObjectGraph + proposeObjectDelta + GraphAttestation: every object needs provenance ref, every relationship an evidenceRef",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/builder/__tests__/object-builder.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/object-builder.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Attested object-graph construction; the graph integrity gate."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/builder/semantic-diff.ts",
+      "SOURCE_SHA": "sha256:c13e9e2b5464eac2ce44026c615b42cfb1fed73e820df8ee6c96460096cab1e",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Deterministic twin diff: source change \u2192 affected projections via reverseWalk \u2192 owner-override conflict check; no LLM",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "./manifest"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/semantic-diff.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Real semantic-collision machinery at the graph layer."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/builder/canonical.ts",
+      "SOURCE_SHA": "sha256:c01e43f3ff5830f7af289397b6497287e86fe04111d416cc5ff8ab5fe21a08c3",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "canonicalizeSpec + semanticDigestOf; law: no timestamps in semantic planning",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "node:crypto"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "fyd/builder/planner.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/canonical.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Keep volatile-stripping semantic rule; re-anchor on digest.ts canonicalize."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/object/object-projection.ts",
+      "SOURCE_SHA": "sha256:c58b3b4ed4b5939f68452d5fb12a8825ad846d6d78b5a26f15cc95e1f142cc43",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "ObjectProjection with per-claim ClaimEvidence states; claim with no evidence renders Unknown, never fact",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "sitespec/*",
+        "ui/*"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "app/api/fyd/objects/[objectId]/route.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/object-projection.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Generic projection; seam off UI-specific EvidenceState/why-this imports."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/data/ping-object-source.ts",
+      "SOURCE_SHA": "sha256:a331b26861cca0274057180ec0625c139745b9bd539a7b8952763aad8c371e11",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Verified-read seam: fail-closed projection verification with recomputed graphDigest",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "node:crypto",
+        "ask-composer"
+      ],
+      "DEPENDENCY_COST": "node-builtin+internal",
+      "CALLERS": [
+        "lib/ping/ping-object-reader.ts"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/objects/object-source.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Tamper-detecting read seam onto projection files."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/fyd/lineage/tracer.ts",
+      "SOURCE_SHA": "sha256:c1f1768a31bac8fea2fd6434fce39367344013a8ae313a6396532658302e4daa",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "End-to-end evidence-chain prover with honest missing-link verdicts",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/lineage/verify-tracer.ts"
+      ],
+      "TARGET_PATH": null,
+      "ACTION": "REFERENCE",
+      "RATIONALE": "Verification harness pattern; not runtime kernel."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "tools/fyd-journal-gateway/server.mjs",
+      "SOURCE_SHA": "sha256:d8b1c0885b9f3c893f8035bf69fc128b789a3428aad50e34bc3652f09bd3efb3",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Tenant-scoped idempotent journal append (:18199, node builtins only); request_id dedupe; append-only JSONL",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [
+        "node builtins"
+      ],
+      "DEPENDENCY_COST": "node-builtin",
+      "CALLERS": [
+        "lib/ping/ping-object-reader.ts"
+      ],
+      "TESTS": [
+        "tools/fyd-journal-gateway/__tests__/dedupe.test.mjs"
+      ],
+      "TARGET_PATH": "packages/events/journal-gateway.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Proven write contract; re-platform from demo mjs to piging2 event runtime."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "tools/fyd-journal-gateway/server.mjs::envelope",
+      "SOURCE_SHA": "sha256:d8b1c0885b9f3c893f8035bf69fc128b789a3428aad50e34bc3652f09bd3efb3",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Canonical event envelope {event_id, timestamp, event_type, tenant_id, aggregate_id, aggregate_type, event_data}",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "lib/ping/ping-object-reader.ts::queryFydSiteOverlays"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/events/envelope.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "De-facto canonical envelope; tenant-scoped journal query contract."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "tools/fyd-site-projection/dump.py",
+      "SOURCE_SHA": "sha256:05efe0d108e218b097a84349117d02c0adf77606b0c7a9ed7073e4c241a18c93",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Deterministic journal\u2192projection rebuild: BASE + OVERLAYS algebra, op validation, atomic write, graphDigest",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [
+        "python3"
+      ],
+      "DEPENDENCY_COST": "toolchain",
+      "CALLERS": [],
+      "TESTS": [
+        "tools/fyd-site-projection/test_dump.py"
+      ],
+      "TARGET_PATH": "packages/events/projection-rebuild.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Port to TS; keep algebra, op validation, atomic tmp+rename, graphDigest. (Postgres shadow retired: duplicate event_ids double-apply.)"
+    },
+    {
+      "SOURCE_REPO": null,
+      "SOURCE_HEAD": null,
+      "SOURCE_PATH": null,
+      "SOURCE_SHA": null,
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "UnifiedEventRuntime proper: envelope + digest + tenant + dedupe contract as a real runtime",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [
+        "./envelope",
+        "trust/digest"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/events/runtime.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Gap: the name exists only in comments; the contract is proven, the body is not."
+    },
+    {
+      "SOURCE_REPO": null,
+      "SOURCE_HEAD": null,
+      "SOURCE_PATH": null,
+      "SOURCE_SHA": null,
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Causation/correlation IDs in the event envelope",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/events/envelope.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Gap: only correlationId=missionId assignment exists; define properly, claim no heritage."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/editor/durable-event-store.ts",
+      "SOURCE_SHA": "missing:src/lib/editor/durable-event-store.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "FYD page-editor LOCAL undo/redo bus; 'durable' aspirational; editor-scoped."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/events.ts",
+      "SOURCE_SHA": "missing:src/lib/events.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "HPP marketing analytics logger; in-memory MVP, explicitly not durable."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping",
+      "SOURCE_HEAD": "55d399bcf2ac2c0ce76c811650cbe2c25fb851a9",
+      "SOURCE_PATH": "src/lib/ping/dev-signer.ts::canonicalizeJson",
+      "SOURCE_SHA": "sha256:d28133236ce2f1dcc1459aa80258d83500582fc9724719db046f88cc7b76da0f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "event-spine",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Superseded by digest.ts (see trust)."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/mission_runtime.js",
+      "SOURCE_SHA": "sha256:bfdc7b66cf21f46ae0d62b8363b23f2561c2d8df0c4c81e3caea7b2d4ab3402a",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Single canonical MissionRuntime: create/assign/start/complete/fail/failWithRetry/leases/traces; immutable tenant_id",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [
+        "pg.Pool",
+        "eventRuntime"
+      ],
+      "DEPENDENCY_COST": "external+internal",
+      "CALLERS": [
+        "orchestration/mission_scheduler.js",
+        "gateway/routes/mission_control.js"
+      ],
+      "TESTS": [
+        "gateway/test_commissioning.js"
+      ],
+      "TARGET_PATH": "packages/missions/mission-runtime.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "'Replaces 12 dead mission implementations'; ADAPT to piging2 event runtime + pg seam."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/mission_scheduler.js",
+      "SOURCE_SHA": "sha256:ae3748e7f0260e49efb96763976a597970a63dc0a4278af719863bc271937943",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "MissionScheduler: polls getPending(), claims, dispatches with timeout bound, classifies observed receipt, completes only on MATCHED_SUCCESS",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [
+        "./mission_runtime",
+        "./worker_runtime"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [
+        "orchestration/mission_scheduler.retry_watchdog.test.js"
+      ],
+      "TARGET_PATH": "packages/missions/mission-scheduler.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Epistemic gate lives here (_dispatch ~L336-388); port with pg seam abstracted."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "workers/worker_runtime.js",
+      "SOURCE_SHA": "sha256:38f67f0bab7ad34cb3af906cd543eb07177da07e0ed98c490e686ab1e10e2724",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "WorkerRuntime: register(name, worker, {eventTypes, maxConcurrent, capabilities}); dispatch(event) \u2192 fail-closed receipt; zero external deps",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "orchestration/mission_scheduler.js"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/missions/worker-runtime.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "The proven execution seam; COPY verbatim (JS\u2192TS types only)."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "workers/canonical_workers.js::BaseWorker+ReplayWorker",
+      "SOURCE_SHA": "sha256:b0e341a0c8623e088ad5a4284c9cd6def764a5d195158be0594b4c9643d20af6",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "BaseWorker contract (handle(event) + _emit preserving namespace/correlation/causation/confidence + tenant-pin fail-closed); ReplayWorker independent verifier",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/missions/workers.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Take BaseWorker + ReplayWorker; other 5 canonical workers are domain-specific, leave them."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/event_to_mission_bridge.js",
+      "SOURCE_SHA": "sha256:32789a241727a01370aafae978f761ea1b167e6f7a97f4bf712bf5d6b672a4bc",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "EventToMissionBridge: event\u2192mission ingress, EVENT_MISSION_MAP",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/missions/event-bridge.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Tiny pure wiring."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/failure_record.js",
+      "SOURCE_SHA": "sha256:6dc15bf4f7e9e946d17ac1a79984f604d3034aa3fd563ad5afe62c8493d66967",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Pure deriveFailureRecord(): mission row + dispatch outcome + retry policy \u2192 failure record; encodes 'agent output != canonical truth'",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "orchestration/mission_scheduler.js"
+      ],
+      "TESTS": [
+        "orchestration/failure_record.test.js"
+      ],
+      "TARGET_PATH": "packages/missions/failure-record.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Epistemic record; UNKNOWN \u2192 unknown_hold / HOLD_RECONCILE / UNKNOWN_EXECUTION."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/execution/capability_registry.js",
+      "SOURCE_SHA": "sha256:d7f46573d3da55e371c996acbd14950f740b5184e6f8cc8216ceeef31dd1a027",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Worker capability registry keyed by id with model metadata (model identity = execution metadata)",
+      "AUTHORITY_OWNER": "capabilities",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/capabilities/registry.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Keep registry + validation; drop surrounding engine."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "orchestration/execution/engine.js",
+      "SOURCE_SHA": "missing:orchestration/execution/engine.js",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Dormant old Orca engine; one of the '12 dead implementations'."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "gateway/mission_authority.js",
+      "SOURCE_SHA": "missing:gateway/mission_authority.js",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Pre-convergence mission authority, replaced by MissionRuntime."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "agents/base_worker.js",
+      "SOURCE_SHA": "missing:agents/base_worker.js",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Old process(job) contract; superseded by handle(event)."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "approval/business_action_authority.js",
+      "SOURCE_SHA": "missing:approval/business_action_authority.js",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Human-approval gate referenced only by own tests \u2014 unwired; re-derive when needed."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
+      "SOURCE_HEAD": "914281ecef46ad24fd48609a8440a2455f2b9d23",
+      "SOURCE_PATH": "*.py (202 files)",
+      "SOURCE_SHA": "missing:*.py (202 files)",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "mission-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Duplicate Python worker plane; superseded by JS canonical workers."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/proceduralizer.ts",
+      "SOURCE_SHA": "sha256:77f15c6a54fa9895a3a537975c6c580f87d2a46b666be601bb9360d2f2a7f789",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "DISCOVER\u2192ACQUIRE\u2192PARSE\u2192NORMALIZE\u2192EXTRACT\u2192PROVENANCE\u2192RESOLVE\u2192RELATE\u2192PROJECT; deterministic-first ingest; every fact carries evidence ref",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "@/lib/ping/types",
+        "jsonld",
+        "./structured-data",
+        "./microdata",
+        "./feed-parser"
+      ],
+      "DEPENDENCY_COST": "npm+internal",
+      "CALLERS": [
+        "src/fyd/acquisition/live-loop.ts",
+        "src/app/api/fyd/build/route.ts"
+      ],
+      "TESTS": [
+        "src/fyd/proceduralize/__tests__/ (11 files)"
+      ],
+      "TARGET_PATH": "packages/fyd/proceduralize/proceduralizer.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "The ingest heart of the first slice; pure, deterministic, self-contained."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/structured-data.ts",
+      "SOURCE_SHA": "sha256:44d9c3bab705af12b998c7d1a1e2712b2a57349ad45f40cd8cda55c05e10bbd9",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "JSON-LD block discovery + offline graph expansion (jsonld 9.0.0); remote-context refusal; malformed fail-closed",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "jsonld"
+      ],
+      "DEPENDENCY_COST": "npm",
+      "CALLERS": [
+        "fyd/proceduralize/proceduralizer.ts"
+      ],
+      "TESTS": [
+        "src/fyd/proceduralize/__tests__/entity-identity.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/proceduralize/structured-data.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Proven against real sites; security posture is load-bearing."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/media/discover.ts",
+      "SOURCE_SHA": "sha256:c440ca22a025a16885b123c0a5873c30d92ba817753b1474f0c8ad1c6d1bc693",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "og:image / img/srcset / JSON-LD image / link[rel=image_src] discovery + rights classification",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/media/__tests__/discover.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/media/discover.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Small, pure."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/onboarding/extractor.ts",
+      "SOURCE_SHA": "sha256:17e34a8bcf50b0a82139b311a762d8b9f99be0f64811741490240f27be703a00",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "PageEvidence: title/description/og/phone/email; strips scripts/styles",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/onboarding/__tests__/"
+      ],
+      "TARGET_PATH": "packages/fyd/onboarding/extractor.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Tiny."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/claim/resource-id.ts",
+      "SOURCE_SHA": "sha256:b31de723856aaff23ee3f85131cdfe1dcb249038636cbc7ffa041f757ab25811",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "claimResourceIdForUrl \u2192 url-<16hex> from normalized origin",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "@/lib/ping/digest"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/claim/__tests__/resource-id.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/claim/resource-id.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Deterministic URL identity."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/generator.ts",
+      "SOURCE_SHA": "sha256:b3545ecd6ec4d256ee426a70b887963c0278fe1117dc5bab9d08d86ea2b8434a",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "generateSiteSpec(graph, opts), GENERATOR_VERSION 1.1.0; archetypes, gallery media",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "../sitespec/*"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "fyd/builder/planner.ts",
+        "fyd/media/site-bundle.ts"
+      ],
+      "TESTS": [
+        "src/fyd/proceduralize/__tests__/generator.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/proceduralize/generator.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "SiteSpec generator; keep version pin."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitespec/validator.ts",
+      "SOURCE_SHA": "sha256:3be1ca76543327476258d2826753848a9ddc85d437d5197e60ff71243667db43",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "validateSiteSpec, isRenderable",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "./types",
+        "./schemas"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/"
+      ],
+      "TARGET_PATH": "packages/fyd/sitespec/validator.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Renderability gate."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitespec/render-model.ts",
+      "SOURCE_SHA": "sha256:95aef3eaa1dee5b5679bf2566c0c454541078f2c46cd6b1d134b3438d7fa8449",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "buildSemanticRenderModel, canonicalizeModel, RENDER_MODEL_VERSION 1",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/render-model.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/sitespec/render-model.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Pure semantic model; canonicalizeModel re-anchors to digest.ts (drop local sortKeys)."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitepatch/pipeline.ts",
+      "SOURCE_SHA": "sha256:6cb2067e2de322739a60bd07590fedf9d78b4e911491d096aaaa44458175aecf",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "runSitePatchPipeline, proposeForOp, applyExtendedSitePatch, previewSitePatch; capability-gated",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/sitepatch/__tests__/sitepatch-pipeline.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/sitepatch/pipeline.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Primitives pure; rewire approval to piging2 authority."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/patch.ts",
+      "SOURCE_SHA": "sha256:51ea6f428f27d74f75e6a2c42a5f667a2cdf87eaca23bd4013045abf85dd3b68",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "proposeSitePatch, applySitePatch, proposalDigest",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/proceduralize/__tests__/patch.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/proceduralize/patch.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Patch primitives."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/attestation-gate.ts",
+      "SOURCE_SHA": "sha256:8acd2d673a909697e1e8f7783ebd589625a0de2d92079dbae979339042050310",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "correction-survived / regen-complete / refresh-applied attestations; failure-honesty gate",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/sitepatch/__tests__/regen-proof.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/owner-mode/attestation-gate.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Missing evidence \u21d2 ATTESTATION_REJECTED, never fabricated."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/app/api/fyd/ask/ask-pipeline.ts",
+      "SOURCE_SHA": "sha256:b674b0ef43dbdbb9d832c509ce10e5a0fc74021aabe100187c7c5d54fa510c5c",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "handleAskRequest: QUESTION \u2192 viewer context \u2192 target object \u2192 visible graph \u2192 evidence \u2192 answer \u2192 citations",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "@/fyd/media/site-bundle",
+        "@lib/ping/ask-composer",
+        "public-projection"
+      ],
+      "DEPENDENCY_COST": "internal+npm",
+      "CALLERS": [
+        "src/app/api/fyd/ask/[siteId]/route.ts"
+      ],
+      "TESTS": [
+        "src/fyd/ask/__tests__/ (11 files)"
+      ],
+      "TARGET_PATH": "packages/fyd/ask/ask-pipeline.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Evidence-bounded ask core; rewire Next route + tenant-context + reader to piging2 seams."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/context-compiler.ts",
+      "SOURCE_SHA": "sha256:eeba99ef0e570412d2969da999544195611f5e0ee98790c28066fe614775abb7",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Context packet compiler; verifyAnswerClaims with epistemic-rank enforcement (SUPPORTED/DERIVED/INFERRED/UNKNOWN)",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/ask/__tests__/context-compiler.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/ask/context-compiler.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Claim grading enforcement."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/visitor-answer.ts",
+      "SOURCE_SHA": "sha256:0ef5abea3b5881c4371ae1eb9e077cf38bcbbbe23d79e2134cc6d4d308c74d78",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Visitor-path answer composer (840 lines)",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "@/lib/ping/ask-composer"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/ask/__tests__/ask-fyd.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/ask/visitor-answer.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Keep composer; rewire tenant/graph seams."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/corrections.ts",
+      "SOURCE_SHA": "sha256:67d427b011782af02cd1e361769ec0ed248346f59bd14cef943bd39dffd05c47",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "CONFIRM|CORRECT|HIDE; assertCorrection, applyCorrections, chainHeads",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "src/fyd/owner-mode/__tests__/corrections.test.ts"
+      ],
+      "TARGET_PATH": "packages/fyd/owner-mode/corrections.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Owner assertion layer; three-layer separation preserved."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/__fixtures__/happy-place-graph.ts",
+      "SOURCE_SHA": "sha256:4229bd3a8d0efa165a5001df6d2245b492d02aad28140ba7c0acf006811d19",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Pinned Happy Place fixture base graph (237 lines)",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/fyd/seed/happy-place-graph.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Seed data for proof 1; no Postgres, rebuilt per read."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts",
+      "SOURCE_SHA": "sha256:30b185b289bac0c1a97e3c82b9b34ed887d994747d6947919a289b189839e557",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Pinned Coppersmith fixture base graph (263 lines)",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/fyd/seed/coppersmith-graph.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Seed data for proof 2."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/lib/ping/ask-composer.ts",
+      "SOURCE_SHA": "sha256:fa2f4a00b3ca2d7490229185641bf15796d6c716df8bbcd0bd341258219d3bb0",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "canonicalize + composeAnswer: canonical-JSON + answer composer substrate",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [
+        "./digest"
+      ],
+      "DEPENDENCY_COST": "internal",
+      "CALLERS": [
+        "fyd/ask/*"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "packages/fyd/ask/ask-composer.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Substrate; wrap or re-implement contract in piging2."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/identity/provider.ts",
+      "SOURCE_SHA": "missing:src/fyd/identity/provider.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Google OAuth enterprise auth; unused by pipeline."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/acquisition/live-loop.ts",
+      "SOURCE_SHA": "missing:src/fyd/acquisition/live-loop.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Autonomous acquisition loop; enterprise extra."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/adapters/activitypub/",
+      "SOURCE_SHA": "missing:src/fyd/adapters/activitypub/",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Provider-specific social architecture."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/concierge.ts",
+      "SOURCE_SHA": "missing:src/fyd/ask/concierge.ts",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Fixed-FAQ demo layer, not evidence-bounded \u2192 REFERENCE only."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/demo-owner-console.tsx",
+      "SOURCE_SHA": "missing:src/fyd/owner-mode/demo-owner-console.tsx",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "rejected",
+      "AUTHORITY_OWNER": "fyd-vertical",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "n/a",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": null,
+      "ACTION": "REJECT",
+      "RATIONALE": "Demo QA chrome."
+    }
+  ]
+}
