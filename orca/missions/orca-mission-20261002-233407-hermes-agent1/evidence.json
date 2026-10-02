@@ -1,0 +1,37 @@
+{
+  "mission_id": "orca-mission-20261002-233407-hermes-agent1",
+  "agent": "hermes",
+  "seam": "worker-execution boundary below router and below independent verification",
+  "task": "implement parse_duration(spec) -> int",
+  "router_consulted": false,
+  "router_reason": "model_router.py is FROZEN and Hermes is not in its pool; Agent #1 attaches at the worker boundary, which is the seam being falsified.",
+  "attempts": [
+    {
+      "n": 1,
+      "worker": "hermes (pig bridge, safe mode)",
+      "bridge_attempts_used": 1,
+      "worker_claim": "SELF-REPORT: implementation complete, all checks pass.",
+      "verifier_passed": true,
+      "failed_checks": [],
+      "artifact_path": "/home/hatch/workspace/orca/missions/orca-mission-20261002-233407-hermes-agent1/parse_duration_attempt1.py"
+    }
+  ],
+  "started_at": "2026-10-02T23:34:07.339105+00:00",
+  "epistemic_gate": {
+    "worker_claim": "SUCCESS",
+    "verifier_result": "PASS",
+    "mission_becomes_verified_success": true,
+    "statement": "WORKER CLAIM != VERIFIED RESULT. Mission status derives ONLY from the verifier."
+  },
+  "mission_status": "VERIFIED_SUCCESS",
+  "negative_control": {
+    "artifact": "/home/hatch/workspace/orca/missions/orca-mission-20261002-233407-hermes-agent1/parse_duration_broken_control.py",
+    "description": "parse_duration that always returns 60",
+    "verifier_passed": false,
+    "failed_checks": [
+      "valid:'30s'"
+    ],
+    "control_holds": true
+  },
+  "completed_at": "2026-10-02T23:34:28.646429+00:00"
+}
