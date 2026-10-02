@@ -62,7 +62,7 @@ import {
 import { eligibleComponents } from "./components";
 import { resolveWebsiteUrl } from "./graph";
 
-export const GENERATOR_VERSION = "1.1.0";
+export const GENERATOR_VERSION = "1.2.0";
 
 export interface GeneratorOptions {
   generatedAt: string;
@@ -125,15 +125,25 @@ function group(graph: ObjectGraph): Grouped {
   return { owner, services, products, locations, people, articles, posts };
 }
 
+/**
+ * Section identity is pageSlug:component:ordinal, where ordinal is the
+ * nth section OF THAT COMPONENT on the page (not the emission index).
+ * Each component is emitted at most once per page, so in practice the
+ * ordinal is 0; the scheme is what matters: inserting or removing a
+ * SIBLING section never renames a surviving section, and reordering
+ * sections never changes their ids. Owner overrides and proposals key
+ * sections by id, so positional ids silently voided owner intent on
+ * every regeneration that changed the section set (Worker E, hunt 4).
+ */
 function section(
   pageSlug: string,
-  index: number,
+  ordinal: number,
   component: string,
   query: FYDSection["query"],
   presentation: FYDSection["presentation"] = {},
 ): FYDSection {
   return {
-    id: pageSlug + ":" + component + ":" + index,
+    id: pageSlug + ":" + component + ":" + ordinal,
     component,
     query,
     presentation,
@@ -171,8 +181,11 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
   if (!g.owner) return null;
   const ownerId = g.owner.id;
   const sections: FYDSection[] = [];
+  const ordinals = new Map<string, number>();
   const add = (component: string, query: FYDSection["query"]) => {
-    sections.push(section("home", sections.length, component, query));
+    const ordinal = ordinals.get(component) ?? 0;
+    ordinals.set(component, ordinal + 1);
+    sections.push(section("home", ordinal, component, query));
   };
 
   add("Hero", { kind: "owner" });
@@ -250,8 +263,11 @@ function aboutPage(g: Grouped): FYDPage | null {
   if (!g.owner) return null;
   const ownerId = g.owner.id;
   const sections: FYDSection[] = [];
+  const ordinals = new Map<string, number>();
   const add = (component: string, query: FYDSection["query"]) => {
-    sections.push(section("about", sections.length, component, query));
+    const ordinal = ordinals.get(component) ?? 0;
+    ordinals.set(component, ordinal + 1);
+    sections.push(section("about", ordinal, component, query));
   };
   if (g.owner.description.trim() !== "") {
     add("BusinessSummary", { kind: "owner" });

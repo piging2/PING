@@ -106,7 +106,7 @@ describe("proof 8: regeneration", () => {
     expect(result.evidenceDiff.removed.length).toBeGreaterThan(0);
 
     // Affected paths point at the sections binding the changed service.
-    expect(result.affectedPaths.some((p) => p.includes("home:Services:2"))).toBe(true);
+    expect(result.affectedPaths.some((p) => p.includes("home:Services:0"))).toBe(true);
     expect(result.freshPages).toContain("home");
     expect(result.freshPages).toContain("services");
 
@@ -189,7 +189,7 @@ describe("proof 8: regeneration", () => {
     expect(result.overridesReapplied).toBeGreaterThan(0);
     const home = result.spec.pages.find((p) => p.slug === "home");
     // The owner-approved order (Services first) survived the fresh generation.
-    expect(home!.sections[0].id).toBe("home:Services:2");
+    expect(home!.sections[0].id).toBe("home:Services:0");
     expect(home!.sections[0].component).toBe("Services");
   });
 

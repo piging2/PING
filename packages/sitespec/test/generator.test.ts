@@ -34,12 +34,15 @@ test("Happy Place compiles to the expected pages and owner", () => {
   expect(names).toContain("AskFYD");
 });
 
-test("section ids are deterministic pageSlug:component:index", () => {
+test("section ids are stable pageSlug:component:ordinal (per-component, not positional)", () => {
   const spec = generateSiteSpec(GRAPH, { generatedAt: GEN_AT });
   for (const page of spec.pages) {
-    page.sections.forEach((s, i) => {
-      expect(s.id).toBe(`${page.slug}:${s.component}:${i}`);
-    });
+    const seen = new Map<string, number>();
+    for (const s of page.sections) {
+      const ordinal = seen.get(s.component) ?? 0;
+      seen.set(s.component, ordinal + 1);
+      expect(s.id).toBe(`${page.slug}:${s.component}:${ordinal}`);
+    }
   }
 });
 

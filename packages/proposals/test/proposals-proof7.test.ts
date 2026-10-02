@@ -39,7 +39,7 @@ describe("proof 7: conversational customization", () => {
     expect(home).toBeDefined();
     const services = home!.sections.find((s) => s.component === "Services");
     expect(services).toBeDefined();
-    expect(services!.id).toBe("home:Services:2");
+    expect(services!.id).toBe("home:Services:0");
   });
 
   test("proposePatch drafts a typed proposal with before/after", () => {
@@ -59,7 +59,7 @@ describe("proof 7: conversational customization", () => {
     expect(op.op).toBe("reorder_section");
     if (op.op !== "reorder_section") return;
     expect(op.pageSlug).toBe("home");
-    expect(op.after[0]).toBe("home:Services:2");
+    expect(op.after[0]).toBe("home:Services:0");
     expect([...op.after].sort()).toEqual([...op.before].sort());
     expect(p.beforeDigest).toBe(digestCanonical(spec));
     expect(p.afterDigest).not.toBe(p.beforeDigest);
@@ -135,7 +135,7 @@ describe("proof 7: conversational customization", () => {
 
     // The applied spec has the emergency section first.
     const home = applied.state.spec.pages.find((p) => p.slug === "home");
-    expect(home!.sections[0].id).toBe("home:Services:2");
+    expect(home!.sections[0].id).toBe("home:Services:0");
     expect(home!.sections[0].component).toBe("Services");
 
     // The transition record is appended (canonical, append-only).
@@ -157,7 +157,7 @@ describe("proof 7: conversational customization", () => {
     expect(ov.kind).toBe("section_order");
     if (ov.kind === "section_order") {
       expect(ov.pageSlug).toBe("home");
-      expect(ov.sectionIds[0]).toBe("home:Services:2");
+      expect(ov.sectionIds[0]).toBe("home:Services:0");
     }
 
     // The applied proposal carries its new status.
