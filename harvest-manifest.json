@@ -2665,6 +2665,132 @@
         "eligibility.ts"
       ],
       "bundle_runtime_cost": "high (tenant/projection machinery)"
+    },
+    {
+      "SOURCE_REPO": "ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts",
+      "SOURCE_SHA": "sha256:see-harvest-banner-in-target",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Machine-generated Coppersmith Plumbing captured object graph fixture (source https://www.coppersmithplumbing.com/)",
+      "AUTHORITY_OWNER": "packages/sitespec/fixtures (piging2 experience IR)",
+      "DEPENDENCIES": [
+        "../src/types"
+      ],
+      "DEPENDENCY_COST": "zero new runtime deps",
+      "CALLERS": [
+        "packages/sitespec/test/pipeline-coppersmith.test.ts"
+      ],
+      "TESTS": [
+        "pipeline-coppersmith.test.ts: full slice, determinism, fail-closed"
+      ],
+      "TARGET_PATH": "packages/sitespec/fixtures/coppersmith-graph.ts",
+      "ACTION": "COPY",
+      "RATIONALE": "Near-verbatim harvest; one mechanical import rewrite. Deterministic input for proof 2, not a live fetch.",
+      "proof_ids": [
+        2
+      ],
+      "source_loc": 263,
+      "harvested_loc": 281,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": 0,
+      "bundle_runtime_cost": "none"
+    },
+    {
+      "SOURCE_REPO": "piging2-harvest",
+      "SOURCE_HEAD": "c6895e8b18cb5a30bf120484d2ecbdbf01864ae5",
+      "SOURCE_PATH": "packages/sitespec/test/pipeline.test.ts",
+      "SOURCE_SHA": "n/a-new",
+      "LICENSE": "n/a",
+      "PURPOSE": "Proof 2 test: Coppersmith through the identical runSlice pipeline",
+      "AUTHORITY_OWNER": "packages/sitespec/test",
+      "DEPENDENCIES": [
+        "../src/pipeline",
+        "../fixtures/coppersmith-graph"
+      ],
+      "DEPENDENCY_COST": "zero new runtime deps",
+      "CALLERS": [
+        "jest"
+      ],
+      "TESTS": [
+        "self: 3 tests (slice, determinism, fail-closed)"
+      ],
+      "TARGET_PATH": "packages/sitespec/test/pipeline-coppersmith.test.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "Mirrors pipeline.test.ts shape exactly; observed values recorded from probe run, structural assertions strict.",
+      "proof_ids": [
+        2
+      ],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 95,
+      "dependencies_added": 0,
+      "bundle_runtime_cost": "none"
+    },
+    {
+      "SOURCE_REPO": "ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/components/renderer.tsx",
+      "SOURCE_SHA": "sha256:ff750534-recorded-in-harvest-banner",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "SiteSpec-to-React mapping machinery: dispatch contract, SectionShell shape, requiresData rule, generic fallback, factual field selection",
+      "AUTHORITY_OWNER": "packages/react-renderer/src (piging2 presentation adapter)",
+      "DEPENDENCIES": [
+        "react@18.3.1",
+        "react-dom@18.3.1"
+      ],
+      "DEPENDENCY_COST": "react+react-dom pinned exact from FYD lockfile; next NOT a dependency (app shell, not adapter)",
+      "CALLERS": [
+        "packages/react-renderer/test/render-proof5.test.ts"
+      ],
+      "TESTS": [
+        "render-proof5.test.ts: 8 tests, static HTML via react-dom/server"
+      ],
+      "TARGET_PATH": "packages/react-renderer/src/render.tsx",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Mapping machinery adapted; FYD components rejected (coupled to RenderContext/theme/motion). Facts-only sections, semantic HTML, boundary enforced in code: renderer never imports ObjectGraph.",
+      "proof_ids": [
+        5
+      ],
+      "source_loc": 2210,
+      "harvested_loc": 0,
+      "adapter_loc": 1,
+      "new_fyd_loc": 1,
+      "dependencies_added": 2,
+      "bundle_runtime_cost": "react+react-dom pinned exact"
+    },
+    {
+      "SOURCE_REPO": "piging2-harvest",
+      "SOURCE_HEAD": "40e84869929fb75806be31ffec02054b741f93ba",
+      "SOURCE_PATH": "n/a",
+      "SOURCE_SHA": "n/a-new",
+      "LICENSE": "n/a",
+      "PURPOSE": "PublicObjectFacts input contract + factsFromProjection(): renderer consumes projection facts, never the graph",
+      "AUTHORITY_OWNER": "packages/react-renderer/src",
+      "DEPENDENCIES": [
+        "@piging2/sitespec (type-only)"
+      ],
+      "DEPENDENCY_COST": "zero new runtime deps",
+      "CALLERS": [
+        "packages/react-renderer/src/render.tsx"
+      ],
+      "TESTS": [
+        "render-proof5.test.ts"
+      ],
+      "TARGET_PATH": "packages/react-renderer/src/facts.ts",
+      "ACTION": "REWRITE-SMALL",
+      "RATIONALE": "New boundary contract enforcing presentation-adapter separation: type-only import from sitespec, no import that can yield a graph.",
+      "proof_ids": [
+        5
+      ],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 1,
+      "dependencies_added": 0,
+      "bundle_runtime_cost": "none"
     }
   ],
   "v2_changes": [
