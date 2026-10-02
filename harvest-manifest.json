@@ -20,7 +20,7 @@
       "note": "canonical ping-runtime lineage; read-only; pre-existing dirty build artifacts untouched"
     }
   },
-  "entry_count": 81,
+  "entry_count": 90,
   "sha_filled": 61,
   "entries": [
     {
@@ -1539,6 +1539,224 @@
       "TARGET_PATH": null,
       "ACTION": "REJECT",
       "RATIONALE": "Demo QA chrome."
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/lib/ping/types.ts",
+      "SOURCE_SHA": "sha256:1ecb1e689c1bc5721f854833fdf623aef836d92de55cddb3875972137a2f9307",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "PingObject/PingRelationship/ObjectProvenance record contracts (object-substrate block only)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "packages/trust (type-only, none at runtime)"
+      ],
+      "DEPENDENCY_COST": "zero runtime deps",
+      "CALLERS": [
+        "test/object-types via graph/verify/schema tests (harness only for now)"
+      ],
+      "TESTS": [
+        "packages/objects/test/verify.test.ts",
+        "packages/objects/test/bindings.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/src/object-types.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Projections (ObjectView), owner overrides, capability/action types deliberately left behind.",
+      "proof_ids": [
+        3,
+        4
+      ]
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitespec/schemas.ts",
+      "SOURCE_SHA": "sha256:7e17d75ed9821eb08af306cbd9fc4f2b62bf76e07e2f403b23e85fd7bb028e30",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Schema field/type contracts, 3 proof schemas, validator, relationship rules",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/objects/test/schema.test.ts (harness only for now)"
+      ],
+      "TESTS": [
+        "packages/objects/test/schema.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/src/schema.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "eligibleComponents/capabilityOptions/agentToolDescription/schema-roles rejected: renderer and capability layers, not the object kernel.",
+      "proof_ids": [
+        1
+      ]
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitespec/graph.ts",
+      "SOURCE_SHA": "sha256:2fbe2e339c080e8164b9ae83c4f5ebcd38a63c719742929865eb5db51c8be56b",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "ObjectGraph shape + presentation-binding verifier (field -> claim -> evidence ref hop)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/objects/test/bindings.test.ts (harness only for now)"
+      ],
+      "TESTS": [
+        "packages/objects/test/bindings.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/src/graph.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "resolveWebsiteUrl rejected: FYD generator helper with has_website predicate vocab.",
+      "proof_ids": [
+        4
+      ]
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/builder/object-builder.ts",
+      "SOURCE_SHA": "sha256:8b6608021e4cfb1584c872e1b98fbbca21cdac813e29d63d4825d42e00544100",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Five-check graph verification contract + attestation (ids, schema catalog, evidence refs, relationship legality, visibility)",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [
+        "packages/trust digest"
+      ],
+      "DEPENDENCY_COST": "zero (trust kernel only)",
+      "CALLERS": [
+        "packages/objects/test/verify.test.ts (harness only for now)"
+      ],
+      "TESTS": [
+        "packages/objects/test/verify.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/src/verify.ts",
+      "ACTION": "REWRITE",
+      "RATIONALE": "Rewritten contract glue: TenantContext, PingProjection, eligibility vocab, node:crypto rejected. Inverse normalization manifested as OPTIONAL.",
+      "proof_ids": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/lib/ping/website-objects.ts",
+      "SOURCE_SHA": "sha256:c9eb56af7607dd7ad9de60d2b995b975747a1284a86308dcc53f2927ad6ac717",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Deterministic web:<kind>:<key> id naming contract for website-derived objects/relationships",
+      "AUTHORITY_OWNER": "object-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/objects/test/identity.test.ts (harness only for now)"
+      ],
+      "TESTS": [
+        "packages/objects/test/identity.test.ts"
+      ],
+      "TARGET_PATH": "packages/objects/src/identity.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Module itself Next.js-server coupled (@/lib/blog, @/lib/products); only the naming scheme harvested. Digest-addressed ids via trust digestCanonical, pinned formulation, no invented hasher.",
+      "proof_ids": [
+        2
+      ]
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/builder/semantic-diff.ts",
+      "SOURCE_SHA": "sha256:c13e9e2b5464eac2ce44026c615b42cfb1fed73e820df8ee6c964c60096cab1e",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Twin diff engine (source change -> affected bindings -> owner conflicts)",
+      "AUTHORITY_OWNER": "none",
+      "DEPENDENCIES": [
+        "manifest.ts",
+        "owner-intent.ts",
+        "PingObject+projections"
+      ],
+      "DEPENDENCY_COST": "high (owner-intent, dependency manifest, projection bindings)",
+      "CALLERS": [
+        "src/fyd/builder/source-refresh.ts",
+        "src/fyd/ask/field-conflicts.ts"
+      ],
+      "TESTS": [
+        "src/fyd/builder/__tests__/semantic-diff.test.ts"
+      ],
+      "TARGET_PATH": "",
+      "ACTION": "REJECT",
+      "RATIONALE": "Diff/regeneration machinery, not object construction. Proofs 1-4 need objects with evidence refs, not change computation.",
+      "proof_ids": []
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/object/owner-overlay.ts",
+      "SOURCE_SHA": "sha256:897b71cd151c8ab568b68182e72c2001cdbc83f657291c1d208fb600848bc1f1",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Owner-attested field corrections composed onto the projection",
+      "AUTHORITY_OWNER": "none",
+      "DEPENDENCIES": [
+        "owner store",
+        "PingObject.ownerFieldCorrections"
+      ],
+      "DEPENDENCY_COST": "medium (owner-store coupling)",
+      "CALLERS": [
+        "src/fyd read seam"
+      ],
+      "TESTS": [],
+      "TARGET_PATH": "",
+      "ACTION": "REJECT",
+      "RATIONALE": "Owner layer: corrections/overrides belong to the proposal/owner slice, not the object kernel. Kernel PingObject carries no owner fields by design.",
+      "proof_ids": []
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/sitespec/binding-verifier.ts",
+      "SOURCE_SHA": "sha256:68e300f672bf29388d84f4de8d38bce5754cdfddfcda4089315fbb50f0381727",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Strong factual-binding emission gate (freshness horizons, owner-assertion matching)",
+      "AUTHORITY_OWNER": "none",
+      "DEPENDENCIES": [
+        "@/lib/ping/digest",
+        "OwnerFieldCorrection",
+        "ObjectGraph"
+      ],
+      "DEPENDENCY_COST": "medium (848 LOC publish-path policy)",
+      "CALLERS": [
+        "emission seam (assertSpecBindingsVerified)",
+        "dropUnboundBindings"
+      ],
+      "TESTS": [
+        "src/fyd/sitespec/__tests__/binding-verifier.test.ts"
+      ],
+      "TARGET_PATH": "",
+      "ACTION": "REJECT",
+      "RATIONALE": "Emission-gate policy for proofs 5-8 (SiteSpec->renderer), not proofs 1-4. The kernel carries the weak verifier (graph.ts) only.",
+      "proof_ids": []
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/builder/object-builder.ts",
+      "SOURCE_SHA": "sha256:8b6608021e4cfb1584c872e1b98fbbca21cdac813e29d63d4825d42e00544100",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Tenant attestation + inverse normalization (works_for->employs derivation)",
+      "AUTHORITY_OWNER": "none",
+      "DEPENDENCIES": [
+        "TenantContext",
+        "PingProjection",
+        "eligibility.ts"
+      ],
+      "DEPENDENCY_COST": "high (tenant/projection machinery)",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "",
+      "ACTION": "REJECT",
+      "RATIONALE": "Partial REJECT inside a REWRITE harvest: the module body was not copied; only the check contract was rewritten in verify.ts. Tenant attestation belongs to a tenant layer; inverse normalization is OPTIONAL.",
+      "proof_ids": []
     }
   ]
 }
