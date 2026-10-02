@@ -29,14 +29,22 @@
  * - Size limits: content-length pre-check plus streaming abort.
  * - Timeouts on connect and overall.
  *
- * Residual TOCTOU note: the DNS check and the fetch are not atomic. The
- * gate validates the addresses DNS returns at check time; the production
- * fetch implementation re-resolves independently, so a hostile DNS that
- * answers differently per query (rebinding) could still steer the socket.
- * The gate is the contract that mocked tests verify (see
- * __tests__/safe-fetch.test.ts); production deployments needing atomicity
- * must pin the validated address at the socket layer (not implemented
- * here). This is reported honestly rather than claimed away.
+ * DNS REBINDING ASSUMPTION (P0 #3 re-proof, 2026-10-02; executable proof in
+ * test/ssrf-reproof-p0.test.ts "P0#3 DNS rebinding assumption"):
+ * - Per hop: the gate re-resolves DNS and re-validates every address on
+ *   EVERY redirect hop. It never pins hop one's resolution: a redirect
+ *   target whose fresh DNS answer is private is rejected, not followed.
+ * - Check vs connect (residual TOCTOU, reported honestly): the gate
+ *   validates the addresses ITS dnsLookup returns at check time; the
+ *   production fetch implementation re-resolves independently on its own
+ *   socket stack. The boundary therefore ASSUMES check-time DNS answers
+ *   hold at connect time. A hostile DNS that answers differently per
+ *   query (rebinding between the gate's check and the socket's connect)
+ *   could still steer the socket; the gate cannot see the socket's
+ *   resolution. Production deployments needing atomicity must pin the
+ *   validated address at the socket layer (not implemented here: it needs
+ *   a pinned-lookup socket factory, which is new machinery, not a repair
+ *   of this gate). This is reported honestly rather than claimed away.
  *
  * An arbitrary agent- or user-supplied URL can NEVER become an unrestricted
  * server-side fetch through this module: every URL passes this gate.
