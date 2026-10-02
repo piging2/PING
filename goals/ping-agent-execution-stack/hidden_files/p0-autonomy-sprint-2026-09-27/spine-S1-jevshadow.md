@@ -1,0 +1,41 @@
+# S1: jev-shadow failure loop — forensic trace (read-only)
+
+Date: 2026-09-27 ~13:05 MDT. Pig transport STABLE. Gateway container: ping-gateway:repair-cert-20260924, Up 22h. All live source paths below are inside the container image at /app (baked, not bind-mounted).
+
+## Exact failure mechanism
+
+Every CLAIM_CREATED emitted by the claim pipeline causes EventToMissionBridge to mint a CLASSIFICATION_CREATE mission; MissionScheduler dispatches each mission on the ORIGINAL business event type (CLAIM_CREATED), and WorkerRuntime.dispatch() routes it to every worker registered for that type, which includes 'jev-shadow' (registered in the gateway bootstrap with eventTypes ['CLAIM_CREATED']). JevShadowWorker runs its rule provider successfully, then calls _emit(JEV_DECISION_EVALUATED). The emit passes step 2 (the event is registered in event_registry.json) and step 2b (the verdict-authority gate: VERDICT_PRODUCERS binds JEV_DECISION_EVALUATED to source 'jev-shadow', which matches), but fails at step 3: EventGovernance._validateNamespace() derives namespace 'jev' from the event type and finds no owner for it in the NAMESPACE_OWNERS map, returning "No owner defined for namespace 'jev'". BaseWorker._emit converts the non-ok emit result into a thrown Error, WorkerRuntime.dispatch() logs "[WorkerRuntime] Worker 'jev-shadow' failed:" and rethrows, and MissionScheduler logs "[MissionScheduler] Mission <id> failed:", marks the mission failed, and retries it (retry_pending, max_attempts 3, 5s backoff) before routing to the DLQ. Because the fault is a deterministic governance-config gap and not a transient failure, every retry fails identically, and every new CLAIM_CREATED mints a fresh doomed mission, producing the observed steady-state failure stream (3 missions currently retry_pending with this exact error: 70e962a9d257c6dc, a5dc21a36107b0a5, 402152d14539171b).
+
+## Single root-cause line
+
+/app/ping-runtime/events/event_governance.js:200 — `return { valid: false, reason: \`No owner defined for namespace '${namespace}'\` };` — fires because the NAMESPACE_OWNERS map (lines 14-82 of the same file) contains no `jev` entry, even though JEV_DECISION_EVALUATED is a registered event (event_registry.json:3278, authority_owner "JevShadowWorker") with a verdict-producer binding (unified_event_runtime.js:41). The prior verification that "Live EventValidator accepts it" checked registration (step 2) but never exercised the namespace-ownership gate (step 3); that is the gap.
+
+## Does it block the P0 mission path (lane-p01 /api/mc/dispatch)?
+
+No. The lane-p01 dispatch path is a wholly separate runtime: ~/workspace/lane-p01/tree/src/app/api/mc/dispatch/route.ts + mc-dispatch.ts write MC_* lifecycle events to a JSONL journal (/home/nolan/workspace/fyd-journal-gateway/events.jsonl) and execute via the lane-d adapter shim (adapter-call.js) and copilot-broker/dispatch-task.js. Verified by grep: zero references to WorkerRuntime, MissionScheduler, UnifiedEventRuntime, EventGovernance, or ping-runtime anywhere in mc-dispatch.ts. The P0 mission ("Analyze my website and make emergency services more prominent") does not flow through CLASSIFICATION_CREATE missions, so it is unaffected. The failure loop is isolated to the gateway's ping-runtime intelligence pipeline, with this collateral damage confined there: no CLASSIFICATION_CREATE mission can ever complete while jev-shadow is registered and its emit is governance-rejected (dispatch() throws after ClassificationWorker itself succeeds, poisoning the mission), plus log noise and scheduler-slot churn. Per standing policy, jev-shadow remains a bounded shadow sensor, never an authority; this diagnosis does not promote it.
+
+## Smallest authority-correct intervention (NOT implemented)
+
+Add one line to NAMESPACE_OWNERS in event_governance.js declaring the jev namespace owner (consistent with the registered event's authority_owner "JevShadowWorker", the VERDICT_PRODUCERS binding, and the terminal-event design that gives jev no bridge mission mapping), rebuild and redeploy the gateway image, and let the retry_pending missions succeed on their next retry. Immediate stopgap alternative: remove the jev-shadow registration from the gateway bootstrap (gateway_runtime.js:541) so classification missions stop being poisoned, keeping the shadow dark until the namespace is wired. Caveat: NAMESPACE_OWNERS is constitutional governance policy, so the edit should be reviewed as a policy change; either way jev remains a non-authority shadow sensor.
+
+## Component classification (one line of evidence each)
+
+- WorkerRuntime (live: ping-gateway:/app/ping-runtime/workers/worker_runtime.js) — KEEP. Evidence: worker_runtime.js:96-107 — dispatch matches workers by eventTypes and propagates worker errors to MissionScheduler; functioning as designed.
+- JevShadowWorker (live: ping-gateway:/app/ping-runtime/jev/shadow_worker.js) — BROKEN. Evidence: shadow_worker.js:91 — its only output, _emit(JEV_DECISION_EVALUATED), is rejected 100% of the time by governance, so the worker can never succeed.
+- EventGovernance NAMESPACE_OWNERS (live: ping-gateway:/app/ping-runtime/events/event_governance.js:14-82) — BROKEN. Evidence: event_governance.js:200 — _validateNamespace rejects 'jev' because the map has no jev key, while the event is registered with a verdict-producer binding.
+- UnifiedEventRuntime.emit step 3 (live: ping-gateway:/app/ping-runtime/events/unified_event_runtime.js:198-211) — KEEP. Evidence: unified_event_runtime.js:205-211 — routes every emission through EventGovernance, fail-closed; working as designed.
+- BaseWorker._emit (live: ping-gateway:/app/ping-runtime/workers/canonical_workers.js:83-90) — KEEP. Evidence: canonical_workers.js:90 — converts a non-ok emit result into a thrown Error; correct fail-closed propagation.
+- MissionScheduler (live: ping-gateway:/app/ping-runtime/orchestration/mission_scheduler.js) — KEEP. Evidence: mission_scheduler.js:283-325 — retry_pending with max_attempts 3 then failed plus DLQ; correct for transient faults, but it amplifies this deterministic config fault into a retry loop.
+- EventToMissionBridge (live: ping-gateway:/app/ping-runtime/orchestration/event_to_mission_bridge.js) — KEEP. Evidence: event_to_mission_bridge.js:60 — CLAIM_CREATED maps to CLASSIFICATION_CREATE missions, feeding the loop; the mapping itself is correct.
+- jev-shadow registration (live: ping-gateway:/app/gateway/bootstrap/gateway_runtime.js:541) — KEEP (intentional per JEV P3 design; the wiring, not the registration, is broken).
+- VERDICT_PRODUCERS binding (live: ping-gateway:/app/ping-runtime/events/unified_event_runtime.js:41) — KEEP. Evidence: unified_event_runtime.js:41 — JEV_DECISION_EVALUATED bound to 'jev-shadow' correctly passes the verdict gate; the failure is downstream at governance.
+- Event registry entry for JEV_DECISION_EVALUATED (live: ping-gateway:/app/gateway/generated/event_registry.json:3278) — KEEP. Evidence: registry entry exists with authority_owner "JevShadowWorker" and passes step-2 validation.
+- Local mirror ~/workspace/tenanos-wave/swarm-18/live-worker_runtime.js — DUPLICATE. Evidence: byte-identical (169 lines) to the live container file; an archaeology copy, not a second runtime.
+- Local source ~/workspace/jev-stage/shadow_worker.js — DUPLICATE (build-source copy). Evidence: byte-identical to live /app/ping-runtime/jev/shadow_worker.js.
+- lane-p01 /api/mc/dispatch (~/workspace/lane-p01/tree/src/app/api/mc/dispatch/route.ts + ../_lib/mc-dispatch.ts) — KEEP, wholly separate. Evidence: mc-dispatch.ts:23-25 — journal JSONL plus adapter-call.js/copilot-broker, zero ping-runtime imports.
+
+## Method notes
+
+- Pig transport verified STABLE (PIG_OK round trip). Read-only throughout: docker exec cat/grep/sed, docker logs, psql SELECT only. Nothing written to the Pig, no code changed, no commits, no pushes, no HPP contact, :3200 untouched.
+- The live WorkerRuntime is the single live one (ping-gateway container). Local finds named "worker_runtime" are identical mirrors, not alternate runtimes.
+- Gateway DB is brain-postgres / ping_runtime (not ping-postgres). Current blast radius: 3 missions retry_pending with the jev error; failure is deterministic so each mission burns its 3 retries then goes to the DLQ, while new CLAIM_CREATED events keep minting fresh doomed missions.

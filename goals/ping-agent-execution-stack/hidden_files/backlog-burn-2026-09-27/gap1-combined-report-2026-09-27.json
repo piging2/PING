@@ -1,0 +1,524 @@
+{
+  "generated_at": "2026-09-27T18:00:44.390385+00:00",
+  "fixture": "fyd-lane/canonical-conformance/fixture.json",
+  "pinned_semantics": {
+    "BYTE_FORM": "Recursive key sort, array order preserved (semantic, never sorted), separators (',',':'), raw UTF-8 (no \\uXXXX escaping), undefined -> null, empty structures preserved.",
+    "FLOATS_REFUSED": "Any float value (finite or non-finite) in the input must make the canonicalizer throw/refuse, never emit bytes. Rationale: Python and JS serialize floats differently (repr vs shortest round-trip, integer-valued floats, exponent formatting), so a digest must never silently depend on it. dump.py already refuses; the pin extends fail-closed behavior to all sides.",
+    "KEY_ORDER_UTF16": "Object keys sort in UTF-16 code-unit order (JS String sort, i.e. the reference Object.keys().sort()). Python sorted() uses code-point order and diverges on astral-plane keys; that divergence is a recorded FAIL, not an accepted variant."
+  },
+  "verdict": "NON_CONFORMANT",
+  "failing_case_runs": 30,
+  "implementations": {
+    "hash-authority.ts": {
+      "class": "reference",
+      "source": "fyd-lane/harvest-wave1/code-evidence/hash-authority.ts (HashAuthority.canonicalizeObject)",
+      "status": "NON_CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 bfa75859ef176e86"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 76cc41d83738e0c6"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 842410ec2e35ce90"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 c0bf82ad036cb0a5"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"price\":19.99}"
+        },
+        {
+          "id": "float-nested",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"a\":{\"b\":[1,2.5]}}"
+        },
+        {
+          "id": "float-nan",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-inf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-neginf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        }
+      ]
+    },
+    "absorb/canonical.ts": {
+      "class": "live",
+      "source": "fyd-lane/absorb/src/canonical.ts (canonicalize)",
+      "status": "CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 bfa75859ef176e86"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 76cc41d83738e0c6"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 842410ec2e35ce90"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 c0bf82ad036cb0a5"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "canonicalize: float values are refused; they cannot serialize deterministically (pinned FLOATS_REFUSED)"
+        },
+        {
+          "id": "float-nested",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "canonicalize: float values are refused; they cannot serialize deterministically (pinned FLOATS_REFUSED)"
+        },
+        {
+          "id": "float-nan",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "canonicalize: float values are refused; they cannot serialize deterministically (pinned FLOATS_REFUSED)"
+        },
+        {
+          "id": "float-inf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "canonicalize: float values are refused; they cannot serialize deterministically (pinned FLOATS_REFUSED)"
+        },
+        {
+          "id": "float-neginf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "canonicalize: float values are refused; they cannot serialize deterministically (pinned FLOATS_REFUSED)"
+        }
+      ]
+    },
+    "dump.py": {
+      "class": "live",
+      "source": "fyd-lane/dump.py::canonicalize (float-refusing)",
+      "status": "CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 bfa75859ef176e86"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 76cc41d83738e0c6"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 842410ec2e35ce90"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "SKIP",
+          "reason": "NOT_APPLICABLE",
+          "detail": "case is ts-only"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canonicalize: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-nested",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canonicalize: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-nan",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canonicalize: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-inf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canonicalize: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-neginf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canonicalize: float refused (TS/Python serialization differs)"
+        }
+      ]
+    },
+    "lane-e/proof.py": {
+      "class": "live",
+      "source": "fyd-lane/lane-e/proof.py::canon (json.dumps sort_keys, no float refusal)",
+      "status": "CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 bfa75859ef176e86"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 76cc41d83738e0c6"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 842410ec2e35ce90"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "SKIP",
+          "reason": "NOT_APPLICABLE",
+          "detail": "case is ts-only"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canon: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-nested",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canon: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-nan",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canon: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-inf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canon: float refused (TS/Python serialization differs)"
+        },
+        {
+          "id": "float-neginf",
+          "result": "PASS",
+          "reason": "REFUSED_AS_PINNED",
+          "detail": "ValueError: canon: float refused (TS/Python serialization differs)"
+        }
+      ]
+    },
+    "check-stable.py": {
+      "class": "historical",
+      "source": "fyd-lane/check-stable.py line 17 expression (ensure_ascii default True; file not importable)",
+      "status": "NON_CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 bfa75859ef176e86"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 76cc41d83738e0c6"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "FAIL",
+          "reason": "UNICODE_ESCAPED",
+          "detail": "non-ASCII escaped as \\uXXXX instead of raw UTF-8"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "SKIP",
+          "reason": "NOT_APPLICABLE",
+          "detail": "case is ts-only"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "FAIL",
+          "reason": "UNICODE_ESCAPED",
+          "detail": "non-ASCII escaped as \\uXXXX instead of raw UTF-8"
+        },
+        {
+          "id": "float-finite",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"price\":19.99}"
+        },
+        {
+          "id": "float-nested",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"a\":{\"b\":[1,2.5]}}"
+        },
+        {
+          "id": "float-nan",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":NaN}"
+        },
+        {
+          "id": "float-inf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":Infinity}"
+        },
+        {
+          "id": "float-neginf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":-Infinity}"
+        }
+      ]
+    },
+    "CanonicalBytes.serialize": {
+      "class": "historical",
+      "source": "fyd-lane/harvest-wave1/code-evidence/canonical_authority.js (frozen PING-side copy)",
+      "status": "NON_CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "FAIL",
+          "reason": "ARRAY_SEPARATORS",
+          "detail": "$.a: array length 1 != 3 (separators missing?)"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "FAIL",
+          "reason": "ARRAY_SEPARATORS",
+          "detail": "bytes are not valid JSON; array separators missing"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 842410ec2e35ce90"
+        },
+        {
+          "id": "empty-structures",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 564f61283addf496"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "FAIL",
+          "reason": "UNDEFINED_LITERAL",
+          "detail": "undefined serialized as literal undefined instead of null"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"price\":19.99}"
+        },
+        {
+          "id": "float-nested",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"a\":{\"b\":[12.5]}}"
+        },
+        {
+          "id": "float-nan",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-inf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-neginf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        }
+      ]
+    },
+    "legacy top-level stringify": {
+      "class": "historical",
+      "source": "fyd-lane/harvest-wave1/code-evidence/unified_event_runtime.js line 170 (C1 key-order bug, frozen)",
+      "status": "NON_CONFORMANT",
+      "cases": [
+        {
+          "id": "key-order-basic",
+          "result": "FAIL",
+          "reason": "NESTED_KEYS_DROPPED",
+          "detail": "$.m: nested keys dropped: ['b']"
+        },
+        {
+          "id": "nested-arrays-preserved",
+          "result": "FAIL",
+          "reason": "NESTED_KEYS_DROPPED",
+          "detail": "$.deep: nested keys dropped: ['l1']"
+        },
+        {
+          "id": "unicode-bmp",
+          "result": "FAIL",
+          "reason": "NESTED_KEYS_DROPPED",
+          "detail": "$.日本語: nested keys dropped: ['key']"
+        },
+        {
+          "id": "empty-structures",
+          "result": "FAIL",
+          "reason": "NESTED_KEYS_DROPPED",
+          "detail": "$.c: nested keys dropped: ['d']"
+        },
+        {
+          "id": "undefined-to-null",
+          "result": "FAIL",
+          "reason": "NESTED_KEYS_DROPPED",
+          "detail": "$: nested keys dropped: ['a']"
+        },
+        {
+          "id": "astral-key-order",
+          "result": "PASS",
+          "reason": "BYTES_MATCH",
+          "detail": "sha256 48b89ea4f04b786a"
+        },
+        {
+          "id": "float-finite",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"price\":19.99}"
+        },
+        {
+          "id": "float-nested",
+          "result": "FAIL",
+          "reason": "FLOAT_ACCEPTED",
+          "detail": "finite float serialized to bytes instead of refused: {\"a\":{}}"
+        },
+        {
+          "id": "float-nan",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-inf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        },
+        {
+          "id": "float-neginf",
+          "result": "FAIL",
+          "reason": "NONFINITE_SERIALIZED",
+          "detail": "non-finite value serialized to bytes instead of refused: {\"x\":null}"
+        }
+      ]
+    }
+  }
+}

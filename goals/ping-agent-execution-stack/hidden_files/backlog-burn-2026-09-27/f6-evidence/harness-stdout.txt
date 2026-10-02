@@ -1,0 +1,48 @@
+canonical-bytes conformance  fixture=fyd-lane/canonical-conformance/fixture.json  cases=11
+----------------------------------------------------------------------------------------------------
+[ref] hash-authority.ts            NON_CONFORMANT
+      float-finite             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"price":19.99}
+      float-nested             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"a":{"b":[1,2.5]
+      float-nan                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-inf                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-neginf             FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+[live] absorb/canonical.ts          NON_CONFORMANT
+      float-finite             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"price":19.99}
+      float-nested             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"a":{"b":[1,2.5]
+[live] dump.py                      NON_CONFORMANT
+      undefined-to-null        SKIP NOT_APPLICABLE     case is ts-only
+      astral-key-order         FAIL KEY_SORT_ASTRAL    astral-plane keys not in pinned UTF-16 code-unit order
+[live] lane-e/proof.py              CONFORMANT
+      undefined-to-null        SKIP NOT_APPLICABLE     case is ts-only
+[hist] check-stable.py              NON_CONFORMANT
+      unicode-bmp              FAIL UNICODE_ESCAPED    non-ASCII escaped as \uXXXX instead of raw UTF-8
+      undefined-to-null        SKIP NOT_APPLICABLE     case is ts-only
+      astral-key-order         FAIL UNICODE_ESCAPED    non-ASCII escaped as \uXXXX instead of raw UTF-8
+      float-finite             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"price":19.99}
+      float-nested             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"a":{"b":[1,2.5]
+      float-nan                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":NaN}
+      float-inf                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":Infinity
+      float-neginf             FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":-Infinit
+[hist] CanonicalBytes.serialize     NON_CONFORMANT
+      key-order-basic          FAIL ARRAY_SEPARATORS   $.a: array length 1 != 3 (separators missing?)
+      nested-arrays-preserved  FAIL ARRAY_SEPARATORS   bytes are not valid JSON; array separators missing
+      undefined-to-null        FAIL UNDEFINED_LITERAL  undefined serialized as literal undefined instead of null
+      float-finite             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"price":19.99}
+      float-nested             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"a":{"b":[12.5]}
+      float-nan                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-inf                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-neginf             FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+[hist] legacy top-level stringify   NON_CONFORMANT
+      key-order-basic          FAIL NESTED_KEYS_DROPPED $.m: nested keys dropped: ['b']
+      nested-arrays-preserved  FAIL NESTED_KEYS_DROPPED $.deep: nested keys dropped: ['l1']
+      unicode-bmp              FAIL NESTED_KEYS_DROPPED $.日本語: nested keys dropped: ['key']
+      empty-structures         FAIL NESTED_KEYS_DROPPED $.c: nested keys dropped: ['d']
+      undefined-to-null        FAIL NESTED_KEYS_DROPPED $: nested keys dropped: ['a']
+      float-finite             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"price":19.99}
+      float-nested             FAIL FLOAT_ACCEPTED     finite float serialized to bytes instead of refused: {"a":{}}
+      float-nan                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-inf                FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+      float-neginf             FAIL NONFINITE_SERIALIZED non-finite value serialized to bytes instead of refused: {"x":null}
+----------------------------------------------------------------------------------------------------
+verdict: NON_CONFORMANT  (33 failing case-runs)
+report: f6-scratch/gap1-f6-after.json

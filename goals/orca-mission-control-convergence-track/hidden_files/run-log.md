@@ -1,0 +1,1 @@
+2026-09-30 02:21 UTC overnight lane: integration gate FAIL at 3c47916 (projector test 4/5, stale-world assertion) -> remediated (test fixture-pinned, snapshot regenerated) -> integrated SHA 004e171 clean (22/22, 6/6, 25/25 independent replay). MC gaps: (a)(b) PASS, (c)(d) BLOCKED (Pig-only repo). Commits 5c3e9c5, 4ca53fe, 004e171, never pushed.

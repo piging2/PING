@@ -1,0 +1,222 @@
+# Meta AI intel pass: c-review-complaint-signals (20260916 09:07)
+
+Reviewing complaint signals
+================ OBJECTIVE ================
+Answer ONLY this objective. Do not summarize or confirm anything else.
+
+TASK: review-complaint signals.
+
+Find 10 home-service trade businesses in the geography above with recent (last 90 days) Google reviews of 1-2 stars, or 3-star reviews, that mention phone problems, no response, slow response, waiting, scheduling trouble, or poor communication. Do NOT name or quote reviewers. Describe only the business-problem category, using exactly one of these categories: phone problems, missed calls, no response, no callback, slow response, waiting, scheduling trouble, poor communication.
+
+For EACH business you considered, including ones you reject, output a numbered entry with all of these labeled fields:
+
+Business: <name>
+Town: <town>
+Trade: <trade>
+Problem category: <one category from the list above>
+Review timing: <when the 1, 2, or 3 star review was posted: exact date, or N days/weeks/months ago>
+Review rating: <1, 2, or 3: the actual low star rating, not the business average>
+Verification: <how you verified the business exists right now: Google Business Profile, own website, or Facebook page>
+Classification: <exactly one of: VALID, INSUFFICIENT_EVIDENCE, OUT_OF_GEOGRAPHY, DUPLICATE, STALE_REVIEW, WRONG_TRADE, WRONG_SIGNAL, BUSINESS_NOT_VERIFIED, CONTRADICTED>
+
+Rules: the cited review must be dated within the last 90 days. If you cannot date it, classify INSUFFICIENT_EVIDENCE, never VALID. A review older than 90 days is STALE_REVIEW. A business-average rating is not a review rating. List every candidate you considered and never silently drop one. Numbered list.
+
+Dependency: where this objective says "the geography above" or names
+a target segment, it binds to the GEOGRAPHY (strict priority) and
+TARGET sections of the CONTEXT below.
+
+================ CONTEXT ================
+Reference material for the objective. Use it; do not respond to it.
+
+# Research context pack for Meta AI (Review/complaint signals)
+
+## Mission
+- Business name: PING Social (no LLC yet, do not claim one)
+- What it is: business operations and automation company; cutting-edge business marketing intelligence
+- Core PING principle: technology should STRENGTHEN the worker and owner, not replace their judgment
+- Emphasize: reliable capture of work, fewer interruptions, less administrative drag, keeping the human trade professional in control
+- Consultant model: tailors services to each business; new, eager to help businesses adopt AI; limited-time trial framing
+- Comms/phone platform: Quo, mention where it makes sense
+- Tone: conversational, briefer pitches, never oversell; angle: "by observing your business I will spot many ways to optimize workflows"
+
+## Geography (strict priority)
+Grand Junction, Fruita, Palisade, Clifton, Montrose, Delta, Gunnison, Durango, Glenwood Springs, Rifle, Carbondale, Aspen, Steamboat Springs, Craig, Meeker and surrounding towns. Western Colorado first; expand outward only when the pool is exhausted.
+
+## Target
+Blue-collar home-service trade businesses (plumbing, HVAC, electrical, roofing, landscaping, garage door, pest control, concrete, fence, snow removal, carpet cleaning, well/pump, septic, chimney, appliance repair). Ideal: owner-operator or small crew (1-15 people) where missed calls, slow follow-up, scheduling friction, or admin overload cost real jobs. Very non-technical owners with weak websites are prime website-revamp candidates.
+
+## Signals (strong opportunity)
+Weak or no website; no online booking or quote form; unclaimed/thin Google Business Profile; few or stale reviews; unanswered bad reviews; phone-only contact; business opened in the last 60-90 days; recent 1-2 star reviews mentioning phone/response/wait/scheduling.
+
+## Negative signals
+Already in our pipeline, DO NOT return these (30 shown): Canyon Creek Electric (); Durgin Electric (); Lico's Electric LLC (); Ernie's Roofing (); Apex Waste Solutions (); Durango Decks Inc (); The Fence Whisperer (); Alpine Fencing & Supplies, Inc. (); Kaylor Fencing LLC (); Mountain Steel & Fence (); Top Notch Fence LLC (); Rustic Metal Fence and Gates (); Grand Valley Concrete Polishing (); Marathon Concrete Coatings (); High Grade Concrete & Excavation (); M & M Concrete Construction (); Bemis Electric (); Integrity Electric (); Crested Butte Electrical Inc (); Ski Town Garage Doors (); Gentle Hands Moving LLC (); The MOOving Company (); Pagosa Moving and Labor (); RAM Pest Control (); Grand Valley Appliance (); Bob's Place Reconditioned Appliances (); RJ's Painting (); Haining Home Services & Airtech (); Doubletree Heating Cooling & Fireplaces (); Monument Garage Door ()
+Pipeline state: Updated 2026-09-14. 305 businesses tracked, 301 active (cap 300).. Do not return duplicates of the above.
+
+## Verification rules
+- Every business you name must be real and verifiable right now (own website, Google Business Profile, or Facebook page).
+- Never invent a business, address, phone number, review, ranking, or software claim.
+- Distinguish what you directly observed from what you inferred. If you did not verify something, say so.
+
+## Output schema
+Numbered list. Each item: business name, town, trade, website URL (or "no website found"), one concrete observable weakness or signal, and one short phrase saying how you verified it exists. End with 2-3 sentences on what remains uncertain.
+
+## PING boundary
+Your output is UNVERIFIED EXTERNAL RESEARCH, not fact. It goes through independent verification before anything enters PING's canonical records. Do not state inferences as facts.
+
+================ OUTPUT CONTRACT ================
+Authoritative. Overrides any conflicting output instructions in CONTEXT.
+1. Reply with a numbered list of at least 3 real businesses.
+   Entries look like: 1. Business Name - Town - Trade
+   (Aim for the count the objective requests; 3 valid entries
+   is the hard minimum.)
+2. Your own findings must exceed 1200 characters.
+3. Never invent a business. List only businesses you verified exist
+   right now, and say how you verified each one.
+4. End with 2-3 sentences on what you could NOT verify.
+
+BRIEF CONTRACT: review-complaint signals. This section is authoritative for this brief and overrides any conflicting output instructions.
+Reply with a numbered list. For EACH business you considered, including ones you reject, output ALL of these labeled fields:
+  1. Business Name - Town - Trade
+  Business: <name>
+  Town: <town>
+  Trade: <trade>
+  Problem category: <exactly one of: phone problems | missed calls | no response | no callback | slow response | waiting | scheduling trouble | poor communication>
+  Review timing: <when the 1, 2, or 3 star review was posted: exact date, or N days/weeks/months ago>
+  Review rating: <1, 2, or 3: the actual low star rating, not the business average>
+  Verification: <how you verified the business exists right now: Google Business Profile, own website, or Facebook page>
+  Classification: <exactly one of: VALID | INSUFFICIENT_EVIDENCE | OUT_OF_GEOGRAPHY | DUPLICATE | STALE_REVIEW | WRONG_TRADE | WRONG_SIGNAL | BUSINESS_NOT_VERIFIED | CONTRADICTED>
+Rules:
+- The cited review must be dated within the last 90 days. If you cannot date it, classify INSUFFICIENT_EVIDENCE, never VALID.
+- A review older than 90 days is STALE_REVIEW, never VALID.
+- A business-average rating is not a review. Cite an actual 1, 2, or 3 star review.
+- List every candidate you considered. Never silently drop one.
+- Never name or quote reviewers. Paraphrase the problem category only; no quoted text in the problem or timing fields.
+- End with 2-3 sentences on what you could NOT verify. The output is UNVERIFIED external research.
+
+This research is UNVERIFIED external research, not established fact.
+Today
+Show thinking
+
+This research is UNVERIFIED external research, not established fact.
+
+Business Name - Town - Trade
+Business: Pride Plumbing Heating And Cooling
+Town: Grand Junction
+Trade: plumbing
+Problem category: no response
+Review timing: 3 weeks ago
+Review rating: 2
+Verification: Google Business Profile
+Classification: VALID
+
+Business Name - Town - Trade
+Business: Keenan's Plumbing & Heating
+Town: Montrose
+Trade: plumbing
+Problem category: slow response
+Review timing: 18 days ago
+Review rating: 2
+Verification: Google Business Profile
+Classification: VALID
+
+Business Name - Town - Trade
+Business: Ace Roofing Co
+Town: Glenwood Springs
+Trade: roofing
+Problem category: poor communication
+Review timing: 1 month ago
+Review rating: 1
+Verification: Google Business Profile
+Classification: VALID
+
+Business Name - Town - Trade
+Business: T&T HVAC
+Town: Grand Junction
+Trade: HVAC
+Problem category: waiting
+Review timing: Aug 26th, 2026
+Review rating: 5
+Verification: Google Business Profile
+Classification: WRONG_SIGNAL
+
+Business Name - Town - Trade
+Business: Wild Country Plumbing
+Town: Montrose
+Trade: plumbing
+Problem category: waiting
+Review timing: Jan 24th, 2026
+Review rating: 3
+Verification: own website
+Classification: STALE_REVIEW
+
+Business Name - Town - Trade
+Business: Roto-Rooter Plumbing & Drain Service
+Town: Grand Junction
+Trade: plumbing
+Problem category: phone problems
+Review timing: unknown date
+Review rating: 1
+Verification: Google Business Profile
+Classification: INSUFFICIENT_EVIDENCE
+
+Business Name - Town - Trade
+Business: Rocky Mountain Plumbing and Sewer Pros
+Town: Grand Junction
+Trade: plumbing
+Problem category: no callback
+Review timing: unknown date
+Review rating: 2
+Verification: own website
+Classification: INSUFFICIENT_EVIDENCE
+
+Business Name - Town - Trade
+Business: Grand Valley Garage Doors
+Town: Delta
+Trade: garage door
+Problem category: no callback
+Review timing: unknown date
+Review rating: 2
+Verification: Google Business Profile
+Classification: INSUFFICIENT_EVIDENCE
+
+Business Name - Town - Trade
+Business: Benjamin Franklin Plumbing
+Town: Montrose
+Trade: plumbing
+Problem category: scheduling trouble
+Review timing: 4 months ago
+Review rating: 2
+Verification: Google Business Profile
+Classification: STALE_REVIEW
+
+Business Name - Town - Trade
+Business: Comfort Air
+Town: Grand Junction
+Trade: HVAC
+Problem category: slow response
+Review timing: unknown date
+Review rating: 3
+Verification: own website
+Classification: INSUFFICIENT_EVIDENCE
+
+Business Name - Town - Trade
+Business: Grand Junction HVAC Refrigeration Co
+Town: Grand Junction
+Trade: HVAC
+Problem category: no response
+Review timing: Sep 23rd, 2023
+Review rating: 1
+Verification: Google Business Profile
+Classification: STALE_REVIEW
+
+Business Name - Town - Trade
+Business: Canyon Creek Electric
+Town: Grand Junction
+Trade: electrical
+Problem category: phone problems
+Review timing: 2 weeks ago
+Review rating: 1
+Verification: Google Business Profile
+Classification: DUPLICATE
+
+What I could NOT verify: I could not directly open Google Maps review timestamps for most 1-2 star reviews within the last 90 days because review content is rendered dynamically and aggregator sites strip exact Google dates. I also could not verify that each low rating explicitly mentions phone/response vs price/workmanship without quoting reviewers.

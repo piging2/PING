@@ -1,0 +1,522 @@
+{
+  "schema": "ping-runtime-manifest/v1",
+  "worktree": "/home/nolan/ping",
+  "head": "88c9651be93fd45d3de2f76ac376a696f6413ff0",
+  "generated": "2026-09-19",
+  "note": "Read-only forensic pass. Exclusion never means deletion.",
+  "allowlist": [
+    "gateway/server.js",
+    "gateway/bootstrap/gateway_runtime.js",
+    "gateway/bootstrap/wiring.js, container.js, lifecycle.js, main.js, index.js",
+    "ping-runtime/events/unified_event_runtime.js",
+    "ping-runtime/events/event_read_authority.js",
+    "ping-runtime/events/event_bridge.js",
+    "ping-runtime/events/event_validator.js",
+    "ping-runtime/events/event_governance.js",
+    "ping-runtime/events/repository_store.js",
+    "ping-runtime/authorities/constitutional_time_authority.js",
+    "ping-runtime/orchestration/event_to_mission_bridge.js",
+    "ping-runtime/orchestration/mission_runtime.js",
+    "ping-runtime/orchestration/mission_scheduler.js",
+    "ping-runtime/workers/worker_runtime.js",
+    "ping-runtime/workers/canonical_workers.js",
+    "ping-runtime/workers/intelligence_worker.js",
+    "ping-runtime/boundaries/priority_boundary.js",
+    "gateway/kernel_replay_execution_provider.js",
+    "ping-runtime/evidence/evidence_authority.js",
+    "gateway/replay/kernel/deterministic_replay_engine.js",
+    "database/canonical_events.sql",
+    "ping-runtime/runtime/capability_resolver.js",
+    "gateway/generated/capability_registry.json",
+    "gateway/generated/event_registry.json",
+    "gateway/generated/workflow_registry.json",
+    "gateway/generated/deployment_manifest.json",
+    "gateway/generated/state_machine_registry.json",
+    "ping-runtime/evidence/constitutional_verification_authority.js",
+    "gateway/routes/events.js",
+    "gateway/routes/canonical_events.js",
+    "gateway/canonical_event_envelope.js",
+    "runtime/kernel/event_repository.js",
+    "gateway/event_repository.js",
+    "runtime/kernel/gateway_adapter.js"
+  ],
+  "excluded": [
+    {
+      "path": "gateway/generated/*_generator.js",
+      "class": "DEVELOPMENT_ONLY"
+    },
+    {
+      "path": "ping-runtime/agents/replay_worker.js",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "workers/*.py, runtime/workers/*.py, brainos/orchestration/src/*.py",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "runtime/adapters/google_drive/google_drive_ingestion_adapter.py",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "database/events.sql",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/test_*.js, evals/, test/, tests/",
+      "class": "TEST_ONLY"
+    },
+    {
+      "path": "worktrees/",
+      "class": "DEVELOPMENT_ONLY"
+    },
+    {
+      "path": "archive/, audit/, audit_reports/, reports/, docs/ (analysis MD)",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": ".graph/ (if present), evidence/",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "runtime/kernel/events/event-authority-interface.ts",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "runtime/adapters/postgres_event_store.ts",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/bootstrap/constitutional_runtime.js",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/test_*.js, evals/",
+      "class": "TEST_ONLY"
+    }
+  ],
+  "rows": [
+    {
+      "path": "gateway/server.js",
+      "why_required": "gateway process entrypoint (Docker CMD)",
+      "importer": "docker",
+      "authority": "process",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/bootstrap/gateway_runtime.js",
+      "why_required": "wires all services, mounts routes",
+      "importer": "server.js",
+      "authority": "process",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/bootstrap/wiring.js, container.js, lifecycle.js, main.js, index.js",
+      "why_required": "bootstrap composition",
+      "importer": "gateway_runtime.js",
+      "authority": "process",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/unified_event_runtime.js",
+      "why_required": "canonical event acceptance, identity, persistence (ping_events)",
+      "importer": "gateway_runtime.js:432",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/event_read_authority.js",
+      "why_required": "event reads for routes",
+      "importer": "gateway_runtime.js:381",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/event_bridge.js",
+      "why_required": "legacy ingress adapter (repository_events + canonical_events -> ping_events)",
+      "importer": "gateway_runtime.js:460",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/event_validator.js",
+      "why_required": "event type validation at emit",
+      "importer": "unified_event_runtime.js",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/event_governance.js",
+      "why_required": "governance/namespace check at emit",
+      "importer": "unified_event_runtime.js",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/events/repository_store.js",
+      "why_required": "RepositoryStore service",
+      "importer": "gateway_runtime.js",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/authorities/constitutional_time_authority.js",
+      "why_required": "canonical timestamps",
+      "importer": "unified_event_runtime.js, routes",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/orchestration/event_to_mission_bridge.js",
+      "why_required": "event -> mission trigger",
+      "importer": "gateway_runtime.js",
+      "authority": "Mission",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/orchestration/mission_runtime.js",
+      "why_required": "mission persistence/lifecycle (ping_missions)",
+      "importer": "gateway_runtime.js:475",
+      "authority": "Mission",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/orchestration/mission_scheduler.js",
+      "why_required": "mission dispatch to workers",
+      "importer": "gateway_runtime.js:552",
+      "authority": "Mission/Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/workers/worker_runtime.js",
+      "why_required": "worker execution engine",
+      "importer": "mission_scheduler.js",
+      "authority": "Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/workers/canonical_workers.js",
+      "why_required": "canonical worker implementations",
+      "importer": "worker_runtime.js",
+      "authority": "Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/workers/intelligence_worker.js",
+      "why_required": "intelligence worker",
+      "importer": "worker_runtime.js",
+      "authority": "Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/boundaries/priority_boundary.js",
+      "why_required": "priority normalization at mission ingress",
+      "importer": "event_to_mission_bridge.js",
+      "authority": "Mission",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/kernel_replay_execution_provider.js",
+      "why_required": "deterministic kernel replay engine provider",
+      "importer": "gateway_runtime.js:512",
+      "authority": "Replay",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS (check native deps if any)",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/evidence/evidence_authority.js",
+      "why_required": "retrieval verification, traces Qdrant hits to ping_events",
+      "importer": "gateway_runtime.js (Phase E)",
+      "authority": "Evidence",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/replay/kernel/deterministic_replay_engine.js",
+      "why_required": "deterministic replay engine (state machine + fingerprint + invariants + witness)",
+      "importer": "kernel_replay_execution_provider.js",
+      "authority": "Replay",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "database/canonical_events.sql",
+      "why_required": "canonical_events schema, read by CanonicalEventEnvelope.initialize()",
+      "importer": "canonical_event_envelope.js:46",
+      "authority": "Event (legacy ingress)",
+      "runtime_reachable": true,
+      "arm64_concern": "SQL",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/runtime/capability_resolver.js",
+      "why_required": "capability registry authority (loads capability_registry.json, throws if missing)",
+      "importer": "gateway_runtime.js:179",
+      "authority": "Capability",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/capability_registry.json",
+      "why_required": "required capability registry (runtime config)",
+      "importer": "capability_resolver.js",
+      "authority": "Capability",
+      "runtime_reachable": true,
+      "arm64_concern": "JSON config",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/event_registry.json",
+      "why_required": "required event type registry (EventValidator)",
+      "importer": "event_validator.js",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "JSON config",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/workflow_registry.json",
+      "why_required": "required workflow registry (WorkflowExecutor)",
+      "importer": "workflow_executor.js",
+      "authority": "Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "JSON config",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/deployment_manifest.json",
+      "why_required": "required deployment manifest (DeploymentLoader)",
+      "importer": "deployment_loader.js",
+      "authority": "Capability",
+      "runtime_reachable": true,
+      "arm64_concern": "JSON config",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/state_machine_registry.json",
+      "why_required": "required state machine registry",
+      "importer": "state_machine_executor.js",
+      "authority": "Worker",
+      "runtime_reachable": true,
+      "arm64_concern": "JSON config",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/generated/*_generator.js",
+      "why_required": "registry generators (build-time)",
+      "importer": "n/a",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE JS",
+      "class": "DEVELOPMENT_ONLY"
+    },
+    {
+      "path": "ping-runtime/evidence/constitutional_verification_authority.js",
+      "why_required": "second read-side verifier (relationship to EvidenceAuthority untraced)",
+      "importer": "gateway_runtime.js",
+      "authority": "Evidence",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "ping-runtime/agents/replay_worker.js",
+      "why_required": "thin replay adapter (unwired, nothing requires it)",
+      "importer": "none",
+      "authority": "Replay",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE JS",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "workers/*.py, runtime/workers/*.py, brainos/orchestration/src/*.py",
+      "why_required": "legacy Python event/replay/witness workers reading legacy `events` table",
+      "importer": "none live",
+      "authority": "Event/Replay/Witness (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE PYTHON",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "runtime/adapters/google_drive/google_drive_ingestion_adapter.py",
+      "why_required": "legacy Drive ingestion writing `events`",
+      "importer": "none live",
+      "authority": "Event (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE PYTHON",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "database/events.sql",
+      "why_required": "legacy `events` table schema",
+      "importer": "none live",
+      "authority": "Event (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "SQL",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/test_*.js, evals/, test/, tests/",
+      "why_required": "tests and eval harnesses",
+      "importer": "none (not imported by runtime)",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "n/a",
+      "class": "TEST_ONLY"
+    },
+    {
+      "path": "worktrees/",
+      "why_required": "development worktrees",
+      "importer": "n/a",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "n/a",
+      "class": "DEVELOPMENT_ONLY"
+    },
+    {
+      "path": "archive/, audit/, audit_reports/, reports/, docs/ (analysis MD)",
+      "why_required": "audit archaeology",
+      "importer": "n/a",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "n/a",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": ".graph/ (if present), evidence/",
+      "why_required": "graphs and generated evidence",
+      "importer": "n/a",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "n/a",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/routes/events.js",
+      "why_required": "HTTP /events API (canonical spine emit)",
+      "importer": "gateway_runtime.js:681",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/routes/canonical_events.js",
+      "why_required": "HTTP /canonical-events API (legacy ingress)",
+      "importer": "gateway_runtime.js:685",
+      "authority": "Event",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/canonical_event_envelope.js",
+      "why_required": "writes canonical_events (bridged into ping_events)",
+      "importer": "gateway_runtime.js:399",
+      "authority": "Event (legacy ingress)",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "runtime/kernel/event_repository.js",
+      "why_required": "derived audit/projection adapter (repository_events)",
+      "importer": "gateway_adapter.js:27",
+      "authority": "Event (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "gateway/event_repository.js",
+      "why_required": "shim delegating to kernel",
+      "importer": "constitutional_runtime.js",
+      "authority": "Event (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "runtime/kernel/gateway_adapter.js",
+      "why_required": "kernel adapter instantiated by gateway",
+      "importer": "gateway_runtime.js:386",
+      "authority": "Event (legacy)",
+      "runtime_reachable": true,
+      "arm64_concern": "PURE JS",
+      "class": "INCLUDE_RUNTIME_V1"
+    },
+    {
+      "path": "runtime/kernel/events/event-authority-interface.ts",
+      "why_required": "IEventAuthority (dormant interface)",
+      "importer": "none",
+      "authority": "Event",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE TS (types only)",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "runtime/adapters/postgres_event_store.ts",
+      "why_required": "PostgresEventStore (dormant, zero instantiation)",
+      "importer": "none (RepositoryAuthority imports, never constructed)",
+      "authority": "Event",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE TS",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/bootstrap/constitutional_runtime.js",
+      "why_required": "ConstitutionalRuntime (only referenced by test)",
+      "importer": "test only",
+      "authority": "Event (legacy)",
+      "runtime_reachable": false,
+      "arm64_concern": "PURE JS",
+      "class": "PRESERVE_NOT_DISTRIBUTE"
+    },
+    {
+      "path": "gateway/test_*.js, evals/",
+      "why_required": "tests and eval harnesses",
+      "importer": "none (not imported by runtime)",
+      "authority": "n/a",
+      "runtime_reachable": false,
+      "arm64_concern": "n/a",
+      "class": "TEST_ONLY"
+    }
+  ]
+}

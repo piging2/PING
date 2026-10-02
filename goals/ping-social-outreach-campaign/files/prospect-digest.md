@@ -1,6 +1,6 @@
 # PING Social prospect digest
 _Derived from western-co-prospects.jsonl (sha256:969356d0be12). This file is a snapshot, not a source of truth._
-Updated 2026-09-29. 306 businesses tracked, 300 active (cap 300).
+Updated 2026-09-30. 306 businesses tracked, 300 active (cap 300).
 
 ## Counts by priority
 - HOT: 3
@@ -122,7 +122,7 @@ Updated 2026-09-29. 306 businesses tracked, 300 active (cap 300).
 | Genesis Appliance Service Inc | Grand Junction | residential appliance repair (kitchen/laundry, wine coolers, disposals, gas BBQs, gas fireplaces) | Missed-call capture | followup-f2 2026-10-03..2026-10-07 (DM; draft NEEDED; final touch, 3-touch ladder cap) |
 | Affordable Garage Doors | Grand Junction | garage doors | Missed-call capture | followup-f1 2026-10-03..2026-10-06 (draft NEEDED; day 4-7 after 2026-09-29 initial) |
 
-## Recently changed (62 in the last 7 days)
+## Recently changed (56 in the last 7 days)
 - 2026-09-29: Grime Fighters (Grand Junction) - 2026-09-16 AEO eval (round-65): ai_discoverability strong; own-site email gjgrimefighters@
 - 2026-09-29: Quala-Tree Care LLC (Grand Junction area) - F1 SENT 2026-09-29 UTC (Gmail id 1a0eaf318a55e366; initial 2026-09-25 id 1a0d601db53d6964;
 - 2026-09-29: Alpine Roll-Off Services (Rifle) - F1 SENT 2026-09-29 UTC (Gmail id 1a0eaf56ce0f0437; initial 2026-09-25; no reply, no declin

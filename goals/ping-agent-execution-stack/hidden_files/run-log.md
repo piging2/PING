@@ -1,0 +1,1 @@
+2026-09-30 02:21 UTC overnight lane: Pig C: read-only audit complete. 463G total, 23G free (96%). Top: ext4.vhdx 119G, docker_data.vhdx 106G (both HOT, do not move). Phase 1 candidates ~3-5G (temp/swap/caches/recycle). Staged move-plan: ~/workspace/pig-storage/flashdrive-move-plan-2026-09-29.md. Nothing moved, nothing deleted. No D:/E: mounted.

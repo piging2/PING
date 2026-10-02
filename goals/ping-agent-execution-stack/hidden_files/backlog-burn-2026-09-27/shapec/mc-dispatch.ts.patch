@@ -1,0 +1,17 @@
+diff --git a/src/app/api/mc/_lib/mc-dispatch.ts b/src/app/api/mc/_lib/mc-dispatch.ts
+index 424c324..c61d7df 100644
+--- a/src/app/api/mc/_lib/mc-dispatch.ts
++++ b/src/app/api/mc/_lib/mc-dispatch.ts
+@@ -20,7 +20,11 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
+ import { spawnSync } from 'child_process';
+ import { join } from 'path';
+ 
+-export const JOURNAL_PATH = '/home/nolan/workspace/fyd-journal-gateway/events.jsonl';
++// Shape C (MC->FYD wiring, 2026-09-27): MC_JOURNAL_PATH overrides the journal
++// path for local proof/test only. Default is the production journal path,
++// unchanged when the env var is unset.
++export const JOURNAL_PATH =
++  process.env.MC_JOURNAL_PATH || '/home/nolan/workspace/fyd-journal-gateway/events.jsonl';
+ export const ARTIFACT_ROOT = '/home/nolan/workspace/mission-control/artifacts';
+ export const ADAPTER_SHIM = '/home/nolan/workspace/mission-control/lane-d/adapter-call.js';
+ 

@@ -1,0 +1,72 @@
+---
+id: threads-engagement-pass
+title: Threads engagement pass
+enabled: true
+owner: goal:ping-social-brand-launch
+mode: task
+schedule:
+  kind: interval
+  timezone: America/Denver
+  at: 2026-09-15T23:01:21
+  every: 2h
+timeout_secs: 10800
+delivery:
+  - chat_id: d96a472e-4130-41a3-bf2d-851477ee9279
+metadata:
+  originating_chat_context_json: '{"chat_id":"76d7c127-fea6-44d1-a77e-1665978229c6","origin_provider":"main","chat_kind":"direct","event_kind":"message","require_mention":false,"device_id":"9d0e7f13-3c74-4270-807d-f10839e6f2ea"}'
+  presentation_locale: en-US
+---
+## NO-SCALE-BACK RAMP (2026-09-26, Nolan: never scale back, always retry, ramp weekly)
+
+Nolan's binding order 2026-09-26: on social, a failed pass is retried, never answered with lower caps. Failure means do it again. This pass: every 2h, caps 45 likes + 12 comments per pass. Weekly ramp RESUMED: +5 likes/week and +3 comments/week from these caps, no ceiling. A hard platform block stops the pass and is surfaced; once clear, resume at the ramped caps, never at minimum, never a hold period. NOTE (2026-09-27 correction): the old "needs Nolan's manual login" claim was a stale artifact of a broken login gate in th-restore.js (fixed 2026-09-27: the gate now also detects feed chrome). The session was never lost; th-restore.js reported already_logged_in once the gate was fixed. Never assume Nolan must log in: run th-restore.js and trust its gate. Only if the fixed gate reports a genuine logged-out state with no SSO entry does the manual-login ask go to Nolan, once, with evidence. Targeting, pacing, comment voice, guard, intent ledger, and fail-closed rules below are unchanged.
+
+Threads tech-leader engagement pass for PING Social brand building (Nolan's 2026-09-15 directive: run engagement passes on tech leaders on Threads, including @mentions).
+
+## CEO MODE VOLUME DIRECTIVE (2026-09-23, Nolan, standing; throttle LIFTED 2026-09-26 per the no-scale-back order)
+
+Threads runs heavy: up to 45 likes + 12 comments per pass, every 2h. Weekly ramp: +5 likes/week and +3 comments/week from these caps, no ceiling (2026-09-26). Targeting, pacing, comment voice, guard, intent ledger, and fail-closed rules below are unchanged.
+
+BROWSER-HEALTH PREREQUISITE (standing, layered model): Phase B actions run ONLY when Pig browser health is verified. The layers are Pig machine, proxy, Tailscale route, CDP, and browser, diagnosed separately; pig-health-heartbeat (every 15m) and pig-route-watch (every 10m) are the reporters — consult their latest status before Phase B. A route failure is NOT a machine failure; name the failing layer in the pass log. If browser/CDP health is unverified or failing, run Phase A discovery-only and classify the action path DEPENDENCY_FAILURE; never launch Phase B blind.
+
+BROWSER-WINDOW ISOLATION (2026-09-23 ~13:45 MDT, verified live): Threads and Instagram each get their OWN separate browser window (Nolan 13:02 directive, no tab sprawl). The worker (th-engage.js openWorkerWindow) opens a dedicated OS window via CDP Target.createTarget newWindow on the shared ig-profile context, so the Instagram-linked Threads login is shared; the window is closed after every pass and Nolan's tabs are never touched. Proven by 0-action dry runs on the Pig (login gate passed, window opened and closed, Nolan's window byte-identical after). CANARY RULE: the first full pass after login runs Phase B as a canary of at most 3 actions to prove one legitimate action in the new window; resume the 45+12 ceiling only after the canary lands cleanly with no anomaly. Do NOT edit th-engage.js, ig-engage.js, run_th_pass.sh, run_ig_pass.sh, ensure-cdp*.sh, cdp-health.sh, or any CDP/browser scripts without coordinator direction.
+
+STAY-ON RULE: this schedule stays ENABLED unless there is a real blocker or a genuine flagged-account risk. A logged-out session or a login that needs a 2FA code the worker does not have are NOT reasons to disable: end the run with zero engagement, log it, and let the next pass retry. Never park a background run waiting for a user code. Disable only on: an actual account restriction, action block, checkpoint, or verification challenge that signals the account is flagged (then surface it to Nolan immediately; caps are never halved), or Nolan saying stop.
+
+MECHANICAL NEVER-RE-ENGAGE: prose is not the enforcement. The guard script ~/workspace/outreach/engagement-guard.py (now threads-capable) consults the durable history in ~/workspace/outreach/threads-engagement.md. The steps below are mandatory; an LLM that forgets the rule still cannot engage a blocked account.
+
+Environment: export ENGAGEMENT_GUARD_PASSES_DIR=~/workspace/goals/ping-social-brand-launch/hidden_files/engagement-passes before calling the guard or ledger scripts, so Threads manifests live under the brand-launch goal.
+
+Steps:
+1. Read ~/workspace/outreach/threads-engagement.md header rules first.
+2. Phase A, discovery only: spawn a browser task for Threads as @nolanpigi (verify signed in first; restore via the saved Instagram login if logged out; if login cannot be restored without a 2FA code, stop with zero engagement, log it, keep the schedule enabled). The task is READ-ONLY: find recent posts from tech leaders, founders, and builders with eligible public posts, and return candidate handles plus post URLs (https://www.threads.com/@handle/post/CODE form). Seed targets (verified 2026-09-15): @garyvee, @karpathy, @mcuban, @ycombinator; discovery may add more tech voices, but verify each handle is really the person (verified badge or unmistakable identity) before listing. It must NOT like, comment, repost, follow, or DM anything.
+3. Write the returned candidates to ~/workspace/goals/ping-social-brand-launch/hidden_files/engagement-passes/th-candidates-<timestamp>.json as [{"account":"@handle","url":"https://www.threads.com/@handle/post/.../"}, ...].
+4. Run the guard: `~/workspace/outreach/engagement-guard.py filter --platform threads --in <candidates file> --out <eligible file> --audit`. It consults the durable history and classifies each candidate ELIGIBLE / ALREADY_ENGAGED / BLOCKED / UNKNOWN-UNCHECKABLE. Only ELIGIBLE candidates go in the eligible file; the rest are logged as SKIPPED_REENGAGEMENT or BLOCKED with reasons. If the guard exits 3 (history uncheckable), FAIL CLOSED: end the pass with zero engagement, log the fail-closed, keep the schedule enabled. If zero candidates are eligible, log it and end the pass quietly.
+4b. Unknown-execution filter: run `~/workspace/outreach/action-intent-ledger.py refuse --platform threads --in <eligible file> --out <final file> --pass-id th-<timestamp>` using the same <timestamp> as the candidates file. It refuses any candidate whose account has an unresolved intent from an older pass with a truthful UNKNOWN_EXECUTION reason, never silently skipping. If it exits 3 (ledger unreadable), FAIL CLOSED: end the pass with zero engagement and log it. If zero candidates remain, log it and end quietly. Copy refused UNKNOWN_EXECUTION entries into the pass log section; they need explicit reconciliation, not a retry.
+5. Phase B, engagement only (gated on the browser-health prerequisite above): first write the closed action set to ~/workspace/goals/ping-social-brand-launch/hidden_files/engagement-passes/th-actions-<timestamp>.json as [{"account":"@handle","url":"https://www.threads.com/.../","action":"like|comment","comment_text":"..."}, ...], assigning each final candidate its planned action within the caps below. Comment text is drafted here, in the header-rules voice, @mentioning the author naturally where it fits. The only valid action values are like and comment.
+5b. Intent before action: BEFORE Phase B starts, run `~/workspace/outreach/action-intent-ledger.py write-intents --platform threads --in <th-actions file> --pass-id th-<timestamp>`. One INTENT_RECORDED record per planned action, durable before any browser action. If this fails, do not start Phase B. The pass_id is th-<candidates timestamp> for the whole pass; reuse it across restarts of the same pass (a new pass_id means a new pass, and other passes' unresolved intents block). Then spawn the second browser task with the th-actions file as its CLOSED action set: it may execute ONLY the planned actions listed, up to the caps, and nothing else. For comment actions it posts the drafted comment_text verbatim; it must not invent reply text. If it cannot read the file, it does nothing. No new discovery in this phase.
+6. Restart safety: after every batch of ~5 completed actions (and on any restart before the pass completes), call `~/workspace/outreach/engagement-guard.py record --platform threads --account <handle> --url <post url> --action like|comment` for each completed action, so the durable log reflects reality immediately. Also record each batch's outcomes in the intent ledger: `~/workspace/outreach/action-intent-ledger.py record-outcomes --platform threads --pass-id th-<timestamp> --outcomes-json <batch report>` where the batch report is [{"account":"@handle","url":"...","action":"like|comment","ok":true/false,"note":"..."}]. Outcomes close intents; a crash between intent and outcome leaves UNKNOWN_EXECUTION, which the next pass refuses until reconciled (never auto-retried). On restart, re-run steps 4 and 4b on the remaining candidates before continuing.
+7. Engagement rules: tech leaders, founders, builders, technology voices only. Volume: up to 45 likes plus up to 12 comments per pass (no-scale-back ramp, 2026-09-26 Nolan directive). Human pacing: 60 to 120 seconds between actions. View each post fully before engaging. Never exceed these caps. Parallelism: run ONE browser task per pass on this account; parallelize across platforms, never within a pass (two tasks on the same account would interleave actions and break pacing).
+8. Comment voice: under 25 words, smart and specific, funny when it fits. React to something concrete in the post. @mention the author naturally when replying. Never sell, never mention PING Social, no links, no contact info, no em dashes.
+9. Stop instantly on any action block, checkpoint, verification challenge, rate-limit warning, or any sign of reduced reach, and report it. Log the stop and surface it; the next pass resumes at the ramped caps. Never halve caps, never hold at minimum.
+10. Post-pass verification: write the browser task's reported completed actions to a report file and run `~/workspace/outreach/engagement-guard.py verify --platform threads --report <report file>`. Any VIOLATION (an action that was not ELIGIBLE at selection time) is a real mistake: surface it to Nolan in the final message.
+
+After the pass, append a dated pass section to ~/workspace/outreach/threads-engagement.md: pass number, likes (handles + post URLs), comments (verbatim text + post URL), skipped accounts and why (including guard-blocked ones), any anomalies. Keep runs quiet: only surface to Nolan in the final message if there was an action block, checkpoint, login failure, guard fail-closed, or a verify VIOLATION; otherwise report only the pass counts.
+
+## SCHEDULER RESILIENCE (2026-09-17, automation-resilience program, Nolan's directive items 13/14/15)
+
+NON-BLOCKING HARD RULE: no individual job, brief, surface, provider, or artifact can block unrelated work. A failure on one surface quarantines ONLY that surface (CAPABILITY=BLOCKED); every other schedule continues normally. This pass must never wait on, retry, or depend on the state of another platform's pass, another brief, or another artifact. Log your own outcome and move on. (The Pig ig-profile Chrome CDP wedge blocks this surface only; it is not a global failure.)
+
+RECOVERY BUDGETS (governing rule: ~/workspace/pig-fb/recovery-budgets.json v1.0.0; it owns the numbers, this body owns the behavior):
+- Enumeration: up to 3 alternate strategies per pass on SUSPECT_ENUMERATION_FAILURE (zero candidates while the historical baseline is nonzero: try seed-handle scan, then expanded tech-voice scan, then reply-thread scan), then classify ENUMERATION_FAILURE and quarantine the surface.
+- Browser/CDP recovery: max 2 attempts per pass (a read-only probe, then one gentle recovery action), then DEPENDENCY_FAILURE, no hammering. The th-restore.js relink path needs a working CDP attach; if attach fails twice, stop and quarantine rather than forcing it.
+- Authentication: max 2 attempts per pass (Instagram SSO restore), no credential entry, no waiting on a 2FA code, then AUTH_FAILURE and quarantine.
+- Rate limit: stop instantly on any warning; backoff 5m/10m/20m across passes, then a 24h quarantine; caps are never halved. Backoff never shortens pacing.
+- Budget exhaustion quarantines the surface, never disables this schedule, never blocks other work.
+
+PASS CLASSIFICATION: classify every pass outcome with the universal classifier (~/workspace/pig-fb/pass-classifier.js when it lands; until then write the class name verbatim in the pass log section): SUCCESS_ACTION, SUCCESS_EMPTY, ENUMERATION_FAILURE, ELIGIBILITY_EMPTY, DEPENDENCY_FAILURE, AUTH_FAILURE, SURFACE_DRIFT, RATE_LIMIT, TEMPORARY_FAILURE, TERMINAL_FAILURE. Zero candidates with a nonzero baseline is SUSPECT_ENUMERATION_FAILURE: alternate enumeration, never a successful-empty mark.
+
+YIELD-DRIVEN CADENCE (baseline interval for this schedule: 2h; failures never drive cadence):
+- Yield = actions landed (EXECUTED) per pass, read from ~/workspace/outreach/threads-engagement.md and the action-truth store (~/workspace/outreach/action-truth.jsonl when it lands). Only passes classified SUCCESS_EMPTY or ELIGIBILITY_EMPTY with verified-healthy enumeration count toward the empty streak. Failure classes (AUTH_FAILURE, DEPENDENCY_FAILURE, RATE_LIMIT, ENUMERATION_FAILURE) do NOT count; they drive recovery budgets and the stay-on rule, not cadence.
+- Genuine-empty streaks do not stretch the interval and never lower caps.
+- Any pass landing >=1 action: confirm the baseline 2h interval and exit light mode.
+- Ramping by design: the interval stays 2h; volume only moves up via the weekly ramp.

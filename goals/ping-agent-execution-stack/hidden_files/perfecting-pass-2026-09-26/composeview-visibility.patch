@@ -1,0 +1,165 @@
+diff --git a/fyd-product-lane/src/fyd/customize/server.ts b/fyd-product-lane/src/fyd/customize/server.ts
+index d3be52f..25484f4 100644
+--- a/fyd-product-lane/src/fyd/customize/server.ts
++++ b/fyd-product-lane/src/fyd/customize/server.ts
+@@ -18,6 +18,7 @@ import type { FYDSiteSpec, ObjectGraph, ViewerContext } from "@/fyd/sitespec/typ
+ import {
+   applyFieldVisibility,
+   resolveFieldVisibility,
++  visibilityDecisionsFromBlock,
+   type FieldVisibilityDecision,
+ } from "@/fyd/sitespec/field-visibility";
+ import { applyPresentationIntent } from "./apply-layer";
+@@ -86,22 +87,6 @@ export function logDemoAuth(
+   );
+ }
+ 
+-/** Owner decisions carried by a digest-verified visibility block. */
+-export function visibilityDecisionsFromBlock(
+-  block: FieldVisibilityBlock | null,
+-): FieldVisibilityDecision[] {
+-  if (!block) return [];
+-  return block.decisions.map((d) => ({
+-    objectId: d.objectId,
+-    field: d.field,
+-    policy: d.policy,
+-    decidedBy: "owner" as const,
+-    decidedAt: d.approval.approvedAt,
+-    source: "owner_override" as const,
+-    version: d.version ?? 1,
+-  }));
+-}
+-
+ /**
+  * Resolve the current policy for one object field from the site's
+  * digest-verified visibility block (owner override wins, else the
+diff --git a/fyd-product-lane/src/fyd/object/view.ts b/fyd-product-lane/src/fyd/object/view.ts
+index 1f6ccb4..764a404 100644
+--- a/fyd-product-lane/src/fyd/object/view.ts
++++ b/fyd-product-lane/src/fyd/object/view.ts
+@@ -32,9 +32,15 @@
+ import {
+   getPingObjectGraphSync,
+   listPingSiteIdsSync,
++  type PingProjection,
+ } from "@/fyd/data/ping-object-source";
+ import { SCHEMA_ROLES } from "../sitespec/schemas";
+-import type { ObjectGraph } from "../sitespec/types";
++import type { ObjectGraph, ViewerContext } from "../sitespec/types";
++import {
++  applyFieldVisibility,
++  visibilityDecisionsFromBlock,
++  type FieldVisibilityDecision,
++} from "../sitespec/field-visibility";
+ import type { PingObject } from "../../lib/ping/types";
+ import { readOverrides } from "./owner-store";
+ import { resolveCircleBackground } from "../media/circle-background";
+@@ -219,13 +225,39 @@ export function buildCapabilities(
+  * which enforce the tenant/object honesty gates (unknown tenant, unknown
+  * id, non-public object).
+  */
++/**
++ * Options for composeObjectView.
++ *
++ * decisions: the digest-verified owner field-visibility decisions for the
++ * tenant (resolve with visibilityDecisionsFromBlock on the projection's
++ * fieldVisibility block). viewer: the viewer context for "members"-policy
++ * fields (absent = public, fail closed). When omitted, only the
++ * conservative defaults apply.
++ */
++export interface ComposeObjectViewOpts {
++  decisions?: FieldVisibilityDecision[];
++  viewer?: ViewerContext;
++}
++
+ export function composeObjectView(
+   graph: ObjectGraph,
+   siteId: string,
+   obj: PingObject,
+   viewId: string,
+   overridesKey: string,
++  opts?: ComposeObjectViewOpts,
+ ): ObjectView {
++  // Field-visibility gate (visibility-composeObjectView-bypass fix): the
++  // same digest-verified owner decisions the site renderer applies (via
++  // loadCustomizedSite -> applyFieldVisibility) project the graph BEFORE
++  // any field is read, so an owner-hidden phone/email can never leak
++  // through the contact block, capabilities, or sample questions. The
++  // source graph is never mutated: applyFieldVisibility returns a fresh
++  // record per object with rebuilt fields.
++  const objId = obj.id;
++  graph = applyFieldVisibility(graph, opts?.decisions ?? [], opts?.viewer);
++  obj = graph.objects.find((o) => o.id === objId) ?? obj;
++
+   const overrides = readOverrides(overridesKey);
+   const description = field(obj, "description") ?? obj.description ?? "";
+   const website = field(obj, "website");
+@@ -316,17 +348,20 @@ export function composeObjectView(
+  * into a 404). Throws only on programmer error, never on missing data.
+  */
+ export function loadObjectView(slug: string): ObjectView | null {
+-  let graph: ObjectGraph;
++  let projection: PingProjection;
+   try {
+-    graph = getPingObjectGraphSync(slug).graph;
++    projection = getPingObjectGraphSync(slug);
+   } catch {
+     return null;
+   }
+-  const business = graph.objects.find(
++  const business = projection.graph.objects.find(
+     (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
+   );
+   if (!business) return null;
+-  return composeObjectView(graph, slug, business, slug, slug);
++  return composeObjectView(projection.graph, slug, business, slug, slug, {
++    decisions: visibilityDecisionsFromBlock(projection.fieldVisibility),
++    viewer: { viewerId: null, displayName: null, role: "public" },
++  });
+ }
+ 
+ /**
+diff --git a/fyd-product-lane/src/fyd/sitespec/field-visibility.ts b/fyd-product-lane/src/fyd/sitespec/field-visibility.ts
+index 6b9ec72..e309eb2 100644
+--- a/fyd-product-lane/src/fyd/sitespec/field-visibility.ts
++++ b/fyd-product-lane/src/fyd/sitespec/field-visibility.ts
+@@ -37,6 +37,7 @@
+ 
+ import type { PingObject } from "@/lib/ping/types";
+ import type { ObjectGraph, ViewerContext } from "./types";
++import type { FieldVisibilityBlock } from "../customize/types";
+ 
+ /**
+  * What the owner allows for one object field.
+@@ -65,6 +66,31 @@ export interface FieldVisibilityDecision {
+   version: number;
+ }
+ 
++/**
++ * Owner decisions carried by a digest-verified visibility block.
++ *
++ * The block is the journaled VISIBILITY layer; these decisions are the
++ * OWNER OVERRIDE input to the projection pipeline
++ * (SOURCE VALUE + VISIBILITY POLICY + OWNER OVERRIDE + VIEWER CONTEXT
++ * -> PROJECTED VALUE). Lives here, in the one visibility authority, so
++ * every read path (site renderer, object view, ask) resolves decisions
++ * the same way without importing the customize server module.
++ */
++export function visibilityDecisionsFromBlock(
++  block: FieldVisibilityBlock | null,
++): FieldVisibilityDecision[] {
++  if (!block) return [];
++  return block.decisions.map((d) => ({
++    objectId: d.objectId,
++    field: d.field,
++    policy: d.policy,
++    decidedBy: "owner" as const,
++    decidedAt: d.approval.approvedAt,
++    source: "owner_override" as const,
++    version: d.version ?? 1,
++  }));
++}
++
+ /**
+  * Resolve the visibility for one object field.
+  *

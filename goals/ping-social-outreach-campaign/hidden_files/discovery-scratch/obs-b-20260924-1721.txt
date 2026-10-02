@@ -1,0 +1,7 @@
+Meta AI b-brief (new-business-radar) verification 2026-09-24: 10 named entities, 0 verified-new.
+
+VERIFIED: 4/10 were already present in pipeline.md as source=meta-ai-intel NEW rows (BlueSky Pressure Washing, Golden Arrow Property Services, Skilled Hands Handyman Services, GH Paint L.L.C.) while the b-brief context pack's 36-name negative list excluded NONE of them. The duplicate-emission guard has a spec gap: ingest dedupe must run against pipeline.md NEW rows, not just the context pack negative list.
+
+VERIFIED: The remaining 6/6 (S & R Ranch, Blue Lion Roofing, Adonai Electric, 5K Home Services, Gonzalez Landscaping, Thurston & Sons Property Maintenance) were SOS-filing-only entities with no owned web presence (no live site, no Google Business Profile, no Facebook page) and no discoverable contact route. Aggregator shadowing (opengovco/opencorpdata) dominates exact-name queries, so the absence of owned presence is genuine, not a search miss. Filing-only candidates are undeliverable: staging them consumes active-prospect capacity for inert rows.
+
+Implication for the tandem pipeline: the b-brief's contract should require a contact route (own-site email/form or published phone) before any entity is treated as a candidate, and ingest dedupe must query live pipeline rows.

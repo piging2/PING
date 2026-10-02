@@ -1,0 +1,110 @@
+{
+  "checks": [
+    {
+      "evidence": {
+        "known_pages": [
+          "about",
+          "explore",
+          "home",
+          "services"
+        ],
+        "mode": "bare",
+        "page_slug": null,
+        "problems": [
+          "bare presentation object: no page_slug/section_id; the patch is not anchored to any page or section"
+        ],
+        "section_id": null,
+        "section_in_compiled_spec": false
+      },
+      "id": "anchor",
+      "name": "patch is anchored to a specific page/section",
+      "verdict": "FAIL"
+    },
+    {
+      "evidence": {
+        "fields": [
+          "copy",
+          "featuredIds",
+          "heading",
+          "hidden",
+          "hiddenObjectIds",
+          "objectOrder"
+        ],
+        "mode": "bare",
+        "note": "bare presentation object; the canonical envelope {mission_id, page_slug, section_id, presentation} is required"
+      },
+      "id": "envelope",
+      "name": "proposal envelope has exactly the known fields",
+      "verdict": "FAIL"
+    },
+    {
+      "evidence": {
+        "presentation_fields": [
+          "copy",
+          "featuredIds",
+          "heading",
+          "hidden",
+          "hiddenObjectIds",
+          "objectOrder"
+        ],
+        "problems": [
+          "field 'objectOrder': expected list, got int (value=5)"
+        ]
+      },
+      "id": "contract",
+      "name": "every presentation field matches the FYDPresentation contract type",
+      "verdict": "FAIL"
+    },
+    {
+      "evidence": {
+        "fields": {
+          "featuredIds": {
+            "count": 1,
+            "duplicates": [],
+            "unresolved": [
+              "Emergency Repairs"
+            ]
+          },
+          "hiddenObjectIds": {
+            "count": 0,
+            "duplicates": [],
+            "unresolved": []
+          }
+        },
+        "graph_object_count": 7,
+        "problems": [
+          "field 'featuredIds': unresolved object ids ['Emergency Repairs'] (not in the Happy Place graph)"
+        ]
+      },
+      "id": "references",
+      "name": "featuredIds/object references resolve to real object ids",
+      "verdict": "FAIL"
+    },
+    {
+      "evidence": {
+        "hits": [
+          {
+            "claim": "availability claim '24/7'",
+            "field": "copy",
+            "matched_text": "24/7"
+          },
+          {
+            "claim": "immediacy claim",
+            "field": "copy",
+            "matched_text": "immediate"
+          }
+        ],
+        "note": "pattern-based flagging; a hit means the text asserts a fact the website never stated in the ingested graph"
+      },
+      "id": "claims",
+      "name": "no unverified factual claims presented as website statements",
+      "verdict": "FAIL"
+    }
+  ],
+  "extraction_notes": [
+    "extracted fenced JSON block with keys ['analysis', 'proposed_patch', 'rationale']",
+    "using inner proposed_patch object (envelope keys analysis/rationale excluded from validation)"
+  ],
+  "overall": "FAIL",
+  "validator": "mission-control/proposal_validate.py (p0/approval)"
+}

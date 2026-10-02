@@ -1,0 +1,49 @@
+diff --git a/src/fyd/proceduralize/proceduralizer.ts b/src/fyd/proceduralize/proceduralizer.ts
+index 9d948a6..0b07068 100644
+--- a/src/fyd/proceduralize/proceduralizer.ts
++++ b/src/fyd/proceduralize/proceduralizer.ts
+@@ -369,11 +369,19 @@ export interface ProjectedGraph {
+   relationships: PingRelationship[];
+ }
+ 
++/**
++ * Stage 9 accepts the Stage 8 output. RelatedPair[] defaults to [] so all
++ * existing 4-argument callers keep compiling; the pipeline caller threads
++ * relate(fields) through. Pairs with a predicate other than links_to are
++ * ignored by design: relate() only emits links_to today, and project() must
++ * not mint relationship predicates it has no contract for.
++ */
+ export function project(
+   fields: ExtractedField[],
+   sourceUrl: string,
+   nowIso: string,
+   controllerId: string,
++  pairs: RelatedPair[] = [],
+ ): ProjectedGraph {
+   const scalar: Record<string, string | string[]> = {};
+   for (const f of fields) scalar[f.name] = f.value;
+@@ -427,6 +435,24 @@ export function project(
+     });
+   }
+ 
++  // Stage 8 output: relate()'s links_to pairs become first-class
++  // relationships with evidence refs (objectgraph-relate-output-dropped).
++  let linkIndex = 0;
++  for (const pair of pairs) {
++    if (pair.predicate !== "links_to" || pair.subjectHint !== "business") {
++      continue;
++    }
++    relationships.push({
++      id: businessId + "-links_to-" + linkIndex++,
++      subject: businessId,
++      predicate: "links_to",
++      object: pair.objectHint,
++      status: "active",
++      createdAt: nowIso,
++      evidenceRef: "proceduralizer:relate:socials",
++    });
++  }
++
+   return { objects, relationships };
+ }
+ 
