@@ -1,0 +1,1484 @@
+{
+  "harness": "lane-f-integration",
+  "run_id": "run-2026-09-26T1338",
+  "run_at": "2026-09-26T13:38:41.209Z",
+  "cases": [
+    {
+      "case": "happy-path",
+      "mission_id": "lane-f-a4e05bbc43402d7b",
+      "verdict": "FAIL",
+      "checks_run": 18,
+      "checks_failed": 1,
+      "failed_checks": [
+        "projection links artifact digest"
+      ],
+      "checks": [
+        {
+          "name": "adapter outcome is completed",
+          "pass": true,
+          "detail": {
+            "outcome": "completed"
+          }
+        },
+        {
+          "name": "work_order_id is the deterministic mint (sha256 workorder:taskId [0:16])",
+          "pass": true,
+          "detail": {
+            "work_order_id": "b691022df8277519",
+            "expected": "b691022df8277519"
+          }
+        },
+        {
+          "name": "work order is stable across re-dispatch of the same (execution, attempt)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "result_id present (verified envelope identity)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "no canonical emission without an event runtime (recorded=false, honest)",
+          "pass": true,
+          "detail": {
+            "recorded": false,
+            "event_id": null
+          }
+        },
+        {
+          "name": "prompt context was received (digest present)",
+          "pass": true,
+          "detail": {
+            "digest": "9063917e15322f39276fad129630440b81e8e5ecda2c228cf69117715399abbe"
+          }
+        },
+        {
+          "name": "prompt contains tenant context + mission linkage",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "artifact path returned",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "artifact links mission/run/execution/work-order",
+          "pass": true,
+          "detail": {
+            "mission": "lane-f-a4e05bbc43402d7b",
+            "run": "lane-f-a4e05bbc43402d7b-r1",
+            "execution": "lane-f-a4e05bbc43402d7b-x1",
+            "workOrder": "b691022df8277519"
+          }
+        },
+        {
+          "name": "envelope passed the verified contract (binding + echo + pairing)",
+          "pass": true,
+          "detail": {
+            "envelope_echo": "b691022df8277519",
+            "result_id": "fa5a3b5fd63f560d..."
+          }
+        },
+        {
+          "name": "tenant_id threaded into artifact",
+          "pass": true,
+          "detail": {
+            "tenant_id": "happy-place"
+          }
+        },
+        {
+          "name": "artifact digest is stable (recompute matches)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "exactly 1 effect performed",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "projected status is SUCCEEDED",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "projection links artifact digest",
+          "pass": false,
+          "detail": {
+            "kind": "evidence",
+            "path": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/happy-path/lane-f-a4e05bbc43402d7b/workspace/result-lane-f-a4e05bbc43402d7b-x1-a1.json",
+            "sha256": "2e806262336f055e346470d236d135451a19feb6ce18e2fc6ddbe0e760e0315e",
+            "event_id": "mc-d-3d401e3f7d90"
+          }
+        },
+        {
+          "name": "refresh parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "happy-path.js",
+      "transport": "synthetic-happy",
+      "spend": 0,
+      "ms": 298
+    },
+    {
+      "case": "unknown-ambiguous",
+      "mission_id": "lane-f-9eca86abe3209125",
+      "verdict": "PASS",
+      "checks_run": 23,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "dispatch receipt proves a worker matched",
+          "pass": true,
+          "detail": {
+            "matched": true,
+            "worker": "observation",
+            "routeExists": true
+          }
+        },
+        {
+          "name": "dispatch receipt records the undefined return honestly",
+          "pass": true,
+          "detail": {}
+        },
+        {
+          "name": "outcome is UNKNOWN: mission row untouched (still running)",
+          "pass": true,
+          "detail": {
+            "status": "running"
+          }
+        },
+        {
+          "name": "mission NOT completed",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "mission NOT failed (no FAILED collapse)",
+          "pass": true,
+          "detail": {
+            "status": "running"
+          }
+        },
+        {
+          "name": "zero automatic retry (retries=0, no retry_pending)",
+          "pass": true,
+          "detail": {
+            "retries": 0,
+            "status": "running"
+          }
+        },
+        {
+          "name": "UNKNOWN reconciled as HOLD (observable)",
+          "pass": true,
+          "detail": {
+            "holds": 1
+          }
+        },
+        {
+          "name": "HOLD event emitted (MISSION_RECONCILE_HOLD)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "scheduler stats.unknown === 1",
+          "pass": true,
+          "detail": {
+            "dispatched": 1,
+            "completed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "renewals": 0,
+            "reconciled": 1,
+            "watchdogScans": 0,
+            "unknown": 1,
+            "scope": "session",
+            "running": false,
+            "processing": 0,
+            "pollIntervalMs": 5000,
+            "maxConcurrent": 3,
+            "dispatchTimeoutMs": 2000,
+            "stuckThresholdMs": 60000,
+            "reconciliationLogSize": 1
+          }
+        },
+        {
+          "name": "zero fabricated \"no worker matched\" narrative",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "no failure error recorded on mission",
+          "pass": true,
+          "detail": {}
+        },
+        {
+          "name": "exactly 1 effect (no duplicate dispatch)",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "unknown event recorded (MC_RUN_UNKNOWN)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "no execution_failed event exists for this attempt",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projection has the mission row",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projected status is UNKNOWN",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "projected status is NOT FAILED",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projected status is NOT NO_MATCH",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "reconciliation_state is IN PROGRESS",
+          "pass": true,
+          "detail": "RECONCILIATION IN PROGRESS"
+        },
+        {
+          "name": "retry is not authorized (no proven non-execution)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "refresh parity (fresh-process re-projection byte-identical)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity (delete + re-project byte-identical)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control (appended event changes projection)",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "unknown-ambiguous.js",
+      "ms": 96
+    },
+    {
+      "case": "no-match",
+      "mission_id": "lane-f-c3ff6d5301c2e583",
+      "verdict": "PASS",
+      "checks_run": 17,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "dispatch receipt observes matched=false",
+          "pass": true,
+          "detail": {
+            "matched": false,
+            "worker": null,
+            "routeExists": false,
+            "result": null
+          }
+        },
+        {
+          "name": "dispatch receipt observes routeExists=false",
+          "pass": true,
+          "detail": {
+            "matched": false,
+            "worker": null,
+            "routeExists": false,
+            "result": null
+          }
+        },
+        {
+          "name": "outcome is NO_MATCH: terminal fail, zero retry",
+          "pass": true,
+          "detail": {
+            "status": "failed",
+            "retries": 1
+          }
+        },
+        {
+          "name": "nothing reclaimed for redispatch",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "no effect performed",
+          "pass": true,
+          "detail": {
+            "effects": 0
+          }
+        },
+        {
+          "name": "error prose states the OBSERVED receipt (not an inference)",
+          "pass": true,
+          "detail": {
+            "last_error": "no worker matched event_type=LANE_F_UNREGISTERED (dispatch receipt: matched=false, routeExists=false)"
+          }
+        },
+        {
+          "name": "NO_MATCH routed to DLQ for human repair",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "not recorded as UNKNOWN (no HOLD)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "1B receipt proves matched=true (worker ran)",
+          "pass": true,
+          "detail": {
+            "matched": true,
+            "routeExists": true,
+            "result": "undefined"
+          }
+        },
+        {
+          "name": "1C receipt proves matched=false, routeExists=false (nobody ran)",
+          "pass": true,
+          "detail": {
+            "matched": false,
+            "routeExists": false,
+            "result": null
+          }
+        },
+        {
+          "name": "1B and 1C terminal event types differ on the event plane",
+          "pass": true,
+          "detail": {
+            "termB": [
+              "MC_RUN_UNKNOWN"
+            ],
+            "termC": [
+              "MC_RUN_NO_MATCH"
+            ]
+          }
+        },
+        {
+          "name": "projected status is NO_MATCH",
+          "pass": true,
+          "detail": "NO_MATCH"
+        },
+        {
+          "name": "projected status is NOT FAILED",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projected status is NOT UNKNOWN",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "refresh parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "no-match.js",
+      "_logs_excerpt": "",
+      "ms": 147
+    },
+    {
+      "case": "failed-before-effect",
+      "mission_id": "lane-f-8732d9bb8e798013",
+      "verdict": "PASS",
+      "checks_run": 10,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "effect stand-in shows 0 effects after the throw",
+          "pass": true,
+          "detail": {
+            "note": "counted after retry below"
+          }
+        },
+        {
+          "name": "first failure recorded with the real error",
+          "pass": true,
+          "detail": {
+            "attempts": 2
+          }
+        },
+        {
+          "name": "retry of a genuine failure completes",
+          "pass": true,
+          "detail": {
+            "status": "completed"
+          }
+        },
+        {
+          "name": "exactly 1 effect total (retry of genuine failures is safe)",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "FAILED event recorded for attempt 1",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "the FAILED event carries the real error, not routing prose",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projected status is SUCCEEDED after honest retry",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "refresh parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "failed-before-effect.js",
+      "ms": 220
+    },
+    {
+      "case": "timeout-unknown",
+      "mission_id": "lane-f-1d5bec141c901f24",
+      "verdict": "PASS",
+      "checks_run": 16,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "dispatch timed out (did not hang)",
+          "pass": true,
+          "detail": {
+            "elapsed": 1408
+          }
+        },
+        {
+          "name": "outcome is UNKNOWN: mission row stays running, never FAILED",
+          "pass": true,
+          "detail": {
+            "status": "running"
+          }
+        },
+        {
+          "name": "HOLD emitted with DISPATCH_TIMEOUT reason",
+          "pass": true,
+          "detail": [
+            "dispatch timeout after 400ms (outcome unknown)"
+          ]
+        },
+        {
+          "name": "MISSION_RECONCILE_HOLD event emitted",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "zero retry queued for the unknown mission",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "late effect recorded honestly in the counter file",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "late effect did NOT rewrite the outcome to SUCCEEDED",
+          "pass": true,
+          "detail": {
+            "status": "running"
+          }
+        },
+        {
+          "name": "no FAILED-on-timeout collapse",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "fresh scheduler does not silently redispatch the held mission",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "HOLD event recorded with DISPATCH_TIMEOUT reason",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "no execution_failed event for this attempt",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "projected status is UNKNOWN (never FAILED on timeout)",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "UI renders OUTCOME UNKNOWN — RECONCILIATION IN PROGRESS",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "refresh parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "timeout-unknown.js",
+      "dispatch_timeout_ms": 400,
+      "ms": 1620
+    },
+    {
+      "case": "duplicate-effect-regression",
+      "mission_id": "lane-f-d4b1677be06bd7b6",
+      "verdict": "PASS",
+      "checks_run": 5,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "negative control: known-bad code reproduces the duplicate effect",
+          "pass": true,
+          "detail": {
+            "exit": 0,
+            "stdout_tail": " \"claim_in_code\": \"live_mission_scheduler.verbatim.js line 318\"\n  },\n  \"duplicate_effect\": true,\n  \"evidence_file\": \"/home/hatch/workspace/sprint-2026-09-24/orca/wr-effect-unknown/evidence-provider-effects.jsonl\",\n  \"log\": [\n    \"failWithRetry: retries=1 error=\\\"no worker matched event_type=BILL_CUSTOMER\\\"\",\n    \"failWithRetry: retries=2 error=\\\"no worker matched event_type=BILL_CUSTOMER\\\"\"\n  ]\n}\n"
+          }
+        },
+        {
+          "name": "regression exits 0 on repaired code",
+          "pass": true,
+          "detail": {
+            "exit": 0
+          }
+        },
+        {
+          "name": "regression: 45/45 assertions pass",
+          "pass": true,
+          "detail": {
+            "passCount": 45,
+            "failCount": 0
+          }
+        },
+        {
+          "name": "exactly-once invariant: effects == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "lane-A regression evidence bundle captured",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "duplicate-effect-regression.js",
+      "ms": 805
+    },
+    {
+      "case": "concurrency-ab",
+      "mission_id": "lane-f-conc-shared-5b81526d716c",
+      "verdict": "PASS",
+      "checks_run": 114,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "base: barrier rendezvous (both transports in flight)",
+          "pass": true,
+          "detail": {
+            "A": true,
+            "B": true
+          }
+        },
+        {
+          "name": "base: execution windows overlap (genuinely concurrent)",
+          "pass": true,
+          "detail": {
+            "A": [
+              "2026-09-26T13:38:33.202Z",
+              "2026-09-26T13:38:33.614Z"
+            ],
+            "B": [
+              "2026-09-26T13:38:33.209Z",
+              "2026-09-26T13:38:33.614Z"
+            ]
+          }
+        },
+        {
+          "name": "base: ID family 'mission_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-A-5fc2deba10cb",
+            "B": "lane-f-conc-B-4dca79671e15"
+          }
+        },
+        {
+          "name": "base: ID family 'run_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-A-5fc2deba10cb-r1",
+            "B": "lane-f-conc-B-4dca79671e15-r1"
+          }
+        },
+        {
+          "name": "base: ID family 'execution_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-A-5fc2deba10cb-x1",
+            "B": "lane-f-conc-B-4dca79671e15-x1"
+          }
+        },
+        {
+          "name": "base: ID family 'work_order_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "a5e1ff1a9452eb05",
+            "B": "ee4c29819541c848"
+          }
+        },
+        {
+          "name": "base: ID family 'artifact' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/base/A/result-lane-f-conc-A-5fc2deba10cb-x1-a1.json",
+            "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/base/B/result-lane-f-conc-B-4dca79671e15-x1-a1.json"
+          }
+        },
+        {
+          "name": "base: work orders match the deterministic mint",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: neither run's record names the other's execution identity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: A received prompt-A (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: B received prompt-B (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: no cross-delivery (A did not receive B's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: no cross-delivery (B did not receive A's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: prompt digests differ",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: workspace A contains no B identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "base: workspace B contains no A identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "base: A's evidence link resolves to A's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: B's evidence link resolves to B's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: evidence graph is bipartite (no A<->B edge)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "base: A outcome is UNKNOWN (ambiguous/timeout)",
+          "pass": true,
+          "detail": {
+            "outcome": "escalated",
+            "honestOutcome": "unknown",
+            "reason": "no JSON object found in worker stdout"
+          }
+        },
+        {
+          "name": "base: B outcome is SUCCEEDED, unaffected by A",
+          "pass": true,
+          "detail": {
+            "outcome": "completed"
+          }
+        },
+        {
+          "name": "base: A effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "base: B effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "base: A tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "happy-place"
+          }
+        },
+        {
+          "name": "base: B tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "coppersmith-plumbing"
+          }
+        },
+        {
+          "name": "base: event sets disjoint (no shared event ids)",
+          "pass": true,
+          "detail": {
+            "intersection": []
+          }
+        },
+        {
+          "name": "V1: barrier rendezvous (both transports in flight)",
+          "pass": true,
+          "detail": {
+            "A": true,
+            "B": true
+          }
+        },
+        {
+          "name": "V1: execution windows overlap (genuinely concurrent)",
+          "pass": true,
+          "detail": {
+            "A": [
+              "2026-09-26T13:38:34.085Z",
+              "2026-09-26T13:38:34.486Z"
+            ],
+            "B": [
+              "2026-09-26T13:38:34.059Z",
+              "2026-09-26T13:38:34.499Z"
+            ]
+          }
+        },
+        {
+          "name": "V1: ID family 'mission_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V1-A-f106e73a53a8",
+            "B": "lane-f-conc-V1-B-046466db8b5a"
+          }
+        },
+        {
+          "name": "V1: ID family 'run_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V1-A-f106e73a53a8-r1",
+            "B": "lane-f-conc-V1-B-046466db8b5a-r1"
+          }
+        },
+        {
+          "name": "V1: ID family 'execution_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V1-A-f106e73a53a8-x1",
+            "B": "lane-f-conc-V1-B-046466db8b5a-x1"
+          }
+        },
+        {
+          "name": "V1: ID family 'work_order_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "61bb7c030e11ea1b",
+            "B": "87a8fcb814357dff"
+          }
+        },
+        {
+          "name": "V1: ID family 'artifact' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V1/A/result-lane-f-conc-V1-A-f106e73a53a8-x1-a1.json",
+            "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V1/B/result-lane-f-conc-V1-B-046466db8b5a-x1-a1.json"
+          }
+        },
+        {
+          "name": "V1: work orders match the deterministic mint",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: neither run's record names the other's execution identity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: A received prompt-A (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: B received prompt-B (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: V1: identical briefs still yield distinct prompt digests (work_order echo differs)",
+          "pass": true,
+          "detail": {
+            "digestA": "8e6eeb5f01467086cd66b64beb799a4e44d326d460479b85593ff9529dd50970",
+            "digestB": "74230ca23c3b0ff02d3541e6790416caf6dddc187f2c539152232c4409525e04"
+          }
+        },
+        {
+          "name": "V1: workspace A contains no B identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V1: workspace B contains no A identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V1: A's evidence link resolves to A's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: B's evidence link resolves to B's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: evidence graph is bipartite (no A<->B edge)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V1: A outcome is UNKNOWN (ambiguous/timeout)",
+          "pass": true,
+          "detail": {
+            "outcome": "escalated",
+            "honestOutcome": "unknown",
+            "reason": "no JSON object found in worker stdout"
+          }
+        },
+        {
+          "name": "V1: B outcome is SUCCEEDED, unaffected by A",
+          "pass": true,
+          "detail": {
+            "outcome": "completed"
+          }
+        },
+        {
+          "name": "V1: A effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "V1: B effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "V1: A tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "happy-place"
+          }
+        },
+        {
+          "name": "V1: B tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "coppersmith-plumbing"
+          }
+        },
+        {
+          "name": "V1: event sets disjoint (no shared event ids)",
+          "pass": true,
+          "detail": {
+            "intersection": []
+          }
+        },
+        {
+          "name": "V2: barrier rendezvous (both transports in flight)",
+          "pass": true,
+          "detail": {
+            "A": true,
+            "B": true
+          }
+        },
+        {
+          "name": "V2: execution windows overlap (genuinely concurrent)",
+          "pass": true,
+          "detail": {
+            "A": [
+              "2026-09-26T13:38:34.871Z",
+              "2026-09-26T13:38:35.287Z"
+            ],
+            "B": [
+              "2026-09-26T13:38:34.793Z",
+              "2026-09-26T13:38:35.287Z"
+            ]
+          }
+        },
+        {
+          "name": "V2: ID family 'mission_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V2-A-dea25242b277",
+            "B": "lane-f-conc-V2-B-7dc950077567"
+          }
+        },
+        {
+          "name": "V2: ID family 'run_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V2-A-dea25242b277-r1",
+            "B": "lane-f-conc-V2-B-7dc950077567-r1"
+          }
+        },
+        {
+          "name": "V2: ID family 'execution_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V2-A-dea25242b277-x1",
+            "B": "lane-f-conc-V2-B-7dc950077567-x1"
+          }
+        },
+        {
+          "name": "V2: ID family 'work_order_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "b861c7f6bce091eb",
+            "B": "3f676b9659858302"
+          }
+        },
+        {
+          "name": "V2: ID family 'artifact' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V2/A/result-lane-f-conc-V2-A-dea25242b277-x1-a1.json",
+            "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V2/B/result-lane-f-conc-V2-B-7dc950077567-x1-a1.json"
+          }
+        },
+        {
+          "name": "V2: work orders match the deterministic mint",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: neither run's record names the other's execution identity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: A received prompt-A (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: B received prompt-B (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: no cross-delivery (A did not receive B's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: no cross-delivery (B did not receive A's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: prompt digests differ",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: workspace A contains no B identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V2: workspace B contains no A identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V2: A's evidence link resolves to A's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: B's evidence link resolves to B's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: evidence graph is bipartite (no A<->B edge)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V2: A outcome is UNKNOWN (ambiguous/timeout)",
+          "pass": true,
+          "detail": {
+            "outcome": "escalated",
+            "honestOutcome": "unknown",
+            "reason": "no JSON object found in worker stdout"
+          }
+        },
+        {
+          "name": "V2: B outcome is SUCCEEDED, unaffected by A",
+          "pass": true,
+          "detail": {
+            "outcome": "completed"
+          }
+        },
+        {
+          "name": "V2: A effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "V2: B effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "V2: A tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "happy-place"
+          }
+        },
+        {
+          "name": "V2: B tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "coppersmith-plumbing"
+          }
+        },
+        {
+          "name": "V2: event sets disjoint (no shared event ids)",
+          "pass": true,
+          "detail": {
+            "intersection": []
+          }
+        },
+        {
+          "name": "V3: barrier rendezvous (both transports in flight)",
+          "pass": true,
+          "detail": {
+            "A": true,
+            "B": true
+          }
+        },
+        {
+          "name": "V3: execution windows overlap (genuinely concurrent)",
+          "pass": true,
+          "detail": {
+            "A": [
+              "2026-09-26T13:38:35.655Z",
+              "2026-09-26T13:38:36.057Z"
+            ],
+            "B": [
+              "2026-09-26T13:38:35.654Z",
+              "2026-09-26T13:38:36.057Z"
+            ]
+          }
+        },
+        {
+          "name": "V3: ID family 'mission_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V3-A-32114e827748",
+            "B": "lane-f-conc-V3-B-cacda4023933"
+          }
+        },
+        {
+          "name": "V3: ID family 'run_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V3-A-32114e827748-r1",
+            "B": "lane-f-conc-V3-B-cacda4023933-r1"
+          }
+        },
+        {
+          "name": "V3: ID family 'execution_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "lane-f-conc-V3-A-32114e827748-x1",
+            "B": "lane-f-conc-V3-B-cacda4023933-x1"
+          }
+        },
+        {
+          "name": "V3: ID family 'work_order_id' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "e811911b8669e1a6",
+            "B": "b4b01f5041b43ecc"
+          }
+        },
+        {
+          "name": "V3: ID family 'artifact' pairwise distinct",
+          "pass": true,
+          "detail": {
+            "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V3/A/result-lane-f-conc-V3-A-32114e827748-x1-a1.json",
+            "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1338/concurrency-ab/lane-f-conc-shared-5b81526d716c/workspaces/V3/B/result-lane-f-conc-V3-B-cacda4023933-x1-a1.json"
+          }
+        },
+        {
+          "name": "V3: work orders match the deterministic mint",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: neither run's record names the other's execution identity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: A received prompt-A (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: B received prompt-B (contains own brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: no cross-delivery (A did not receive B's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: no cross-delivery (B did not receive A's brief)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: prompt digests differ",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: workspace A contains no B identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V3: workspace B contains no A identity material",
+          "pass": true,
+          "detail": []
+        },
+        {
+          "name": "V3: A's evidence link resolves to A's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: B's evidence link resolves to B's own execution_id",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: evidence graph is bipartite (no A<->B edge)",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "V3: A outcome is UNKNOWN (ambiguous/timeout)",
+          "pass": true,
+          "detail": {
+            "outcome": "unknown",
+            "reason": "dispatcher_timeout"
+          }
+        },
+        {
+          "name": "V3: B outcome is SUCCEEDED, unaffected by A",
+          "pass": true,
+          "detail": {
+            "outcome": "completed"
+          }
+        },
+        {
+          "name": "V3: A effect count == 0",
+          "pass": true,
+          "detail": {
+            "effects": 0
+          }
+        },
+        {
+          "name": "V3: B effect count == 1",
+          "pass": true,
+          "detail": {
+            "effects": 1
+          }
+        },
+        {
+          "name": "V3: A tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "happy-place"
+          }
+        },
+        {
+          "name": "V3: B tenant threaded into evidence",
+          "pass": true,
+          "detail": {
+            "tenant_id": "coppersmith-plumbing"
+          }
+        },
+        {
+          "name": "V3: event sets disjoint (no shared event ids)",
+          "pass": true,
+          "detail": {
+            "intersection": []
+          }
+        },
+        {
+          "name": "projection has all 8 mission rows",
+          "pass": true,
+          "detail": {
+            "rows": 8
+          }
+        },
+        {
+          "name": "projection: lane-f-conc-A-5fc2deba10cb... is UNKNOWN",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "projection: lane-f-conc-V1-A-f106e73a53a8... is UNKNOWN",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "projection: lane-f-conc-V2-A-dea25242b277... is UNKNOWN",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "projection: lane-f-conc-V3-A-32114e827748... is UNKNOWN",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "projection: lane-f-conc-B-4dca79671e15... is SUCCEEDED",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "projection: lane-f-conc-V1-B-046466db8b5a... is SUCCEEDED",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "projection: lane-f-conc-V2-B-7dc950077567... is SUCCEEDED",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "projection: lane-f-conc-V3-B-cacda4023933... is SUCCEEDED",
+          "pass": true,
+          "detail": "SUCCEEDED"
+        },
+        {
+          "name": "refresh parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "replay parity",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "negative control",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "concurrency-ab.js",
+      "variants": [
+        "base",
+        "V1",
+        "V2",
+        "V3"
+      ],
+      "concurrency_mechanism": "worker_threads + shared barrier",
+      "ms": 3508
+    },
+    {
+      "case": "refresh-replay",
+      "mission_id": "lane-f-33b80f94df5e48cc",
+      "verdict": "PASS",
+      "checks_run": 7,
+      "checks_failed": 0,
+      "failed_checks": [],
+      "checks": [
+        {
+          "name": "projector port equivalent to live route (real mission)",
+          "pass": true,
+          "detail": {
+            "ran": true,
+            "mission": "mc-m-63d04f4517f9",
+            "journal_events": 9,
+            "field_mismatches": [],
+            "artifacts_match": true,
+            "route_status": "SUCCEEDED",
+            "port_status": "SUCCEEDED",
+            "equivalent": true
+          }
+        },
+        {
+          "name": "duplicate emit is refused (same content-derived id)",
+          "pass": true,
+          "detail": {
+            "d1": "appended",
+            "d2": "duplicate-skipped"
+          }
+        },
+        {
+          "name": "event_id is content-derived and stable",
+          "pass": true,
+          "detail": null
+        },
+        {
+          "name": "emitter bumps tied timestamps (+1ms, causal order preserved)",
+          "pass": true,
+          "detail": {
+            "t1": "2026-09-26T13:38:39.658Z",
+            "t2": "2026-09-26T13:38:39.659Z"
+          }
+        },
+        {
+          "name": "same-mission events apply in causal order",
+          "pass": true,
+          "detail": "UNKNOWN"
+        },
+        {
+          "name": "project.py is a pure function of (journal, as-of)",
+          "pass": true,
+          "detail": {
+            "ran": true,
+            "journal_events": 33,
+            "byte_identical": true,
+            "bytes": 428
+          }
+        },
+        {
+          "name": "harness projector is a pure function of (journal bytes, as-of)",
+          "pass": true,
+          "detail": null
+        }
+      ],
+      "case_file": "refresh-replay.js",
+      "ms": 4815
+    }
+  ],
+  "failed": [
+    "happy-path"
+  ]
+}

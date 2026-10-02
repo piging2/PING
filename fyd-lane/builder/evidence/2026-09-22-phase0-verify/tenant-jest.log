@@ -1,0 +1,48 @@
+PASS src/fyd/tenant/__tests__/e-scoped-stores.test.ts
+  scoped runtime entry points (real wrappers)
+    ✓ A cannot read B's overrides; B cannot read A's overrides (refused before I/O) (4 ms)
+    ✓ A cannot patch B's overrides; B cannot patch A's overrides
+    ✓ A cannot load B's projection; B cannot load A's projection (refused before I/O) (1 ms)
+    ✓ projection meta.siteId mismatch refuses even under the right context (1 ms)
+    ✓ A cannot Ask FYD over B's bundle; B cannot Ask FYD over A's bundle (1 ms)
+    ✓ contextless scoped execution is refused (1 ms)
+    ✓ A cannot record an approval for B; the gateway is never reached (1 ms)
+    ✓ same-tenant approval passes the tenant gate (gateway absence is a downstream error) (8 ms)
+
+PASS src/fyd/tenant/__tests__/c-ask.test.ts
+  tenant boundary: ask API
+    ✓ tenant A asking about site B is refused; B's bundle is never loaded (1 ms)
+    ✓ tenant A asking about site A reaches the answerer with A's siteId (1 ms)
+    ✓ a bundle handed to the answerer is bound to the requested site (4 ms)
+    ✓ no tenant context: the ask entry point fails closed (1 ms)
+
+PASS src/fyd/tenant/__tests__/b-projection.test.ts
+  tenant boundary: projection read seam
+    ✓ same-tenant load works and returns the verified graph (1 ms)
+    ✓ tenant A cannot load tenant B's graph: refused before I/O
+    ✓ a file whose meta.siteId disagrees with its file name is refused (19 ms)
+    ✓ a tampered graphDigest is refused (2 ms)
+    ✓ a missing projection fails closed: throws, never null or empty (1 ms)
+
+PASS src/fyd/tenant/__tests__/d-worker.test.ts
+  tenant boundary: context-less worker paths fail closed
+    ✓ undefined context: the path never executes
+    ✓ null context: the path never executes (4 ms)
+    ✓ empty or malformed tenant id: treated as missing context (1 ms)
+    ✓ valid context: the path runs with the verified tenant id (1 ms)
+    ✓ a worker job touching the real owner store refuses context-less runs and writes nothing (1 ms)
+    ✓ tenantScopedDir: valid ids scope under the base dir; bad ids throw (1 ms)
+
+PASS src/fyd/tenant/__tests__/a-owner.test.ts
+  tenant boundary: owner overrides
+    ✓ BASELINE GAP: unscoped store serves tenant B to any caller (the gap) (1 ms)
+    ✓ tenant A cannot READ tenant B's overrides: refused, typed, no leak (1 ms)
+    ✓ tenant A cannot WRITE tenant B's overrides: refused before any I/O (4 ms)
+    ✓ tenant B CAN read and write its own overrides (same-tenant path works) (1 ms)
+    ✓ a caller with NO tenant context cannot read or write anything (1 ms)
+
+Test Suites: 5 passed, 5 total
+Tests:       28 passed, 28 total
+Snapshots:   0 total
+Time:        1.062 s
+Ran all test suites.

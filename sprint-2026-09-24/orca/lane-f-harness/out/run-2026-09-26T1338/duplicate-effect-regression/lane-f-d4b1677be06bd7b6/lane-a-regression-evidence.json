@@ -1,0 +1,342 @@
+{
+  "suite": "worker-runtime fail-closed regression",
+  "ts": "2026-09-26T13:38:32.846Z",
+  "total": 45,
+  "passed": 45,
+  "failed": 0,
+  "results": [
+    {
+      "name": "case1: effect executed exactly once",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "case1: mission NOT completed",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case1: mission NOT failed",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case1: mission NOT retry_pending (zero automatic retry)",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case1: mission row untouched (still running — UNKNOWN)",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case1: retries counter never advanced",
+      "pass": true,
+      "detail": {
+        "retries": 0
+      }
+    },
+    {
+      "name": "case1: UNKNOWN reconciled as HOLD (observable)",
+      "pass": true,
+      "detail": {
+        "holds": 1
+      }
+    },
+    {
+      "name": "case1: HOLD event emitted",
+      "pass": true,
+      "detail": {
+        "emitted": [
+          "MISSION_RECONCILE_HOLD"
+        ]
+      }
+    },
+    {
+      "name": "case1: scheduler stats.unknown === 1",
+      "pass": true,
+      "detail": {
+        "dispatched": 1,
+        "completed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "renewals": 0,
+        "reconciled": 1,
+        "watchdogScans": 0,
+        "unknown": 1,
+        "scope": "session",
+        "running": false,
+        "processing": 0,
+        "pollIntervalMs": 5000,
+        "maxConcurrent": 3,
+        "dispatchTimeoutMs": 2000,
+        "stuckThresholdMs": 60000,
+        "reconciliationLogSize": 1
+      }
+    },
+    {
+      "name": "case1: zero fabricated \"no worker matched\" narrative",
+      "pass": true,
+      "detail": {
+        "logExcerpt": "[MissionScheduler] OUTCOME UNKNOWN — RECONCILIATION IN PROGRESS — mission m-case1 (worker 'observation' matched event_type=BILL_CUSTOMER but returned no result — outcome unknown, effect may have occurred)"
+      }
+    },
+    {
+      "name": "case1: no failure error recorded on mission",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case2: dispatch receipt observes matched=false",
+      "pass": true,
+      "detail": {
+        "matched": false,
+        "worker": null,
+        "routeExists": false,
+        "result": null
+      }
+    },
+    {
+      "name": "case2: dispatch receipt observes routeExists=false",
+      "pass": true,
+      "detail": {
+        "matched": false,
+        "worker": null,
+        "routeExists": false,
+        "result": null
+      }
+    },
+    {
+      "name": "case2: NO_MATCH fails terminally (failed)",
+      "pass": true,
+      "detail": {
+        "status": "failed"
+      }
+    },
+    {
+      "name": "case2: zero retry consumed (retries=1 via max_attempts:1, then terminal)",
+      "pass": true,
+      "detail": {
+        "retries": 1
+      }
+    },
+    {
+      "name": "case2: nothing reclaimed for redispatch",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case2: no effect performed",
+      "pass": true,
+      "detail": {
+        "effects": 0
+      }
+    },
+    {
+      "name": "case2: error prose states the OBSERVED receipt (not an inference)",
+      "pass": true,
+      "detail": {
+        "last_error": "no worker matched event_type=SOMETHING_UNREGISTERED (dispatch receipt: matched=false, routeExists=false)"
+      }
+    },
+    {
+      "name": "case2: NO_MATCH routed to DLQ for human repair",
+      "pass": true,
+      "detail": {
+        "dlq": 1
+      }
+    },
+    {
+      "name": "case2: not recorded as UNKNOWN",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case3: SUCCEEDED -> completed",
+      "pass": true,
+      "detail": {
+        "status": "completed"
+      }
+    },
+    {
+      "name": "case3: effect executed once",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "case3: stats.completed === 1",
+      "pass": true,
+      "detail": {
+        "dispatched": 1,
+        "completed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "renewals": 0,
+        "reconciled": 0,
+        "watchdogScans": 0,
+        "unknown": 0,
+        "scope": "session",
+        "running": false,
+        "processing": 0,
+        "pollIntervalMs": 5000,
+        "maxConcurrent": 3,
+        "dispatchTimeoutMs": 2000,
+        "stuckThresholdMs": 60000,
+        "reconciliationLogSize": 0
+      }
+    },
+    {
+      "name": "case3: no UNKNOWN recorded",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case4: thrown error -> FAILED path (retry_pending)",
+      "pass": true,
+      "detail": {
+        "status": "retry_pending"
+      }
+    },
+    {
+      "name": "case4: no effect occurred before the throw",
+      "pass": true,
+      "detail": {
+        "effects": 0
+      }
+    },
+    {
+      "name": "case4: retry counter advanced (existing contract)",
+      "pass": true,
+      "detail": {
+        "retries": 1
+      }
+    },
+    {
+      "name": "case4: retry of a genuine failure still works -> completed",
+      "pass": true,
+      "detail": {
+        "status": "completed"
+      }
+    },
+    {
+      "name": "case4: effect executed exactly once total",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "case5: post-effect throw follows the FAILED contract (retry_pending)",
+      "pass": true,
+      "detail": {
+        "status": "retry_pending"
+      }
+    },
+    {
+      "name": "case5: RESIDUAL RISK — redispatch duplicates the effect (documents the gap)",
+      "pass": true,
+      "detail": {
+        "note": "see below"
+      }
+    },
+    {
+      "name": "case5: redispatch performed the effect a second time (known gap, not a regression)",
+      "pass": true,
+      "detail": {
+        "effects": 2
+      }
+    },
+    {
+      "name": "case6: timeout -> mission row untouched (running)",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case6: timeout -> HOLD reconciled",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case6: timeout -> HOLD event emitted",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case6: timeout -> never FAILED",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case6: timeout -> zero retry queued",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case6: no effect observable from coordinator side",
+      "pass": true,
+      "detail": {
+        "effects": 0
+      }
+    },
+    {
+      "name": "case7: UNKNOWN leaves row running (untouched)",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case7: fresh instance does not pick up the running mission",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case7: nothing reclaimable for retry",
+      "pass": true,
+      "detail": {}
+    },
+    {
+      "name": "case7: fresh watchdog re-emits HOLD (detection only, no fail/retry)",
+      "pass": true,
+      "detail": {
+        "watched": 1
+      }
+    },
+    {
+      "name": "case7: watchdog did not fail or retry the mission",
+      "pass": true,
+      "detail": {
+        "status": "running"
+      }
+    },
+    {
+      "name": "case7: effect executed exactly once across the simulated restart",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "case7: KNOWN OPEN QUESTION recorded — Arrow-1 reaper (mission-runtime side) may still reset running->created after a real process restart and redispatch; pending Nolan's Reaper-vs-HOLD decision, NOT fixed by this repair",
+      "pass": true,
+      "detail": {
+        "note": "see WR-EFFECT-UNKNOWN-LANE.md secondary path"
+      }
+    }
+  ]
+}

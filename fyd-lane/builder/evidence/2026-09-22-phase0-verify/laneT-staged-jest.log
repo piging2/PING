@@ -1,0 +1,42 @@
+PASS ../../../../tmp/laneT-staged/b-projection.test.ts
+  tenant boundary: projection read seam
+    ✓ same-tenant load works and returns the verified graph (33 ms)
+    ✓ tenant A cannot load tenant B's graph: refused before I/O (1 ms)
+    ✓ a file whose meta.siteId disagrees with its file name is refused (36 ms)
+    ✓ a tampered graphDigest is refused (2 ms)
+    ✓ a missing projection fails closed: throws, never null or empty (2 ms)
+
+PASS ../../../../tmp/laneT-staged/a-owner.test.ts
+  tenant boundary: owner overrides
+    ✓ BASELINE GAP: unscoped store serves tenant B to any caller (the gap) (12 ms)
+    ✓ tenant A cannot READ tenant B's overrides: refused, typed, no leak (2 ms)
+    ✓ tenant A cannot WRITE tenant B's overrides: refused before any I/O (37 ms)
+    ✓ tenant B CAN read and write its own overrides (same-tenant path works) (1 ms)
+    ✓ a caller with NO tenant context cannot read or write anything (2 ms)
+
+PASS ../../../../tmp/laneT-staged/d-worker.test.ts
+  tenant boundary: context-less worker paths fail closed
+    ✓ undefined context: the path never executes (30 ms)
+    ✓ null context: the path never executes (21 ms)
+    ✓ empty or malformed tenant id: treated as missing context (17 ms)
+    ✓ valid context: the path runs with the verified tenant id (2 ms)
+    ✓ a worker job touching the real owner store refuses context-less runs and writes nothing (4 ms)
+    ✓ tenantScopedDir: valid ids scope under the base dir; bad ids throw (2 ms)
+
+PASS ../../../../tmp/laneT-staged/c-ask.test.ts
+  tenant boundary: ask API
+    ✓ tenant A asking about site B is refused; B's bundle is never loaded (3 ms)
+    ✓ tenant A asking about site A reaches the answerer with A's siteId (4 ms)
+    ✓ a bundle handed to the answerer is bound to the requested site (6 ms)
+    ✓ no tenant context: the ask entry point fails closed
+
+Test Suites: 4 passed, 4 total
+Tests:       20 passed, 20 total
+Snapshots:   0 total
+Time:        3.207 s
+Ran all test suites.
+
+Note: sha256 of /tmp/laneT-staged/a-owner.test.ts matched the repo original
+(8a65520f2b062c2d572525a4ecb161ea42a020ae89f04733645d3c7885239161); the
+/tmp copies were read-only cp's of the repo's landed test files, which were
+independently verified byte-identical to the staged Lane T files via local diff.

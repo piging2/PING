@@ -1,0 +1,61 @@
+# LANE B DONE — Card + Node projections (commit b4f17f2)
+
+Branch: fyd/sitespec-generator. All work in NEW files only; `view.ts` untouched.
+
+## What Lane B built (src/fyd/object/)
+- `object-projection.ts` — the generic prop both components take (see interface below)
+- `evidence-chrome.tsx` — shared EvidenceMark / FactRow / RelatedRow / CapabilityActions
+- `card.tsx` — `ObjectCard` (portable inline CARD/EMBED projection)
+- `node.tsx` — `ObjectNode` (full NODE: CENTER canonical content + MARGINS context plane)
+- `__tests__/card-node-projections.test.tsx` — 14 proof tests (all passing)
+- `jest.laneb.config.cjs` (+ css-stub.cjs, next-link-stub.cjs) — node-env test config
+
+Circle = existing `ObjectCircle` primitive (src/fyd/ui/object-circle.tsx), reused, not redesigned.
+
+## Props interface (for Lane C's lab and Lane A's wiring)
+
+```ts
+import type { EvidenceState } from "../ui/evidence-state";   // observed | inferred | unverified | unknown | unavailable | withheld
+import type { EvidenceStep } from "../ui/why-this";           // { step, detail, state? }
+
+export interface ClaimEvidence {
+  state: EvidenceState;
+  receipt?: string;      // e.g. "happyplacecarpentry.com"
+  asOf?: string;         // ISO date
+  steps?: EvidenceStep[]; // WhyThis lineage; omit when none
+}
+export interface Fact { label: string; value: string; evidence: ClaimEvidence; }
+// value renders ONLY when evidence.state !== "unknown"; "withheld" renders "Hidden by owner"
+export interface RelatedRef {
+  id: string; name: string; kindLabel: string;  // "Person" | "Location" | "Service" ...
+  relation: string;        // human predicate, e.g. "Works for"
+  evidence: ClaimEvidence;
+}
+export interface ObjectProjection {
+  id: string; schema: string; kindLabel: string; // "Business" | "Person" | "Service"
+  name: string;
+  category: Fact | null;
+  location: Fact | null;
+  summary: Fact | null;    // null when no evidence-backed description: no generated prose
+  facts: Fact[];           // services, areas... each with its own basis
+  people: RelatedRef[];    // REAL related objects only; empty => section omitted
+  contact: { phone: Fact | null; email: Fact | null; website: Fact | null };
+  capabilities: ObjectCapability[]; // actions derive ONLY from this list; no fake buttons
+  provenance: { label: string; ref: string; derivedAt: string };
+  sampleQuestions: string[];
+  ownerUpdatedAt: string | null;
+  media: ObjectMediaView[]; // rights-authorized only
+}
+export function objectViewToProjection(view: ObjectView): ObjectProjection;
+```
+
+`ObjectCard({ projection, nodeHref?, maxFacts? })`, `ObjectNode({ projection, nodeHref? })`.
+
+## Mismatch risk vs Lane A (live, observed 2026-09-21)
+Lane A reworked `view.ts` mid-lane: `ServiceBasis` is now `"structured" | "owner"`
+(was `"derived" | "owner"`); services come from structured service objects in the
+projection JSON fixtures via `getPingObjectGraphSync`. The Lane B adapter was
+updated to match (structured -> observed, unknown basis kinds -> unverified).
+The adapter reads only the shared `types.ts` contract, so future shape changes
+will fail at `tsc` time. There is still no LANE_A_DONE; treat ObjectView as moving
+until Lane A publishes it.

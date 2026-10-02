@@ -1,0 +1,105 @@
+# LANE A — FL-20260921-233 CLOSED (read-model unification on the PING-backed projection)
+
+## Canonical loader (for Card/Node lanes to reuse)
+
+- Module: `src/fyd/object/view.ts` (repo `/home/nolan/projects/ping`, branch `fyd/sitespec-generator`)
+- Function: `loadObjectView(slug: string): ObjectView | null`
+- Also: `loadCircleProjection(slug: string): CircleProjection | null`,
+  `knownServices(slug): { ids: string[]; names: Map<string,string> }`,
+  `listObjectIds(): string[]` (now: projection files on disk).
+- Deprecated aliases kept for in-flight lanes: `buildObjectView`, `buildCircleProjection`
+  (thin consts, will be removed in a later wave).
+
+## Projection data shape it returns (ObjectView)
+
+```
+{
+  id: string,                 // site slug, e.g. "happy-place"
+  schema: string,             // "ping.social.business@1"
+  name: string,               // business title from the projection
+  category: string | null,    // derived from keywords
+  locationLabel: string | null,
+  summary: string,            // business description from the projection
+  media: ObjectMediaView[],   // authorized-only, from src/fyd/media/manifests/<slug>.json
+  services: ObjectServiceView[], // STRUCTURED service objects linked by active
+                              // provides/offers relationships (see below)
+  serviceArea: string[],
+  contact: { phone, email, website, locality, addressVisibility },
+  capabilities: ObjectCapability[],  // ask/follow/like always; call/email/website when present
+  provenance: { kind, ref, derivedAt, label },
+  ownerUpdatedAt: string | null,     // from the owner store
+  sampleQuestions: string[3],
+}
+
+ObjectServiceView = { id, name, basis: "structured" | "owner",
+                      basisLabel, visible }
+```
+
+Services are structured PING service objects (`ping.social.service@1`),
+selected exactly like the site generator: relationship
+`subject=business.id, predicate in (provides, offers), status=active`,
+target `visibility=public`, sorted by object id. Service id = the PING
+object id (stable, deterministic). No prose parsing at runtime; the
+ingestion fixtures are test-only. Ask FYD reads the same objects
+(ask-composer relatedServices filter), so all three surfaces agree.
+
+## What changed (working tree, NOT committed — see note below)
+
+- `src/fyd/object/view.ts`: rewired to `getPingObjectGraphSync` /
+  `listPingSiteIdsSync`; fixture imports + GRAPHS map deleted; services
+  from structured objects; `loadObjectView`/`loadCircleProjection` added;
+  deprecated `buildObjectView`/`buildCircleProjection` aliases kept.
+- `src/fyd/object/types.ts`: `ServiceBasis` "derived" -> "structured".
+- `src/fyd/object/__tests__/fixtures/projections/{happy-place,coppersmith-plumbing}.json`:
+  NEW, byte-copies of real PING dump output (digest-verified by the loader).
+- `src/fyd/object/__tests__/{view,circle-projection,commands,follows}.test.ts`:
+  updated to the projection-backed vocabulary; view test pins
+  FYD_PROJECTION_DIR at the fixtures.
+- Consumers renamed to the canonical loader: `src/app/o/page.tsx`,
+  `src/app/o/[objectId]/page.tsx` (also: service caption "From the site
+  data", disclosure copy updated), `src/app/o/[objectId]/manage/page.tsx`
+  (dead derived-nudge replaced with an empty-services nudge, basis tag
+  "site"->"record"), `src/app/api/fyd/objects/[objectId]/route.ts`,
+  `src/app/api/fyd/objects/[objectId]/overrides/route.ts`,
+  `src/app/api/fyd/circle/route.ts`, `src/fyd/preview/pipeline.ts`.
+
+COMMIT NOTE: no commit was made. All 15 touched paths are untracked in
+git (no commit in history contains them; sibling lanes authored them as
+working-tree files). Committing would sweep other lanes' authorship into
+Lane A. The lane constraint says commit ONLY the lane's files; failing
+closed, the change stays in the working tree, fully tested and proven.
+Parent owns cross-lane commit strategy.
+
+## Executable proof of three-way agreement (2026-09-21, all executed)
+
+(a) PING journal/projection JSON (Pig):
+`FYD_OVERLAY_JOURNAL=demo dump.py happy-place` ->
+overlayEventIds=["39fc9971a47f807ef38cf8976cb9d4ff4360c27b52bf14f4cc1f4393094d78fd"],
+graphDigest=8f4737d846b4e75491b2f8092fabd8d792bb4c896e1e331dd2aac58b38be3607
+(matches the 2026-09-21 trace report exactly);
+services = ["Pergola Design Consultations"] (id website-service-51de038c1defe8bd).
+
+(b) Rendered page `GET /sites/happy-place` (dev :3100): HTTP 200, 86459 bytes,
+"Pergola Design Consultations" x7, including the rendered Services card
+`<article><h3>Pergola Design Consultations</h3>`.
+
+(c) ObjectView via live server `GET /api/fyd/objects/happy-place`
+(exercises loadObjectView in production code path): ok:true,
+services=["Pergola Design Consultations"], basis="structured",
+id=website-service-51de038c1defe8bd. `/o/happy-place` renders the service
+with the "From the site data" caption.
+
+Unit proof: `npx jest --config src/fyd/object/jest.config.cjs` -> 6 suites,
+43 tests, all pass. `npx jest --config src/fyd/boundary/jest.config.cjs`
+-> 6 pass. `npx tsc --noEmit` -> clean.
+
+No fixture read path at runtime:
+`grep -rn "__fixtures__" src --include=*.ts/tsx | grep -v __tests__ | grep -v proceduralize/`
+-> only `src/fyd/resolve/spike/demo.ts`, a standalone `npx tsx` spike
+script not imported by any app route/page (verified zero references).
+Fixtures are now test-only.
+
+Incident during the lane: a bare `dump.py happy-place` (wrong journal)
+briefly clobbered the live projection; detected by the proof command
+itself and recovered with `FYD_OVERLAY_JOURNAL=demo`; full record in
+`~/workspace/fyd-lane/lane-a-failures.md`. Durable lesson recorded there.

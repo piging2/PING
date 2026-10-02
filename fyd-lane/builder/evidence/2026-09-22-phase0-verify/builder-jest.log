@@ -1,0 +1,79 @@
+PASS src/fyd/builder/__tests__/object-builder.test.ts
+  verifyObjectGraph
+    ✓ a clean graph verifies and is attested (3 ms)
+    ✓ works_for derives an evidence-preserving employs inverse (1 ms)
+    ✓ an explicit forward edge wins over the derived inverse (1 ms)
+    ✓ attestation digest is deterministic
+    ✓ missing tenant context refuses (10 ms)
+    ✓ cross-tenant projection is refused before any graph byte is trusted (1 ms)
+    ✓ duplicate object IDs fail (1 ms)
+    ✓ unknown schema fails (1 ms)
+    ✓ object without a provenance ref fails (1 ms)
+    ✓ evidence ref on an unknown object fails
+    ✓ illegal predicate fails
+    ✓ private object used as public evidence fails closed (1 ms)
+    ✓ bad visibility value fails
+    ✓ a purely private graph verifies: privacy is a fact, not an error (1 ms)
+    ✓ the proposed delta is empty: no synthetic observations
+
+PASS src/fyd/builder/__tests__/planner.test.ts
+  planSite
+    ✓ same inputs -> same semantic spec, byte for byte (4 ms)
+    ✓ volatile stamps never enter the semantic digest (2 ms)
+    ✓ different vectors -> different plans (composition actually matters) (1 ms)
+    ✓ the planner never manufactures facts: no ungrounded sections (1 ms)
+    ✓ planned spec validates against the SiteSpec schema (1 ms)
+    ✓ confidence law holds: presentationConfidence <= factConfidence everywhere (2 ms)
+    ✓ prohibited positioning is honored in generated copy (1 ms)
+    ✓ operating constraints remove components and record the removal (1 ms)
+    ✓ unknown operating constraints are recorded, never applied
+    ✓ empty owner intent equals current behavior (1 ms)
+    ✓ manifest forward/reverse walks cover every binding (1 ms)
+    ✓ planner version is stamped on the spec and manifest (3 ms)
+    ✓ missing tenant context refuses before any planning
+
+PASS src/fyd/builder/__tests__/dimensions.test.ts
+  archetype dimensions
+    ✓ same vector -> byte-identical policy (1 ms)
+    ✓ float noise below quantization never changes the policy
+    ✓ invalid vectors fail closed (6 ms)
+    ✓ quantizeVector is deterministic and bounded
+    ✓ roofer vs emergency plumber: different information architecture
+    ✓ the two tenant operating points compose differently (1 ms)
+    ✓ named presets are vocabulary: nearest name is stable
+
+PASS src/fyd/builder/__tests__/verifier.test.ts
+  generated presentation verifier
+    ✓ bound copy verifies (1 ms)
+    ✓ unknown object fails closed
+    ✓ unknown field fails closed
+    ✓ claim mismatch fails closed: copy must appear in the bound field (1 ms)
+    ✓ private-source binding fails closed
+    ✓ ungrounded copy fails closed
+    ✓ prohibited positioning fails closed (1 ms)
+    ✓ a verifier failure throws on assert (5 ms)
+
+PASS src/fyd/builder/__tests__/structural-proof.test.ts
+  structural proof: two tenants, one planner
+    ✓ coppersmith-plumbing vs ping-fyd are materially different (4 ms)
+
+PASS src/fyd/builder/__tests__/structural-diff.test.ts
+  structural diff
+    ✓ trade tenant vs knowledge tenant: materially different (4 ms)
+    ✓ same tenant, same inputs: no material difference (1 ms)
+
+PASS src/fyd/builder/__tests__/eligibility.test.ts
+  eligibility
+    ✓ trade graph: services, locations, team, connected, recent all eligible (1 ms)
+    ✓ knowledge graph: no team, articles count as recent (1 ms)
+    ✓ service count 0 -> Services ineligible, with reason
+    ✓ no owner -> nothing eligible
+    ✓ person without works_for is not team (1 ms)
+    ✓ eligibility is deterministic
+    ✓ private objects never count toward eligibility
+
+Test Suites: 7 passed, 7 total
+Tests:       53 passed, 53 total
+Snapshots:   0 total
+Time:        0.902 s, estimated 1 s
+Ran all test suites.

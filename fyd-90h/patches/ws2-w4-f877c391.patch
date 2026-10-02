@@ -1,0 +1,870 @@
+diff --git a/src/fyd/proceduralize/__tests__/dependency-index-seeding.test.ts b/src/fyd/proceduralize/__tests__/dependency-index-seeding.test.ts
+new file mode 100644
+index 00000000..c98cee87
+--- /dev/null
++++ b/src/fyd/proceduralize/__tests__/dependency-index-seeding.test.ts
+@@ -0,0 +1,275 @@
++/**
++ * W4 dependency-index seeding proofs (Decision 3: generator lane owns seeding).
++ *
++ * The generator emits dependency edges at generation time
++ * (generateSiteSpecWithDependencies): evidence -> object, object -> SiteSpec
++ * section, section -> rendered page. The DependencyIndex is derived state
++ * built from that bundle. These tests prove:
++ *
++ *  1. Emission: the spec from generateSiteSpecWithDependencies is
++ *     byte-identical to generateSiteSpec (the recorder is side-effect free).
++ *  2. The one question: the index answers "which generated site parts
++ *     depend on this object" and nothing more.
++ *  3. Rebuildability: delete the index, rebuild from (graph + generator
++ *     output), diff — identical.
++ *  4. Clean-rebuild equivalence: an index-driven incremental regeneration
++ *     (change one object, splice only affected sections) converges to the
++ *     clean full rebuild; membership-changing edits fail closed instead of
++ *     producing a partial site that claims completeness.
++ *  5. Fail-closed: unknown/missing dependency info throws, never silently
++ *     yields a partial index.
++ */
++
++import type { FYDSiteSpec } from "../../sitespec/types";
++import {
++  generateSiteSpec,
++  generateSiteSpecWithDependencies,
++} from "../generator";
++import { createEdgeRecorder, type GeneratedDependencies } from "../dependency-edges";
++import { DependencyIndex } from "../dependency-index";
++import { HAPPY_PLACE_GRAPH } from "../__fixtures__/happy-place-graph";
++
++const AT = "2026-09-29T12:00:00.000Z";
++const OWNER = "website-business-6fa5ebd99d72c4cb";
++const SERVICE = "website-business-6fa5ebd99d72c4cb-service-3263502c8175"; // "Repairs"
++const EVIDENCE = "website-ingestion:https://happy-place-platform.vercel.app/";
++
++function sectionIds(spec: FYDSiteSpec): string[] {
++  return spec.pages.flatMap((p) => p.sections.map((s) => s.id));
++}
++
++describe("generator-owned dependency seeding", () => {
++  test("with-dependencies spec is byte-identical to generateSiteSpec output", () => {
++    const plain = generateSiteSpec(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    const { spec, dependencies } = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, {
++      generatedAt: AT,
++    });
++    expect(JSON.stringify(spec)).toBe(JSON.stringify(plain));
++    expect(dependencies.generatorVersion).toBe("1.1.0");
++    expect(dependencies.specKind).toBe("fyd.sitespec@1");
++  });
++
++  test("every spec section has a section->page edge; every object has evidence edges", () => {
++    const { spec, dependencies } = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, {
++      generatedAt: AT,
++    });
++    const specSections = new Set(sectionIds(spec));
++    const edged = new Set(dependencies.sectionToPage.map((e) => e.sectionId));
++    expect(edged).toEqual(specSections);
++    // evidence -> object: each object's provenance ref is recorded
++    const byObject = new Map<string, string[]>();
++    for (const e of dependencies.evidenceToObject) {
++      const list = byObject.get(e.objectId) ?? [];
++      list.push(e.evidenceId);
++      byObject.set(e.objectId, list);
++    }
++    for (const o of HAPPY_PLACE_GRAPH.objects) {
++      expect(byObject.get(o.id)).toContain(EVIDENCE);
++    }
++  });
++
++  test("the index answers the one question: which site parts depend on this object", () => {
++    const { spec, dependencies } = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, {
++      generatedAt: AT,
++    });
++    const idx = DependencyIndex.fromEdges(dependencies, spec);
++    // A service populates the home Services section, the services-page
++    // section, and the home ObjectRail.
++    const svc = idx.invalidate(SERVICE);
++    expect(svc.sections.some((s) => s.startsWith("home:Services:"))).toBe(true);
++    expect(svc.sections.some((s) => s.startsWith("services:Services:"))).toBe(true);
++    expect(svc.sections.some((s) => s.startsWith("home:ObjectRail:"))).toBe(true);
++    expect(svc.pages).toEqual(["explore", "home", "services"]);
++    // The owner populates the owner-kind sections.
++    const own = idx.sectionsForObject(OWNER);
++    expect(own.some((s) => s.startsWith("home:Hero:"))).toBe(true);
++    expect(own.some((s) => s.startsWith("home:Contact:"))).toBe(true);
++    // Exactness: the affected set is precisely the sections whose component
++    // consumes this object kind (derived from the spec, not the bundle).
++    const allSections = sectionIds(spec);
++    const expectedSvc = allSections
++      .filter((id) => /:(Services|ObjectRail|ObjectFeed):/.test(id))
++      .sort();
++    expect(idx.sectionsForObject(SERVICE)).toEqual(expectedSvc);
++    // (plus explore:ObjectFeed: the owner is itself a public,
++    // feed-renderable object in the explore feed)
++    const expectedOwner = allSections
++      .filter((id) => /:(Hero|BusinessSummary|Contact|Links|CTA|ObjectFeed):/.test(id))
++      .sort();
++    expect(idx.sectionsForObject(OWNER)).toEqual(expectedOwner);
++    // An unknown object invalidates nothing (not an error: it simply
++    // contributes to no generated part).
++    expect(idx.sectionsForObject("no-such-object")).toEqual([]);
++    // Static sections (AskFYD) are registered with genuinely-zero
++    // contributors: they resolve to no objects but are known sections.
++    const ask = spec.pages
++      .flatMap((p) => p.sections)
++      .find((s) => s.component === "AskFYD");
++    expect(ask).toBeDefined();
++    expect(idx.objectsForSection(ask!.id)).toEqual([]);
++  });
++});
++
++describe("rebuildability: delete the index, rebuild from graph + generator output", () => {
++  test("rebuilt index is identical (canonical diff)", () => {
++    const first = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    const idx1 = DependencyIndex.fromEdges(first.dependencies, first.spec);
++    const canonical1 = idx1.toCanonical();
++
++    // "Delete" the index and the in-memory bundle: rebuild from graph +
++    // generator output, with the bundle surviving only as serialized JSON.
++    const bundleJson = JSON.stringify(first.dependencies);
++    const reparsed: GeneratedDependencies = JSON.parse(bundleJson);
++    const second = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    // The generator re-emits the identical bundle for the same graph.
++    expect(JSON.stringify(second.dependencies)).toBe(bundleJson);
++    const idx2 = DependencyIndex.fromEdges(reparsed, second.spec);
++    expect(idx2.toCanonical()).toBe(canonical1);
++  });
++});
++
++describe("invariant: incremental output converges to clean-rebuild equivalence", () => {
++  /**
++   * One proof path, not a framework: given the affected section set from
++   * the index, splice the freshly generated affected sections into the old
++   * spec. If the section inventory changed at all (a section appeared or
++   * vanished), the index cannot describe the new shape: fail closed and
++   * demand a full rebuild instead of silently shipping a partial site.
++   */
++  function incrementalSplice(
++    oldSpec: FYDSiteSpec,
++    newSpec: FYDSiteSpec,
++    affectedSections: string[],
++  ): FYDSiteSpec {
++    const oldIds = sectionIds(oldSpec);
++    const newIds = sectionIds(newSpec);
++    if (JSON.stringify(oldIds) !== JSON.stringify(newIds)) {
++      throw new Error(
++        "incremental splice refused: section inventory changed " +
++          `(old ${oldIds.length}, new ${newIds.length}); full rebuild required`,
++      );
++    }
++    const freshSections = new Map(
++      newSpec.pages.flatMap((p) => p.sections.map((s) => [s.id, s])),
++    );
++    const freshPages = new Map(newSpec.pages.map((p) => [p.slug, p]));
++    const affected = new Set(affectedSections);
++    return {
++      ...oldSpec,
++      pages: oldSpec.pages.map((p) => {
++        const touched = p.sections.some((s) => affected.has(s.id));
++        if (!touched) return p;
++        // The page is affected: take its regenerated sections, and its
++        // title (page titles derive from the owner object, so an owner
++        // edit can change them without changing the section inventory).
++        return {
++          ...p,
++          title: freshPages.get(p.slug)!.title,
++          sections: p.sections.map((s) => (affected.has(s.id) ? freshSections.get(s.id)! : s)),
++        };
++      }),
++    };
++  }
++
++  function changedGraph(mutator: (g: typeof HAPPY_PLACE_GRAPH) => void) {
++    const g = JSON.parse(JSON.stringify(HAPPY_PLACE_GRAPH)) as typeof HAPPY_PLACE_GRAPH;
++    mutator(g);
++    return g;
++  }
++
++  test("one changed object: incremental splice == clean full rebuild", () => {
++    const base = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    const idx = DependencyIndex.fromEdges(base.dependencies, base.spec);
++
++    // Change one object: rename the "Repairs" service. Sections are
++    // declarative queries, so their JSON is unchanged; the index still
++    // names exactly the sections that must re-render, and the splice of
++    // those sections converges to the clean rebuild. (Coverage — no
++    // under/over-reporting — is proven exactly in the one-question test.)
++    const changed = changedGraph((g) => {
++      const svc = g.objects.find((o) => o.id === SERVICE)!;
++      svc.title = "Repairs (renamed)";
++      svc.fields["name"] = "Repairs (renamed)";
++    });
++    const rebuilt = generateSiteSpecWithDependencies(changed, { generatedAt: AT });
++
++    const affected = idx.sectionsForObject(SERVICE);
++    expect(affected.length).toBeGreaterThan(0);
++    const incremental = incrementalSplice(base.spec, rebuilt.spec, affected);
++    expect(JSON.stringify(incremental)).toBe(JSON.stringify(rebuilt.spec));
++  });
++
++  test("owner rename (page titles change): incremental splice == clean rebuild", () => {
++    const base = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    const idx = DependencyIndex.fromEdges(base.dependencies, base.spec);
++
++    // Renaming the owner changes page titles without changing the section
++    // inventory: the splice refreshes affected pages' titles and sections.
++    const changed = changedGraph((g) => {
++      g.objects.find((o) => o.id === OWNER)!.title = "Happy Place Carpentry Co.";
++    });
++    const rebuilt = generateSiteSpecWithDependencies(changed, { generatedAt: AT });
++    expect(JSON.stringify(sectionIds(base.spec))).toBe(
++      JSON.stringify(sectionIds(rebuilt.spec)),
++    );
++    expect(rebuilt.spec.pages.find((p) => p.slug === "home")!.title).toBe(
++      "Happy Place Carpentry Co.",
++    );
++
++    const incremental = incrementalSplice(base.spec, rebuilt.spec, idx.sectionsForObject(OWNER));
++    expect(JSON.stringify(incremental)).toBe(JSON.stringify(rebuilt.spec));
++  });
++
++  test("membership-changing edit fails closed instead of shipping a partial site", () => {
++    const base = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, { generatedAt: AT });
++    const idx = DependencyIndex.fromEdges(base.dependencies, base.spec);
++
++    // Remove the owner's description: the home BusinessSummary section
++    // vanishes, so the index built from the old generation cannot describe
++    // the new shape.
++    const changed = changedGraph((g) => {
++      g.objects.find((o) => o.id === OWNER)!.description = "";
++    });
++    const rebuilt = generateSiteSpecWithDependencies(changed, { generatedAt: AT });
++    expect(sectionIds(rebuilt.spec)).not.toEqual(sectionIds(base.spec));
++
++    expect(() =>
++      incrementalSplice(base.spec, rebuilt.spec, idx.sectionsForObject(OWNER)),
++    ).toThrow(/section inventory changed/);
++  });
++});
++
++describe("fail-closed: unknown or missing dependency info", () => {
++  test("a spec section with no edges throws (never a silent partial index)", () => {
++    const { spec, dependencies } = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, {
++      generatedAt: AT,
++    });
++    const dropped = sectionIds(spec)[0];
++    const partial: GeneratedDependencies = {
++      ...dependencies,
++      sectionToPage: dependencies.sectionToPage.filter((e) => e.sectionId !== dropped),
++      objectToSection: dependencies.objectToSection.filter((e) => e.sectionId !== dropped),
++    };
++    expect(() => DependencyIndex.fromEdges(partial, spec)).toThrow(/no dependency edges/);
++  });
++
++  test("edges referencing unknown sections throw", () => {
++    const { spec, dependencies } = generateSiteSpecWithDependencies(HAPPY_PLACE_GRAPH, {
++      generatedAt: AT,
++    });
++    const dangling: GeneratedDependencies = {
++      ...dependencies,
++      objectToSection: [
++        ...dependencies.objectToSection,
++        { objectId: OWNER, sectionId: "home:Ghost:99" },
++      ],
++    };
++    expect(() => DependencyIndex.fromEdges(dangling, spec)).toThrow(/unknown section/);
++  });
++
++  test("duplicate section registration throws at generation time", () => {
++    const rec = createEdgeRecorder();
++    rec.section("home:Hero:0", "home", [OWNER]);
++    expect(() => rec.section("home:Hero:0", "home", [OWNER])).toThrow(/registered twice/);
++  });
++});
+diff --git a/src/fyd/proceduralize/dependency-edges.ts b/src/fyd/proceduralize/dependency-edges.ts
+new file mode 100644
+index 00000000..569cd4c3
+--- /dev/null
++++ b/src/fyd/proceduralize/dependency-edges.ts
+@@ -0,0 +1,177 @@
++/**
++ * Generator-emitted dependency edges (W4, Decision 3: generator lane owns seeding).
++ *
++ * The generator is the first component that knows object X contributed to
++ * section Y in SiteSpec Z. It records that knowledge here, at generation
++ * time, as three edge sets:
++ *
++ *   evidence -> object        (which recorded source claims an object derives from)
++ *   object   -> SiteSpec section (which objects populated each emitted section)
++ *   section  -> rendered page (which page each emitted section belongs to)
++ *
++ * The emitted bundle is DERIVED STATE, not canonical truth: the object
++ * graph is canonical. The bundle is rebuildable from (graph + generator
++ * output) by re-running the generator on the same graph; the generator is
++ * pure and deterministic, so the bundle is byte-stable for a fixed graph.
++ *
++ * Scope discipline (what this does NOT do):
++ *  - Not a reactive computation engine: no watchers, subscriptions, or
++ *    recomputation triggers. It is a static edge bundle per generation.
++ *  - Not claim-level evidence provenance: evidence edges are object-level
++ *    provenance refs (provenance.ref / provenance.updatedRefs) only.
++ *  - Not a cross-site index: edges are scoped to one SiteSpec generation.
++ *  - Not a renderer cache and not an invalidation executor: it only
++ *    answers "which generated site parts depend on this object" via the
++ *    DependencyIndex built from this bundle.
++ */
++
++export interface EvidenceObjectEdge {
++  evidenceId: string;
++  objectId: string;
++}
++
++export interface ObjectSectionEdge {
++  objectId: string;
++  sectionId: string;
++}
++
++export interface SectionPageEdge {
++  sectionId: string;
++  pageSlug: string;
++}
++
++/**
++ * The generator's dependency emission for one SiteSpec generation.
++ * All edge lists are sorted canonically (by the first id, then the
++ * second) so serialization is deterministic across runs.
++ */
++export interface GeneratedDependencies {
++  /** Must match the generator's GENERATOR_VERSION at emission time. */
++  generatorVersion: string;
++  /** The SiteSpec kind this bundle describes, e.g. "fyd.sitespec@1". */
++  specKind: string;
++  evidenceToObject: EvidenceObjectEdge[];
++  objectToSection: ObjectSectionEdge[];
++  sectionToPage: SectionPageEdge[];
++}
++
++/**
++ * Recorder threaded through the generator's page builders. A section is
++ * registered exactly once, at the moment the generator creates it, with
++ * the full contributing object id set. Static sections (no object
++ * contributors) register with an empty object id list: explicit emptiness
++ * is data, and the index builder treats "registered with []" as
++ * genuinely-none, while "never registered" is unknown and fails closed.
++ */
++export interface EdgeRecorder {
++  /** Record that a section was created on a page with these contributors. */
++  section(sectionId: string, pageSlug: string, objectIds: string[]): void;
++  /** Record that an object derives from a recorded evidence ref. */
++  evidence(evidenceId: string, objectId: string): void;
++}
++
++interface RecorderState {
++  sectionToPage: Map<string, string>;
++  sectionToObjects: Map<string, Set<string>>;
++  evidenceToObject: Map<string, Set<string>>;
++  sectionOrder: string[];
++}
++
++const sortObjectSectionEdges = (edges: ObjectSectionEdge[]): ObjectSectionEdge[] =>
++  [...edges].sort((x, y) =>
++    x.objectId < y.objectId
++      ? -1
++      : x.objectId > y.objectId
++        ? 1
++        : x.sectionId < y.sectionId
++          ? -1
++          : x.sectionId > y.sectionId
++            ? 1
++            : 0,
++  );
++
++export function createEdgeRecorder(): EdgeRecorder & { bundle(v: { generatorVersion: string; specKind: string }): GeneratedDependencies } {
++  const state: RecorderState = {
++    sectionToPage: new Map(),
++    sectionToObjects: new Map(),
++    evidenceToObject: new Map(),
++    sectionOrder: [],
++  };
++  const section = (sectionId: string, pageSlug: string, objectIds: string[]): void => {
++    if (state.sectionToPage.has(sectionId)) {
++      throw new Error("dependency-edges: section registered twice: " + sectionId);
++    }
++    state.sectionToPage.set(sectionId, pageSlug);
++    state.sectionToObjects.set(sectionId, new Set([...objectIds].sort()));
++    state.sectionOrder.push(sectionId);
++  };
++  const evidence = (evidenceId: string, objectId: string): void => {
++    if (evidenceId === "") return; // no recorded ref: honest absence, not an edge
++    let set = state.evidenceToObject.get(evidenceId);
++    if (!set) {
++      set = new Set();
++      state.evidenceToObject.set(evidenceId, set);
++    }
++    set.add(objectId);
++  };
++  const bundle = (v: { generatorVersion: string; specKind: string }): GeneratedDependencies => {
++    const objectToSection: ObjectSectionEdge[] = [];
++    for (const sectionId of state.sectionOrder) {
++      const objects = state.sectionToObjects.get(sectionId);
++      if (objects) {
++        for (const objectId of [...objects].sort()) {
++          objectToSection.push({ objectId, sectionId });
++        }
++      }
++    }
++    const sectionToPage: SectionPageEdge[] = state.sectionOrder.map((sectionId) => ({
++      sectionId,
++      pageSlug: state.sectionToPage.get(sectionId) as string,
++    }));
++    const evidenceToObject: EvidenceObjectEdge[] = [];
++    for (const evidenceId of [...state.evidenceToObject.keys()].sort()) {
++      for (const objectId of [...(state.evidenceToObject.get(evidenceId) as Set<string>)].sort()) {
++        evidenceToObject.push({ evidenceId, objectId });
++      }
++    }
++    return {
++      generatorVersion: v.generatorVersion,
++      specKind: v.specKind,
++      evidenceToObject,
++      objectToSection: sortObjectSectionEdges(objectToSection),
++      sectionToPage,
++    };
++  };
++  return { section, evidence, bundle };
++}
++
++/**
++ * Drop edges for sections that did not survive into the final spec
++ * (archetype composition filters/reorders sections without changing
++ * their ids). The bundle then describes exactly the emitted spec, which
++ * is what the index's fail-closed completeness check requires. Evidence
++ * edges are object-scoped and unaffected.
++ */
++export function pruneEdgesToSections(
++  deps: GeneratedDependencies,
++  sectionIds: Set<string>,
++): GeneratedDependencies {
++  return {
++    ...deps,
++    objectToSection: deps.objectToSection.filter((e) => sectionIds.has(e.sectionId)),
++    sectionToPage: deps.sectionToPage.filter((e) => sectionIds.has(e.sectionId)),
++  };
++}
++
++/**
++ * The evidence refs an object derives from, in canonical order: the
++ * creating provenance ref plus any update refs. Empty refs are dropped
++ * (honest absence); the caller records nothing for them.
++ */
++export function evidenceIdsForObject(provenance: {
++  ref: string;
++  updatedRefs?: string[];
++}): string[] {
++  const refs = [provenance.ref, ...(provenance.updatedRefs ?? [])].filter((r) => r !== "");
++  return [...new Set(refs)].sort();
++}
+diff --git a/src/fyd/proceduralize/dependency-index.ts b/src/fyd/proceduralize/dependency-index.ts
+new file mode 100644
+index 00000000..a9498114
+--- /dev/null
++++ b/src/fyd/proceduralize/dependency-index.ts
+@@ -0,0 +1,159 @@
++/**
++ * DependencyIndex: answers exactly one question —
++ * "which generated site parts depend on this object?"
++ *
++ * Derived state, owned by the generator lane's seeding (Decision 3).
++ * The generator emits the edge bundle at generation time
++ * (dependency-edges.ts); this class is the queryable index built from it.
++ * It is rebuildable from (graph + generator output): re-running the
++ * generator on the same graph re-emits the same bundle, and fromEdges on
++ * that bundle yields an identical index (proven by the rebuildability
++ * test, not by assertion here).
++ *
++ * Fail-closed: fromEdges throws when the bundle is incomplete or
++ * inconsistent with the spec it describes. Unknown/missing dependency
++ * info never silently produces a partial index that claims completeness.
++ *
++ * Scope discipline (what this does NOT do):
++ *  - No reactive recomputation: it is a static snapshot per generation.
++ *  - No claim-level evidence graph: evidence edges ride along in the
++ *    bundle for consumers that need them; the index queries only
++ *    object -> section -> page.
++ *  - No persistence of its own: the bundle is the serializable form.
++ *  - No invalidation execution: it reports the affected set; the regen
++ *    seam (L6) decides what to do with it.
++ */
++
++import type { FYDSiteSpec } from "../sitespec/types";
++import type { GeneratedDependencies } from "./dependency-edges";
++
++export type SectionId = string;
++export type ObjectId = string;
++export type PageSlug = string;
++
++export class DependencyIndex {
++  private objectToSections = new Map<ObjectId, Set<SectionId>>();
++  private sectionToObjects = new Map<SectionId, Set<ObjectId>>();
++  private sectionToPage = new Map<SectionId, PageSlug>();
++
++  /** Low-level registration; prefer fromEdges for generator-built indexes. */
++  register(objectId: ObjectId, sectionIds: SectionId[]): void {
++    let set = this.objectToSections.get(objectId);
++    if (!set) {
++      set = new Set<SectionId>();
++      this.objectToSections.set(objectId, set);
++    }
++    for (const s of sectionIds) {
++      set.add(s);
++      let rev = this.sectionToObjects.get(s);
++      if (!rev) {
++        rev = new Set<ObjectId>();
++        this.sectionToObjects.set(s, rev);
++      }
++      rev.add(objectId);
++    }
++  }
++
++  /**
++   * Build the index from one generation's edge bundle, checked against the
++   * spec that generation produced. Throws (fail closed) when:
++   *  - any section in the spec has no section->page edge (unknown), or
++   *  - any edge references a section id absent from the spec (dangling).
++   * A section registered with zero object contributors (static sections
++   * like AskFYD) is genuinely-none and passes; a section never registered
++   * at all is unknown and fails.
++   */
++  static fromEdges(deps: GeneratedDependencies, spec: FYDSiteSpec): DependencyIndex {
++    const specSections = new Set<SectionId>();
++    for (const page of spec.pages) {
++      for (const s of page.sections) specSections.add(s.id);
++    }
++    const pageOf = new Map<SectionId, PageSlug>();
++    for (const e of deps.sectionToPage) {
++      if (!specSections.has(e.sectionId)) {
++        throw new Error(
++          "dependency-index: section->page edge for unknown section: " + e.sectionId,
++        );
++      }
++      pageOf.set(e.sectionId, e.pageSlug);
++    }
++    for (const sectionId of specSections) {
++      if (!pageOf.has(sectionId)) {
++        throw new Error(
++          "dependency-index: spec section has no dependency edges (unknown): " + sectionId,
++        );
++      }
++    }
++    for (const e of deps.objectToSection) {
++      if (!specSections.has(e.sectionId)) {
++        throw new Error(
++          "dependency-index: object->section edge for unknown section: " + e.sectionId,
++        );
++      }
++    }
++    const idx = new DependencyIndex();
++    idx.sectionToPage = pageOf;
++    for (const e of deps.objectToSection) {
++      idx.register(e.objectId, [e.sectionId]);
++    }
++    // Sections with zero object contributors still resolve to their objects
++    // (empty) and their page; they were explicitly registered as empty.
++    for (const sectionId of specSections) {
++      if (!idx.sectionToObjects.has(sectionId)) {
++        idx.sectionToObjects.set(sectionId, new Set());
++      }
++    }
++    return idx;
++  }
++
++  /** Sections that (re)render when this object changes. Sorted, stable. */
++  sectionsForObject(objectId: ObjectId): SectionId[] {
++    const set = this.objectToSections.get(objectId);
++    return set ? [...set].sort() : [];
++  }
++
++  /** Pages that (re)render when this object changes, via its sections. */
++  pagesForObject(objectId: ObjectId): PageSlug[] {
++    const pages = new Set<PageSlug>();
++    for (const s of this.sectionsForObject(objectId)) {
++      const p = this.sectionToPage.get(s);
++      if (p) pages.add(p);
++    }
++    return [...pages].sort();
++  }
++
++  /** Objects contributing to a section. Empty for static sections. */
++  objectsForSection(sectionId: SectionId): ObjectId[] {
++    const set = this.sectionToObjects.get(sectionId);
++    return set ? [...set].sort() : [];
++  }
++
++  /** The invalidation set for one changed object: its sections. */
++  invalidate(objectId: ObjectId): { sections: SectionId[]; pages: PageSlug[] } {
++    return { sections: this.sectionsForObject(objectId), pages: this.pagesForObject(objectId) };
++  }
++
++  size(): number {
++    return this.objectToSections.size;
++  }
++
++  /**
++   * Canonical serialization for the rebuildability proof: delete the
++   * index, rebuild from (graph + generator output), diff this string.
++   * Identical strings mean identical indexes.
++   */
++  toCanonical(): string {
++    const objects = [...this.objectToSections.keys()].sort();
++    const sections = [...this.sectionToObjects.keys()].sort();
++    const pages: Record<SectionId, PageSlug> = {};
++    for (const s of sections) {
++      const p = this.sectionToPage.get(s);
++      if (p !== undefined) pages[s] = p;
++    }
++    return JSON.stringify({
++      objects: objects.map((o) => [o, this.sectionsForObject(o)]),
++      sections: sections.map((s) => [s, this.objectsForSection(s)]),
++      pages,
++    });
++  }
++}
+diff --git a/src/fyd/proceduralize/generator.ts b/src/fyd/proceduralize/generator.ts
+index 89f42455..6a8ddf49 100644
+--- a/src/fyd/proceduralize/generator.ts
++++ b/src/fyd/proceduralize/generator.ts
+@@ -50,6 +50,13 @@ import { resolveWebsiteUrl } from "../sitespec/graph";
+ import { applyArchetype } from "../archetypes/apply";
+ import type { ArchetypeProfile } from "../archetypes/profiles";
+ import { galleryMediaFor } from "../media/select";
++import {
++  createEdgeRecorder,
++  evidenceIdsForObject,
++  pruneEdgesToSections,
++  type EdgeRecorder,
++  type GeneratedDependencies,
++} from "./dependency-edges";
+ 
+ export const GENERATOR_VERSION = "1.1.0";
+ 
+@@ -172,29 +179,39 @@ function roleQuery(from: string, role: FYDSchemaRole, limit?: number): FYDQuery
+ }
+ 
+ /** HOME: Hero, BusinessSummary, Services, Products, Locations, People, Gallery, RecentObjects, Contact, Links, CTA, AskFYD, ObjectRail. */
+-function homePage(g: Grouped, graph: ObjectGraph, opts: GeneratorOptions): FYDPage | null {
++function homePage(g: Grouped, graph: ObjectGraph, opts: GeneratorOptions, rec?: EdgeRecorder): FYDPage | null {
+   if (!g.owner) return null;
+   const ownerId = g.owner.id;
+   const sections: FYDSection[] = [];
+-  const add = (component: string, query: FYDSection["query"]) => {
+-    sections.push(section("home", sections.length, component, query));
++  const ids = (objs: PingObject[]): string[] => objs.map((o) => o.id);
++  // The third argument names the objects that populated the section: the
++  // generator records dependency edges here, at creation time. Static
++  // sections pass [] explicitly (genuinely no contributors, not unknown).
++  const add = (
++    component: string,
++    query: FYDSection["query"],
++    objectIds: string[] = [],
++  ) => {
++    const s = section("home", sections.length, component, query);
++    sections.push(s);
++    if (rec) rec.section(s.id, "home", objectIds);
+   };
+ 
+-  add("Hero", { kind: "owner" });
++  add("Hero", { kind: "owner" }, [ownerId]);
+   if (g.owner.description.trim() !== "") {
+-    add("BusinessSummary", { kind: "owner" });
++    add("BusinessSummary", { kind: "owner" }, [ownerId]);
+   }
+   if (g.services.length > 0) {
+-    add("Services", roleQuery(ownerId, "service"));
++    add("Services", roleQuery(ownerId, "service"), ids(g.services));
+   }
+   if (g.products.length > 0) {
+-    add("Products", roleQuery(ownerId, "product"));
++    add("Products", roleQuery(ownerId, "product"), ids(g.products));
+   }
+   if (g.locations.length > 0) {
+-    add("Locations", roleQuery(ownerId, "location"));
++    add("Locations", roleQuery(ownerId, "location"), ids(g.locations));
+   }
+   if (g.people.length > 0) {
+-    add("People", roleQuery(ownerId, "person"));
++    add("People", roleQuery(ownerId, "person"), ids(g.people));
+   }
+   // Gallery: emitted if and only if the site carries >=1 acquired gallery
+   // asset. The manifest is keyed by site id; an absent siteId means no
+@@ -207,20 +224,23 @@ function homePage(g: Grouped, graph: ObjectGraph, opts: GeneratorOptions): FYDPa
+     add("Gallery", { kind: "static" });
+   }
+   if (g.articles.length > 0 || g.posts.length > 0) {
+-    add("RecentObjects", roleQueryUnion(ownerId, ["post", "article"], 6));
++    add("RecentObjects", roleQueryUnion(ownerId, ["post", "article"], 6), [
++      ...ids(g.articles),
++      ...ids(g.posts),
++    ]);
+   }
+   if (hasContact(graph, g.owner)) {
+-    add("Contact", { kind: "owner" });
++    add("Contact", { kind: "owner" }, [ownerId]);
+   }
+   if (hasSocials(graph, g.owner)) {
+-    add("Links", { kind: "owner" });
++    add("Links", { kind: "owner" }, [ownerId]);
+   }
+   // CTA is a site capability, present on every generated home page: the
+   // visitor's primary action block (visit website / ask FYD). The registry,
+   // the renderer, the eligibility report, and the dimension-vector policy
+   // (CTA boosted by urgency) all already account for it; the generator
+   // simply never emitted it.
+-  add("CTA", { kind: "owner" });
++  add("CTA", { kind: "owner" }, [ownerId]);
+   // AskFYD is a site capability, present on every generated home page.
+   add("AskFYD", { kind: "static" });
+   // ObjectRail: the primary-circle doorway, inline. Features the richest
+@@ -237,6 +257,13 @@ function homePage(g: Grouped, graph: ObjectGraph, opts: GeneratorOptions): FYDPa
+     add(
+       "ObjectRail",
+       roleQueryUnion(ownerId, ["service", "product", "person", "post", "article"], 6),
++      [
++        ...ids(g.services),
++        ...ids(g.products),
++        ...ids(g.people),
++        ...ids(g.articles),
++        ...ids(g.posts),
++      ],
+     );
+   }
+ 
+@@ -261,31 +288,39 @@ function hasSocials(graph: ObjectGraph, owner: PingObject): boolean {
+ }
+ 
+ /** ABOUT: BusinessSummary plus People. Exists when there is something to say. */
+-function aboutPage(g: Grouped): FYDPage | null {
++function aboutPage(g: Grouped, rec?: EdgeRecorder): FYDPage | null {
+   if (!g.owner) return null;
+   const ownerId = g.owner.id;
+   const sections: FYDSection[] = [];
+-  const add = (component: string, query: FYDSection["query"]) => {
+-    sections.push(section("about", sections.length, component, query));
++  const add = (
++    component: string,
++    query: FYDSection["query"],
++    objectIds: string[] = [],
++  ) => {
++    const s = section("about", sections.length, component, query);
++    sections.push(s);
++    if (rec) rec.section(s.id, "about", objectIds);
+   };
+   if (g.owner.description.trim() !== "") {
+-    add("BusinessSummary", { kind: "owner" });
++    add("BusinessSummary", { kind: "owner" }, [ownerId]);
+   }
+   if (g.people.length > 0) {
+-    add("People", roleQuery(ownerId, "person"));
++    add("People", roleQuery(ownerId, "person"), g.people.map((o) => o.id));
+   }
+   if (sections.length === 0) return null;
+   return { slug: "about", title: "About " + g.owner.title, navLabel: "About", sections };
+ }
+ 
+ /** SERVICES: the full service list. Exists only when services exist. */
+-function servicesPage(g: Grouped): FYDPage | null {
++function servicesPage(g: Grouped, rec?: EdgeRecorder): FYDPage | null {
+   if (!g.owner || g.services.length === 0) return null;
++  const s = section("services", 0, "Services", roleQuery(g.owner.id, "service"));
++  if (rec) rec.section(s.id, "services", g.services.map((o) => o.id));
+   return {
+     slug: "services",
+     title: "Services",
+     navLabel: "Services",
+-    sections: [section("services", 0, "Services", roleQuery(g.owner.id, "service"))],
++    sections: [s],
+   };
+ }
+ 
+@@ -294,30 +329,60 @@ function servicesPage(g: Grouped): FYDPage | null {
+  * feed-renderable. The planner asks eligibleComponents() (the registry
+  * contract): sections exist when their data exists, so no feed-renderable
+  * schema means no Explore page. */
+-function explorePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
++function explorePage(g: Grouped, graph: ObjectGraph, rec?: EdgeRecorder): FYDPage | null {
+   const publicObjects = graph.objects.filter((o) => o.visibility === "public");
+   if (publicObjects.length < 4) return null;
+   const feedSchemas = [...new Set(publicObjects.map((o) => o.schema))]
+     .filter((s) => eligibleComponents(s).includes("ObjectFeed"))
+     .sort();
+   if (feedSchemas.length === 0) return null;
++  const s = section("explore", 0, "ObjectFeed", {
++    kind: "all",
++    schemas: feedSchemas,
++    limit: 20,
++  });
++  if (rec) {
++    rec.section(
++      s.id,
++      "explore",
++      publicObjects.filter((o) => feedSchemas.includes(o.schema)).map((o) => o.id),
++    );
++  }
+   return {
+     slug: "explore",
+     title: "Explore",
+     navLabel: "Explore",
+-    sections: [
+-      section("explore", 0, "ObjectFeed", { kind: "all", schemas: feedSchemas, limit: 20 }),
+-    ],
++    sections: [s],
+   };
+ }
+ 
+ export function generateSiteSpec(graph: ObjectGraph, opts: GeneratorOptions): FYDSiteSpec {
++  return generateSiteSpecWithDependencies(graph, opts).spec;
++}
++
++/**
++ * Generation with dependency emission: the same pure, deterministic spec
++ * generateSiteSpec produces (byte-identical for the same inputs), plus the
++ * generator's edge bundle recorded at generation time:
++ *   evidence -> object, object -> SiteSpec section, section -> rendered page.
++ * When an archetype profile composes the spec (filtering/reordering
++ * sections), the bundle is pruned to the final spec's section set so it
++ * describes exactly what was emitted.
++ */
++export function generateSiteSpecWithDependencies(
++  graph: ObjectGraph,
++  opts: GeneratorOptions,
++): { spec: FYDSiteSpec; dependencies: GeneratedDependencies } {
++  const rec = createEdgeRecorder();
++  for (const o of graph.objects) {
++    for (const e of evidenceIdsForObject(o.provenance)) rec.evidence(e, o.id);
++  }
+   const g = group(graph);
+   const pages: FYDPage[] = [];
+-  const home = homePage(g, graph, opts);
+-  const about = aboutPage(g);
+-  const services = servicesPage(g);
+-  const explore = explorePage(g, graph);
++  const home = homePage(g, graph, opts, rec);
++  const about = aboutPage(g, rec);
++  const services = servicesPage(g, rec);
++  const explore = explorePage(g, graph, rec);
+   if (home) pages.push(home);
+   if (about) pages.push(about);
+   if (services) pages.push(services);
+@@ -344,5 +409,14 @@ export function generateSiteSpec(graph: ObjectGraph, opts: GeneratorOptions): FY
+   };
+   // Optional archetype composition: an absent profile leaves today output
+   // byte-identical; a present profile composes deterministically.
+-  return opts.profile ? applyArchetype(spec, opts.profile, graph) : spec;
++  const finalSpec = opts.profile ? applyArchetype(spec, opts.profile, graph) : spec;
++  const finalSections = new Set<string>();
++  for (const page of finalSpec.pages) {
++    for (const s of page.sections) finalSections.add(s.id);
++  }
++  const dependencies = pruneEdgesToSections(
++    rec.bundle({ generatorVersion: GENERATOR_VERSION, specKind: spec.kind }),
++    finalSections,
++  );
++  return { spec: finalSpec, dependencies };
+ }

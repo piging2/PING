@@ -1,0 +1,1568 @@
+diff --git a/src/fyd/data/__tests__/projection-reader-seam.test.ts b/src/fyd/data/__tests__/projection-reader-seam.test.ts
+new file mode 100644
+index 00000000..28d1541e
+--- /dev/null
++++ b/src/fyd/data/__tests__/projection-reader-seam.test.ts
+@@ -0,0 +1,192 @@
++/**
++ * W5 projection-reader seam: integration proof on the trackc line.
++ *
++ * Exercises the REAL integrated modules (src/fyd/data/projection-reader.ts,
++ * projection-verify.ts, file-dump-projection-reader.ts, default-reader.ts,
++ * ping-object-source.ts):
++ *  1. Determinism: identical history -> identical snapshotDigest and
++ *     canonicalBytes; dumpedAt is informational (excluded from identity).
++ *  2. Fail-closed: tampered graphDigest throws; missing snapshot throws.
++ *  3. Interface-bound: an in-memory stub reader drives getPingObjectGraph
++ *     (no filesystem touched).
++ *  4. Sync fail-closed: an async-only reader refuses sync reads.
++ *  5. Naming law: the seam modules never describe a projection with the
++ *     word "authority" (the JOURNAL is the authority).
++ *  6. Seam listing: listPingSiteIds goes through the registered reader.
++ */
++import { createHash } from "node:crypto";
++import { mkdtempSync, writeFileSync, readFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { canonicalize } from "@/lib/ping/ask-composer";
++import { FileDumpProjectionReader } from "@/fyd/data/file-dump-projection-reader";
++import {
++  setProjectionReader,
++  resetProjectionReader,
++  isSyncProjectionReader,
++  type ProjectionReader,
++  type ProjectionSnapshot,
++} from "@/fyd/data/projection-reader";
++import {
++  getPingObjectGraph,
++  getPingObjectGraphSync,
++  listPingSiteIds,
++  listPingSiteIdsSync,
++} from "@/fyd/data/ping-object-source";
++
++const SITE = "seam-proof-site";
++
++function makeDoc(siteId: string, dumpedAt: string): Record<string, unknown> {
++  const graph = {
++    objects: [
++      {
++        id: "obj-1",
++        schema: "business",
++        visibility: "public",
++        title: "Seam Shop",
++        provenance: { kind: "procedural-fixture", ref: "fixture:seam" },
++      },
++    ],
++    relationships: [],
++  };
++  const graphDigest = createHash("sha256")
++    .update(canonicalize(graph), "utf8")
++    .digest("hex");
++  return {
++    meta: {
++      siteId,
++      dumpedAt,
++      dumperVersion: "1.2.1",
++      baseDigest: "b".repeat(64),
++      fixtureFileDigest: "f".repeat(64),
++      fixtureHeader: "h",
++      overlayEventIds: [],
++      graphDigest,
++      generatedAt: "2026-09-29T00:00:00Z",
++    },
++    graph,
++  };
++}
++
++function writeSite(dir: string, siteId: string, dumpedAt: string): string {
++  const path = join(dir, siteId + ".json");
++  writeFileSync(path, JSON.stringify(makeDoc(siteId, dumpedAt)));
++  return path;
++}
++
++afterEach(() => {
++  resetProjectionReader();
++  delete process.env.FYD_PROJECTION_DIR;
++});
++
++test("determinism: same history, two reads -> identical identity", async () => {
++  const d1 = mkdtempSync(join(tmpdir(), "w5d1-"));
++  const d2 = mkdtempSync(join(tmpdir(), "w5d2-"));
++  writeSite(d1, SITE, "2026-09-29T10:00:00Z");
++  // dumpedAt differs: informational only, excluded from snapshot identity.
++  writeSite(d2, SITE, "2026-09-29T11:00:00Z");
++  const reader = new FileDumpProjectionReader();
++  process.env.FYD_PROJECTION_DIR = d1;
++  const s1 = await reader.readSnapshot(SITE);
++  process.env.FYD_PROJECTION_DIR = d2;
++  const s2 = await reader.readSnapshot(SITE);
++  expect(s1.snapshotDigest).toBe(s2.snapshotDigest);
++  expect(s1.sourceDigest).toBe(s2.sourceDigest);
++  expect(s1.canonicalBytes).toBe(s2.canonicalBytes);
++  expect(s1.snapshotDigest).toBe(
++    createHash("sha256").update(s1.canonicalBytes, "utf8").digest("hex"),
++  );
++});
++
++test("fail-closed: tampered graphDigest throws; missing snapshot throws", async () => {
++  const d = mkdtempSync(join(tmpdir(), "w5f-"));
++  const path = writeSite(d, SITE, "2026-09-29T10:00:00Z");
++  const doc = JSON.parse(readFileSync(path, "utf8")) as {
++    meta: { graphDigest: string };
++  };
++  doc.meta.graphDigest = "0".repeat(64);
++  writeFileSync(path, JSON.stringify(doc));
++  process.env.FYD_PROJECTION_DIR = d;
++  const reader = new FileDumpProjectionReader();
++  await expect(reader.readSnapshot(SITE)).rejects.toThrow(/graphDigest mismatch/);
++  await expect(reader.readSnapshot("no-such-site")).rejects.toThrow(
++    /no snapshot/,
++  );
++});
++
++test("interface-bound: stub reader drives getPingObjectGraph, no fs touched", async () => {
++  const stubSnapshot: ProjectionSnapshot = {
++    siteId: SITE,
++    snapshotDigest: "stubdigest",
++    sourceDigest: "stubsource",
++    canonicalBytes: "{}",
++    dumpedAt: "2026-09-29T10:00:00Z",
++    graph: {
++      objects: [
++        {
++          id: "obj-9",
++          schema: "business",
++          visibility: "public",
++          title: "Stub Shop",
++          provenance: { kind: "procedural-fixture", ref: "fixture:stub" },
++        },
++      ],
++      relationships: [],
++    } as unknown as ProjectionSnapshot["graph"],
++    meta: {
++      siteId: SITE,
++      dumpedAt: "2026-09-29T10:00:00Z",
++      dumperVersion: "stub",
++      baseDigest: "b",
++      fixtureFileDigest: "f",
++      fixtureHeader: "h",
++      overlayEventIds: [],
++      graphDigest: "g",
++      generatedAt: "2026-09-29T10:00:00Z",
++    },
++    presentationIntent: null,
++    fieldVisibility: null,
++  };
++  const stubReader: ProjectionReader = {
++    kind: "remote",
++    readSnapshot: async (id: string) => {
++      if (id !== SITE) throw new Error("stub: unknown site");
++      return stubSnapshot;
++    },
++    listSiteIds: async () => [SITE],
++    regenerate: async () => {
++      throw new Error("stub: RegenerateUnsupported");
++    },
++  };
++  setProjectionReader(stubReader);
++  expect(isSyncProjectionReader(stubReader)).toBe(false);
++  // FYD_PROJECTION_DIR points nowhere: the stub must not touch the fs.
++  process.env.FYD_PROJECTION_DIR = join(tmpdir(), "w5-no-such-dir-xyz");
++  const proj = await getPingObjectGraph(SITE);
++  expect(proj.graph.objects[0]!.title).toBe("Stub Shop");
++  expect(proj.meta.dumperVersion).toBe("stub");
++  expect(() => getPingObjectGraphSync(SITE)).toThrow(/async contract only/);
++  expect(await listPingSiteIds()).toEqual([SITE]);
++});
++
++test("naming law: no 'projection authority' in the seam modules", () => {
++  const root = join(__dirname, "..");
++  for (const f of [
++    "projection-reader.ts",
++    "projection-verify.ts",
++    "file-dump-projection-reader.ts",
++    "default-reader.ts",
++    "ping-object-source.ts",
++  ]) {
++    const srcText = readFileSync(join(root, f), "utf8");
++    expect(srcText).not.toMatch(/projection authority/i);
++  }
++});
++
++test("seam listing: file-dump reader lists fixture sites", async () => {
++  const d = mkdtempSync(join(tmpdir(), "w5l-"));
++  writeSite(d, SITE, "2026-09-29T10:00:00Z");
++  process.env.FYD_PROJECTION_DIR = d;
++  expect(await listPingSiteIds()).toEqual([SITE]);
++  expect(listPingSiteIdsSync()).toEqual([SITE]);
++});
+diff --git a/src/fyd/data/default-reader.ts b/src/fyd/data/default-reader.ts
+new file mode 100644
+index 00000000..759d09d0
+--- /dev/null
++++ b/src/fyd/data/default-reader.ts
+@@ -0,0 +1,31 @@
++/**
++ * Default ProjectionReader registration (Decision 2: file-dump for this
++ * proof, behind the seam).
++ *
++ * This module exists to keep the import graph cycle-free:
++ *   ping-object-source -> default-reader -> file-dump-projection-reader
++ *     -> projection-verify (pure) -> (no fyd/data imports)
++ *   ping-object-source -> projection-reader (interfaces + registry)
++ * Neither projection-reader nor file-dump-projection-reader imports
++ * ping-object-source.
++ *
++ * Import this module once at the seam boundary (ping-object-source does).
++ */
++import { FileDumpProjectionReader } from "./file-dump-projection-reader";
++import { setDefaultProjectionReaderFactory } from "./projection-reader";
++
++let registered = false;
++
++export function registerDefaultProjectionReader(): void {
++  if (registered) return;
++  registered = true;
++  let instance: FileDumpProjectionReader | null = null;
++  setDefaultProjectionReaderFactory(() => {
++    if (!instance) instance = new FileDumpProjectionReader();
++    return instance;
++  });
++}
++
++// Register on import: the seam default is file-dump unless a test or a
++// future physical reader overrides it via setProjectionReader().
++registerDefaultProjectionReader();
+diff --git a/src/fyd/data/file-dump-projection-reader.ts b/src/fyd/data/file-dump-projection-reader.ts
+new file mode 100644
+index 00000000..ea8077de
+--- /dev/null
++++ b/src/fyd/data/file-dump-projection-reader.ts
+@@ -0,0 +1,278 @@
++/**
++ * FileDumpProjectionReader — today's physical ProjectionReader.
++ *
++ * NAMING: the file dump is ONE DISPOSABLE REPRESENTATION of a projection
++ * derived from the journal (the authority). It is never canonical truth,
++ * and the word "authority" is never attached to the dump. Deleting the
++ * dump and regenerating from the journal must yield the same
++ * snapshotDigest for the same history — that disposability is proven by
++ * test, not asserted.
++ *
++ * Mechanics (harvested, not reinvented):
++ *   - Read: the JSON snapshot at <projectionDir>/<siteId>.json, parsed and
++ *     digest-verified by projection-verify.ts (the same fail-closed rules
++ *     the read seam has always enforced).
++ *   - Regenerate: execFile the PING-side dump
++ *     (tools/fyd-site-projection/dump.py), which rebuilds the snapshot
++ *     from the fixture base + journal overlays. SERVER ONLY — never call
++ *     from the public served path (regen is a privileged operation owned
++ *     by the regen seam, not by page rendering).
++ *
++ * Determinism: the snapshot identity (snapshotDigest) excludes volatile
++ * wall-clock fields (meta.dumpedAt). Same canonical history -> same
++ * canonicalBytes -> same snapshotDigest, no matter when the dump ran.
++ */
++
++import { execFile } from "node:child_process";
++import { readFile, readdir, access } from "node:fs/promises";
++import { readFileSync, readdirSync, constants } from "node:fs";
++import { join } from "node:path";
++import {
++  parseAndVerifyRawProjection,
++  canonicalSnapshotBytes,
++  snapshotDigestOf,
++  sourceDigestOf,
++} from "./projection-verify";
++import {
++  RegenerateFailed,
++  type ProjectionReader,
++  type ProjectionReadOpts,
++  type ProjectionSnapshot,
++  type RegenerateResult,
++  type SyncProjectionReader,
++} from "./projection-reader";
++
++const DEFAULT_PROJECTION_DIR = "/home/nolan/ping/var/fyd-projections";
++
++/** Candidate locations for the PING-side dump script (first hit wins). */
++const DUMP_SCRIPT_CANDIDATES = [
++  "/home/hatch/workspace/lane-d-impl/tools/fyd-site-projection/dump.py",
++  "/home/nolan/ping/tools/fyd-site-projection/dump.py",
++];
++
++const REGEN_TIMEOUT_MS = 120_000;
++
++function projectionDir(): string {
++  // Resolved lazily (per call): tests repoint FYD_PROJECTION_DIR per case.
++  return process.env.FYD_PROJECTION_DIR ?? DEFAULT_PROJECTION_DIR;
++}
++
++async function resolveDumpScript(): Promise<string> {
++  const override = process.env.FYD_DUMP_PY;
++  if (override) return override;
++  for (const candidate of DUMP_SCRIPT_CANDIDATES) {
++    try {
++      await access(candidate, constants.R_OK);
++      return candidate;
++    } catch {
++      /* try next */
++    }
++  }
++  throw new RegenerateFailed(
++    "<unknown>",
++    "no dump script found: set FYD_DUMP_PY or install one at " +
++      DUMP_SCRIPT_CANDIDATES.join(" / "),
++  );
++}
++
++function execFileAsync(
++  file: string,
++  args: string[],
++  env: NodeJS.ProcessEnv,
++): Promise<{ stdout: string; stderr: string }> {
++  return new Promise((resolve, reject) => {
++    execFile(
++      file,
++      args,
++      { env, timeout: REGEN_TIMEOUT_MS, maxBuffer: 16 * 1024 * 1024 },
++      (error, stdout, stderr) => {
++        if (error) {
++          const code =
++            typeof (error as { code?: unknown }).code === "number"
++              ? (error as { code: number }).code
++              : -1;
++          reject(
++            Object.assign(
++              new Error(
++                `dump.py failed (exit ${code}): ${String(stderr).slice(0, 500)}`,
++              ),
++              { exitCode: code, stderr: String(stderr) },
++            ),
++          );
++          return;
++        }
++        resolve({ stdout: String(stdout), stderr: String(stderr) });
++      },
++    );
++  });
++}
++
++function buildSnapshot(
++  siteId: string,
++  raw: string,
++  path: string,
++): ProjectionSnapshot {
++  const verified = parseAndVerifyRawProjection(raw, siteId, path);
++  // Snapshot identity is computed over the RAW document (pre-overlay): the
++  // owner overlay is a serve-time composition owned by ping-object-source
++  // and is never part of the snapshot's byte identity.
++  const doc = JSON.parse(raw) as Record<string, unknown>;
++  return {
++    siteId,
++    canonicalBytes: canonicalSnapshotBytes(doc),
++    snapshotDigest: snapshotDigestOf(doc),
++    sourceDigest: sourceDigestOf(verified.meta),
++    meta: verified.meta,
++    graph: verified.graph,
++    presentationIntent: verified.presentationIntent,
++    fieldVisibility: verified.fieldVisibility,
++  };
++}
++
++function missingSnapshotError(siteId: string, path: string): Error {
++  return new Error(
++    `file-dump-projection-reader: site "${siteId}": no snapshot at ${path} ` +
++      `(regenerate from the journal first); refusing to serve stale data`,
++  );
++}
++
++export class FileDumpProjectionReader
++  implements ProjectionReader, SyncProjectionReader
++{
++  readonly kind = "file-dump" as const;
++
++  /** Resolved lazily so FYD_PROJECTION_DIR repoints work per call. */
++  protected dir(): string {
++    return projectionDir();
++  }
++
++  protected snapshotPath(siteId: string): string {
++    return join(this.dir(), siteId + ".json");
++  }
++
++  async readSnapshot(
++    siteId: string,
++    _opts?: ProjectionReadOpts,
++  ): Promise<ProjectionSnapshot> {
++    const path = this.snapshotPath(siteId);
++    let raw: string;
++    try {
++      raw = await readFile(path, "utf8");
++    } catch {
++      throw missingSnapshotError(siteId, path);
++    }
++    return buildSnapshot(siteId, raw, path);
++  }
++
++  readSnapshotSync(
++    siteId: string,
++    _opts?: ProjectionReadOpts,
++  ): ProjectionSnapshot {
++    const path = this.snapshotPath(siteId);
++    let raw: string;
++    try {
++      raw = readFileSync(path, "utf8");
++    } catch {
++      throw missingSnapshotError(siteId, path);
++    }
++    return buildSnapshot(siteId, raw, path);
++  }
++
++  async listSiteIds(): Promise<string[]> {
++    try {
++      const files = await readdir(this.dir());
++      return files
++        .filter((f) => f.endsWith(".json"))
++        .map((f) => f.slice(0, -".json".length))
++        .sort();
++    } catch {
++      return [];
++    }
++  }
++
++  listSiteIdsSync(): string[] {
++    try {
++      return readdirSync(this.dir())
++        .filter((f) => f.endsWith(".json"))
++        .map((f) => f.slice(0, -".json".length))
++        .sort();
++    } catch {
++      return [];
++    }
++  }
++
++  /**
++   * Rebuild the snapshot for a site from canonical history (fixture base +
++   * journal overlays) via the PING-side dump, then return the rebuilt
++   * snapshot's identity.
++   *
++   * SERVER ONLY. Never call from the public served path: regeneration is a
++   * privileged operation. The dump inherits the process journal config
++   * (FYD_OVERLAY_JOURNAL, FYD_JOURNAL_GATEWAY_URL, ...); this reader only
++   * pins the output directory to its own projectionDir so the reader's
++   * configured location is authoritative.
++   */
++  async regenerate(siteId: string): Promise<RegenerateResult> {
++    let script: string;
++    try {
++      script = await resolveDumpScript();
++    } catch (e) {
++      throw new RegenerateFailed(
++        siteId,
++        e instanceof Error ? e.message : String(e),
++      );
++    }
++    const outDir = this.dir();
++    try {
++      await execFileAsync("python3", [script, siteId], {
++        ...process.env,
++        FYD_PROJECTION_OUT_DIR: outDir,
++      });
++    } catch (e) {
++      const err = e as { exitCode?: number; message?: string };
++      const hint =
++        err.exitCode === 2
++          ? " (overlay query failed: journal unreachable or WRONG_JOURNAL — fail closed, nothing written)"
++          : "";
++      throw new RegenerateFailed(
++        siteId,
++        `dump.py invocation failed${hint}: ${err.message ?? String(e)}`,
++      );
++    }
++    const outPath = join(outDir, siteId + ".json");
++    let snapshot: ProjectionSnapshot;
++    try {
++      snapshot = await this.readSnapshot(siteId);
++    } catch (e) {
++      throw new RegenerateFailed(
++        siteId,
++        `dump ran but the rebuilt snapshot is unreadable: ${
++          e instanceof Error ? e.message : String(e)
++        }`,
++      );
++    }
++    return {
++      siteId,
++      snapshotDigest: snapshot.snapshotDigest,
++      sourceDigest: snapshot.sourceDigest,
++      outPath,
++    };
++  }
++}
++
++/** Narrow a registered reader to the sync contract (fail closed otherwise). */
++export function requireSyncReader(
++  reader: ProjectionReader,
++  siteId: string,
++): SyncProjectionReader {
++  if (
++    typeof (reader as SyncProjectionReader).readSnapshotSync !== "function" ||
++    typeof (reader as SyncProjectionReader).listSiteIdsSync !== "function"
++  ) {
++    throw new Error(
++      `projection-reader: sync read of site "${siteId}" unsupported by the ` +
++        `${reader.kind} reader (async contract only); refusing to fake it`,
++    );
++  }
++  return reader as SyncProjectionReader;
++}
+diff --git a/src/fyd/data/ping-object-source.ts b/src/fyd/data/ping-object-source.ts
+index 8288f7af..029b85a4 100644
+--- a/src/fyd/data/ping-object-source.ts
++++ b/src/fyd/data/ping-object-source.ts
+@@ -1,64 +1,68 @@
+ /**
+  * PING-backed object source for FYD demo sites. SERVER ONLY.
+  *
+- * This module is the website repo's read seam onto PING state. It reads the
+- * canonical projection JSON written by the PING-side dump
+- * (/home/nolan/ping/tools/fyd-site-projection/dump.py) and NEVER falls back
+- * to a static fixture: a missing, malformed, or tampered projection is a
+- * hard failure, not a silent stale render.
++ * This module is the website repo's read seam onto PING state. Reads go
++ * through the ProjectionReader seam (src/fyd/data/projection-reader.ts):
++ * the registered reader produces a deterministic, digest-verified snapshot
++ * for the site, and this module composes the serve-time owner overlay onto
++ * it. The default physical reader is the file dump (Decision 2); swapping
++ * in a Postgres/IncrementalGraph/remote reader later changes no consumer.
+  *
+- * Verification (fail closed, in order):
+- *  1. The projection file exists and parses.
++ * NAMING LAW (ratified 2026-09-29): the JOURNAL is the authority
++ * (canonical history). The file dump is one disposable representation of
++ * a projection — never canonical truth, and never described with the
++ * word "authority".
++ *
++ * Verification (fail closed, in order — owned by projection-verify.ts):
++ *  1. The snapshot exists and parses.
+  *  2. meta.siteId matches the requested site.
+  *  3. Every object carries provenance with a non-empty ref — the
+- *     "NO CUSTOMER FACT WITHOUT A TRACEABLE BASIS" law. This is the data
+- *     source's share of "verify bindings before render": the renderer
+- *     verifies per-field bindings; this module guarantees the projection
+- *     itself only contains traceable objects.
+- *  4. graphDigest: sha256 over canonicalize(graph) recomputed here and
+- *     compared to meta.graphDigest. canonicalize is the repo's existing
+- *     canonical JSON (src/lib/ping/ask-composer.ts) — the same rule the
+- *     dump uses (recursive key sort, array order preserved). A mismatch
+- *     means the projection was tampered with or written by a different
+- *     dumper version: refuse to serve it.
++ *     "NO CUSTOMER FACT WITHOUT A TRACEABLE BASIS" law.
++ *  4. graphDigest: sha256 over canonicalize(graph) recomputed and compared
++ *     to meta.graphDigest. A mismatch means tampering or an incompatible
++ *     dumper: refuse to serve it.
++ *  5/6. presentationIntent / fieldVisibility blocks digest-verified when
++ *     present.
++ * A missing, malformed, or tampered snapshot is a hard failure, not a
++ * silent stale render.
+  *
+  * The projection directory is configurable via FYD_PROJECTION_DIR for tests;
+  * in production it is the PING-owned var dir the dump writes to.
+  */
+ 
+-import { createHash } from "node:crypto";
+-import { readFile } from "node:fs/promises";
+-import { readFileSync, readdirSync } from "node:fs";
+-import { join } from "node:path";
+-import { canonicalize } from "@/lib/ping/ask-composer";
+-import type { ObjectGraph } from "@/fyd/sitespec/types";
+-import type { PingObject, PingRelationship } from "@/lib/ping/types";
+ import {
+   applyOwnerFieldCorrections,
+   type OwnerOverlayResult,
+ } from "@/fyd/object/owner-overlay";
+-import type { PresentationIntentBlock } from "@/fyd/customize/types";
+ import {
+   decisionsForGraph,
+   verifyPublicProjection,
+   type PublicViewerKind,
+   type VerifiedPublicProjection,
+ } from "@/fyd/sitespec/public-projection";
+-
+-export interface ProjectionMeta {
+-  siteId: string;
+-  dumpedAt: string;
+-  dumperVersion: string;
+-  baseDigest: string;
+-  fixtureFileDigest: string;
+-  fixtureHeader: string;
+-  overlayEventIds: string[];
+-  graphDigest: string;
+-  generatedAt: string;
+-  /** Optional digest of the presentationIntent block (digest-verified). */
+-  presentationIntentDigest?: string;
+-  eventSequences?: [number, number] | null;
+-}
++import type { ObjectGraph } from "@/fyd/sitespec/types";
++import type {
++  PresentationIntentBlock,
++  FieldVisibilityBlock,
++} from "@/fyd/customize/types";
++import type {
++  ProjectionMeta,
++  VerifiedRawProjection,
++} from "./projection-verify";
++import {
++  getProjectionReader,
++  isSyncProjectionReader,
++  type ProjectionReadOpts,
++  type ProjectionSnapshot,
++} from "./projection-reader";
++// Side effect: registers FileDumpProjectionReader as the seam default
++// (Decision 2). Kept as a separate module to keep the import graph
++// cycle-free.
++import "./default-reader";
++
++// Re-exported for consumers that type against this module.
++export type { ProjectionMeta };
++export type { ProjectionReadOpts };
+ 
+ export interface PingProjection {
+   graph: ObjectGraph;
+@@ -79,6 +83,16 @@ export interface PingProjection {
+    * projection carries no intent block (older dumps).
+    */
+   presentationIntent: PresentationIntentBlock | null;
++  /**
++   * Owner-approved field visibility decisions (the VISIBILITY POLICY
++   * layer: hide/show, e.g. street address). Digest-verified against
++   * meta.fieldVisibilityDigest. Applied to a projected copy of the graph
++   * BEFORE spec compilation; the source graph keeps every fact. Null
++   * when the projection carries no visibility block (older dumps) -- and
++   * when null, visibility decisions fail closed to HIDE for privacy-
++   * sensitive fields (see customize/server.ts).
++   */
++  fieldVisibility: FieldVisibilityBlock | null;
+ }
+ 
+ /** Options for the projection read seam. */
+@@ -91,171 +105,38 @@ export interface PingSourceOpts {
+   ownerOverlay?: boolean;
+ }
+ 
+-function projectionDir(): string {
+-  return (
+-    process.env.FYD_PROJECTION_DIR ?? "/home/nolan/ping/var/fyd-projections"
+-  );
+-}
+-
+-function fail(siteId: string, reason: string): never {
+-  throw new Error(`ping-object-source: site "${siteId}": ${reason}`);
+-}
+-
+-function isRecord(v: unknown): v is Record<string, unknown> {
+-  return typeof v === "object" && v !== null && !Array.isArray(v);
+-}
+-
+-function validateObject(o: unknown, siteId: string): asserts o is PingObject {
+-  if (!isRecord(o)) fail(siteId, "object is not a record");
+-  for (const k of ["id", "schema", "visibility", "title"] as const) {
+-    if (typeof o[k] !== "string" || (o[k] as string).length === 0) {
+-      fail(siteId, `object has bad "${k}"`);
+-    }
+-  }
+-  const prov = o["provenance"];
+-  if (!isRecord(prov) || typeof prov["ref"] !== "string" || prov["ref"] === "") {
+-    fail(
+-      siteId,
+-      `object "${o["id"]}" lacks provenance ref: no customer fact without a traceable basis`,
+-    );
+-  }
+-}
+-
+-function validateRelationship(
+-  r: unknown,
+-  siteId: string,
+-): asserts r is PingRelationship {
+-  if (!isRecord(r)) fail(siteId, "relationship is not a record");
+-  for (const k of ["id", "subject", "object", "predicate"] as const) {
+-    if (typeof r[k] !== "string" || (r[k] as string).length === 0) {
+-      fail(siteId, `relationship has bad "${k}"`);
+-    }
+-  }
+-}
+-
+-function validateGraph(graph: unknown, siteId: string): asserts graph is ObjectGraph {
+-  if (!isRecord(graph)) fail(siteId, "graph is not a record");
+-  if (!Array.isArray(graph["objects"])) fail(siteId, "graph.objects is not an array");
+-  if (!Array.isArray(graph["relationships"]))
+-    fail(siteId, "graph.relationships is not an array");
+-  for (const o of graph["objects"]) validateObject(o, siteId);
+-  for (const r of graph["relationships"]) validateRelationship(r, siteId);
+-}
+-
+-function validateMeta(meta: unknown, siteId: string): asserts meta is ProjectionMeta {
+-  if (!isRecord(meta)) fail(siteId, "meta is not a record");
+-  if (meta["siteId"] !== siteId)
+-    fail(siteId, `meta.siteId "${String(meta["siteId"])}" does not match requested site`);
+-  for (const k of [
+-    "dumpedAt",
+-    "dumperVersion",
+-    "baseDigest",
+-    "fixtureFileDigest",
+-    "graphDigest",
+-    "generatedAt",
+-  ] as const) {
+-    if (typeof meta[k] !== "string" || (meta[k] as string).length === 0) {
+-      fail(siteId, `meta has bad "${k}"`);
+-    }
+-  }
+-  if (!Array.isArray(meta["overlayEventIds"])) {
+-    fail(siteId, "meta.overlayEventIds is not an array");
+-  }
+-}
+-
+-function validatePresentationIntent(
+-  raw: unknown,
+-  meta: ProjectionMeta,
+-  siteId: string,
+-): PresentationIntentBlock | null {
+-  if (raw === undefined || raw === null) {
+-    if (meta.presentationIntentDigest !== undefined) {
+-      fail(siteId, "meta.presentationIntentDigest present but no presentationIntent block");
+-    }
+-    return null;
+-  }
+-  if (!isRecord(raw)) fail(siteId, "presentationIntent is not a record");
+-  const digest = meta.presentationIntentDigest;
+-  if (typeof digest !== "string" || digest.length === 0) {
+-    fail(siteId, "presentationIntent block present without meta.presentationIntentDigest");
+-  }
+-  const recomputed = createHash("sha256")
+-    .update(canonicalize(raw), "utf8")
+-    .digest("hex");
+-  if (recomputed !== digest) {
+-    fail(
+-      siteId,
+-      "presentationIntentDigest mismatch: the intent block was tampered with " +
+-        "or written by an incompatible dumper; refusing to serve it",
+-    );
+-  }
+-  const directives = raw["directives"];
+-  if (!Array.isArray(directives)) fail(siteId, "presentationIntent.directives is not an array");
+-  for (const d of directives) {
+-    if (!isRecord(d)) fail(siteId, "presentationIntent directive is not a record");
+-    if (typeof d["intentId"] !== "string" || d["intentId"] === "")
+-      fail(siteId, "presentationIntent directive has bad intentId");
+-    const si = d["siteIntent"];
+-    if (!isRecord(si) || typeof si["kind"] !== "string" || si["kind"] === "")
+-      fail(siteId, "presentationIntent directive has bad siteIntent");
+-    const prop = d["proposal"];
+-    if (!isRecord(prop) || typeof prop["proposalDigest"] !== "string" || prop["proposalDigest"] === "")
+-      fail(siteId, "presentationIntent directive has bad proposal");
+-    const ap = d["approval"];
+-    if (!isRecord(ap)) fail(siteId, "presentationIntent directive has bad approval");
+-    for (const k of ["proposalDigest", "approvedBy", "approvedAt"] as const) {
+-      if (typeof ap[k] !== "string" || (ap[k] as string).length === 0)
+-        fail(siteId, `presentationIntent directive approval has bad "${k}"`);
+-    }
+-  }
+-  const prov = raw["provenance"];
+-  if (!isRecord(prov) || prov["kind"] !== "owner-presentation-intent")
+-    fail(siteId, "presentationIntent.provenance is missing or mislabeled");
+-  return raw as unknown as PresentationIntentBlock;
+-}
+-
+-function parseAndVerify(
+-  raw: string,
+-  siteId: string,
+-  path: string,
++function toPingProjection(
++  snapshot: ProjectionSnapshot,
++  raw: VerifiedRawProjection,
+   opts?: PingSourceOpts,
+ ): PingProjection {
+-  let doc: unknown;
+-  try {
+-    doc = JSON.parse(raw);
+-  } catch {
+-    fail(siteId, `projection at ${path} is not valid JSON`);
+-  }
+-  if (!isRecord(doc)) fail(siteId, "projection is not a record");
+-  validateMeta(doc["meta"], siteId);
+-  validateGraph(doc["graph"], siteId);
+-  const meta = doc["meta"] as ProjectionMeta;
+-  const graph = doc["graph"] as ObjectGraph;
+-  const presentationIntent = validatePresentationIntent(doc["presentationIntent"], meta, siteId);
+-  const recomputed = createHash("sha256")
+-    .update(canonicalize(graph), "utf8")
+-    .digest("hex");
+-  if (recomputed !== meta.graphDigest) {
+-    fail(
+-      siteId,
+-      "graphDigest mismatch: the projection was tampered with or written by " +
+-        "an incompatible dumper; refusing to serve it",
+-    );
+-  }
+   // Overlay AFTER verification, never before: owner state composes onto
+   // verified source state, it is never part of source verification and
+-  // never mutates the projection. Source refresh (re-dump) re-reads the
++  // never mutates the snapshot. Source refresh (re-dump) re-reads the
+   // owner store on every serve, so it cannot erase a correction.
+   if (opts?.ownerOverlay === false) {
+-    return { graph, meta, ownerOverlay: null, presentationIntent };
+-  }
+-  const overlay = applyOwnerFieldCorrections(graph, siteId);
+-  return { graph: overlay.graph, meta, ownerOverlay: overlay, presentationIntent };
++    return {
++      graph: raw.graph,
++      meta: raw.meta,
++      ownerOverlay: null,
++      presentationIntent: raw.presentationIntent,
++      fieldVisibility: raw.fieldVisibility,
++    };
++  }
++  const overlay = applyOwnerFieldCorrections(raw.graph, snapshot.siteId);
++  return {
++    graph: overlay.graph,
++    meta: raw.meta,
++    ownerOverlay: overlay,
++    presentationIntent: raw.presentationIntent,
++    fieldVisibility: raw.fieldVisibility,
++  };
+ }
+ 
+ /**
+- * Load the PING-backed projection for a site. Throws (fail closed) when the
+- * projection is missing, malformed, untraceable, or tampered. Never returns
++ * Load the PING-backed projection for a site. Reads through the
++ * ProjectionReader seam (default: file dump). Throws (fail closed) when the
++ * snapshot is missing, malformed, untraceable, or tampered. Never returns
+  * stale or unverified data. By default the returned graph carries the
+  * owner's composed field corrections (owner value wins) with the correction
+  * evidence attached per object; pass { ownerOverlay: false } for the raw
+@@ -265,64 +146,60 @@ export async function getPingObjectGraph(
+   siteId: string,
+   opts?: PingSourceOpts,
+ ): Promise<PingProjection> {
+-  const path = join(projectionDir(), siteId + ".json");
+-  let raw: string;
+-  try {
+-    raw = await readFile(path, "utf8");
+-  } catch {
+-    fail(
+-      siteId,
+-      `no PING projection at ${path} (run the PING-side dump first); refusing to serve stale data`,
+-    );
+-  }
+-  return parseAndVerify(raw!, siteId, path, opts);
++  // The reader owns verification (parse + digest-verify, fail closed):
++  // the snapshot graph is already the verified raw graph. The owner
++  // overlay composes onto it here, after verification, never before.
++  const snapshot = await getProjectionReader().readSnapshot(siteId, opts);
++  const verified: VerifiedRawProjection = {
++    graph: snapshot.graph,
++    meta: snapshot.meta,
++    presentationIntent: snapshot.presentationIntent,
++    fieldVisibility: snapshot.fieldVisibility,
++  };
++  return toPingProjection(snapshot, verified, opts);
+ }
+ 
+ /**
+  * Synchronous variant for call sites that must stay sync (e.g. the Ask FYD
+- * bundle loader). Same verification, same fail-closed contract.
++ * bundle loader). Same verification, same fail-closed contract. Requires
++ * the registered reader to support sync reads (file-dump does); an
++ * async-only reader fails closed here rather than faking sync.
+  */
+ export function getPingObjectGraphSync(
+   siteId: string,
+   opts?: PingSourceOpts,
+ ): PingProjection {
+-  const path = join(projectionDir(), siteId + ".json");
+-  let raw: string;
+-  try {
+-    raw = readFileSync(path, "utf8");
+-  } catch {
+-    fail(
+-      siteId,
+-      `no PING projection at ${path} (run the PING-side dump first); refusing to serve stale data`,
++  const reader = getProjectionReader();
++  if (!isSyncProjectionReader(reader)) {
++    throw new Error(
++      `ping-object-source: sync read of site "${siteId}" unsupported by the ` +
++        `${reader.kind} reader (async contract only); refusing to fake it`,
+     );
+   }
+-  return parseAndVerify(raw, siteId, path, opts);
++  const snapshot = reader.readSnapshotSync(siteId, opts);
++  const verified: VerifiedRawProjection = {
++    graph: snapshot.graph,
++    meta: snapshot.meta,
++    presentationIntent: snapshot.presentationIntent,
++    fieldVisibility: snapshot.fieldVisibility,
++  };
++  return toPingProjection(snapshot, verified, opts);
+ }
+ 
+ /** Site ids this source can serve: the projection files present on disk. */
+ export async function listPingSiteIds(): Promise<string[]> {
+-  const { readdir } = await import("node:fs/promises");
+-  try {
+-    const files = await readdir(projectionDir());
+-    return files
+-      .filter((f) => f.endsWith(".json"))
+-      .map((f) => f.slice(0, -".json".length))
+-      .sort();
+-  } catch {
+-    return [];
+-  }
++  return getProjectionReader().listSiteIds();
+ }
+ 
+ /** Synchronous variant of listPingSiteIds. */
+ export function listPingSiteIdsSync(): string[] {
+-  try {
+-    return readdirSync(projectionDir())
+-      .filter((f) => f.endsWith(".json"))
+-      .map((f) => f.slice(0, -".json".length))
+-      .sort();
+-  } catch {
+-    return [];
++  const reader = getProjectionReader();
++  if (!isSyncProjectionReader(reader)) {
++    throw new Error(
++      `ping-object-source: sync site listing unsupported by the ${reader.kind} reader`,
++    );
+   }
++  return reader.listSiteIdsSync();
+ }
+ 
+ /**
+diff --git a/src/fyd/data/projection-reader.ts b/src/fyd/data/projection-reader.ts
+new file mode 100644
+index 00000000..6c7c9421
+--- /dev/null
++++ b/src/fyd/data/projection-reader.ts
+@@ -0,0 +1,229 @@
++/**
++ * ProjectionReader — the semantic read contract for FYD site projections.
++ *
++ * NAMING LAW (ratified 2026-09-29, Nolan): the JOURNAL is the authority —
++ * the canonical history of owner corrections, proposal decisions, published
++ * SiteSpec transitions, and canonical object transitions. A projection is
++ * ONE DISPOSABLE REPRESENTATION of the state derived from that history:
++ * deterministic, replayable, inspectable, deletable, rebuildable. It is
++ * never canonical truth, and the word "authority" is never attached to a
++ * projection (not in code, comments, docs, or tests, not even in negated
++ * explanations). Within the FYD scope the word "authority" belongs to the
++ * journal alone.
++ *
++ * Contract (what every implementation promises the builder):
++ *   - readSnapshot(siteId): given the canonical history, produce a
++ *     deterministic, replayable, inspectable snapshot. Same history ->
++ *     same snapshotDigest, byte for byte (volatile wall-clock fields such
++ *     as meta.dumpedAt are informational only and are EXCLUDED from the
++ *     snapshot identity).
++ *   - sourceDigest: identifies the canonical history the snapshot was
++ *     derived from (base digest + fixture digest + ordered overlay event
++ *     ids). Two snapshots with equal sourceDigest came from the same
++ *     history; two with equal snapshotDigest are byte-identical snapshots.
++ *   - Fail closed: a missing, malformed, untraceable, or tampered snapshot
++ *     throws. Never a stale fallback, never unverified data.
++ *
++ * The contract is physical-agnostic: FileDumpProjectionReader is today's
++ * implementation (JSON snapshots written by the PING-side dump). A future
++ * PostgresProjectionReader, IncrementalGraphReader, or remote reader
++ * implements the same interface; consumers (ping-object-source and
++ * everything behind it) do not change.
++ */
++
++import type { ObjectGraph } from "@/fyd/sitespec/types";
++import type {
++  PresentationIntentBlock,
++  FieldVisibilityBlock,
++} from "@/fyd/customize/types";
++import type { ProjectionMeta } from "./projection-verify";
++
++/** Options for the projection read seam (same semantics as PingSourceOpts). */
++export interface ProjectionReadOpts {
++  /**
++   * Compose owner field corrections onto the verified graph (default true).
++   * Set false only for raw-source evidence reads: the effective value
++   * everywhere else comes from the composed graph.
++   *
++   * Note: overlay composition is a serve-time concern owned by
++   * ping-object-source (it re-reads the live owner store). The snapshot
++   * itself always carries the raw verified graph; the opt only controls
++   * whether the reader composes the overlay before returning.
++   */
++  ownerOverlay?: boolean;
++}
++
++/**
++ * The snapshot the builder consumes. Deterministic: derived from canonical
++ * history only; volatile wall-clock metadata (meta.dumpedAt) is carried for
++ * humans but excluded from canonicalBytes/snapshotDigest.
++ */
++export interface ProjectionSnapshot {
++  siteId: string;
++  /**
++   * sha256 over canonicalBytes. THE snapshot identity: equal digests mean
++   * byte-identical snapshots, regardless of which physical reader produced
++   * them or when.
++   */
++  snapshotDigest: string;
++  /**
++   * sha256 identifying the canonical history this snapshot was derived
++   * from (base digest + fixture digest + ordered overlay event ids +
++   * dumper version). Equal sourceDigests mean the same history.
++   */
++  sourceDigest: string;
++  /**
++   * Canonical snapshot bytes: canonical JSON of the full snapshot document
++   * with volatile fields excluded. Byte-compare across regenerations must
++   * be identical for the same canonical history. This is what the builder
++   * consumes.
++   */
++  canonicalBytes: string;
++  /** Provenance of the snapshot (dumpedAt informational only). */
++  meta: ProjectionMeta;
++  /**
++   * Verified object graph. The owner overlay is composed by the consumer
++   * (ping-object-source) AFTER verification when opts.ownerOverlay is set;
++   * the snapshot's byte identity is always the raw verified graph.
++   */
++  graph: ObjectGraph;
++  /** Owner-approved presentation-intent directives (digest-verified). */
++  presentationIntent: PresentationIntentBlock | null;
++  /** Owner-approved field visibility decisions (digest-verified). */
++  fieldVisibility: FieldVisibilityBlock | null;
++}
++
++/** Result of rebuilding the physical representation from canonical history. */
++export interface RegenerateResult {
++  siteId: string;
++  /** Snapshot identity of the rebuilt representation. */
++  snapshotDigest: string;
++  /** Canonical-history identity the rebuild was derived from. */
++  sourceDigest: string;
++  /** Where the rebuilt representation lives (physical detail). */
++  outPath: string;
++}
++
++/** Physical implementation identity. Diagnostics only — not authority. */
++export type ProjectionReaderKind =
++  | "file-dump"
++  | "postgres"
++  | "incremental-graph"
++  | "remote";
++
++/**
++ * The semantic contract. Implementations:
++ *   FileDumpProjectionReader — today: JSON snapshots from the PING-side dump.
++ *   PostgresProjectionReader — later: same contract, SQL-backed.
++ *   IncrementalGraphReader  — later: same contract, graph-backed.
++ *   remote reader           — later: same contract, HTTP-backed.
++ */
++export interface ProjectionReader {
++  /** Physical implementation identity (diagnostics only). */
++  readonly kind: ProjectionReaderKind;
++  /**
++   * Read the snapshot for a site. Throws (fail closed) when the snapshot
++   * is missing, malformed, untraceable, or tampered. Never returns stale
++   * or unverified data.
++   */
++  readSnapshot(
++    siteId: string,
++    opts?: ProjectionReadOpts,
++  ): Promise<ProjectionSnapshot>;
++  /** Site ids this reader can serve. */
++  listSiteIds(): Promise<string[]>;
++  /**
++   * Rebuild the physical representation from the canonical history
++   * (journal) and return the rebuilt snapshot's identity.
++   *
++   * SERVER ONLY. Never call from the public served path: regeneration is
++   * a privileged operation owned by the regen seam (L6), not by page
++   * rendering. Implementations that cannot rebuild from history (e.g. a
++   * remote reader over a read-only replica) throw RegenerateUnsupported.
++   *
++   * Disposability: deleting the physical representation and calling
++   * regenerate must yield the same snapshotDigest for the same history.
++   */
++  regenerate(siteId: string): Promise<RegenerateResult>;
++}
++
++/**
++ * Extension for readers that can serve synchronously (file-dump can; a
++ * remote reader cannot). Sync consumers (the Ask bundle loader, edge
++ * routes) depend on this narrower contract; the base contract stays
++ * async-only so Postgres/remote readers are implementable without faking
++ * sync.
++ */
++export interface SyncProjectionReader extends ProjectionReader {
++  readSnapshotSync(
++    siteId: string,
++    opts?: ProjectionReadOpts,
++  ): ProjectionSnapshot;
++  listSiteIdsSync(): string[];
++}
++
++export function isSyncProjectionReader(
++  r: ProjectionReader,
++): r is SyncProjectionReader {
++  return (
++    typeof (r as SyncProjectionReader).readSnapshotSync === "function" &&
++    typeof (r as SyncProjectionReader).listSiteIdsSync === "function"
++  );
++}
++
++/** Typed failure: this physical reader cannot rebuild from history. */
++export class RegenerateUnsupported extends Error {
++  constructor(
++    public readonly readerKind: ProjectionReaderKind,
++    reason: string,
++  ) {
++    super(
++      `RegenerateUnsupported: ${readerKind} reader cannot rebuild the projection from canonical history: ${reason}`,
++    );
++    this.name = "RegenerateUnsupported";
++  }
++}
++
++/** Typed failure: regeneration ran but produced no usable snapshot. */
++export class RegenerateFailed extends Error {
++  constructor(siteId: string, detail: string) {
++    super(`RegenerateFailed: site "${siteId}": ${detail}`);
++    this.name = "RegenerateFailed";
++  }
++}
++
++// ---------------------------------------------------------------------------
++// Registry: one seam, swappable physical reader. The default is the file
++// dump (Decision 2). Tests and future physical implementations swap it via
++// setProjectionReader without touching consumers.
++// ---------------------------------------------------------------------------
++
++let overrideReader: ProjectionReader | null = null;
++let defaultFactory: (() => ProjectionReader) | null = null;
++
++export function setProjectionReader(reader: ProjectionReader): void {
++  overrideReader = reader;
++}
++
++/** Test/embedding escape hatch: restore the default (file-dump) reader. */
++export function resetProjectionReader(): void {
++  overrideReader = null;
++}
++
++/** Set by the default-reader module (keeps this module cycle-free). */
++export function setDefaultProjectionReaderFactory(
++  factory: () => ProjectionReader,
++): void {
++  defaultFactory = factory;
++}
++
++export function getProjectionReader(): ProjectionReader {
++  if (overrideReader) return overrideReader;
++  if (!defaultFactory) {
++    throw new Error(
++      "projection-reader: no reader registered and no default factory set " +
++        "(import @/fyd/data/default-reader once at the seam boundary)",
++    );
++  }
++  return defaultFactory();
++}
+diff --git a/src/fyd/data/projection-verify.ts b/src/fyd/data/projection-verify.ts
+new file mode 100644
+index 00000000..d7c0fb34
+--- /dev/null
++++ b/src/fyd/data/projection-verify.ts
+@@ -0,0 +1,372 @@
++/**
++ * Projection snapshot verification. SERVER ONLY.
++ *
++ * Pure parse + verify for FYD site projection snapshots, extracted from
++ * src/fyd/data/ping-object-source.ts so the ProjectionReader seam
++ * (file-dump today, other physical readers later) owns verification in
++ * exactly one place. No filesystem access here: callers supply the raw
++ * bytes; this module parses, validates, and digest-verifies.
++ *
++ * Verification (fail closed, in order):
++ *  1. The snapshot parses as JSON and is a record.
++ *  2. meta.siteId matches the requested site.
++ *  3. Every object carries provenance with a non-empty ref — the
++ *     "NO CUSTOMER FACT WITHOUT A TRACEABLE BASIS" law.
++ *  4. graphDigest: sha256 over canonicalize(graph) recomputed here and
++ *     compared to meta.graphDigest. A mismatch means tampering or an
++ *     incompatible dumper: refuse.
++ *  5. presentationIntent block (when present): digest-verified against
++ *     meta.presentationIntentDigest, structurally validated.
++ *  6. fieldVisibility block (when present): digest-verified against
++ *     meta.fieldVisibilityDigest, structurally validated.
++ *
++ * Owner overlays are NOT composed here: they are a serve-time concern
++ * (ping-object-source re-reads the live owner store after verification).
++ * The snapshot identity below is always the raw verified snapshot.
++ *
++ * Snapshot identity (determinism):
++ *  - canonicalBytes: canonical JSON of the snapshot document with volatile
++ *    wall-clock fields excluded (meta.dumpedAt). Byte-compare across
++ *    regenerations must be identical for the same canonical history.
++ *  - snapshotDigest = sha256(canonicalBytes).
++ *  - sourceDigest = sha256 over the canonical-history identity
++ *    (baseDigest + fixtureFileDigest + ordered overlayEventIds +
++ *    dumperVersion).
++ */
++
++import { createHash } from "node:crypto";
++import { canonicalize } from "@/lib/ping/ask-composer";
++import type { ObjectGraph } from "@/fyd/sitespec/types";
++import type { PingObject, PingRelationship } from "@/lib/ping/types";
++import type {
++  PresentationIntentBlock,
++  FieldVisibilityBlock,
++} from "@/fyd/customize/types";
++
++export interface ProjectionMeta {
++  siteId: string;
++  /** Wall-clock write time. INFORMATIONAL ONLY: excluded from snapshot identity. */
++  dumpedAt: string;
++  dumperVersion: string;
++  baseDigest: string;
++  fixtureFileDigest: string;
++  fixtureHeader: string;
++  overlayEventIds: string[];
++  graphDigest: string;
++  generatedAt: string;
++  /** Optional digest of the presentationIntent block (digest-verified). */
++  presentationIntentDigest?: string;
++  /** Optional digest of the fieldVisibility block (digest-verified). */
++  fieldVisibilityDigest?: string;
++  eventSequences?: [number, number] | null;
++}
++
++/**
++ * The raw verified snapshot: everything digest-verified, nothing composed.
++ * Owner overlays compose onto this in ping-object-source, after
++ * verification, never before.
++ */
++export interface VerifiedRawProjection {
++  graph: ObjectGraph;
++  meta: ProjectionMeta;
++  presentationIntent: PresentationIntentBlock | null;
++  fieldVisibility: FieldVisibilityBlock | null;
++}
++
++function fail(siteId: string, reason: string): never {
++  throw new Error(`projection-verify: site "${siteId}": ${reason}`);
++}
++
++function isRecord(v: unknown): v is Record<string, unknown> {
++  return typeof v === "object" && v !== null && !Array.isArray(v);
++}
++
++function validateObject(o: unknown, siteId: string): asserts o is PingObject {
++  if (!isRecord(o)) fail(siteId, "object is not a record");
++  for (const k of ["id", "schema", "visibility", "title"] as const) {
++    if (typeof o[k] !== "string" || (o[k] as string).length === 0) {
++      fail(siteId, `object has bad "${k}"`);
++    }
++  }
++  const prov = o["provenance"];
++  if (!isRecord(prov) || typeof prov["ref"] !== "string" || prov["ref"] === "") {
++    fail(
++      siteId,
++      `object "${o["id"]}" lacks provenance ref: no customer fact without a traceable basis`,
++    );
++  }
++}
++
++function validateRelationship(
++  r: unknown,
++  siteId: string,
++): asserts r is PingRelationship {
++  if (!isRecord(r)) fail(siteId, "relationship is not a record");
++  for (const k of ["id", "subject", "object", "predicate"] as const) {
++    if (typeof r[k] !== "string" || (r[k] as string).length === 0) {
++      fail(siteId, `relationship has bad "${k}"`);
++    }
++  }
++}
++
++function validateGraph(
++  graph: unknown,
++  siteId: string,
++): asserts graph is ObjectGraph {
++  if (!isRecord(graph)) fail(siteId, "graph is not a record");
++  if (!Array.isArray(graph["objects"]))
++    fail(siteId, "graph.objects is not an array");
++  if (!Array.isArray(graph["relationships"]))
++    fail(siteId, "graph.relationships is not an array");
++  for (const o of graph["objects"]) validateObject(o, siteId);
++  for (const r of graph["relationships"]) validateRelationship(r, siteId);
++}
++
++function validateMeta(
++  meta: unknown,
++  siteId: string,
++): asserts meta is ProjectionMeta {
++  if (!isRecord(meta)) fail(siteId, "meta is not a record");
++  if (meta["siteId"] !== siteId)
++    fail(
++      siteId,
++      `meta.siteId "${String(meta["siteId"])}" does not match requested site`,
++    );
++  for (const k of [
++    "dumpedAt",
++    "dumperVersion",
++    "baseDigest",
++    "fixtureFileDigest",
++    "graphDigest",
++    "generatedAt",
++  ] as const) {
++    if (typeof meta[k] !== "string" || (meta[k] as string).length === 0) {
++      fail(siteId, `meta has bad "${k}"`);
++    }
++  }
++  if (!Array.isArray(meta["overlayEventIds"])) {
++    fail(siteId, "meta.overlayEventIds is not an array");
++  }
++}
++
++function validatePresentationIntent(
++  raw: unknown,
++  meta: ProjectionMeta,
++  siteId: string,
++): PresentationIntentBlock | null {
++  if (raw === undefined || raw === null) {
++    if (meta.presentationIntentDigest !== undefined) {
++      fail(
++        siteId,
++        "meta.presentationIntentDigest present but no presentationIntent block",
++      );
++    }
++    return null;
++  }
++  if (!isRecord(raw)) fail(siteId, "presentationIntent is not a record");
++  const digest = meta.presentationIntentDigest;
++  if (typeof digest !== "string" || digest.length === 0) {
++    fail(
++      siteId,
++      "presentationIntent block present without meta.presentationIntentDigest",
++    );
++  }
++  const recomputed = createHash("sha256")
++    .update(canonicalize(raw), "utf8")
++    .digest("hex");
++  if (recomputed !== digest) {
++    fail(
++      siteId,
++      "presentationIntentDigest mismatch: the intent block was tampered with " +
++        "or written by an incompatible dumper; refusing to serve it",
++    );
++  }
++  const directives = raw["directives"];
++  if (!Array.isArray(directives))
++    fail(siteId, "presentationIntent.directives is not an array");
++  for (const d of directives) {
++    if (!isRecord(d)) fail(siteId, "presentationIntent directive is not a record");
++    if (typeof d["intentId"] !== "string" || d["intentId"] === "")
++      fail(siteId, "presentationIntent directive has bad intentId");
++    const si = d["siteIntent"];
++    if (!isRecord(si) || typeof si["kind"] !== "string" || si["kind"] === "")
++      fail(siteId, "presentationIntent directive has bad siteIntent");
++    const prop = d["proposal"];
++    if (
++      !isRecord(prop) ||
++      typeof prop["proposalDigest"] !== "string" ||
++      prop["proposalDigest"] === ""
++    )
++      fail(siteId, "presentationIntent directive has bad proposal");
++    const ap = d["approval"];
++    if (!isRecord(ap)) fail(siteId, "presentationIntent directive has bad approval");
++    for (const k of ["proposalDigest", "approvedBy", "approvedAt"] as const) {
++      if (typeof ap[k] !== "string" || (ap[k] as string).length === 0)
++        fail(siteId, `presentationIntent directive approval has bad "${k}"`);
++    }
++  }
++  const prov = raw["provenance"];
++  if (!isRecord(prov) || prov["kind"] !== "owner-presentation-intent")
++    fail(siteId, "presentationIntent.provenance is missing or mislabeled");
++  return raw as unknown as PresentationIntentBlock;
++}
++
++function validateFieldVisibility(
++  raw: unknown,
++  meta: ProjectionMeta,
++  siteId: string,
++): FieldVisibilityBlock | null {
++  if (raw === undefined || raw === null) {
++    if (meta.fieldVisibilityDigest !== undefined) {
++      fail(
++        siteId,
++        "meta.fieldVisibilityDigest present but no fieldVisibility block",
++      );
++    }
++    return null;
++  }
++  if (!isRecord(raw)) fail(siteId, "fieldVisibility is not a record");
++  const digest = meta.fieldVisibilityDigest;
++  if (typeof digest !== "string" || digest.length === 0) {
++    fail(siteId, "fieldVisibility block present without meta.fieldVisibilityDigest");
++  }
++  const recomputed = createHash("sha256")
++    .update(canonicalize(raw), "utf8")
++    .digest("hex");
++  if (recomputed !== digest) {
++    fail(
++      siteId,
++      "fieldVisibilityDigest mismatch: the visibility block was tampered with " +
++        "or written by an incompatible dumper; refusing to serve it",
++    );
++  }
++  const decisions = raw["decisions"];
++  if (!Array.isArray(decisions))
++    fail(siteId, "fieldVisibility.decisions is not an array");
++  for (const d of decisions) {
++    if (!isRecord(d)) fail(siteId, "fieldVisibility decision is not a record");
++    if (typeof d["objectId"] !== "string" || d["objectId"] === "")
++      fail(siteId, "fieldVisibility decision has bad objectId");
++    if (typeof d["field"] !== "string" || d["field"] === "")
++      fail(siteId, "fieldVisibility decision has bad field");
++    if (
++      d["policy"] !== "hide" &&
++      d["policy"] !== "show" &&
++      d["policy"] !== "coarse" &&
++      d["policy"] !== "members"
++    )
++      fail(
++        siteId,
++        'fieldVisibility decision has bad policy (want "hide"|"show"|"coarse"|"members")',
++      );
++    const ap = d["approval"];
++    if (!isRecord(ap)) fail(siteId, "fieldVisibility decision has bad approval");
++    for (const k of ["proposalDigest", "approvedBy", "approvedAt"] as const) {
++      if (typeof ap[k] !== "string" || (ap[k] as string).length === 0)
++        fail(siteId, `fieldVisibility decision approval has bad "${k}"`);
++    }
++  }
++  const prov = raw["provenance"];
++  if (!isRecord(prov) || prov["kind"] !== "owner-field-visibility")
++    fail(siteId, "fieldVisibility.provenance is missing or mislabeled");
++  return raw as unknown as FieldVisibilityBlock;
++}
++
++/**
++ * Parse, validate, and digest-verify one projection snapshot document.
++ * Returns the raw verified snapshot (no owner overlay composed).
++ * Throws (fail closed) on any problem. Never returns stale or unverified
++ * data. `path` is used in error messages only.
++ */
++export function parseAndVerifyRawProjection(
++  raw: string,
++  siteId: string,
++  path: string,
++): VerifiedRawProjection {
++  let doc: unknown;
++  try {
++    doc = JSON.parse(raw);
++  } catch {
++    fail(siteId, `projection at ${path} is not valid JSON`);
++  }
++  if (!isRecord(doc)) fail(siteId, "projection is not a record");
++  validateMeta(doc["meta"], siteId);
++  validateGraph(doc["graph"], siteId);
++  const meta = doc["meta"] as ProjectionMeta;
++  const graph = doc["graph"] as ObjectGraph;
++  const presentationIntent = validatePresentationIntent(
++    doc["presentationIntent"],
++    meta,
++    siteId,
++  );
++  const fieldVisibility = validateFieldVisibility(
++    doc["fieldVisibility"],
++    meta,
++    siteId,
++  );
++  const recomputed = createHash("sha256")
++    .update(canonicalize(graph), "utf8")
++    .digest("hex");
++  if (recomputed !== meta.graphDigest) {
++    fail(
++      siteId,
++      "graphDigest mismatch: the projection was tampered with or written by " +
++        "an incompatible dumper; refusing to serve it",
++    );
++  }
++  return { graph, meta, presentationIntent, fieldVisibility };
++}
++
++// ---------------------------------------------------------------------------
++// Snapshot identity (determinism). Volatile wall-clock fields are excluded
++// from the identity: the journal is the authority, and the same canonical
++// history must produce the same snapshot bytes no matter when the dump ran.
++// ---------------------------------------------------------------------------
++
++/** meta keys excluded from snapshot identity (wall-clock, not history). */
++const VOLATILE_META_KEYS = new Set(["dumpedAt"]);
++
++/**
++ * The snapshot document with volatile fields removed. Byte-compare of
++ * canonicalSnapshotBytes across regenerations must be identical for the
++ * same canonical history.
++ */
++export function snapshotDocument(
++  doc: Record<string, unknown>,
++): Record<string, unknown> {
++  const meta = isRecord(doc["meta"]) ? { ...doc["meta"] } : {};
++  for (const k of VOLATILE_META_KEYS) delete meta[k];
++  return { ...doc, meta };
++}
++
++/** Canonical snapshot bytes: the deterministic bytes the builder consumes. */
++export function canonicalSnapshotBytes(doc: Record<string, unknown>): string {
++  return canonicalize(snapshotDocument(doc));
++}
++
++/** sha256 over canonicalSnapshotBytes: THE snapshot identity. */
++export function snapshotDigestOf(doc: Record<string, unknown>): string {
++  return createHash("sha256")
++    .update(canonicalSnapshotBytes(doc), "utf8")
++    .digest("hex");
++}
++
++/**
++ * sha256 identifying the canonical history a snapshot was derived from:
++ * base digest + fixture digest + ordered overlay event ids + dumper
++ * version. Equal sourceDigests mean the same history (same journal state
++ * for the site).
++ */
++export function sourceDigestOf(meta: ProjectionMeta): string {
++  return createHash("sha256")
++    .update(
++      canonicalize({
++        baseDigest: meta.baseDigest,
++        dumperVersion: meta.dumperVersion,
++        fixtureFileDigest: meta.fixtureFileDigest,
++        overlayEventIds: meta.overlayEventIds,
++      }),
++      "utf8",
++    )
++    .digest("hex");
++}
+diff --git a/src/fyd/tenant/__tests__/b-projection.test.ts b/src/fyd/tenant/__tests__/b-projection.test.ts
+index 524d1516..a6560240 100644
+--- a/src/fyd/tenant/__tests__/b-projection.test.ts
++++ b/src/fyd/tenant/__tests__/b-projection.test.ts
+@@ -96,6 +96,6 @@ describe("tenant boundary: projection read seam", () => {
+     }
+     expect(err).not.toBeNull();
+     expect(result).toBe("not-thrown");
+-    expect((err as Error).message).toMatch(/no PING projection/);
++    expect((err as Error).message).toMatch(/no snapshot/);
+   });
+ });

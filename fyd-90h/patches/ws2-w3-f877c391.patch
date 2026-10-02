@@ -1,0 +1,676 @@
+diff --git a/package.json b/package.json
+index 467ca961..a44121d6 100644
+--- a/package.json
++++ b/package.json
+@@ -36,6 +36,7 @@
+     "react-dom": "^18.3.1",
+     "sharp": "^0.35.3",
+     "tailwind-merge": "^3.6.0",
++    "undici": "6.28.0",
+     "yaml": "^2.9.0"
+   },
+   "optionalDependencies": {
+diff --git a/src/fyd/net/__tests__/toctou-no-undici.test.ts b/src/fyd/net/__tests__/toctou-no-undici.test.ts
+new file mode 100644
+index 00000000..7a7f0cfc
+--- /dev/null
++++ b/src/fyd/net/__tests__/toctou-no-undici.test.ts
+@@ -0,0 +1,29 @@
++/**
++ * Fail-closed when undici is unavailable: the default pinned-dispatcher
++ * factory must refuse to fetch rather than fetch unpinned.
++ *
++ * This file mocks "undici" as unresolvable, so it lives apart from
++ * toctou-pinning.test.ts (jest module mocks are per test file).
++ */
++
++jest.mock("undici", () => {
++  throw new Error("Cannot find module 'undici'");
++});
++
++import { safeFetch } from "../safe-fetch";
++
++test("safeFetch fails closed when undici is not installed", async () => {
++  const fetchImpl = jest.fn(async () => new Response("x")) as unknown as typeof fetch;
++  const res = await safeFetch(
++    "http://example.com/",
++    { allowContentTypes: ["text/html"] },
++    {
++      dnsLookup: async () => [{ address: "93.184.216.34" }],
++      fetchImpl,
++    },
++  );
++  expect(res.ok).toBe(false);
++  if (!res.ok) expect(res.reason).toMatch(/Pinned dispatch unavailable/);
++  // The unvalidated socket is never opened.
++  expect(fetchImpl).not.toHaveBeenCalled();
++});
+diff --git a/src/fyd/net/__tests__/toctou-pinning.test.ts b/src/fyd/net/__tests__/toctou-pinning.test.ts
+new file mode 100644
+index 00000000..5424b5f1
+--- /dev/null
++++ b/src/fyd/net/__tests__/toctou-pinning.test.ts
+@@ -0,0 +1,377 @@
++/**
++ * TOCTOU pinning tests (Option A, per-hop pinned lookup).
++ *
++ * The critical invariant: THE DESTINATION WE VALIDATED MUST BE THE
++ * DESTINATION WE CONNECT TO, on every hop, across redirects. DNS and fetch
++ * are injected/mocked; nothing here performs a real external connection
++ * except the loopback end-to-end proof of the production undici factory.
++ *
++ * Classes:
++ *  - buildPinnedLookup serves only the validated set (never consults DNS),
++ *    both callback shapes, IPv4/IPv6 families, empty set fails closed.
++ *  - safeFetch pins per hop: a DNS that rebinds between validation and
++ *    dial cannot steer the socket; the pinned set equals the validated set.
++ *  - Redirect targets are re-validated and re-pinned independently;
++ *    a redirect into private space is rejected before any fetch.
++ *  - Scheme smuggling is rejected at the shape gate (consistent WHATWG
++ *    parse for validation and fetch).
++ *  - The pinned dispatcher is closed exactly once per hop.
++ */
++
++import * as http from "node:http";
++import type { AddressInfo } from "node:net";
++import {
++  buildPinnedDispatcher,
++  buildPinnedLookup,
++  safeFetch,
++  type PinnedDispatcher,
++} from "../safe-fetch";
++
++const PUBLIC = "93.184.216.34";
++const PUBLIC2 = "203.0.113.7"; // TEST-NET-3, classified public
++const PRIVATE = "10.9.9.9";
++
++const publicDns = async (hostname: string) => {
++  if (hostname === "example.com" || hostname === "example.org") {
++    return [{ address: PUBLIC }];
++  }
++  throw new Error("getaddrinfo ENOTFOUND " + hostname);
++};
++
++const OK_PAGE = () =>
++  new Response("<title>ok</title>", { headers: { "content-type": "text/html" } });
++
++function mockFetch(handler: (url: string, init: unknown) => Promise<Response>) {
++  return jest.fn(async (url: string | URL | Request, init?: unknown) =>
++    handler(String(url), init),
++  ) as unknown as typeof fetch;
++}
++
++/** Capture every hop's validated set; hand back a stub dispatcher. */
++function capturingFactory() {
++  const pinnedSets: string[][] = [];
++  const closers: Array<jest.Mock> = [];
++  const seenDispatchers: unknown[] = [];
++  const factory = (addrs: string[]): PinnedDispatcher => {
++    pinnedSets.push([...addrs]);
++    const close = jest.fn(async () => undefined);
++    closers.push(close);
++    const dispatcher = { __pinnedStub: addrs };
++    seenDispatchers.push(dispatcher);
++    return { dispatcher, close };
++  };
++  return { pinnedSets, closers, seenDispatchers, factory };
++}
++
++const PAGE_OPTS: { allowContentTypes: string[] } = { allowContentTypes: ["text/html"] };
++
++describe("buildPinnedLookup", () => {
++  test("all:true shape returns only the validated set", () => {
++    const lookup = buildPinnedLookup([PUBLIC]);
++    const cb = jest.fn();
++    lookup("unrelated.example", { all: true }, cb);
++    expect(cb).toHaveBeenCalledTimes(1);
++    expect(cb.mock.calls[0][0]).toBeNull();
++    expect(cb.mock.calls[0][1]).toEqual([{ address: PUBLIC, family: 4 }]);
++  });
++
++  test("single-address shape returns the first validated address", () => {
++    const lookup = buildPinnedLookup([PUBLIC, PUBLIC2]);
++    const cb = jest.fn();
++    lookup("unrelated.example", {}, cb);
++    expect(cb.mock.calls[0][0]).toBeNull();
++    expect(cb.mock.calls[0][1]).toBe(PUBLIC);
++    expect(cb.mock.calls[0][2]).toBe(4);
++  });
++
++  test("IPv6 validated addresses map to family 6", () => {
++    const v6 = "2606:2800:220:1:248:1893:25c8:1946";
++    const lookup = buildPinnedLookup([v6]);
++    const cb = jest.fn();
++    lookup("unrelated.example", { all: true }, cb);
++    expect(cb.mock.calls[0][1]).toEqual([{ address: v6, family: 6 }]);
++  });
++
++  test("empty validated set fails closed via the error callback", () => {
++    const lookup = buildPinnedLookup([]);
++    const cb = jest.fn();
++    lookup("example.com", { all: true }, cb);
++    expect(cb.mock.calls[0][0]).toBeInstanceOf(Error);
++  });
++
++  test("the requested hostname is ignored: no DNS is consulted", () => {
++    const lookup = buildPinnedLookup([PUBLIC]);
++    const cb = jest.fn();
++    // Even for a hostile-looking name, only the validated set is served.
++    lookup("169.254.169.254.nip.io", { all: true }, cb);
++    expect(cb.mock.calls[0][1]).toEqual([{ address: PUBLIC, family: 4 }]);
++  });
++});
++
++describe("safeFetch per-hop pinning (mocked)", () => {
++  test("a DNS rebind between validation and dial cannot steer the socket", async () => {
++    let calls = 0;
++    const rebindingDns = async (hostname: string) => {
++      calls++;
++      if (hostname === "example.com") {
++        // Validation-time answer: public. Dial-time answer (what a naive
++        // re-resolving fetcher would get): private.
++        return [{ address: calls === 1 ? PUBLIC : PRIVATE }];
++      }
++      throw new Error("getaddrinfo ENOTFOUND " + hostname);
++    };
++    const { pinnedSets, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async () => OK_PAGE());
++
++    const res = await safeFetch("http://example.com/", PAGE_OPTS, {
++      dnsLookup: rebindingDns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++
++    expect(res.ok).toBe(true);
++    // The pinned set is EXACTLY the validation-time answer.
++    expect(pinnedSets).toEqual([[PUBLIC]]);
++    // Simulate what undici does at dial time: invoke the pinned lookup.
++    // The rebind answer (PRIVATE) can never come out of it.
++    const dialCb = jest.fn();
++    buildPinnedLookup(pinnedSets[0])("example.com", { all: true }, dialCb);
++    expect(dialCb.mock.calls[0][1]).toEqual([{ address: PUBLIC, family: 4 }]);
++    expect(JSON.stringify(dialCb.mock.calls[0][1])).not.toContain(PRIVATE);
++  });
++
++  test("the dispatcher is passed to the fetch implementation", async () => {
++    const { seenDispatchers, factory } = capturingFactory();
++    const seenInits: unknown[] = [];
++    const fetchImpl = mockFetch(async (_url, init) => {
++      seenInits.push(init);
++      return OK_PAGE();
++    });
++    const res = await safeFetch("http://example.com/", PAGE_OPTS, {
++      dnsLookup: publicDns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++    expect(res.ok).toBe(true);
++    expect(seenInits).toHaveLength(1);
++    expect((seenInits[0] as { dispatcher?: unknown }).dispatcher).toBe(
++      seenDispatchers[0],
++    );
++  });
++
++  test("redirect targets are re-validated and re-pinned independently", async () => {
++    const seen: string[] = [];
++    const dns = async (hostname: string) => {
++      seen.push(hostname);
++      if (hostname === "example.com") return [{ address: PUBLIC }];
++      if (hostname === "cdn.example.org") {
++        // Rebinds on second answer; the hop must pin the first (validated).
++        return [{ address: seen.filter((h) => h === hostname).length === 1 ? PUBLIC2 : PRIVATE }];
++      }
++      throw new Error("getaddrinfo ENOTFOUND " + hostname);
++    };
++    const { pinnedSets, closers, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async (url) => {
++      if (url === "http://example.com/") {
++        return new Response("", {
++          status: 302,
++          headers: { location: "http://cdn.example.org/asset" },
++        });
++      }
++      return OK_PAGE();
++    });
++
++    const res = await safeFetch("http://example.com/", PAGE_OPTS, {
++      dnsLookup: dns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++
++    expect(res.ok).toBe(true);
++    if (res.ok) {
++      expect(res.finalUrl).toBe("http://cdn.example.org/asset");
++      expect(res.redirectChain).toHaveLength(1);
++    }
++    // Hop 1 pinned to PUBLIC, hop 2 pinned to PUBLIC2 (validation-time).
++    expect(pinnedSets).toEqual([[PUBLIC], [PUBLIC2]]);
++    // One dispatcher per hop, each closed exactly once.
++    expect(closers).toHaveLength(2);
++    for (const close of closers) expect(close).toHaveBeenCalledTimes(1);
++  });
++
++  test("redirect into private space is rejected before any fetch of that hop", async () => {
++    const dns = async (hostname: string) => {
++      if (hostname === "example.com") return [{ address: PUBLIC }];
++      if (hostname === "internal.example") return [{ address: "10.0.0.5" }];
++      throw new Error("getaddrinfo ENOTFOUND " + hostname);
++    };
++    const { pinnedSets, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async (url) => {
++      if (url === "http://example.com/") {
++        return new Response("", {
++          status: 302,
++          headers: { location: "http://internal.example/" },
++        });
++      }
++      throw new Error("must never fetch the private hop");
++    });
++
++    const res = await safeFetch("http://example.com/", PAGE_OPTS, {
++      dnsLookup: dns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++
++    expect(res.ok).toBe(false);
++    if (!res.ok) {
++      expect(res.reason).toMatch(/DNS rejected/);
++      expect(res.reason).toContain("10.0.0.5");
++      expect(res.redirectChain).toHaveLength(1);
++    }
++    expect(fetchImpl).toHaveBeenCalledTimes(1);
++    // Only the first (public) hop was ever pinned.
++    expect(pinnedSets).toEqual([[PUBLIC]]);
++  });
++
++  test("dispatcher is closed exactly once when the fetch itself fails", async () => {
++    const { closers, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async () => {
++      throw new Error("socket hangup");
++    });
++    const res = await safeFetch("http://example.com/", PAGE_OPTS, {
++      dnsLookup: publicDns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++    expect(res.ok).toBe(false);
++    expect(closers).toHaveLength(1);
++    expect(closers[0]).toHaveBeenCalledTimes(1);
++  });
++
++  test("redirect count stays bounded and every hop is pinned", async () => {
++    const { pinnedSets, closers, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async () => {
++      return new Response("", {
++        status: 302,
++        headers: { location: "http://example.com/next" },
++      });
++    });
++    const res = await safeFetch(
++      "http://example.com/",
++      { ...PAGE_OPTS, maxRedirects: 2 },
++      {
++        dnsLookup: publicDns,
++        fetchImpl,
++        dispatcherFactory: factory,
++      },
++    );
++    expect(res.ok).toBe(false);
++    if (!res.ok) expect(res.reason).toMatch(/Too many redirects/);
++    expect(fetchImpl).toHaveBeenCalledTimes(3); // initial + 2 redirects
++    expect(pinnedSets).toEqual([[PUBLIC], [PUBLIC], [PUBLIC]]);
++    expect(closers).toHaveLength(3);
++  });
++});
++
++describe("scheme smuggling (shape gate)", () => {
++  test.each([
++    ["javascript:alert(1)", "Scheme not allowed"],
++    ["data:text/html,<h1>x</h1>", "Scheme not allowed"],
++    ["file:///etc/passwd", "Scheme not allowed"],
++    ["ftp://example.com/x", "Scheme not allowed"],
++    ["http://user:pass@example.com/", "Credential-bearing"],
++  ])("rejects %s", async (url, reasonPart) => {
++    const fetchImpl = mockFetch(async () => OK_PAGE());
++    const res = await safeFetch(url, PAGE_OPTS, {
++      dnsLookup: publicDns,
++      fetchImpl,
++    });
++    expect(res.ok).toBe(false);
++    if (!res.ok) expect(res.reason).toContain(reasonPart);
++    expect(fetchImpl).not.toHaveBeenCalled();
++  });
++
++  test("userinfo smuggling never reaches DNS or the socket", async () => {
++    // http://example.com@169.254.169.254/ has effective host 169.254.169.254,
++    // but the credential gate rejects it before DNS is even consulted: the
++    // apparent host (example.com) is never treated as the destination.
++    const dns = jest.fn(publicDns);
++    const fetchImpl = mockFetch(async () => OK_PAGE());
++    const res = await safeFetch("http://example.com@169.254.169.254/", PAGE_OPTS, {
++      dnsLookup: dns,
++      fetchImpl,
++    });
++    expect(res.ok).toBe(false);
++    if (!res.ok) expect(res.reason).toMatch(/Credential-bearing/);
++    expect(dns).not.toHaveBeenCalled();
++    expect(fetchImpl).not.toHaveBeenCalled();
++  });
++
++  test("backslash is parsed identically for validation and fetch (no divergence)", async () => {
++    // WHATWG URL treats \\ as / for special schemes, so the effective host
++    // of http://example.com\\@169.254.169.254/ is example.com. The invariant
++    // is consistency: the host the gate validates is the host that is
++    // fetched and pinned. A validator/fetcher parse mismatch would be the
++    // smuggling vector; a single shared parse closes it.
++    const seenHosts: string[] = [];
++    const dns = async (hostname: string) => {
++      seenHosts.push(hostname);
++      return publicDns(hostname);
++    };
++    const seenUrls: string[] = [];
++    const fetchImpl = mockFetch(async (url) => {
++      seenUrls.push(url);
++      return OK_PAGE();
++    });
++    const { pinnedSets, factory } = capturingFactory();
++    const res = await safeFetch("http://example.com\\@169.254.169.254/", PAGE_OPTS, {
++      dnsLookup: dns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++    expect(res.ok).toBe(true);
++    expect(seenHosts).toEqual(["example.com"]);
++    expect(pinnedSets).toEqual([[PUBLIC]]);
++    // The fetched URL's host is the validated host.
++    expect(new URL(seenUrls[0]).hostname).toBe("example.com");
++  });
++
++  test("uppercase scheme is normalized, then validated and pinned", async () => {
++    const { pinnedSets, factory } = capturingFactory();
++    const fetchImpl = mockFetch(async () => OK_PAGE());
++    const res = await safeFetch("HTTP://example.com/", PAGE_OPTS, {
++      dnsLookup: publicDns,
++      fetchImpl,
++      dispatcherFactory: factory,
++    });
++    expect(res.ok).toBe(true);
++    expect(pinnedSets).toEqual([[PUBLIC]]);
++  });
++});
++
++describe("production undici dispatcher (loopback end-to-end)", () => {
++  test("dials the validated address, not the URL host", async () => {
++    const server = http.createServer((_req, res) => {
++      res.writeHead(200, { "content-type": "text/html" });
++      res.end("<title>pinned</title>");
++    });
++    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
++    const port = (server.address() as AddressInfo).port;
++    // The gate would never validate loopback; here we prove the MECHANISM:
++    // the dispatcher's lookup ignores the URL host and dials the validated
++    // address (127.0.0.1), so http://pinned.invalid:<port>/ is served by
++    // the loopback server.
++    const pinned = buildPinnedDispatcher(["127.0.0.1"]);
++    try {
++      const res = await fetch(
++        `http://pinned.invalid:${port}/`,
++        { dispatcher: pinned.dispatcher } as RequestInit,
++      );
++      expect(res.status).toBe(200);
++      expect(await res.text()).toContain("pinned");
++    } finally {
++      await pinned.close();
++      server.close();
++    }
++  });
++});
+diff --git a/src/fyd/net/safe-fetch.ts b/src/fyd/net/safe-fetch.ts
+index b5f5e6e4..7643bfee 100644
+--- a/src/fyd/net/safe-fetch.ts
++++ b/src/fyd/net/safe-fetch.ts
+@@ -29,14 +29,25 @@
+  * - Size limits: content-length pre-check plus streaming abort.
+  * - Timeouts on connect and overall.
+  *
+- * Residual TOCTOU note: the DNS check and the fetch are not atomic. The
+- * gate validates the addresses DNS returns at check time; the production
+- * fetch implementation re-resolves independently, so a hostile DNS that
+- * answers differently per query (rebinding) could still steer the socket.
+- * The gate is the contract that mocked tests verify (see
+- * __tests__/safe-fetch.test.ts); production deployments needing atomicity
+- * must pin the validated address at the socket layer (not implemented
+- * here). This is reported honestly rather than claimed away.
++ * TOCTOU pinning (Option A, per-hop pinned lookup): the gate resolves and
++ * validates the address set for every hop, then binds the dial-time
++ * resolution to EXACTLY that set via a per-hop undici Agent whose
++ * connect.lookup closure can only ever return validated addresses (it never
++ * consults DNS). The destination we validated is therefore the destination
++ * we connect to, on every hop including redirects, which are re-validated
++ * and re-pinned independently. undici is a direct dependency; if it is not
++ * installed the factory throws and the fetch fails closed rather than
++ * fetching unpinned. TLS SNI still derives from the URL host (undici
++ * connect.js: servername falls back to the URL host), so pinning the address
++ * does not weaken TLS identity.
++ *
++ * Residual: pinning trusts undici to honor connect.lookup at dial time
++ * (source-verified in undici 6.28.0 lib/core/connect.js: connect options are
++ * spread into net/tls.connect; behavior-probed in
++ * __tests__/toctou-pinning.test.ts). Post-connect peer assertion (Option B)
++ * is not implemented; the pinned lookup already refuses to return anything
++ * outside the validated set, so there is no second resolution to verify
++ * against.
+  *
+  * An arbitrary agent- or user-supplied URL can NEVER become an unrestricted
+  * server-side fetch through this module: every URL passes this gate.
+@@ -61,6 +72,11 @@ export interface SafeFetchFail {
+ 
+ export type SafeFetchResult = SafeFetchOk | SafeFetchFail;
+ 
++/** Fetch init plus the undici `dispatcher` option (typed by the runtime). */
++export interface PinnedFetchInit extends RequestInit {
++  dispatcher?: unknown;
++}
++
+ export interface SafeFetchOptions {
+   /** Allowed content-type prefixes, e.g. ["image/"]. */
+   allowContentTypes: string[];
+@@ -76,6 +92,25 @@ export interface SafeFetchOptions {
+ export interface SafeFetchDeps {
+   dnsLookup?: (hostname: string) => Promise<Array<{ address: string }>>;
+   fetchImpl?: typeof fetch;
++  /**
++   * Build a per-hop pinned dispatcher over the already-validated address
++   * set for the current hop's hostname. The dispatcher MUST restrict
++   * dial-time resolution to exactly these addresses (never re-consult DNS).
++   * Defaults to the undici Agent pinning factory below.
++   */
++  dispatcherFactory?: (validatedAddresses: string[]) => PinnedDispatcher;
++}
++
++/**
++ * A dispatcher whose dial-time resolution is pinned to the validated
++ * address set of one hop. The dispatcher is single-hop: build a fresh one
++ * per hop (redirect targets are re-validated and re-pinned).
++ */
++export interface PinnedDispatcher {
++  /** Passed as the `dispatcher` fetch option. */
++  dispatcher: unknown;
++  /** Release pooled connections. Called exactly once per hop. */
++  close: () => Promise<void> | void;
+ }
+ 
+ const DEFAULT_MAX_BYTES = 15 * 1024 * 1024;
+@@ -194,17 +229,89 @@ export function isPublicIp(ip: string): boolean {
+   return false;
+ }
+ 
++/**
++ * Build the dial-time lookup closure pinned to the validated address set.
++ *
++ * The closure never consults DNS: it can only ever return addresses the
++ * gate already validated for this hop, so a hostile resolver that answers
++ * differently per query (DNS rebinding) cannot steer the socket. An empty
++ * validated set fails closed via the error callback. Both the `all: true`
++ * (array) and single-address callback shapes are served from the pinned set.
++ */
++export function buildPinnedLookup(validated: readonly string[]) {
++  const pinned = [...validated];
++  const familyOf = (address: string): number => (isIP(address) === 6 ? 6 : 4);
++  return (
++    _hostname: string,
++    opts: unknown,
++    callback: (
++      err: Error | null,
++      addresses?: Array<{ address: string; family: number }> | string,
++      family?: number,
++    ) => void,
++  ): void => {
++    if (pinned.length === 0) {
++      callback(new Error("pinned lookup: empty validated address set"));
++      return;
++    }
++    const wantAll = (opts as { all?: boolean } | undefined)?.all;
++    if (wantAll) {
++      callback(
++        null,
++        pinned.map((address) => ({ address, family: familyOf(address) })),
++      );
++    } else {
++      callback(null, pinned[0], familyOf(pinned[0]));
++    }
++  };
++}
++
++type UndiciAgentCtor = new (opts: {
++  connect: { lookup: (...args: never[]) => void };
++}) => { close(): Promise<void> };
++
++function loadUndiciAgent(): UndiciAgentCtor {
++  let mod: unknown;
++  try {
++    // Lazy: keeps this module importable where undici is absent; absence
++    // fails closed at fetch time instead of silently fetching unpinned.
++    // eslint-disable-next-line @typescript-eslint/no-var-requires
++    mod = require("undici");
++  } catch {
++    throw new Error(
++      "safeFetch: undici is required for per-hop pinned dispatch but is not " +
++        "installed. Refusing to fetch unpinned (fail closed).",
++    );
++  }
++  const Agent = (mod as { Agent?: unknown }).Agent;
++  if (typeof Agent !== "function") {
++    throw new Error("safeFetch: undici module does not export Agent (fail closed).");
++  }
++  return Agent as UndiciAgentCtor;
++}
++
++/**
++ * Production pinned-dispatcher factory: one undici Agent per hop, with
++ * dial-time resolution pinned to the validated address set via
++ * connect.lookup (honored at socket creation in undici's connect.js).
++ */
++export function buildPinnedDispatcher(validatedAddresses: string[]): PinnedDispatcher {
++  const Agent = loadUndiciAgent();
++  const agent = new Agent({ connect: { lookup: buildPinnedLookup(validatedAddresses) } });
++  return { dispatcher: agent, close: () => agent.close() };
++}
++
+ async function hostResolvesPublic(
+   hostname: string,
+   dnsLookup: (hostname: string) => Promise<Array<{ address: string }>>,
+-): Promise<{ ok: boolean; reason?: string }> {
++): Promise<{ ok: boolean; reason?: string; addresses?: string[] }> {
+   // URL.hostname keeps brackets on IPv6 literals ("[::1]"); strip them so
+   // the literal-IP check below sees the real address.
+   const bare = hostname.replace(/^\[|\]$/g, "");
+   // A literal IP is checked directly; otherwise every resolved address must be public.
+   if (isIP(bare)) {
+     return isPublicIp(bare)
+-      ? { ok: true }
++      ? { ok: true, addresses: [bare] }
+       : { ok: false, reason: "IP literal is not public routable space: " + bare };
+   }
+   let addrs;
+@@ -219,7 +326,7 @@ async function hostResolvesPublic(
+       return { ok: false, reason: "DNS for " + hostname + " resolves to non-public " + a.address };
+     }
+   }
+-  return { ok: true };
++  return { ok: true, addresses: addrs.map((a) => a.address) };
+ }
+ 
+ function checkUrlShape(raw: string): { ok: boolean; reason?: string; url?: URL } {
+@@ -255,24 +362,44 @@ export async function safeFetch(
+   const fetchImpl = deps.fetchImpl ?? fetch;
+   const redirectChain: string[] = [];
+ 
++  const dispatcherFactory = deps.dispatcherFactory ?? buildPinnedDispatcher;
++
+   let current = rawUrl;
+   for (let hop = 0; hop <= maxRedirects; hop++) {
+     const shape = checkUrlShape(current);
+     if (!shape.ok || !shape.url) return fail("URL rejected: " + shape.reason, redirectChain);
+     const dns = await hostResolvesPublic(shape.url.hostname, dnsLookup);
+-    if (!dns.ok) return fail("DNS rejected: " + dns.reason, redirectChain);
++    if (!dns.ok || !dns.addresses) return fail("DNS rejected: " + dns.reason, redirectChain);
+ 
+-    let res: Response;
++    // TOCTOU pin (Option A): bind this hop's dial-time resolution to the
++    // validated address set. Redirect targets re-enter this loop and are
++    // re-validated and re-pinned independently.
++    let pinned: PinnedDispatcher;
+     try {
+-      res = await fetchImpl(shape.url.toString(), {
+-        redirect: "manual",
+-        signal: AbortSignal.timeout(timeoutMs),
+-        headers: { "User-Agent": "FYD-media-ingest/1.0 (+evidence-bound fetch)" },
+-      });
++      pinned = dispatcherFactory(dns.addresses);
+     } catch (e) {
+-      return fail("Fetch failed: " + (e instanceof Error ? e.message : String(e)), redirectChain);
++      return fail(
++        "Pinned dispatch unavailable: " + (e instanceof Error ? e.message : String(e)),
++        redirectChain,
++      );
+     }
+ 
++    let res: Response;
++    try {
++      try {
++        res = await fetchImpl(shape.url.toString(), {
++          redirect: "manual",
++          signal: AbortSignal.timeout(timeoutMs),
++          headers: { "User-Agent": "FYD-media-ingest/1.0 (+evidence-bound fetch)" },
++          // PinnedDispatcher.dispatcher is `unknown` by design (undici is a
++          // runtime-only dependency here); the fetch signature types the
++          // `dispatcher` option itself.
++          dispatcher: pinned.dispatcher,
++        } as PinnedFetchInit);
++      } catch (e) {
++        return fail("Fetch failed: " + (e instanceof Error ? e.message : String(e)), redirectChain);
++      }
++
+     if (res.status >= 300 && res.status < 400) {
+       const loc = res.headers.get("location");
+       await res.arrayBuffer().catch(() => null);
+@@ -322,6 +449,15 @@ export async function safeFetch(
+     }
+     const bytes = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+     return { ok: true, bytes, contentType, finalUrl: shape.url.toString(), redirectChain };
++    } finally {
++      // The dispatcher is single-hop: release its pooled connections now
++      // that the response body is fully consumed (or the hop failed).
++      try {
++        await pinned.close();
++      } catch {
++        /* close is best-effort; the hop outcome is already decided */
++      }
++    }
+   }
+   return fail("Too many redirects (>" + maxRedirects + ")", redirectChain);
+ }

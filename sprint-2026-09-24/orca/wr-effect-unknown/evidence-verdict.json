@@ -1,0 +1,30 @@
+{
+  "case": "handler performs external effect, then returns undefined",
+  "attempt1": {
+    "effects": 1,
+    "dispatchReturned": "undefined (falsy)",
+    "status": "retry_pending",
+    "error": "no worker matched event_type=BILL_CUSTOMER"
+  },
+  "attempt2": {
+    "effects": 2,
+    "status": "retry_pending"
+  },
+  "observation_gap": {
+    "matched_worker_returned_undefined": true,
+    "unmatched_event_type_return": null,
+    "distinguishable_by_scheduler": false,
+    "note": "dispatch() returns the handler raw return (live_worker_runtime.verbatim.js:87/105). Both \"no worker matched\" (null) and \"worker ran, returned undefined\" are falsy; `!dispatchResult` cannot tell them apart."
+  },
+  "fabricated_prose": {
+    "recorded_error": "no worker matched event_type=BILL_CUSTOMER",
+    "truth": "a worker DID match and DID perform the external effect",
+    "claim_in_code": "live_mission_scheduler.verbatim.js line 318"
+  },
+  "duplicate_effect": true,
+  "evidence_file": "/home/hatch/workspace/sprint-2026-09-24/orca/wr-effect-unknown/evidence-provider-effects.jsonl",
+  "log": [
+    "failWithRetry: retries=1 error=\"no worker matched event_type=BILL_CUSTOMER\"",
+    "failWithRetry: retries=2 error=\"no worker matched event_type=BILL_CUSTOMER\""
+  ]
+}

@@ -1,0 +1,102 @@
+# H3 integration patch (FYD social sprint, hour 3-4 lane: media + presence + owner mode)
+# STAGED ONLY - do not apply without lane reconciliation. Generated against the working
+# tree as of 2026-09-21 ~19:05 UTC; verify context with `git apply --check` before use.
+# Known overlap: the H0-1 lane plans its own edit to src/fyd/media/site-bundle.ts
+# (projection-backed getSiteBundle). The two edits touch different lines of that file
+# but must be merged by the parent orchestrator, not applied blindly.
+# Applies with: git apply h3-integration.patch  (from the repo root)
+--- a/src/fyd/media/site-bundle.ts
++++ b/src/fyd/media/site-bundle.ts
+@@ -14,6 +14,7 @@
+ import { COPPERSMITH_GRAPH } from "../proceduralize/__fixtures__/coppersmith-graph";
+ import { generateSiteSpec } from "../proceduralize/generator";
+ import { isRenderable, validateSiteSpec } from "../sitespec/validator";
++import { getMediaManifest } from "./bundle-media";
+ import type { FYDFinding, FYDSiteSpec, ObjectGraph } from "../sitespec/types";
+ 
+ /** One media item in the bundle manifest. Minimal until the media lane ships. */
+@@ -84,8 +85,8 @@
+     spec,
+     findings,
+     renderable: isRenderable(findings),
+-    // The media lane owns this value; until it ships, the bundle carries null.
+-    mediaManifest: null,
++    // H3 lane: authorized media manifests ship with the bundle.
++    mediaManifest: getMediaManifest(siteId),
+   };
+ }
+ 
+--- a/src/app/sites/happy-place/page.tsx
++++ b/src/app/sites/happy-place/page.tsx
+@@ -13,6 +13,10 @@
+ import { HAPPY_PLACE_GRAPH } from "@/fyd/proceduralize/__fixtures__/happy-place-graph";
+ import { generateSiteSpec } from "@/fyd/proceduralize/generator";
+ import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
++import { getPipelineManifest } from "@/fyd/media/bundle-media";
++import { derivePresence } from "@/fyd/presence/derive-presence";
++import { PresenceBand } from "@/fyd/presence/presence-band";
++import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
+ 
+ export const metadata = {
+   title: "Happy Place Carpentry | FYD Social Generated Site",
+@@ -28,11 +32,22 @@
+   const knownSchemas = new Set(HAPPY_PLACE_GRAPH.objects.map((o) => o.schema));
+   const findings = validateSiteSpec(spec, knownSchemas);
+   const renderable = isRenderable(findings);
++  // H3 lane (staged, not yet applied): data-derived visual presence.
++  // derivePresence is a pure function of (object graph, media manifest);
++  // no per-site hand theming exists anywhere in this change.
++  const presence = derivePresence(
++    HAPPY_PLACE_GRAPH,
++    getPipelineManifest("happy-place"),
++    "happy-place",
++  );
++  const themedSpec = { ...spec, themeTokens: presence.themeTokens };
+ 
+   return (
+     <main className="min-h-screen bg-background">
++      <DemoOwnerMode siteId="happy-place" />
++      <PresenceBand presence={presence} />
+       <SiteClient
+-        spec={spec}
++        spec={themedSpec}
+         graph={HAPPY_PLACE_GRAPH}
+         findings={findings}
+         renderable={renderable}
+--- a/src/app/sites/coppersmith-plumbing/page.tsx
++++ b/src/app/sites/coppersmith-plumbing/page.tsx
+@@ -16,6 +16,10 @@
+ import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
+ import { generateSiteSpec } from "@/fyd/proceduralize/generator";
+ import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
++import { getPipelineManifest } from "@/fyd/media/bundle-media";
++import { derivePresence } from "@/fyd/presence/derive-presence";
++import { PresenceBand } from "@/fyd/presence/presence-band";
++import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
+ 
+ export const metadata = {
+   title: "Coppersmith Plumbing & HVAC | FYD Social Generated Site",
+@@ -30,11 +34,22 @@
+   const knownSchemas = new Set(COPPERSMITH_GRAPH.objects.map((o) => o.schema));
+   const findings = validateSiteSpec(spec, knownSchemas);
+   const renderable = isRenderable(findings);
++  // H3 lane (staged, not yet applied): data-derived visual presence.
++  // derivePresence is a pure function of (object graph, media manifest);
++  // no per-site hand theming exists anywhere in this change.
++  const presence = derivePresence(
++    COPPERSMITH_GRAPH,
++    getPipelineManifest("coppersmith-plumbing"),
++    "coppersmith-plumbing",
++  );
++  const themedSpec = { ...spec, themeTokens: presence.themeTokens };
+ 
+   return (
+     <main className="min-h-screen bg-background">
++      <DemoOwnerMode siteId="coppersmith-plumbing" />
++      <PresenceBand presence={presence} />
+       <SiteClient
+-        spec={spec}
++        spec={themedSpec}
+         graph={COPPERSMITH_GRAPH}
+         findings={findings}
+         renderable={renderable}

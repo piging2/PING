@@ -1,0 +1,35 @@
+/**
+ * FYD family stylesheet (product lane, V1).
+ *
+ * The theme seam for the public family surface:
+ *  1. Tailwind v4 plus the compiled @theme blocks for BOTH locked themes
+ *     (hpp, coppersmith). The @theme inline blocks map utility names to
+ *     var(--fyd-*) references; the vars themselves switch under
+ *     :root[data-theme="..."].
+ *  2. The compiled .tokens.css files define --fyd-* per data-theme.
+ *  3. The page sets data-theme="hpp" | "coppersmith" on its wrapper.
+ *
+ * No token value is inlined here or anywhere in the family components:
+ * every visual value arrives through these compiled artifacts.
+ */
+
+@import "tailwindcss";
+@import "../../builder/tokens/out/hpp.tailwind-theme.css";
+@import "../../builder/tokens/out/coppersmith.tailwind-theme.css";
+@import "../../builder/tokens/out/hpp.tokens.css";
+@import "../../builder/tokens/out/coppersmith.tokens.css";
+
+/* Reduced motion: the whole family honors the user's preference. */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

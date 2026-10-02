@@ -1,0 +1,235 @@
+{
+  "cases": [
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Top-level and nested object keys sorted; values untouched",
+      "expect": {
+        "bytes": "{\"a\":[3,2,1],\"m\":{\"a\":null,\"b\":true},\"n\":\"x\",\"z\":1}",
+        "sha256": "bfa75859ef176e867ba92020f9115e77dc7a8c8c8dccc00571553a287e7ac8c4"
+      },
+      "id": "key-order-basic",
+      "input": {
+        "z": 1,
+        "n": "x",
+        "m": {
+          "b": true,
+          "a": null
+        },
+        "a": [
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Arrays keep semantic order (never sorted); deep nesting sorted at every object level",
+      "expect": {
+        "bytes": "{\"deep\":{\"l1\":{\"l2\":{\"a\":[],\"b\":1}}},\"items\":[{\"a\":2,\"z\":1},3,\"s\"]}",
+        "sha256": "76cc41d83738e0c6b2057c7ffc8226ff33c3df7e343681909960bb85d042faa0"
+      },
+      "id": "nested-arrays-preserved",
+      "input": {
+        "items": [
+          {
+            "z": 1,
+            "a": 2
+          },
+          3,
+          "s"
+        ],
+        "deep": {
+          "l1": {
+            "l2": {
+              "b": 1,
+              "a": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "BMP unicode in keys and values serialized as raw UTF-8, no escaping",
+      "expect": {
+        "bytes": "{\"café\":\"naïve ☕\",\"e\":\"é\",\"日本語\":{\"key\":\"値\"}}",
+        "sha256": "842410ec2e35ce9007cf9f85e26f0cf1b5c170754b69cb40c110aff6535171be"
+      },
+      "id": "unicode-bmp",
+      "input": {
+        "日本語": {
+          "key": "値"
+        },
+        "e": "é",
+        "café": "naïve ☕"
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Empty objects/arrays preserved at every nesting level",
+      "expect": {
+        "bytes": "{\"a\":{},\"b\":[],\"c\":{\"d\":{}},\"e\":[[]]}",
+        "sha256": "564f61283addf496a7877337e6591a47ef2787ee28769dff4de27b1d8eb7744a"
+      },
+      "id": "empty-structures",
+      "input": {
+        "e": [
+          []
+        ],
+        "c": {
+          "d": {}
+        },
+        "b": [],
+        "a": {}
+      }
+    },
+    {
+      "applies": [
+        "ts"
+      ],
+      "description": "undefined normalizes to null (JSON has no undefined; Python adapters skip)",
+      "expect": {
+        "bytes": "{\"a\":null,\"b\":1}",
+        "sha256": "c0bf82ad036cb0a5a03d6759c1b7b8b1f70a39b32dd96ed3977c7f2831ee3b56"
+      },
+      "id": "undefined-to-null",
+      "input": {
+        "b": 1,
+        "a": {
+          "$undefined": true
+        }
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Astral-plane keys sort in UTF-16 code-unit order per the pinned KEY_ORDER_UTF16 semantic (z < U+1F600 < U+E000). Python code-point sort diverges here: recorded FAIL.",
+      "expect": {
+        "bytes": "{\"z\":3,\"😀\":1,\"\":2}",
+        "sha256": "48b89ea4f04b786ac750e371688ec221e3df447f6111e147d69386df105d8b28"
+      },
+      "id": "astral-key-order",
+      "input": {
+        "z": 3,
+        "": 2,
+        "😀": 1
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Finite float must be refused (pinned FLOATS_REFUSED)",
+      "expect": {
+        "pinned": "FLOATS_REFUSED",
+        "throws": true
+      },
+      "id": "float-finite",
+      "input": {
+        "price": 19.99
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Float nested inside object/array must be refused",
+      "expect": {
+        "pinned": "FLOATS_REFUSED",
+        "throws": true
+      },
+      "id": "float-nested",
+      "input": {
+        "a": {
+          "b": [
+            1,
+            2.5
+          ]
+        }
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "NaN must be refused, never null-swallowed or literal-serialized",
+      "expect": {
+        "pinned": "FLOATS_REFUSED",
+        "throws": true
+      },
+      "id": "float-nan",
+      "input": {
+        "x": {
+          "$float": "NaN"
+        }
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "Infinity must be refused",
+      "expect": {
+        "pinned": "FLOATS_REFUSED",
+        "throws": true
+      },
+      "id": "float-inf",
+      "input": {
+        "x": {
+          "$float": "Infinity"
+        }
+      }
+    },
+    {
+      "applies": [
+        "ts",
+        "py"
+      ],
+      "description": "-Infinity must be refused",
+      "expect": {
+        "pinned": "FLOATS_REFUSED",
+        "throws": true
+      },
+      "id": "float-neginf",
+      "input": {
+        "x": {
+          "$float": "-Infinity"
+        }
+      }
+    }
+  ],
+  "meta": {
+    "applies": "ts = TypeScript/JavaScript adapters, py = Python adapters",
+    "input_markers": {
+      "$float": "revived to NaN | Infinity | -Infinity before the call",
+      "$undefined": "revived to undefined before the call (TS adapters only)"
+    },
+    "name": "canonical-bytes cross-language conformance fixture",
+    "pinned_semantics": {
+      "BYTE_FORM": "Recursive key sort, array order preserved (semantic, never sorted), separators (',',':'), raw UTF-8 (no \\uXXXX escaping), undefined -> null, empty structures preserved.",
+      "FLOATS_REFUSED": "Any float value (finite or non-finite) in the input must make the canonicalizer throw/refuse, never emit bytes. Rationale: Python and JS serialize floats differently (repr vs shortest round-trip, integer-valued floats, exponent formatting), so a digest must never silently depend on it. dump.py already refuses; the pin extends fail-closed behavior to all sides.",
+      "KEY_ORDER_UTF16": "Object keys sort in UTF-16 code-unit order (JS String sort, i.e. the reference Object.keys().sort()). Python sorted() uses code-point order and diverges on astral-plane keys; that divergence is a recorded FAIL, not an accepted variant."
+    },
+    "reference": "fyd-lane/harvest-wave1/code-evidence/hash-authority.ts (HashAuthority.canonicalizeObject, then JSON.stringify)",
+    "scope": "canonical BYTES only. The hashCanonical envelope (canonical_version, serialization_version, algorithm) is a TS-jurisdiction versioning construct and is out of scope for cross-language digest conformance."
+  }
+}

@@ -1,0 +1,764 @@
+{
+  "case": "concurrency-ab",
+  "mission_id": "lane-f-conc-shared-a4cd3a41f1df",
+  "verdict": "PASS",
+  "checks_run": 114,
+  "checks_failed": 0,
+  "failed_checks": [],
+  "checks": [
+    {
+      "name": "base: barrier rendezvous (both transports in flight)",
+      "pass": true,
+      "detail": {
+        "A": true,
+        "B": true
+      }
+    },
+    {
+      "name": "base: execution windows overlap (genuinely concurrent)",
+      "pass": true,
+      "detail": {
+        "A": [
+          "2026-09-26T13:44:51.628Z",
+          "2026-09-26T13:44:52.028Z"
+        ],
+        "B": [
+          "2026-09-26T13:44:51.627Z",
+          "2026-09-26T13:44:52.029Z"
+        ]
+      }
+    },
+    {
+      "name": "base: ID family 'mission_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-A-d33d369d9ea8",
+        "B": "lane-f-conc-B-3feae8b735a0"
+      }
+    },
+    {
+      "name": "base: ID family 'run_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-A-d33d369d9ea8-r1",
+        "B": "lane-f-conc-B-3feae8b735a0-r1"
+      }
+    },
+    {
+      "name": "base: ID family 'execution_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-A-d33d369d9ea8-x1",
+        "B": "lane-f-conc-B-3feae8b735a0-x1"
+      }
+    },
+    {
+      "name": "base: ID family 'work_order_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "a69d3f999fbcb8a3",
+        "B": "794133ccd60a2b7b"
+      }
+    },
+    {
+      "name": "base: ID family 'artifact' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/base/A/result-lane-f-conc-A-d33d369d9ea8-x1-a1.json",
+        "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/base/B/result-lane-f-conc-B-3feae8b735a0-x1-a1.json"
+      }
+    },
+    {
+      "name": "base: work orders match the deterministic mint",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: neither run's record names the other's execution identity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: A received prompt-A (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: B received prompt-B (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: no cross-delivery (A did not receive B's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: no cross-delivery (B did not receive A's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: prompt digests differ",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: workspace A contains no B identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "base: workspace B contains no A identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "base: A's evidence link resolves to A's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: B's evidence link resolves to B's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: evidence graph is bipartite (no A<->B edge)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "base: A outcome is UNKNOWN (ambiguous/timeout)",
+      "pass": true,
+      "detail": {
+        "outcome": "escalated",
+        "honestOutcome": "unknown",
+        "reason": "no JSON object found in worker stdout"
+      }
+    },
+    {
+      "name": "base: B outcome is SUCCEEDED, unaffected by A",
+      "pass": true,
+      "detail": {
+        "outcome": "completed"
+      }
+    },
+    {
+      "name": "base: A effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "base: B effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "base: A tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "happy-place"
+      }
+    },
+    {
+      "name": "base: B tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "coppersmith-plumbing"
+      }
+    },
+    {
+      "name": "base: event sets disjoint (no shared event ids)",
+      "pass": true,
+      "detail": {
+        "intersection": []
+      }
+    },
+    {
+      "name": "V1: barrier rendezvous (both transports in flight)",
+      "pass": true,
+      "detail": {
+        "A": true,
+        "B": true
+      }
+    },
+    {
+      "name": "V1: execution windows overlap (genuinely concurrent)",
+      "pass": true,
+      "detail": {
+        "A": [
+          "2026-09-26T13:44:52.250Z",
+          "2026-09-26T13:44:52.655Z"
+        ],
+        "B": [
+          "2026-09-26T13:44:52.255Z",
+          "2026-09-26T13:44:52.656Z"
+        ]
+      }
+    },
+    {
+      "name": "V1: ID family 'mission_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V1-A-df79cab97909",
+        "B": "lane-f-conc-V1-B-0588d9571c76"
+      }
+    },
+    {
+      "name": "V1: ID family 'run_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V1-A-df79cab97909-r1",
+        "B": "lane-f-conc-V1-B-0588d9571c76-r1"
+      }
+    },
+    {
+      "name": "V1: ID family 'execution_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V1-A-df79cab97909-x1",
+        "B": "lane-f-conc-V1-B-0588d9571c76-x1"
+      }
+    },
+    {
+      "name": "V1: ID family 'work_order_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "212d29aa172fdbc5",
+        "B": "06c61fec042387bf"
+      }
+    },
+    {
+      "name": "V1: ID family 'artifact' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V1/A/result-lane-f-conc-V1-A-df79cab97909-x1-a1.json",
+        "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V1/B/result-lane-f-conc-V1-B-0588d9571c76-x1-a1.json"
+      }
+    },
+    {
+      "name": "V1: work orders match the deterministic mint",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: neither run's record names the other's execution identity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: A received prompt-A (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: B received prompt-B (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: V1: identical briefs still yield distinct prompt digests (work_order echo differs)",
+      "pass": true,
+      "detail": {
+        "digestA": "dcdd05b9f14200c0bff0793e7c2a050cd0ab44b838a1944c7dd76751ee55e052",
+        "digestB": "4746c1091a9a696d21f766791614b1051f40188ead732e063e86abefa7502220"
+      }
+    },
+    {
+      "name": "V1: workspace A contains no B identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V1: workspace B contains no A identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V1: A's evidence link resolves to A's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: B's evidence link resolves to B's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: evidence graph is bipartite (no A<->B edge)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V1: A outcome is UNKNOWN (ambiguous/timeout)",
+      "pass": true,
+      "detail": {
+        "outcome": "escalated",
+        "honestOutcome": "unknown",
+        "reason": "no JSON object found in worker stdout"
+      }
+    },
+    {
+      "name": "V1: B outcome is SUCCEEDED, unaffected by A",
+      "pass": true,
+      "detail": {
+        "outcome": "completed"
+      }
+    },
+    {
+      "name": "V1: A effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "V1: B effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "V1: A tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "happy-place"
+      }
+    },
+    {
+      "name": "V1: B tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "coppersmith-plumbing"
+      }
+    },
+    {
+      "name": "V1: event sets disjoint (no shared event ids)",
+      "pass": true,
+      "detail": {
+        "intersection": []
+      }
+    },
+    {
+      "name": "V2: barrier rendezvous (both transports in flight)",
+      "pass": true,
+      "detail": {
+        "A": true,
+        "B": true
+      }
+    },
+    {
+      "name": "V2: execution windows overlap (genuinely concurrent)",
+      "pass": true,
+      "detail": {
+        "A": [
+          "2026-09-26T13:44:52.902Z",
+          "2026-09-26T13:44:53.307Z"
+        ],
+        "B": [
+          "2026-09-26T13:44:52.905Z",
+          "2026-09-26T13:44:53.307Z"
+        ]
+      }
+    },
+    {
+      "name": "V2: ID family 'mission_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V2-A-d26216e259ce",
+        "B": "lane-f-conc-V2-B-f5de371ddb37"
+      }
+    },
+    {
+      "name": "V2: ID family 'run_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V2-A-d26216e259ce-r1",
+        "B": "lane-f-conc-V2-B-f5de371ddb37-r1"
+      }
+    },
+    {
+      "name": "V2: ID family 'execution_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V2-A-d26216e259ce-x1",
+        "B": "lane-f-conc-V2-B-f5de371ddb37-x1"
+      }
+    },
+    {
+      "name": "V2: ID family 'work_order_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "d2186defcefc03c9",
+        "B": "9414cf75b23434ba"
+      }
+    },
+    {
+      "name": "V2: ID family 'artifact' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V2/A/result-lane-f-conc-V2-A-d26216e259ce-x1-a1.json",
+        "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V2/B/result-lane-f-conc-V2-B-f5de371ddb37-x1-a1.json"
+      }
+    },
+    {
+      "name": "V2: work orders match the deterministic mint",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: neither run's record names the other's execution identity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: A received prompt-A (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: B received prompt-B (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: no cross-delivery (A did not receive B's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: no cross-delivery (B did not receive A's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: prompt digests differ",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: workspace A contains no B identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V2: workspace B contains no A identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V2: A's evidence link resolves to A's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: B's evidence link resolves to B's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: evidence graph is bipartite (no A<->B edge)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V2: A outcome is UNKNOWN (ambiguous/timeout)",
+      "pass": true,
+      "detail": {
+        "outcome": "escalated",
+        "honestOutcome": "unknown",
+        "reason": "no JSON object found in worker stdout"
+      }
+    },
+    {
+      "name": "V2: B outcome is SUCCEEDED, unaffected by A",
+      "pass": true,
+      "detail": {
+        "outcome": "completed"
+      }
+    },
+    {
+      "name": "V2: A effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "V2: B effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "V2: A tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "happy-place"
+      }
+    },
+    {
+      "name": "V2: B tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "coppersmith-plumbing"
+      }
+    },
+    {
+      "name": "V2: event sets disjoint (no shared event ids)",
+      "pass": true,
+      "detail": {
+        "intersection": []
+      }
+    },
+    {
+      "name": "V3: barrier rendezvous (both transports in flight)",
+      "pass": true,
+      "detail": {
+        "A": true,
+        "B": true
+      }
+    },
+    {
+      "name": "V3: execution windows overlap (genuinely concurrent)",
+      "pass": true,
+      "detail": {
+        "A": [
+          "2026-09-26T13:44:53.429Z",
+          "2026-09-26T13:44:53.831Z"
+        ],
+        "B": [
+          "2026-09-26T13:44:53.431Z",
+          "2026-09-26T13:44:53.832Z"
+        ]
+      }
+    },
+    {
+      "name": "V3: ID family 'mission_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V3-A-23fd4fdb8c5b",
+        "B": "lane-f-conc-V3-B-b6846d1911fa"
+      }
+    },
+    {
+      "name": "V3: ID family 'run_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V3-A-23fd4fdb8c5b-r1",
+        "B": "lane-f-conc-V3-B-b6846d1911fa-r1"
+      }
+    },
+    {
+      "name": "V3: ID family 'execution_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "lane-f-conc-V3-A-23fd4fdb8c5b-x1",
+        "B": "lane-f-conc-V3-B-b6846d1911fa-x1"
+      }
+    },
+    {
+      "name": "V3: ID family 'work_order_id' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "5f57e8e19ea16054",
+        "B": "f3347b56ad80680f"
+      }
+    },
+    {
+      "name": "V3: ID family 'artifact' pairwise distinct",
+      "pass": true,
+      "detail": {
+        "A": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V3/A/result-lane-f-conc-V3-A-23fd4fdb8c5b-x1-a1.json",
+        "B": "/home/hatch/workspace/sprint-2026-09-24/orca/lane-f-harness/out/run-2026-09-26T1344-0309/concurrency-ab/lane-f-conc-shared-a4cd3a41f1df/workspaces/V3/B/result-lane-f-conc-V3-B-b6846d1911fa-x1-a1.json"
+      }
+    },
+    {
+      "name": "V3: work orders match the deterministic mint",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: neither run's record names the other's execution identity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: A received prompt-A (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: B received prompt-B (contains own brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: no cross-delivery (A did not receive B's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: no cross-delivery (B did not receive A's brief)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: prompt digests differ",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: workspace A contains no B identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V3: workspace B contains no A identity material",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "V3: A's evidence link resolves to A's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: B's evidence link resolves to B's own execution_id",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: evidence graph is bipartite (no A<->B edge)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "V3: A outcome is UNKNOWN (ambiguous/timeout)",
+      "pass": true,
+      "detail": {
+        "outcome": "unknown",
+        "reason": "dispatcher_timeout"
+      }
+    },
+    {
+      "name": "V3: B outcome is SUCCEEDED, unaffected by A",
+      "pass": true,
+      "detail": {
+        "outcome": "completed"
+      }
+    },
+    {
+      "name": "V3: A effect count == 0",
+      "pass": true,
+      "detail": {
+        "effects": 0
+      }
+    },
+    {
+      "name": "V3: B effect count == 1",
+      "pass": true,
+      "detail": {
+        "effects": 1
+      }
+    },
+    {
+      "name": "V3: A tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "happy-place"
+      }
+    },
+    {
+      "name": "V3: B tenant threaded into evidence",
+      "pass": true,
+      "detail": {
+        "tenant_id": "coppersmith-plumbing"
+      }
+    },
+    {
+      "name": "V3: event sets disjoint (no shared event ids)",
+      "pass": true,
+      "detail": {
+        "intersection": []
+      }
+    },
+    {
+      "name": "projection has all 8 mission rows",
+      "pass": true,
+      "detail": {
+        "rows": 8
+      }
+    },
+    {
+      "name": "projection: lane-f-conc-A-d33d369d9ea8... is UNKNOWN",
+      "pass": true,
+      "detail": "UNKNOWN"
+    },
+    {
+      "name": "projection: lane-f-conc-V1-A-df79cab97909... is UNKNOWN",
+      "pass": true,
+      "detail": "UNKNOWN"
+    },
+    {
+      "name": "projection: lane-f-conc-V2-A-d26216e259ce... is UNKNOWN",
+      "pass": true,
+      "detail": "UNKNOWN"
+    },
+    {
+      "name": "projection: lane-f-conc-V3-A-23fd4fdb8c5b... is UNKNOWN",
+      "pass": true,
+      "detail": "UNKNOWN"
+    },
+    {
+      "name": "projection: lane-f-conc-B-3feae8b735a0... is SUCCEEDED",
+      "pass": true,
+      "detail": "SUCCEEDED"
+    },
+    {
+      "name": "projection: lane-f-conc-V1-B-0588d9571c76... is SUCCEEDED",
+      "pass": true,
+      "detail": "SUCCEEDED"
+    },
+    {
+      "name": "projection: lane-f-conc-V2-B-f5de371ddb37... is SUCCEEDED",
+      "pass": true,
+      "detail": "SUCCEEDED"
+    },
+    {
+      "name": "projection: lane-f-conc-V3-B-b6846d1911fa... is SUCCEEDED",
+      "pass": true,
+      "detail": "SUCCEEDED"
+    },
+    {
+      "name": "refresh parity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "replay parity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "negative control",
+      "pass": true,
+      "detail": null
+    }
+  ],
+  "case_file": "concurrency-ab.js",
+  "variants": [
+    "base",
+    "V1",
+    "V2",
+    "V3"
+  ],
+  "concurrency_mechanism": "worker_threads + shared barrier"
+}

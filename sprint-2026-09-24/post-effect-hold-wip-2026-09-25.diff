@@ -1,0 +1,874 @@
+diff --git a/ping-runtime/orchestration/mission_runtime.js b/ping-runtime/orchestration/mission_runtime.js
+index fdd9de3ce..dd9d8557e 100644
+--- a/ping-runtime/orchestration/mission_runtime.js
++++ b/ping-runtime/orchestration/mission_runtime.js
+@@ -77,6 +77,13 @@ class MissionRuntime {
+       ALTER TABLE ping_missions ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64);
+       UPDATE ping_missions SET tenant_id = 'UNKNOWN' WHERE tenant_id IS NULL;
+       CREATE INDEX IF NOT EXISTS idx_pm_tenant_id ON ping_missions(tenant_id);
++      -- H5 HOLD persistence (ORCA reaper fix): an UNKNOWN outcome holds the
++      -- mission row until a recorded operator decision releases it. The held
++      -- flag is the row-visible hold the reaper honors; decisions is the
++      -- mission's operator decisions record.
++      ALTER TABLE ping_missions ADD COLUMN IF NOT EXISTS held BOOLEAN DEFAULT FALSE;
++      ALTER TABLE ping_missions ADD COLUMN IF NOT EXISTS hold_reason TEXT;
++      ALTER TABLE ping_missions ADD COLUMN IF NOT EXISTS decisions JSONB DEFAULT '[]';
+     `);
+   }
+ 
+@@ -142,10 +149,13 @@ class MissionRuntime {
+    * (rowCount 0) — the assignment can never be stolen by a concurrent scheduler.
+    *
+    * @returns {Promise<number>} rowCount — 1 if claimed, 0 if not claimable
++   *
++   * The guard also refuses held missions (H5 HOLD): a held row is never
++   * claimable even if its status was manually reset to 'created'.
+    */
+   async assign(missionId, workerName) {
+     const result = await this._pool.query(
+-      `UPDATE ping_missions SET status = 'assigned', assigned_to = $1, claimed_at = NOW(), lease_until = NOW() + INTERVAL '60 seconds' WHERE mission_id = $2 AND status = 'created' RETURNING mission_id`,
++      `UPDATE ping_missions SET status = 'assigned', assigned_to = $1, claimed_at = NOW(), lease_until = NOW() + INTERVAL '60 seconds' WHERE mission_id = $2 AND status = 'created' AND COALESCE(held, FALSE) = FALSE RETURNING mission_id`,
+       [workerName, missionId]
+     );
+ 
+@@ -200,7 +210,7 @@ class MissionRuntime {
+     } catch (_) {}
+ 
+     const updateResult = await this._pool.query(
+-      `UPDATE ping_missions SET status = 'completed', result = $1, completed_at = NOW() WHERE mission_id = $2 AND status = 'running'`,
++      `UPDATE ping_missions SET status = 'completed', result = $1, completed_at = NOW(), held = FALSE, hold_reason = NULL WHERE mission_id = $2 AND status = 'running'`,
+       [JSON.stringify({ ...result, duration_ms }), missionId]
+     );
+ 
+@@ -216,7 +226,7 @@ class MissionRuntime {
+    */
+   async fail(missionId, error) {
+     const result = await this._pool.query(
+-      `UPDATE ping_missions SET status = 'failed', error = $1, completed_at = NOW()
++      `UPDATE ping_missions SET status = 'failed', error = $1, completed_at = NOW(), held = FALSE, hold_reason = NULL
+        WHERE mission_id = $2 AND status IN ('running', 'assigned', 'retry_pending')`,
+       [error, missionId]
+     );
+@@ -263,7 +273,7 @@ class MissionRuntime {
+     if (nextRetry >= maxAttempts) {
+       // Exhausted — mark failed permanently
+       const result = await this._pool.query(
+-        `UPDATE ping_missions SET status = 'failed', error = $1, retries = $2, completed_at = NOW()
++        `UPDATE ping_missions SET status = 'failed', error = $1, retries = $2, completed_at = NOW(), held = FALSE, hold_reason = NULL
+          WHERE mission_id = $3 AND status IN ('running', 'assigned', 'retry_pending')`,
+         [error, nextRetry, missionId]
+       );
+@@ -276,7 +286,7 @@ class MissionRuntime {
+       // frozen — the F-01 infinite loop.
+       const retryAt = new Date(Date.now() + backoffMs);
+       const result = await this._pool.query(
+-        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3
++        `UPDATE ping_missions SET status = 'retry_pending', error = $1, retries = $2, retry_at = $3, held = FALSE, hold_reason = NULL
+          WHERE mission_id = $4 AND status IN ('running', 'assigned', 'retry_pending')`,
+         [error, nextRetry, retryAt.toISOString(), missionId]
+       );
+@@ -326,6 +336,12 @@ class MissionRuntime {
+    * scheduler (orphans from crashed schedulers or stuck workers beyond the
+    * lease renewal window).
+    *
++   * H5 HOLD (ORCA reaper fix): missions with an outstanding hold (`held`)
++   * are NEVER reaped. An UNKNOWN outcome parks the mission until a recorded
++   * operator decision releases it; the reaper turning it back to `created`
++   * would auto re-dispatch it — the false green this guard closes. Each
++   * skipped held mission is recorded (log + MISSION_LEASE_REAP_SKIPPED_HELD).
++   *
+    * @returns {Promise<number>} count of reclaimed missions
+    */
+   async reapExpiredLeases() {
+@@ -335,6 +351,7 @@ class MissionRuntime {
+        WHERE status IN ('running', 'assigned')
+          AND lease_until IS NOT NULL
+          AND lease_until < NOW()
++         AND COALESCE(held, FALSE) = FALSE
+        RETURNING mission_id`
+     );
+ 
+@@ -350,9 +367,115 @@ class MissionRuntime {
+       }
+     }
+ 
++    // Recorded skip: held missions whose leases expired are deliberately left
++    // parked. Silence here would be a false green (the hold would look like
++    // it lapsed while the mission quietly became re-dispatchable).
++    const skipped = await this._pool.query(
++      `SELECT mission_id FROM ping_missions
++       WHERE status IN ('running', 'assigned')
++         AND lease_until IS NOT NULL
++         AND lease_until < NOW()
++         AND COALESCE(held, FALSE) = TRUE`
++    );
++    for (const row of (skipped.rows || [])) {
++      console.log(`[MissionRuntime] Lease reap SKIPPED held mission ${row.mission_id} — awaiting operator decision`);
++      if (this._eventRuntime) {
++        const tenantId = await this._missionTenant(row.mission_id);
++        await this._eventRuntime.emit('MISSION_LEASE_REAP_SKIPPED_HELD', 'mission-runtime', { missionId: row.mission_id },
++          tenantId ? { tenant_id: tenantId } : {});
++      }
++    }
++
+     return reclaimed;
+   }
+ 
++  /**
++   * Persist (or clear) an H5 HOLD on a mission row.
++   *
++   * The hold is row-visible so it survives scheduler restarts and so the
++   * reaper honors it. Called by the scheduler's watchdog when it emits a
++   * HOLD reconciliation record for an UNKNOWN outcome.
++   *
++   * @param {string} missionId
++   * @param {boolean} held — true to hold, false to clear
++   * @param {string|null} reason — why the hold was placed
++   * @returns {Promise<number>} rowCount — 1 if the row was updated
++   */
++  async setHeld(missionId, held, reason = null) {
++    const result = await this._pool.query(
++      `UPDATE ping_missions SET held = $2, hold_reason = $3 WHERE mission_id = $1`,
++      [missionId, !!held, reason]
++    );
++    return result.rowCount || 0;
++  }
++
++  /**
++   * Record an operator decision against a mission — the ONLY path that
++   * releases an H5 HOLD.
++   *
++   * The decision is appended to the mission's `decisions` record (audit
++   * trail), then the action takes effect:
++   *   - 'release': hold cleared, mission returns to `created` so it becomes
++   *     eligible for dispatch again through the normal conditional-claim
++   *     path (assign → start), never by direct dispatch.
++   *   - 'fail': hold cleared, mission marked `failed` with the decision
++   *     reason as the error — terminal.
++   *
++   * Fail-closed: unknown actions, empty reasons, and unknown mission ids
++   * throw; nothing is recorded and the hold is untouched.
++   *
++   * @param {string} missionId
++   * @param {object} decision — { action: 'release'|'fail', reason: string, decided_by?: string }
++   * @returns {Promise<object>} the recorded decision entry
++   */
++  async recordOperatorDecision(missionId, decision = {}) {
++    const { constitutionalTimeAuthority } = require('../authorities/constitutional_time_authority.js');
++    const action = decision.action;
++    const reason = decision.reason;
++    if (action !== 'release' && action !== 'fail') {
++      throw new Error(`MissionRuntime.recordOperatorDecision: unknown action '${action}' (expected 'release' or 'fail')`);
++    }
++    if (typeof reason !== 'string' || reason.trim().length === 0) {
++      throw new Error('MissionRuntime.recordOperatorDecision: a non-empty reason is required');
++    }
++    const entry = {
++      action,
++      reason,
++      decided_by: decision.decided_by || 'operator',
++      decided_at: constitutionalTimeAuthority.nowAsISOString(),
++    };
++
++    const result = await this._pool.query(
++      `UPDATE ping_missions
++       SET decisions = COALESCE(decisions, '[]'::jsonb) || $2::jsonb,
++           held = FALSE,
++           hold_reason = NULL,
++           status = CASE WHEN $3 = 'release' THEN 'created' ELSE 'failed' END,
++           assigned_to = CASE WHEN $3 = 'release' THEN NULL ELSE assigned_to END,
++           started_at = CASE WHEN $3 = 'release' THEN NULL ELSE started_at END,
++           lease_until = CASE WHEN $3 = 'release' THEN NULL ELSE lease_until END,
++           claimed_at = CASE WHEN $3 = 'release' THEN NULL ELSE claimed_at END,
++           error = CASE WHEN $3 = 'fail' THEN $4 ELSE error END,
++           completed_at = CASE WHEN $3 = 'fail' THEN NOW() ELSE completed_at END
++       WHERE mission_id = $1
++       RETURNING mission_id, status`,
++      [missionId, JSON.stringify([entry]), action, reason]
++    );
++
++    if ((result.rowCount || 0) < 1) {
++      throw new Error(`MissionRuntime.recordOperatorDecision: mission ${missionId} not found`);
++    }
++
++    if (this._eventRuntime) {
++      const tenantId = await this._missionTenant(missionId);
++      await this._eventRuntime.emit('MISSION_OPERATOR_DECISION', 'mission-runtime',
++        { missionId, decision: entry, status: result.rows[0].status },
++        tenantId ? { tenant_id: tenantId } : {});
++    }
++
++    return entry;
++  }
++
+   /**
+    * Reclaim due retries — the missing link of the retry contract (F-01 repair).
+    *
+@@ -371,6 +494,7 @@ class MissionRuntime {
+        WHERE status = 'retry_pending'
+          AND retry_at IS NOT NULL
+          AND retry_at <= NOW()
++         AND COALESCE(held, FALSE) = FALSE
+        RETURNING mission_id`
+     );
+ 
+@@ -397,6 +521,11 @@ class MissionRuntime {
+    * cutoff. Feeds the scheduler's stuck-running watchdog; the caller filters
+    * out missions it is actively processing.
+    *
++   * H5 HOLD: already-held missions are excluded — the watchdog must not emit
++   * a second HOLD for a mission parked on an outstanding operator hold
++   * (notably across scheduler restarts, where the in-session dedup set is
++   * empty but the row flag survives).
++   *
+    * @param {string} olderThanIso — ISO cutoff; missions older than this qualify
+    * @returns {Promise<object[]>} mission rows
+    */
+@@ -405,6 +534,7 @@ class MissionRuntime {
+       `SELECT * FROM ping_missions
+        WHERE status IN ('running', 'assigned')
+          AND COALESCE(started_at, claimed_at, created_at) < $1
++         AND COALESCE(held, FALSE) = FALSE
+        ORDER BY created_at ASC`,
+       [olderThanIso]
+     );
+diff --git a/ping-runtime/orchestration/mission_scheduler.js b/ping-runtime/orchestration/mission_scheduler.js
+index 9b57a90b6..9722fea35 100644
+--- a/ping-runtime/orchestration/mission_scheduler.js
++++ b/ping-runtime/orchestration/mission_scheduler.js
+@@ -179,7 +179,8 @@ class MissionScheduler {
+       // Arrow 1: Reap expired leases — turns assigned/running missions whose
+       // lease expired back to created, enabling re-dispatch after worker crash.
+       // Only catches orphaned missions NOT in the scheduler's _processing set
+-      // (those had their leases renewed in Arrow 0).
++      // (those had their leases renewed in Arrow 0). Missions under an H5 HOLD
++      // are skipped (the skip is recorded) — they never auto re-dispatch.
+       try {
+         const reaped = await this._missionRuntime.reapExpiredLeases();
+         if (reaped > 0) console.log(`[MissionScheduler] Reaped ${reaped} expired leases`);
+@@ -439,6 +440,13 @@ class MissionScheduler {
+    * touched: a timeout never resolves to FAILED, and no automatic retry is
+    * derived for unknown effects.
+    *
++   * The HOLD is persisted to the mission row (setHeld) BEFORE the
++   * reconciliation record is emitted: the reaper (reapExpiredLeases) only
++   * honors holds it can see in the row. Emitting a HOLD the reaper cannot
++   * see would be a false green — the expired lease would still be reaped
++   * and the mission auto re-dispatched. If persistence fails, no HOLD is
++   * claimed (fail closed) and the failure is logged loudly.
++   *
+    * Emission is observable (MISSION_RECONCILE_HOLD event + bounded in-memory
+    * log + stats) and replayable (the record carries mission_id, payload
+    * digest, dispatch outcome, and correlation/causation ids; the failure_id is
+@@ -469,6 +477,21 @@ class MissionScheduler {
+       return null;
+     }
+ 
++    // Persist the HOLD to the mission row BEFORE claiming it: the reaper
++    // honors only row-visible holds. Fail closed — if the hold cannot be
++    // persisted, do not emit a reconciliation record for it.
++    let holdPersisted = false;
++    if (typeof this._missionRuntime.setHeld === 'function') {
++      try {
++        holdPersisted = (await this._missionRuntime.setHeld(mission.mission_id, true, reason)) >= 1;
++      } catch (holdErr) {
++        console.error(`[MissionScheduler] HOLD persistence FAILED for ${mission.mission_id}: ${holdErr.message}`);
++      }
++    } else {
++      console.error(`[MissionScheduler] missionRuntime.setHeld unavailable — cannot persist HOLD for ${mission.mission_id} (reaper may re-dispatch)`);
++    }
++    if (!holdPersisted) return null;
++
+     this._reconciled.add(mission.mission_id);
+ 
+     if (this._eventRuntime) {
+diff --git a/ping-runtime/orchestration/mission_scheduler.reaper_hold.test.js b/ping-runtime/orchestration/mission_scheduler.reaper_hold.test.js
+new file mode 100644
+index 000000000..1647f4254
+--- /dev/null
++++ b/ping-runtime/orchestration/mission_scheduler.reaper_hold.test.js
+@@ -0,0 +1,423 @@
++'use strict';
++/**
++ * ORCA reaper-vs-HOLD proof (mission layer P0).
++ *
++ * Gap under test: a mission parked on an H5 HOLD (UNKNOWN outcome awaiting
++ * an operator decision) keeps its `running`/`assigned` status with a stale
++ * 60s lease. The reaper's reapExpiredLeases() used to reset ANY
++ * running/assigned row with an expired lease back to `created`, which the
++ * scheduler's dispatch arrow then auto re-dispatched — an automatic retry
++ * of an unknown outcome, the exact false green HOLD semantics forbid.
++ *
++ * Proved here:
++ *   1. A HELD mission whose lease expires is never reaped, never
++ *      re-dispatched, and the skip is recorded (log + MISSION_LEASE_REAP_SKIPPED_HELD).
++ *   2. The hold survives the row: only a recorded operator decision releases
++ *      it (recordOperatorDecision), after which the mission becomes eligible
++ *      again through the normal conditional-claim path — no deadlock.
++ *   3. A 'fail' decision is terminal; invalid decisions are rejected
++ *      (fail closed) and leave the hold untouched.
++ *   4. The claim gate refuses held missions outright.
++ *   5. Non-held expired leases still reap (no regression).
++ *
++ * Harness: same FakePool + controllable-clock style as
++ * mission_scheduler.retry_watchdog.test.js. The decision logic under test
++ * (reapExpiredLeases, setHeld, recordOperatorDecision, assign, the
++ * scheduler's watchdog) runs for real; the fake only emulates pg wire
++ * semantics for the SQL the runtime issues.
++ *
++ * Run: node --test mission_scheduler.reaper_hold.test.js
++ */
++const test = require('node:test');
++const assert = require('node:assert/strict');
++
++const { MissionRuntime } = require('./mission_runtime.js');
++const { MissionScheduler } = require('./mission_scheduler.js');
++
++// ── Controllable clock ──────────────────────────────────────────────
++let fakeNow = Date.now();
++const realDateNow = Date.now;
++Date.now = () => fakeNow;
++const iso = () => new Date(fakeNow).toISOString();
++
++class FakePool {
++  constructor() { this.missions = new Map(); }
++  _inList(sql) {
++    const m = sql.match(/status IN \(([^)]+)\)/);
++    return m ? m[1].split(',').map(s => s.trim().replace(/'/g, '')) : null;
++  }
++  async query(sql, params = []) {
++    const S = sql.replace(/\s+/g, ' ').trim();
++    if (/^(CREATE|ALTER)/.test(S)) return { rows: [], rowCount: 0 };
++    const byId = (id) => this.missions.get(id);
++
++    if (S.includes('INSERT INTO ping_missions')) {
++      const id = params[0];
++      if (this.missions.has(id)) return { rows: [], rowCount: 0 };
++      this.missions.set(id, {
++        mission_id: id, mission_type: params[1], payload: params[2],
++        priority: params[3] || 0, created_by: params[4] || null,
++        status: 'created', result: null, assigned_to: null,
++        created_at: iso(), started_at: null, completed_at: null,
++        error: null, retries: 0, retry_at: null, lease_until: null, claimed_at: null,
++        tenant_id: params[5] || 'UNKNOWN', held: false, hold_reason: null, decisions: [],
++      });
++      return { rows: [], rowCount: 1 };
++    }
++    if (S.includes('SELECT tenant_id FROM ping_missions')) {
++      const m = byId(params[0]);
++      return m ? { rows: [{ tenant_id: m.tenant_id }], rowCount: 1 } : { rows: [], rowCount: 0 };
++    }
++    if (S.includes('SELECT retries FROM ping_missions')) {
++      const m = byId(params[0]);
++      return m ? { rows: [{ retries: m.retries }], rowCount: 1 } : { rows: [], rowCount: 0 };
++    }
++    if (S.includes('SELECT started_at FROM ping_missions')) {
++      const m = byId(params[0]);
++      return m ? { rows: [{ started_at: m.started_at }], rowCount: 1 } : { rows: [], rowCount: 0 };
++    }
++    if (S.includes('SELECT * FROM ping_missions') && S.includes('WHERE mission_id')) {
++      const m = byId(params[0]);
++      return m ? { rows: [m], rowCount: 1 } : { rows: [], rowCount: 0 };
++    }
++    // setHeld(): persist/clear an H5 HOLD on the row
++    if (S.includes('SET held =') && S.includes('hold_reason = $')) {
++      const m = byId(params[0]);
++      if (!m) return { rows: [], rowCount: 0 };
++      m.held = !!params[1]; m.hold_reason = params[2];
++      return { rows: [], rowCount: 1 };
++    }
++    // recordOperatorDecision(): append to the decisions record, release or fail
++    if (S.includes('SET decisions = COALESCE')) {
++      const m = byId(params[0]);
++      if (!m) return { rows: [], rowCount: 0 };
++      const entries = JSON.parse(params[1]);
++      m.decisions = (m.decisions || []).concat(entries);
++      m.held = false; m.hold_reason = null;
++      if (params[2] === 'release') {
++        m.status = 'created'; m.assigned_to = null; m.started_at = null;
++        m.lease_until = null; m.claimed_at = null;
++      } else {
++        m.status = 'failed'; m.error = params[3]; m.completed_at = iso();
++      }
++      return { rows: [{ mission_id: m.mission_id, status: m.status }], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'assigned'")) {
++      const m = byId(params[1]);
++      if (!m || m.status !== 'created' || m.held === true) return { rows: [], rowCount: 0 };
++      m.status = 'assigned'; m.assigned_to = params[0];
++      m.claimed_at = iso(); m.lease_until = new Date(fakeNow + 60000).toISOString();
++      return { rows: [{ mission_id: m.mission_id }], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'running'")) {
++      const m = byId(params[0]);
++      if (!m || m.status !== 'assigned') return { rows: [], rowCount: 0 };
++      m.status = 'running'; m.started_at = iso();
++      return { rows: [], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'completed'")) {
++      const m = byId(params[1]);
++      if (!m || m.status !== 'running') return { rows: [], rowCount: 0 };
++      m.status = 'completed'; m.result = params[0]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
++      return { rows: [], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'retry_pending'")) {
++      const m = byId(params[3]);
++      const allowed = this._inList(S) || [];
++      if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
++      m.status = 'retry_pending'; m.error = params[0]; m.retries = params[1]; m.retry_at = params[2];
++      m.held = false; m.hold_reason = null;
++      return { rows: [], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'failed'") && S.includes('retries')) {
++      const m = byId(params[2]);
++      const allowed = this._inList(S) || [];
++      if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
++      m.status = 'failed'; m.error = params[0]; m.retries = params[1]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
++      return { rows: [], rowCount: 1 };
++    }
++    if (S.includes("SET status = 'failed'")) {
++      const m = byId(params[1]);
++      const allowed = this._inList(S) || [];
++      if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
++      m.status = 'failed'; m.error = params[0]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
++      return { rows: [], rowCount: 1 };
++    }
++    // reclaimRetryPending(): retry_pending + due retry_at -> created (never held)
++    if (S.includes("SET status = 'created'") && S.includes('retry_at = NULL')) {
++      const out = [];
++      for (const m of this.missions.values()) {
++        if (m.status === 'retry_pending' && m.retry_at && Date.parse(m.retry_at) <= fakeNow && m.held !== true) {
++          m.status = 'created'; m.assigned_to = null; m.lease_until = null;
++          m.claimed_at = null; m.retry_at = null;
++          out.push({ mission_id: m.mission_id });
++        }
++      }
++      return { rows: out, rowCount: out.length };
++    }
++    // reapExpiredLeases(): running/assigned + expired lease -> created (never held)
++    if (S.includes("SET status = 'created'")) {
++      const out = [];
++      for (const m of this.missions.values()) {
++        if (['running', 'assigned'].includes(m.status) && m.lease_until && Date.parse(m.lease_until) < fakeNow && m.held !== true) {
++          m.status = 'created'; m.assigned_to = null; m.lease_until = null;
++          m.claimed_at = null; m.retry_at = iso();
++          out.push({ mission_id: m.mission_id });
++        }
++      }
++      return { rows: out, rowCount: out.length };
++    }
++    // reapExpiredLeases(): recorded skip — held missions whose lease expired
++    if (S.includes('SELECT mission_id FROM ping_missions')) {
++      const out = [];
++      for (const m of this.missions.values()) {
++        if (['running', 'assigned'].includes(m.status) && m.lease_until && Date.parse(m.lease_until) < fakeNow && m.held === true) {
++          out.push({ mission_id: m.mission_id });
++        }
++      }
++      return { rows: out, rowCount: out.length };
++    }
++    if (S.includes('SET lease_until = NOW()')) {
++      const m = byId(params[1]);
++      if (!m || !['running', 'assigned'].includes(m.status) || !m.lease_until) return { rows: [], rowCount: 0 };
++      m.lease_until = new Date(fakeNow + params[0] * 1000).toISOString();
++      return { rows: [], rowCount: 1 };
++    }
++    // findStuckRunning() — already-held missions excluded (no duplicate HOLD)
++    if (S.includes('COALESCE(started_at')) {
++      const cutoff = Date.parse(params[0]);
++      const rows = [...this.missions.values()].filter(m =>
++        ['running', 'assigned'].includes(m.status) &&
++        m.held !== true &&
++        Date.parse(m.started_at || m.claimed_at || m.created_at) < cutoff);
++      return { rows, rowCount: rows.length };
++    }
++    // getPending(): created ONLY
++    if (S.includes('WHERE status =') && S.includes('LIMIT')) {
++      const limit = params[0] || 10;
++      const rows = [...this.missions.values()]
++        .filter(m => m.status === 'created')
++        .sort((a, b) => (b.priority || 0) - (a.priority || 0))
++        .slice(0, limit);
++      return { rows, rowCount: rows.length };
++    }
++    throw new Error(`FakePool: unhandled SQL: ${S.slice(0, 140)}`);
++  }
++}
++
++function makeHarness(opts = {}) {
++  fakeNow = realDateNow(); // fresh clock per harness — no cross-test leakage
++  const pool = new FakePool();
++  const emitted = [];
++  const eventRuntime = {
++    emitted,
++    async emit(type, source, payload = {}) { emitted.push({ type, source, payload }); return { status: 'ok' }; },
++  };
++  const harness = { pool, events: eventRuntime, workerInvocations: 0 };
++  const behaviors = {
++    hanging: () => { harness.workerInvocations++; return new Promise(() => {}); },
++    ok: async () => { harness.workerInvocations++; return { status: 'ok' }; },
++  };
++  let behavior = opts.worker || 'hanging';
++  const workerRuntime = {
++    getStats: () => ({ workers: { observation: {} } }),
++    dispatch: (event) => behaviors[behavior](event),
++  };
++  const mr = new MissionRuntime({ pool, eventRuntime });
++  const sched = new MissionScheduler({
++    missionRuntime: mr,
++    workerRuntime,
++    eventRuntime,
++    retryPolicy: { max_attempts: 3, backoff_delay_ms: 5000 },
++    pollIntervalMs: 3600000, // manual _poll() only
++    dispatchTimeoutMs: opts.dispatchTimeoutMs || 50,
++    stuckThresholdMs: opts.stuckThresholdMs || 600000,
++  });
++  harness.mr = mr;
++  harness.sched = sched;
++  harness.setWorker = (b) => { behavior = b; };
++  harness.advance = (ms) => { fakeNow += ms; };
++  harness.now = () => fakeNow;
++  return harness;
++}
++
++function holds(h) {
++  return h.events.emitted.filter(e => e.type === 'MISSION_RECONCILE_HOLD');
++}
++
++function skips(h) {
++  return h.events.emitted.filter(e => e.type === 'MISSION_LEASE_REAP_SKIPPED_HELD');
++}
++
++// Dispatch a mission through a hanging worker so the dispatch timeout fires
++// and the watchdog parks it on an H5 HOLD. Returns the mission id.
++async function parkOnHold(h, tag) {
++  const id = await h.mr.create('LEAD_FOLLOWUP', {
++    event_id: `evt-${tag}`, event_type: 'LEAD_CREATED', correlation_id: `corr-${tag}`,
++  }, { tenant_id: 't1' });
++  // The dispatch timeout uses an unref'd timer (it must never hold the
++  // process open in production). Keep a ref'd handle alive for the test so
++  // the event loop survives until the timer fires.
++  const keepAlive = setInterval(() => {}, 1000);
++  try {
++    await h.sched._poll(); // dispatch hangs -> 50ms timeout -> HOLD
++  } finally {
++    clearInterval(keepAlive);
++  }
++  return id;
++}
++
++// ── The proof ───────────────────────────────────────────────────────
++
++
++// ── The proof ───────────────────────────────────────────────────────
++
++test('reaper: a HELD mission whose lease expires is never re-dispatched; the skip is recorded', async () => {
++  const h = makeHarness({ worker: 'hanging', dispatchTimeoutMs: 50 });
++  const id = await parkOnHold(h, 'rh1');
++
++  // The watchdog parked it: HOLD persisted to the row, exactly one dispatch.
++  let m = h.pool.missions.get(id);
++  assert.equal(m.status, 'running', 'watchdog never mutates the row status');
++  assert.equal(m.held, true, 'HOLD persisted to the mission row');
++  assert.equal(holds(h).length, 1, 'exactly one HOLD reconciliation record emitted');
++  assert.equal(h.workerInvocations, 1, 'exactly one physical dispatch');
++
++  // The lease expires through the ~60s re-dispatch path.
++  h.advance(61000);
++  const reaped = await h.mr.reapExpiredLeases();
++  assert.equal(reaped, 0, 'reaper reclaims zero held missions');
++
++  // The skip is recorded — silence here would be the false green.
++  const rec = skips(h);
++  assert.equal(rec.length, 1, 'one recorded skip for the held mission');
++  assert.equal(rec[0].payload.missionId, id);
++
++  // Row untouched, hold intact.
++  m = h.pool.missions.get(id);
++  assert.equal(m.status, 'running');
++  assert.equal(m.held, true);
++  assert.ok(!h.events.emitted.some(e => e.type === 'MISSION_LEASE_EXPIRED' && e.payload.missionId === id),
++    'no MISSION_LEASE_EXPIRED for a held mission');
++
++  // Full poll cycle: reaper arrow + dispatch arrow. Still no re-dispatch.
++  await h.sched._poll();
++  assert.equal(h.workerInvocations, 1, 'zero automatic re-dispatch of the held mission');
++  const pending = await h.mr.getPending(10);
++  assert.ok(!pending.some(p => p.mission_id === id), 'held mission never becomes pending');
++  m = h.pool.missions.get(id);
++  assert.equal(m.status, 'running');
++  assert.equal(m.held, true);
++});
++
++test('operator: a release decision re-enables the mission through the claim path (no deadlock)', async () => {
++  const h = makeHarness({ worker: 'hanging', dispatchTimeoutMs: 50 });
++  const id = await parkOnHold(h, 'rh2');
++  h.advance(61000);
++  await h.sched._poll();
++  assert.equal(h.workerInvocations, 1, 'held through the full poll cycle');
++
++  // The operator decides, with a recorded reason. This is the ONLY release path.
++  const entry = await h.mr.recordOperatorDecision(id, {
++    action: 'release',
++    reason: 'operator verified exactly one effect; safe to re-dispatch',
++    decided_by: 'nolan',
++  });
++  assert.equal(entry.action, 'release');
++  assert.equal(entry.decided_by, 'nolan');
++  assert.ok(entry.decided_at, 'decision timestamp recorded');
++
++  let m = h.pool.missions.get(id);
++  assert.equal(m.held, false, 'hold cleared');
++  assert.equal(m.status, 'created', 'eligible again via the created state');
++  assert.equal(m.decisions.length, 1, 'decisions record holds the operator decision');
++  assert.deepEqual(m.decisions[0], entry);
++  const dec = h.events.emitted.filter(e => e.type === 'MISSION_OPERATOR_DECISION');
++  assert.equal(dec.length, 1);
++  assert.equal(dec[0].payload.missionId, id);
++
++  // Now the mission CAN proceed: normal conditional-claim dispatch, exactly once.
++  h.setWorker('ok');
++  await h.sched._poll();
++  assert.equal(h.workerInvocations, 2, 'released mission dispatched exactly once more');
++  assert.equal(h.pool.missions.get(id).status, 'completed');
++});
++
++test('operator: a fail decision is terminal and never re-dispatched', async () => {
++  const h = makeHarness({ worker: 'hanging', dispatchTimeoutMs: 50 });
++  const id = await parkOnHold(h, 'rh3');
++
++  const entry = await h.mr.recordOperatorDecision(id, {
++    action: 'fail',
++    reason: 'effect confirmed duplicated upstream; do not retry',
++  });
++  assert.equal(entry.action, 'fail');
++  let m = h.pool.missions.get(id);
++  assert.equal(m.status, 'failed');
++  assert.equal(m.error, 'effect confirmed duplicated upstream; do not retry');
++  assert.equal(m.held, false);
++  assert.equal(m.decisions.length, 1);
++
++  h.advance(120000);
++  await h.sched._poll();
++  assert.equal(h.workerInvocations, 1, 'no re-dispatch after a fail decision');
++  assert.equal(h.pool.missions.get(id).status, 'failed');
++});
++
++test('operator: decisions fail closed — invalid input leaves the hold untouched', async () => {
++  const h = makeHarness({ worker: 'hanging', dispatchTimeoutMs: 50 });
++  const id = await parkOnHold(h, 'rh4');
++
++  await assert.rejects(
++    h.mr.recordOperatorDecision(id, { action: 'retry', reason: 'nope' }),
++    /unknown action/,
++    'unknown actions are rejected'
++  );
++  await assert.rejects(
++    h.mr.recordOperatorDecision(id, { action: 'release', reason: '   ' }),
++    /non-empty reason/,
++    'empty reasons are rejected'
++  );
++  await assert.rejects(
++    h.mr.recordOperatorDecision('mission-that-does-not-exist', { action: 'release', reason: 'x' }),
++    /not found/,
++    'unknown missions are rejected'
++  );
++
++  const m = h.pool.missions.get(id);
++  assert.equal(m.held, true, 'hold untouched by rejected decisions');
++  assert.equal(m.status, 'running');
++  assert.equal(m.decisions.length, 0, 'nothing recorded');
++});
++
++test('claim gate: a held mission is never claimable, even with status manually reset to created', async () => {
++  const h = makeHarness({ worker: 'hanging', dispatchTimeoutMs: 50 });
++  const id = await parkOnHold(h, 'rh5');
++
++  // Simulate a manual/errant status reset: the row is created but still held.
++  h.pool.missions.get(id).status = 'created';
++  assert.equal(await h.mr.assign(id, 'observation'), 0, 'claim guard refuses held rows');
++  const m = h.pool.missions.get(id);
++  assert.equal(m.status, 'created', 'no state change from the refused claim');
++  assert.equal(m.held, true, 'hold intact');
++  assert.equal(m.assigned_to, 'observation', 'assigned_to untouched by the refused claim');
++});
++
++test('reaper: non-held expired leases still reap (no regression)', async () => {
++  const h = makeHarness({ worker: 'ok' });
++  const id = await h.mr.create('LEAD_FOLLOWUP', {
++    event_id: 'evt-rh6', event_type: 'LEAD_CREATED',
++  }, { tenant_id: 't1' });
++  assert.equal(await h.mr.assign(id, 'observation'), 1);
++
++  h.advance(61000);
++  assert.equal(await h.mr.reapExpiredLeases(), 1, 'orphan without a hold is reclaimed');
++  const m = h.pool.missions.get(id);
++  assert.equal(m.status, 'created');
++  const expired = h.events.emitted.filter(e => e.type === 'MISSION_LEASE_EXPIRED');
++  assert.equal(expired.length, 1);
++  assert.equal(skips(h).length, 0, 'no skip recorded for a non-held mission');
++});
+diff --git a/ping-runtime/orchestration/mission_scheduler.retry_watchdog.test.js b/ping-runtime/orchestration/mission_scheduler.retry_watchdog.test.js
+index e4f515272..d05272a3d 100755
+--- a/ping-runtime/orchestration/mission_scheduler.retry_watchdog.test.js
++++ b/ping-runtime/orchestration/mission_scheduler.retry_watchdog.test.js
+@@ -57,9 +57,14 @@ class FakePool {
+         status: 'created', result: null, assigned_to: null,
+         created_at: iso(), started_at: null, completed_at: null,
+         error: null, retries: 0, retry_at: null, lease_until: null, claimed_at: null,
++        tenant_id: params[5] || 'UNKNOWN', held: false, hold_reason: null, decisions: [],
+       });
+       return { rows: [], rowCount: 1 };
+     }
++    if (S.includes('SELECT tenant_id FROM ping_missions')) {
++      const m = byId(params[0]);
++      return m ? { rows: [{ tenant_id: m.tenant_id }], rowCount: 1 } : { rows: [], rowCount: 0 };
++    }
+     if (S.includes('SELECT retries FROM ping_missions')) {
+       const m = byId(params[0]);
+       return m ? { rows: [{ retries: m.retries }], rowCount: 1 } : { rows: [], rowCount: 0 };
+@@ -72,9 +77,16 @@ class FakePool {
+       const m = byId(params[0]);
+       return m ? { rows: [m], rowCount: 1 } : { rows: [], rowCount: 0 };
+     }
++    // setHeld(): persist/clear an H5 HOLD on the row
++    if (S.includes('SET held =') && S.includes('hold_reason')) {
++      const m = byId(params[0]);
++      if (!m) return { rows: [], rowCount: 0 };
++      m.held = !!params[1]; m.hold_reason = params[2];
++      return { rows: [], rowCount: 1 };
++    }
+     if (S.includes("SET status = 'assigned'")) {
+       const m = byId(params[1]);
+-      if (!m || m.status !== 'created') return { rows: [], rowCount: 0 };
++      if (!m || m.status !== 'created' || m.held === true) return { rows: [], rowCount: 0 };
+       m.status = 'assigned'; m.assigned_to = params[0];
+       m.claimed_at = iso(); m.lease_until = new Date(fakeNow + 60000).toISOString();
+       return { rows: [{ mission_id: m.mission_id }], rowCount: 1 };
+@@ -89,6 +101,7 @@ class FakePool {
+       const m = byId(params[1]);
+       if (!m || m.status !== 'running') return { rows: [], rowCount: 0 };
+       m.status = 'completed'; m.result = params[0]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
+       return { rows: [], rowCount: 1 };
+     }
+     if (S.includes("SET status = 'retry_pending'")) {
+@@ -96,6 +109,7 @@ class FakePool {
+       const allowed = this._inList(S) || [];
+       if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
+       m.status = 'retry_pending'; m.error = params[0]; m.retries = params[1]; m.retry_at = params[2];
++      m.held = false; m.hold_reason = null;
+       return { rows: [], rowCount: 1 };
+     }
+     if (S.includes("SET status = 'failed'") && S.includes('retries')) {
+@@ -103,6 +117,7 @@ class FakePool {
+       const allowed = this._inList(S) || [];
+       if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
+       m.status = 'failed'; m.error = params[0]; m.retries = params[1]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
+       return { rows: [], rowCount: 1 };
+     }
+     if (S.includes("SET status = 'failed'")) {
+@@ -110,6 +125,7 @@ class FakePool {
+       const allowed = this._inList(S) || [];
+       if (!m || !allowed.includes(m.status)) return { rows: [], rowCount: 0 };
+       m.status = 'failed'; m.error = params[0]; m.completed_at = iso();
++      m.held = false; m.hold_reason = null;
+       return { rows: [], rowCount: 1 };
+     }
+     // reclaimRetryPending(): retry_pending + due retry_at -> created (retries kept)
+@@ -124,11 +140,11 @@ class FakePool {
+       }
+       return { rows: out, rowCount: out.length };
+     }
+-    // reapExpiredLeases(): running/assigned + expired lease -> created
++    // reapExpiredLeases(): running/assigned + expired lease -> created (never held)
+     if (S.includes("SET status = 'created'")) {
+       const out = [];
+       for (const m of this.missions.values()) {
+-        if (['running', 'assigned'].includes(m.status) && m.lease_until && Date.parse(m.lease_until) < fakeNow) {
++        if (['running', 'assigned'].includes(m.status) && m.lease_until && Date.parse(m.lease_until) < fakeNow && m.held !== true) {
+           m.status = 'created'; m.assigned_to = null; m.lease_until = null;
+           m.claimed_at = null; m.retry_at = iso();
+           out.push({ mission_id: m.mission_id });
+@@ -136,17 +152,28 @@ class FakePool {
+       }
+       return { rows: out, rowCount: out.length };
+     }
++    // reapExpiredLeases(): recorded skip — held missions whose lease expired
++    if (S.includes('SELECT mission_id FROM ping_missions')) {
++      const out = [];
++      for (const m of this.missions.values()) {
++        if (['running', 'assigned'].includes(m.status) && m.lease_until && Date.parse(m.lease_until) < fakeNow && m.held === true) {
++          out.push({ mission_id: m.mission_id });
++        }
++      }
++      return { rows: out, rowCount: out.length };
++    }
+     if (S.includes('SET lease_until = NOW()')) {
+       const m = byId(params[1]);
+       if (!m || !['running', 'assigned'].includes(m.status) || !m.lease_until) return { rows: [], rowCount: 0 };
+       m.lease_until = new Date(fakeNow + params[0] * 1000).toISOString();
+       return { rows: [], rowCount: 1 };
+     }
+-    // findStuckRunning()
++    // findStuckRunning() — already-held missions are excluded (no duplicate HOLD)
+     if (S.includes('COALESCE(started_at')) {
+       const cutoff = Date.parse(params[0]);
+       const rows = [...this.missions.values()].filter(m =>
+         ['running', 'assigned'].includes(m.status) &&
++        m.held !== true &&
+         Date.parse(m.started_at || m.claimed_at || m.created_at) < cutoff);
+       return { rows, rowCount: rows.length };
+     }
+@@ -187,6 +214,12 @@ function makeHarness(opts = {}) {
+     },
+   };
+   const mr = new MissionRuntime({ pool, eventRuntime });
++  // W3 tenant law: create() requires options.tenant_id (fail closed). These
++  // tests predate that requirement; the harness supplies the test tenant so
++  // the tests exercise the law's happy path instead of its rejection path.
++  const _create = mr.create.bind(mr);
++  mr.create = (type, payload, options = {}) =>
++    _create(type, payload, { tenant_id: 'test-tenant', ...options });
+   const sched = new MissionScheduler({
+     missionRuntime: mr,
+     workerRuntime,
+diff --git a/ping-runtime/orchestration/mission_scheme_convergence.test.js b/ping-runtime/orchestration/mission_scheme_convergence.test.js
+index 8b37e86b8..88de0d4f0 100644
+--- a/ping-runtime/orchestration/mission_scheme_convergence.test.js
++++ b/ping-runtime/orchestration/mission_scheme_convergence.test.js
+@@ -38,7 +38,7 @@ function mockPool(captured) {
+ test('MissionRuntime.create targets the canonical ping_missions table', async () => {
+   const captured = [];
+   const rt = new MissionRuntime({ pool: mockPool(captured) });
+-  const id = await rt.create('LEAD_FOLLOWUP', { event_id: 'evt_123' }, { priority: 3 });
++  const id = await rt.create('LEAD_FOLLOWUP', { event_id: 'evt_123' }, { priority: 3, tenant_id: 'test-tenant' });
+   assert.equal(captured.length, 1);
+   assert.match(captured[0].sql, /INSERT INTO ping_missions/);
+   assert.match(captured[0].sql, /ON CONFLICT \(mission_id\) DO NOTHING/);
+@@ -49,9 +49,9 @@ test('MissionRuntime.create targets the canonical ping_missions table', async ()
+ test('MissionRuntime mission_id is deterministic and idempotent by construction', async () => {
+   const mk = () => new MissionRuntime({ pool: mockPool([]) });
+   const payload = { event_id: 'evt_abc', source: 'email-connector' };
+-  const id1 = await mk().create('REVIEW_RESPONSE', payload);
+-  const id2 = await mk().create('REVIEW_RESPONSE', { ...payload });
+-  const id3 = await mk().create('REVIEW_RESPONSE', { event_id: 'evt_other' });
++  const id1 = await mk().create('REVIEW_RESPONSE', payload, { tenant_id: 'test-tenant' });
++  const id2 = await mk().create('REVIEW_RESPONSE', { ...payload }, { tenant_id: 'test-tenant' });
++  const id3 = await mk().create('REVIEW_RESPONSE', { event_id: 'evt_other' }, { tenant_id: 'test-tenant' });
+   assert.equal(id1, id2, 'same logical mission must hash to the same id');
+   assert.notEqual(id1, id3, 'different events must hash to different ids');
+ });
+@@ -60,7 +60,7 @@ test('MissionRuntime.create emits MISSION_CREATED through the injected event run
+   const emitted = [];
+   const fakeUER = { emit: async (t, s, p) => { emitted.push({ t, s, p }); } };
+   const rt = new MissionRuntime({ pool: mockPool([]), eventRuntime: fakeUER });
+-  const id = await rt.create('CUSTOMER_ONBOARD', { event_id: 'evt_1' });
++  const id = await rt.create('CUSTOMER_ONBOARD', { event_id: 'evt_1' }, { tenant_id: 'test-tenant' });
+   assert.equal(emitted.length, 1);
+   assert.equal(emitted[0].t, 'MISSION_CREATED');
+   assert.equal(emitted[0].s, 'mission-runtime');

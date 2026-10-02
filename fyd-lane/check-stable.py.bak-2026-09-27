@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""Check dump.py refresh persistence: two consecutive dumps must be
+byte-identical after normalizing the volatile dumpedAt timestamp."""
+import json, subprocess, sys
+
+P = "/home/nolan/ping/var/fyd-projections/coppersmith-plumbing.json"
+
+def snap():
+    subprocess.run(
+        ["python3", "/home/nolan/ping/tools/fyd-site-projection/dump.py",
+         "coppersmith-plumbing"],
+        check=True, capture_output=True, env={
+            **dict(__import__("os").environ),
+            "FYD_OVERLAY_JOURNAL": "demo"})
+    d = json.load(open(P))
+    d["meta"]["dumpedAt"] = "NORMALIZED"
+    return json.dumps(d, sort_keys=True, separators=(",", ":")).encode()
+
+a = snap()
+b = snap()
+ha = __import__("hashlib").sha256(a).hexdigest()
+hb = __import__("hashlib").sha256(b).hexdigest()
+print("run1", ha[:16])
+print("run2", hb[:16])
+print("BYTE_STABLE" if ha == hb else "NOT_STABLE")
+sys.exit(0 if ha == hb else 1)

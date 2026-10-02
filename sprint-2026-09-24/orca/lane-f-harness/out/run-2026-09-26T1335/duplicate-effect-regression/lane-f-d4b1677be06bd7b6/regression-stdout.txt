@@ -1,0 +1,50 @@
+ok: case1: effect executed exactly once
+ok: case1: mission NOT completed
+ok: case1: mission NOT failed
+ok: case1: mission NOT retry_pending (zero automatic retry)
+ok: case1: mission row untouched (still running — UNKNOWN)
+ok: case1: retries counter never advanced
+ok: case1: UNKNOWN reconciled as HOLD (observable)
+ok: case1: HOLD event emitted
+ok: case1: scheduler stats.unknown === 1
+ok: case1: zero fabricated "no worker matched" narrative
+ok: case1: no failure error recorded on mission
+ok: case2: dispatch receipt observes matched=false
+ok: case2: dispatch receipt observes routeExists=false
+ok: case2: NO_MATCH fails terminally (failed)
+ok: case2: zero retry consumed (retries=1 via max_attempts:1, then terminal)
+ok: case2: nothing reclaimed for redispatch
+ok: case2: no effect performed
+ok: case2: error prose states the OBSERVED receipt (not an inference)
+ok: case2: NO_MATCH routed to DLQ for human repair
+ok: case2: not recorded as UNKNOWN
+ok: case3: SUCCEEDED -> completed
+ok: case3: effect executed once
+ok: case3: stats.completed === 1
+ok: case3: no UNKNOWN recorded
+ok: case4: thrown error -> FAILED path (retry_pending)
+ok: case4: no effect occurred before the throw
+ok: case4: retry counter advanced (existing contract)
+ok: case4: retry of a genuine failure still works -> completed
+ok: case4: effect executed exactly once total
+ok: case5: post-effect throw follows the FAILED contract (retry_pending)
+ok: case5: RESIDUAL RISK — redispatch duplicates the effect (documents the gap)
+ok: case5: redispatch performed the effect a second time (known gap, not a regression)
+[MissionScheduler] OUTCOME UNKNOWN — RECONCILIATION IN PROGRESS — mission m-case6 (dispatch timeout after 80ms (outcome unknown))
+ok: case6: timeout -> mission row untouched (running)
+ok: case6: timeout -> HOLD reconciled
+ok: case6: timeout -> HOLD event emitted
+ok: case6: timeout -> never FAILED
+ok: case6: timeout -> zero retry queued
+ok: case6: no effect observable from coordinator side
+[MissionScheduler] OUTCOME UNKNOWN — RECONCILIATION IN PROGRESS — mission m-case7 (worker 'observation' matched event_type=BILL_CUSTOMER but returned no result — outcome unknown, effect may have occurred)
+ok: case7: UNKNOWN leaves row running (untouched)
+ok: case7: fresh instance does not pick up the running mission
+ok: case7: nothing reclaimable for retry
+[MissionScheduler] OUTCOME UNKNOWN — RECONCILIATION IN PROGRESS — mission m-case7 (stuck in 'running' since 2026-09-26T12:35:10.200Z (beyond 60000ms threshold))
+ok: case7: fresh watchdog re-emits HOLD (detection only, no fail/retry)
+ok: case7: watchdog did not fail or retry the mission
+ok: case7: effect executed exactly once across the simulated restart
+ok: case7: KNOWN OPEN QUESTION recorded — Arrow-1 reaper (mission-runtime side) may still reset running->created after a real process restart and redispatch; pending Nolan's Reaper-vs-HOLD decision, NOT fixed by this repair
+
+45/45 assertions passed
