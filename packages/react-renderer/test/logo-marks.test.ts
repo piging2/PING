@@ -52,20 +52,22 @@ function build(graph: ObjectGraph): Built {
 }
 
 describe("logo mark resolution", () => {
-  test("HPP resolves to tape-measure", () => {
-    expect(resolveLogoMark(HPP_ID)).toBe("tape-measure");
-  });
-  test("Coppersmith resolves to pipe-wrench", () => {
-    expect(resolveLogoMark(COPPERSMITH_ID)).toBe("pipe-wrench");
+  test("src ships no per-customer default: proof businesses resolve generic", () => {
+    // Backend genericity (point 11): the adapter must not branch on
+    // customer identity. The caller supplies business->mark assignments.
+    expect(resolveLogoMark(HPP_ID)).toBe("generic");
+    expect(resolveLogoMark(COPPERSMITH_ID)).toBe("generic");
   });
   test("unknown business resolves to generic", () => {
     expect(resolveLogoMark("website-business-unknown")).toBe("generic");
   });
-  test("caller override wins over the default mapping", () => {
-    expect(resolveLogoMark(HPP_ID, { [HPP_ID]: "pipe-wrench" })).toBe("pipe-wrench");
+  test("caller-supplied mapping is the only mapping", () => {
+    expect(resolveLogoMark(HPP_ID, { [HPP_ID]: "tape-measure" })).toBe("tape-measure");
+    expect(resolveLogoMark(COPPERSMITH_ID, { [COPPERSMITH_ID]: "pipe-wrench" })).toBe("pipe-wrench");
   });
   test("resolution is deterministic", () => {
-    expect(resolveLogoMark(HPP_ID)).toBe(resolveLogoMark(HPP_ID));
+    const m = { [HPP_ID]: "tape-measure" } as const;
+    expect(resolveLogoMark(HPP_ID, { ...m })).toBe(resolveLogoMark(HPP_ID, { ...m }));
   });
 });
 
@@ -82,25 +84,42 @@ describe("logo mark rendering", () => {
     // SVG marks (pipe-wrench, generic) keep the hand-authored irregular
     // border. The tape-measure mark is the owner's real webp: its own
     // irregular cutout edge IS the border, so it renders an <img> with
-    // no border wrapper and no black badge box.
+    // no border wrapper and no black badge box. Marks are caller-assigned;
+    // src ships no per-customer default (backend genericity, point 11).
     const svgHtml = renderToStaticMarkup(
-      BusinessLogoMark({ objectId: COPPERSMITH_ID, title: "Coppersmith" }),
+      BusinessLogoMark({
+        objectId: COPPERSMITH_ID,
+        title: "Coppersmith",
+        overrides: { [COPPERSMITH_ID]: "pipe-wrench" },
+      }),
     );
     expect(svgHtml).toContain('data-logo-mark="pipe-wrench"');
     expect(svgHtml).toContain('data-logo-border="irregular"');
     const imgHtml = renderToStaticMarkup(
-      BusinessLogoMark({ objectId: HPP_ID, title: "Happy Place" }),
+      BusinessLogoMark({
+        objectId: HPP_ID,
+        title: "Happy Place",
+        overrides: { [HPP_ID]: "tape-measure" },
+      }),
     );
     expect(imgHtml).toContain('data-logo-mark="tape-measure"');
     expect(imgHtml).toContain('data-logo-mark-img="tape-measure"');
-    expect(imgHtml).toContain('src="assets/marks/happy-place-tape-measure.webp"');
+    expect(imgHtml).toContain('src="assets/marks/tape-measure.webp"');
     expect(imgHtml).not.toContain('data-logo-border=');
+  });
+  test("no caller mapping renders the generic mark (empty src default)", () => {
+    const html = renderToStaticMarkup(
+      BusinessLogoMark({ objectId: HPP_ID, title: "Happy Place" }),
+    );
+    expect(html).toContain('data-logo-mark="generic"');
+    expect(html).toContain('data-logo-border="irregular"');
   });
   test("tape-measure image URL is caller-overridable, SVG marks unaffected", () => {
     const html = renderToStaticMarkup(
       BusinessLogoMark({
         objectId: HPP_ID,
         title: "Happy Place",
+        overrides: { [HPP_ID]: "tape-measure" },
         imageUrls: { "tape-measure": "/custom/hpp.webp" },
       }),
     );
@@ -157,10 +176,12 @@ describe("logo marks in the real business renders", () => {
   const cop = build(COPPERSMITH_GRAPH);
 
   test("HPP home page carries the tape-measure webp mark and overlay", () => {
-    const html = renderModelToStaticHtml(hpp.model, hpp.facts);
+    const html = renderModelToStaticHtml(hpp.model, hpp.facts, undefined, {
+      logoMarks: { [HPP_ID]: "tape-measure" },
+    });
     expect(html).toContain('data-logo-mark="tape-measure"');
     expect(html).toContain("data-logo-overlay");
-    expect(html).toContain('src="assets/marks/happy-place-tape-measure.webp"');
+    expect(html).toContain('src="assets/marks/tape-measure.webp"');
     // the webp is an irregular cutout: the mark element has no border
     // wrapper and no badge box (the <style> block legitimately names the
     // selector for SVG marks, so strip it before asserting on markup)
@@ -168,10 +189,21 @@ describe("logo marks in the real business renders", () => {
     expect(markup).not.toContain('data-logo-border="irregular"');
   });
   test("Coppersmith home page carries the pipe-wrench mark and overlay", () => {
-    const html = renderModelToStaticHtml(cop.model, cop.facts);
+    const html = renderModelToStaticHtml(cop.model, cop.facts, undefined, {
+      logoMarks: { [COPPERSMITH_ID]: "pipe-wrench" },
+    });
     expect(html).toContain('data-logo-mark="pipe-wrench"');
     expect(html).toContain("data-logo-overlay");
     expect(html).toContain('data-logo-border="irregular"');
+  });
+  test("without caller logoMarks both pages render the generic mark", () => {
+    // Proves the src default is empty: no customer identity branches the mark.
+    for (const b of [hpp, cop]) {
+      const html = renderModelToStaticHtml(b.model, b.facts);
+      expect(html).toContain('data-logo-mark="generic"');
+      expect(html).not.toContain('data-logo-mark="tape-measure"');
+      expect(html).not.toContain('data-logo-mark="pipe-wrench"');
+    }
   });
   test("neither business render contains a <circle element", () => {
     expect(renderModelToStaticHtml(hpp.model, hpp.facts)).not.toMatch(/<circle/);

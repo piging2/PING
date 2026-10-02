@@ -10,16 +10,18 @@
  *    identifiers, and default-config keys in code ARE code paths.
  *    Fixtures and test dirs may carry fixture data; src must be generic.
  *
- *    KNOWN FINDING (documented, not hidden): this scanner fires on
- *    packages/react-renderer/src/marks.tsx DEFAULT_MARKS, which hardcodes
- *    the two proof businesses' website-derived object ids
+ *    RESOLVED 2026-10-02 (was the FIRST BROKEN BACKEND INVARIANT of the
+ *    16:48 assault): packages/react-renderer/src/marks.tsx DEFAULT_MARKS
+ *    hardcoded the two proof businesses' website-derived object ids
  *    ("website-business-6fa5ebd99d72c4cb" -> "tape-measure",
  *    "website-business-2f1327c09d622175" -> "pipe-wrench") as a default
- *    business->mark mapping. That is customer-specific code in src:
- *    resolveLogoMark branches on those two customers' identities.
- *    Per the point-11 brief, the finding IS the deliverable and is
- *    reported as the FIRST BROKEN BACKEND INVARIANT; the core backend
- *    packages (trust, objects, ask, sitespec, owner, proposals) scan clean.
+ *    business->mark mapping. Fix: the src default is now EMPTY
+ *    (resolveLogoMark returns "generic" without a caller mapping); the
+ *    caller supplies business->mark assignments via RenderOptions.logoMarks.
+ *    The scanner below is the regression test: it must stay green, and
+ *    per-customer defaults must never be reintroduced into src.
+ *    The core backend packages (trust, objects, ask, sitespec, owner,
+ *    proposals) scan clean.
  *
  * 2. Entry-point genericity: a third business the codebase has never seen
  *    ("Harbor Books", no fixture, no special case) compiles through

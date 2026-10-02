@@ -112,28 +112,25 @@ const MARK_COMPONENTS: Record<LogoMarkId, () => React.JSX.Element> = {
 };
 
 /**
- * Default business -> mark mapping. Presentation config owned by the
- * adapter; the semantic model never names a mark. Override via renderer
- * options for new businesses without touching this file's defaults.
+ * Business -> mark mapping. INTENTIONALLY EMPTY in src (backend genericity,
+ * Nolan 2026-10-02): the adapter ships no per-customer defaults. The caller
+ * supplies business->mark assignments via RenderOptions.logoMarks, threaded
+ * through as `overrides`. The semantic model never names a mark.
+ * A previous revision hardcoded the two proof businesses here; the
+ * point-11 genericity scanner pinned that as a customer-specific code
+ * path, and it was removed. Do not reintroduce per-customer defaults.
  */
-const DEFAULT_MARKS: Record<string, LogoMarkId> = {
-  // Happy Place Carpentry LLC (Nolan's directive: the mark is a tape measure)
-  "website-business-6fa5ebd99d72c4cb": "tape-measure",
-  // Coppersmith Plumbing - HVAC - Mechanical
-  "website-business-2f1327c09d622175": "pipe-wrench",
-};
 
 /**
- * Resolve a business's logo mark. Explicit id mapping first, caller
- * overrides second, generic irregular mark as the honest fallback.
- * Never a circle.
+ * Resolve a business's logo mark. Caller-supplied mapping first, generic
+ * irregular mark as the honest fallback. Never a circle.
  */
 export function resolveLogoMark(
   objectId: string,
   overrides?: Record<string, LogoMarkId>,
 ): LogoMarkId {
   if (overrides && objectId in overrides) return overrides[objectId];
-  return DEFAULT_MARKS[objectId] ?? "generic";
+  return "generic";
 }
 
 /**
@@ -145,7 +142,7 @@ export function resolveLogoMark(
  * via imageUrls; the semantic model never names images.
  */
 export const DEFAULT_MARK_IMAGE_URLS: Partial<Record<LogoMarkId, string>> = {
-  "tape-measure": "assets/marks/happy-place-tape-measure.webp",
+  "tape-measure": "assets/marks/tape-measure.webp",
 };
 
 /** Resolve a mark's image URL: explicit caller mapping first, then default. */
