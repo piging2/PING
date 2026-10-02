@@ -12,6 +12,11 @@ IMG="$1"
 CAPFILE="$2"
 PAGEURL="$3"
 TS=$(date +%Y%m%d-%H%M%S)
+# Authority gate (2026-10-02, owner-hold authority repair): a schedule is NOT
+# authorization. authority-check.py reads CURRENT holds.json first (step 0,
+# fail-closed on missing/invalid); an active owner hold denies the dispatch
+# with zero external effects.
+"$(dirname "$0")/../outreach/authority-check.py" facebook || { echo "run_page_post.sh: authority gate denied; failing closed" >&2; exit 2; }
 IMGNAME="page-$(basename "$IMG" | tr -cd 'A-Za-z0-9._-')"
 INBOX_WIN='C:/Users/nolan/.local/share/pigi/fb-engage/page-inbox'
 ENGAGE_WIN='C:/Users/nolan/.local/share/pigi/fb-engage'

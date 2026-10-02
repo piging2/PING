@@ -9,6 +9,11 @@
 set -u
 JOB="$1"
 TS=$(date +%Y%m%d-%H%M%S)
+# Authority gate (2026-10-02, owner-hold authority repair): a schedule is NOT
+# authorization. authority-check.py reads CURRENT holds.json first (step 0,
+# fail-closed on missing/invalid); an active owner hold denies the dispatch
+# with zero external effects.
+"$(dirname "$0")/../outreach/authority-check.py" linkedin || { echo "run_pass.sh (linkedin): authority gate denied; failing closed" >&2; exit 2; }
 REMOTE="C:/Users/nolan/.local/share/pigi/li-engage/inbox/job-$TS.json"
 source "$(dirname "$0")/../pig-fb/pig-ssh.sh"  # shared SSH helper
 PIG_NODE="C:/Users/nolan/.local/share/pigi/node-v22.23.2-win-x64/node.exe"

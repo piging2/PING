@@ -7,6 +7,11 @@
 set -u
 JOB="$1"
 TS=$(date +%Y%m%d-%H%M%S)
+# Authority gate (2026-10-02, owner-hold authority repair): a schedule is NOT
+# authorization. authority-check.py reads CURRENT holds.json first (step 0,
+# fail-closed on missing/invalid); an active owner hold denies the dispatch
+# with zero external effects.
+"$(dirname "$0")/../outreach/authority-check.py" instagram || { echo "run_ig_unfollow.sh: authority gate denied; failing closed" >&2; exit 2; }
 REMOTE_DIR='C:/Users/nolan/.local/share/pigi/ig-engage'
 REMOTE_JOB="$REMOTE_DIR/inbox/job-igunfollow-$TS.json"
 source "$(dirname "$0")/pig-ssh.sh"
