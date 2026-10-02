@@ -28,6 +28,17 @@ Empirically verified 2026-10-01 (node v24.20.0):
   with an appropriate error").
 - FAIL (spec non-conformance): lone surrogates in strings pass through
   instead of terminating (RFC 8785 S3.2.2.2 MUST terminate).
+- FAIL (spec non-conformance): the package's DEFAULT export path
+  (`index.js` -> `stringify-copy.js`) re-inserts sorted keys into a fresh JS
+  object before `JSON.stringify`. JS engines always enumerate
+  canonical-numeric keys first, so `{"\r":3,"1":2}` comes out as
+  `{"1":2,"\r":3}`, violating RFC 8785 S3.2.3 (pure UTF-16 code-unit order).
+  PROVEN by the RFC's own S3.2.3 sort vectors (test P-08b: failed on the
+  default path, passes on `stringify.js`).
+- ADAPTATION DETAIL: PING uses `stringify.js` (the full path) DIRECTLY, not
+  the default export. It builds the output string from the sorted key list
+  with no intermediate object, which is conformant (P-08/P-08b green).
+  The default export must never be used for canonical bytes.
 - NOTE: `toJSON` is honored by the library. The PING domain rejects
   behavioral values before the library ever sees them.
 
