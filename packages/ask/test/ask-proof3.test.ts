@@ -62,6 +62,26 @@ describe("proof 3a: Happy Place services question", () => {
     }
   });
 
+  test("answer-text [n] markers resolve 1-based into evidenceRefs", () => {
+    // Regression: the answer used to number markers per service ([i+1])
+    // while pushing two refs per service, so every marker past [1]
+    // resolved to the previous service's offers-relationship record.
+    // The types.ts contract: marker [n] -> evidenceRefs[n-1].
+    const ans = ask(HAPPY_PLACE_GRAPH, HP_BUSINESS);
+    const services = ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"];
+    services.forEach((svc, i) => {
+      expect(ans.answer).toContain(`${svc} [${2 * i + 1}]`);
+      const ref = ans.evidenceRefs[2 * i + 1 - 1];
+      expect(ref.kind).toBe("object");
+      expect(ref.label).toBe(`Service: ${svc}`);
+      // The even position is the offers-relationship record for the
+      // SAME service, cited by the claim's evidenceRefIds.
+      const relRef = ans.evidenceRefs[2 * i + 1];
+      expect(relRef.kind).toBe("relationship");
+      expect(relRef.label).toBe(`Happy Place Carpentry LLC offers ${svc}`);
+    });
+  });
+
   test("answer text names the services and the website-ingestion source", () => {
     const ans = ask(HAPPY_PLACE_GRAPH, HP_BUSINESS);
     for (const svc of ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"]) {

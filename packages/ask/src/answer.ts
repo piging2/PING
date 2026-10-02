@@ -201,7 +201,14 @@ export function askFyd(input: AskInput): AskAnswer {
       classification: claimClassFor(svcClaimKind),
       evidenceRefIds: [svc.id, relId],
     });
-    listed.push(`${svc.title} [${i + 1}]`);
+    // Marker numbering is 1-based into evidenceRefs (types.ts contract).
+    // Each service contributes TWO refs (object record, then the
+    // offers-relationship record), so the service's visible marker is the
+    // odd position of its object record: marker [n] always resolves to
+    // evidenceRefs[n-1]. The even positions are the relationship records
+    // the claims cite by id. Numbering per service ([i+1]) misattributes
+    // every marker past [1] to the previous service's relationship.
+    listed.push(`${svc.title} [${2 * i + 1}]`);
   });
 
   // Derived claim: the count is computed from evidence, labeled DERIVED.
