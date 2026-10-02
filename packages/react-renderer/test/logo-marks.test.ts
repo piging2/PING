@@ -146,6 +146,10 @@ describe("logo overlay", () => {
     expect(LOGO_OVERLAY_CSS).toContain("summary:hover");
     expect(LOGO_OVERLAY_CSS).toContain(".fyd-logo-mark-img");
   });
+  test("rock animation is disabled under prefers-reduced-motion", () => {
+    expect(LOGO_OVERLAY_CSS).toContain("prefers-reduced-motion");
+    expect(LOGO_OVERLAY_CSS).toContain("animation: none");
+  });
 });
 
 describe("logo marks in the real business renders", () => {

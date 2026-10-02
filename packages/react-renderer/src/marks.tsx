@@ -243,6 +243,13 @@ export const LOGO_OVERLAY_CSS = `
   transform-origin: 50% 80%;
 }
 .fyd-logo-mark-img { display: inline-block; }
+/* Reduced motion: the rock is decorative; never animate without consent. */
+@media (prefers-reduced-motion: reduce) {
+  .fyd-logo-overlay > summary:hover .fyd-logo-mark-img,
+  .fyd-logo-overlay > summary:hover [data-logo-border="irregular"] {
+    animation: none;
+  }
+}
 `;
 
 /**
