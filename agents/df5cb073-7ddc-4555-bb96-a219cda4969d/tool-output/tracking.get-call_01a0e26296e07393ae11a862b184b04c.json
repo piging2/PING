@@ -1,0 +1,995 @@
+{
+  "associations": [
+    {
+      "association_id": "goal-cron:workspace/goals/copilot-oauth-post-auth-failure-investigation/crons/minutely/pig-route-watch__interval@10m.md",
+      "association_type": "cron",
+      "created_at": "",
+      "details": {
+        "id": "pig-route-watch",
+        "path": "workspace/goals/copilot-oauth-post-auth-failure-investigation/crons/minutely/pig-route-watch__interval@10m.md",
+        "title": "pig-route-watch__interval@10m.md"
+      },
+      "goal_id": "goal_9025c0222a63",
+      "target_id": "pig-route-watch",
+      "updated_at": ""
+    }
+  ],
+  "briefings": [],
+  "goal": {
+    "attention_kind": "does_not_need_attention",
+    "attention_updated_at": "2026-09-27 08:01:43.052+00",
+    "created_at": "2026-09-17T20:11:18Z",
+    "current_state": "Pig still unreachable via Tailscale at 02:01 MDT; proxy TCP connects but the CONNECT tunnel returns an empty response, so OAuth log inspection remains paused.",
+    "description": "Nolan's two fresh-session browser OAuth attempts both got GitHub's \"What?\" page AFTER completing the sign-in and Authorize steps. Lead hypothesis is a _gh_sess/CSRF token staleness at the post-auth boundary. When the Pig is reachable, inspect the failed-run logs and OAuth lifecycle, identify the exact request that triggers the failure, implement the smallest fix with a regression test, then live-test the full flow to identity ACTIVE with cleanup verified.",
+    "emoji": "🔍",
+    "goal_id": "goal_9025c0222a63",
+    "goal_kind": "outcome",
+    "icon_generation_status": "ready",
+    "last_activity_at": "2026-09-27T10:11:40Z",
+    "momentum": "",
+    "momentum_status": "on_track",
+    "pushable": true,
+    "slug": "copilot-oauth-post-auth-failure-investigation",
+    "sort_order": 10,
+    "source": "assistant_tracking",
+    "status": "active",
+    "title": "Copilot OAuth post-auth failure investigation",
+    "updated_at": "2026-09-27T10:11:40Z",
+    "value_alignment": "Making browser OAuth the reliable normal flow for authorizing Copilot identities."
+  },
+  "ok": true,
+  "recent_briefing": null,
+  "suggestions": [],
+  "updates": [
+    {
+      "created_at": "2026-09-27T10:11:40Z",
+      "current_state": "Pig route watch hit a Tailscale tunnel failure; the egress proxy is healthy but the tunnel is not establishing.",
+      "description": "Scheduled health check found the Pig unreachable via the Tailscale tunnel even though the egress proxy accepted TCP, so this is access infrastructure failing, not the Pig itself.",
+      "effective_at": "2026-09-27T10:11:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_087b0bfdda41",
+      "updated_at": "2026-09-27T10:11:40Z"
+    },
+    {
+      "created_at": "2026-09-27T10:01:39Z",
+      "current_state": "Pig route is down at the Tailscale tunnel layer; the egress proxy TCP itself is healthy.",
+      "description": "The 04:01 route check found the egress proxy reachable but the tunnel CONNECT failing, so Pig-dependent work waits until the tunnel layer recovers.",
+      "effective_at": "2026-09-27T10:01:39Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_f4a064664f14",
+      "updated_at": "2026-09-27T10:01:39Z"
+    },
+    {
+      "created_at": "2026-09-27T09:51:40Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; proxy TCP was fine.",
+      "description": "The scheduled route watch found the egress proxy reachable but the Tailscale CONNECT tunnel failing, so the Pig could not be reached this pass. This is a network-path issue on the tunnel side, not a confirmed Pig outage.",
+      "effective_at": "2026-09-27T09:51:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_707d5bf0dc91",
+      "updated_at": "2026-09-27T09:51:40Z"
+    },
+    {
+      "created_at": "2026-09-27T09:41:43Z",
+      "current_state": "Pig tunnel unreachable: proxy healthy, Tailscale CONNECT failed.",
+      "description": "The 03:41 route check reached the egress proxy but the Tailscale tunnel to the Pig failed, so live Pig investigation work is blocked at the access layer.",
+      "effective_at": "2026-09-27T09:41:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_2e39151f5df5",
+      "updated_at": "2026-09-27T09:41:43Z"
+    },
+    {
+      "created_at": "2026-09-27T09:31:40Z",
+      "current_state": "Pig route degraded: egress proxy reachable but Tailscale CONNECT tunnel failed with an empty proxy response.",
+      "description": "The 03:31 MDT layered health check found the hatch-egress-proxy TCP connection OK but the Tailscale tunnel failing, so the Pig could not be reached over its usual path.",
+      "effective_at": "2026-09-27T09:31:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: tunnel unreachable",
+      "update_id": "goal_update_846647a04006",
+      "updated_at": "2026-09-27T09:31:40Z"
+    },
+    {
+      "created_at": "2026-09-27T09:21:43Z",
+      "current_state": "Pig unreachable via the Tailscale tunnel proxy: TCP to the egress proxy is fine but the CONNECT tunnel fails.",
+      "description": "The scheduled Pig health check found the egress proxy reachable but the Tailscale CONNECT tunnel failing, so the Pig cannot be reached through the tunnel right now.",
+      "effective_at": "2026-09-27T09:21:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_b90ad51d87fb",
+      "updated_at": "2026-09-27T09:21:43Z"
+    },
+    {
+      "created_at": "2026-09-27T09:11:39Z",
+      "current_state": "Tailscale tunnel check failed: proxy TCP healthy, CONNECT tunnel rejected with an empty response.",
+      "description": "The scheduled Pig route watch found the proxy itself responding but the Tailscale tunnel refusing the connection, so Pig access through the tunnel is blocked at the tunnel layer. This is an access infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-27T09:11:39Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: tunnel layer unreachable",
+      "update_id": "goal_update_31859b408025",
+      "updated_at": "2026-09-27T09:11:39Z"
+    },
+    {
+      "created_at": "2026-09-27T09:01:40Z",
+      "current_state": "Pig route watch reports TAILSCALE_UNREACHABLE; the egress proxy accepts TCP but the CONNECT tunnel fails.",
+      "description": "The layered Pig health check found the proxy reachable over TCP but the Tailscale CONNECT tunnel failing, so Pig access over the tunnel is down at the infrastructure layer.",
+      "effective_at": "2026-09-27T09:01:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_f3195a57892e",
+      "updated_at": "2026-09-27T09:01:40Z"
+    },
+    {
+      "created_at": "2026-09-27T08:41:40Z",
+      "current_state": "Pig route unavailable at the Tailscale tunnel layer; egress proxy TCP is healthy.",
+      "description": "The periodic route check found the proxy reachable but the CONNECT tunnel to the Pig failing with an empty proxy response, so OAuth investigation work depending on Pig access is blocked until the tunnel layer recovers.",
+      "effective_at": "2026-09-27T08:41:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel layer unreachable",
+      "update_id": "goal_update_ef231369cc1a",
+      "updated_at": "2026-09-27T08:41:40Z"
+    },
+    {
+      "created_at": "2026-09-27T08:31:40Z",
+      "current_state": "Pig access route is broken at the Tailscale tunnel layer; proxy TCP is fine.",
+      "description": "The layered health check found the egress proxy reachable but the Tailscale CONNECT tunnel returned an empty proxy response, so the Pig itself is not confirmed down; this is an access infrastructure issue in the tunnel path.",
+      "effective_at": "2026-09-27T08:31:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route health check failed at Tailscale layer",
+      "update_id": "goal_update_d5d3d8cc152e",
+      "updated_at": "2026-09-27T08:31:40Z"
+    },
+    {
+      "created_at": "2026-09-27T08:21:41Z",
+      "current_state": "Pig unreachable via tunnel proxy: TAILSCALE_UNREACHABLE (proxy TCP healthy, CONNECT tunnel failed with empty response). Access-infrastructure issue, not a Pig outage.",
+      "description": "The 02:21 MDT layered route check found the egress proxy and DNS healthy, but the Tailscale CONNECT tunnel failed with an empty response, so the Pig cannot be reached through the tunnel right now.",
+      "effective_at": "2026-09-27T08:21:41Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_7d2f5d832c0b",
+      "updated_at": "2026-09-27T08:21:41Z"
+    },
+    {
+      "created_at": "2026-09-27T08:12:03Z",
+      "current_state": "Pig unreachable via the Tailscale tunnel proxy; proxy TCP layer healthy, CONNECT tunnel returns an empty response.",
+      "description": "Two consecutive health checks confirmed the egress proxy accepts TCP connections but the CONNECT tunnel to the Pig fails with an empty response, so this is an access-infrastructure issue, not a Pig outage; monitoring continues on schedule.",
+      "effective_at": "2026-09-27T08:12:03Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_7220f3b73288",
+      "updated_at": "2026-09-27T08:12:03Z"
+    },
+    {
+      "created_at": "2026-09-27T08:01:43Z",
+      "current_state": "Pig access failing at the Tailscale tunnel layer; proxy TCP path healthy.",
+      "description": "The 02:01 MDT route check reached the egress proxy fine, but the Tailscale CONNECT tunnel returned an empty response, so the Pig is unreachable through the tunnel right now. This is an access-infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-27T08:01:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_053a05aa586c",
+      "updated_at": "2026-09-27T08:01:43Z"
+    },
+    {
+      "created_at": "2026-09-27T07:51:38Z",
+      "current_state": "Pig tunnel unreachable: egress proxy accepts TCP but the Tailscale CONNECT tunnel fails, blocking Pig SSH access.",
+      "description": "The 01:51 MDT route-watch check found the proxy healthy but the tunnel to the Pig failing, so the OAuth investigation work is blocked on the Pig until the tunnel layer recovers.",
+      "effective_at": "2026-09-27T07:51:38Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route-watch check failed at the Tailscale layer",
+      "update_id": "goal_update_01d1dfe2b7a8",
+      "updated_at": "2026-09-27T07:51:38Z"
+    },
+    {
+      "created_at": "2026-09-27T07:41:40Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; proxy TCP is healthy, so the Pig is unreachable from here via the tunnel proxy.",
+      "description": "The scheduled route watch found the egress proxy TCP-connecting fine but the Tailscale CONNECT tunnel failing with an unexpected empty response, an access-infrastructure issue rather than a Pig outage; will keep an eye on the next pass.",
+      "effective_at": "2026-09-27T07:41:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_ebe7a9b48a76",
+      "updated_at": "2026-09-27T07:41:40Z"
+    },
+    {
+      "created_at": "2026-09-27T07:31:43Z",
+      "current_state": "Pig not reachable: proxy TCP OK, but the Tailscale CONNECT tunnel failed.",
+      "description": "The proxy accepted TCP but the tunnel to the Pig failed with an unexpected empty response; this is a tunnel/proxy infrastructure issue, not a confirmed Pig outage, and OAuth traffic is unaffected.",
+      "effective_at": "2026-09-27T07:31:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_ed3e4409f455",
+      "updated_at": "2026-09-27T07:31:43Z"
+    },
+    {
+      "created_at": "2026-09-27T07:21:40Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer (proxy TCP OK, CONNECT tunnel rejected with empty response).",
+      "description": "The egress proxy accepted a TCP connection but the tunnel to the Pig through Tailscale failed, so this is an access-infrastructure issue on the Tailscale/proxy side rather than a Pig outage.",
+      "effective_at": "2026-09-27T07:21:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_0400ec2525a4",
+      "updated_at": "2026-09-27T07:21:40Z"
+    },
+    {
+      "created_at": "2026-09-27T07:11:40Z",
+      "current_state": "Pig not reachable via the Tailscale tunnel proxy: the proxy accepted the connection but the CONNECT tunnel failed.",
+      "description": "The scheduled route check found the egress proxy up but the CONNECT tunnel through it failing, so Pig access via Tailscale is down; this is an access infrastructure issue, not a confirmed Pig outage.",
+      "effective_at": "2026-09-27T07:11:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed: Tailscale tunnel unreachable",
+      "update_id": "goal_update_31b163b25fb8",
+      "updated_at": "2026-09-27T07:11:40Z"
+    },
+    {
+      "created_at": "2026-09-27T07:01:39Z",
+      "current_state": "Pig tunnel still down: proxy TCP works, Tailscale CONNECT fails.",
+      "description": "The route watch found the proxy reachable but the Tailscale CONNECT tunnel returning an empty unexpected response, so the Pig is unreachable through the proxy; the SSH layer was never reached, so this is an access-infrastructure issue rather than a Pig outage.",
+      "effective_at": "2026-09-27T07:01:39Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_2dbe6e8db88d",
+      "updated_at": "2026-09-27T07:01:39Z"
+    },
+    {
+      "created_at": "2026-09-27T06:51:43Z",
+      "current_state": "Pig route watch reports TAILSCALE_UNREACHABLE; tunnel layer failed while proxy TCP is fine.",
+      "description": "The 00:51 MDT Pig health check could not establish the Tailscale tunnel even though the egress proxy itself is reachable, so Pig-side work (including OAuth log inspection) is blocked until the tunnel layer recovers. This is an access-infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-27T06:51:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel layer unreachable",
+      "update_id": "goal_update_f9d50a76e001",
+      "updated_at": "2026-09-27T06:51:43Z"
+    },
+    {
+      "created_at": "2026-09-27T06:41:41Z",
+      "current_state": "Pig unreachable through the Tailscale tunnel; the CONNECT tunnel to the Pig is failing at the Tailscale layer.",
+      "description": "The scheduled Pig route watch check ran overnight: the egress proxy accepted the TCP connection but the Tailscale CONNECT tunnel failed, so the Pig is not reachable. This is a Pig access infrastructure issue, not evidence the Pig itself is down.",
+      "effective_at": "2026-09-27T06:41:41Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_0fc53e83d0ec",
+      "updated_at": "2026-09-27T06:41:41Z"
+    },
+    {
+      "created_at": "2026-09-27T06:31:40Z",
+      "current_state": "Pig access path is degraded at the tunnel layer; the Pig itself is not proven down.",
+      "description": "The route check found the proxy reachable but the CONNECT tunnel to the Pig failed with an empty proxy response, so Pig-side work should wait for the tunnel path to recover.",
+      "effective_at": "2026-09-27T06:31:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_c08908af18dc",
+      "updated_at": "2026-09-27T06:31:40Z"
+    },
+    {
+      "created_at": "2026-09-27T06:21:39Z",
+      "current_state": "Pig route watch reported TAILSCALE_UNREACHABLE; proxy is up but the CONNECT tunnel fails.",
+      "description": "The 00:21 MDT route check found the egress proxy accepting TCP but failing the CONNECT tunnel, so Pig-side OAuth investigation work stays blocked until the route recovers.",
+      "effective_at": "2026-09-27T06:21:39Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_09d8d80937f7",
+      "updated_at": "2026-09-27T06:21:39Z"
+    },
+    {
+      "created_at": "2026-09-27T06:11:40Z",
+      "current_state": "Tailscale tunnel to the Pig is unreachable; egress proxy itself is healthy.",
+      "description": "The 00:11 check found TCP to the egress proxy healthy, but the CONNECT tunnel to the Pig over Tailscale failed with an unexpected empty proxy response, so Pig SSH traffic cannot currently flow; this is an access-path issue, not a Pig outage.",
+      "effective_at": "2026-09-27T06:11:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route health check failed at Tailscale tunnel layer",
+      "update_id": "goal_update_4192cfc4fd5b",
+      "updated_at": "2026-09-27T06:11:40Z"
+    },
+    {
+      "created_at": "2026-09-27T06:02:02Z",
+      "current_state": "Pig unreachable via tunnel: proxy TCP OK, but the Tailscale CONNECT tunnel fails.",
+      "description": "The 00:01 MDT check found the egress proxy responding but the tunnel to the Pig failing; this is a Pig access infrastructure issue, not the Pig being down.",
+      "effective_at": "2026-09-27T06:02:02Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_3f8e538ccbc4",
+      "updated_at": "2026-09-27T06:02:02Z"
+    },
+    {
+      "created_at": "2026-09-27T05:51:42Z",
+      "current_state": "Proxy TCP is healthy but the CONNECT tunnel to the Pig fails; the Pig itself is not implicated.",
+      "description": "The 23:51 MDT layered health check reached the egress proxy but the Tailscale CONNECT tunnel failed, so Pig access remains blocked by tunnel/proxy infrastructure while the Pig itself is not down.",
+      "effective_at": "2026-09-27T05:51:42Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: tunnel layer unreachable",
+      "update_id": "goal_update_af7e2569d01d",
+      "updated_at": "2026-09-27T05:51:42Z"
+    },
+    {
+      "created_at": "2026-09-27T05:41:41Z",
+      "current_state": "Pig unreachable tonight: the egress proxy accepts TCP but the CONNECT tunnel to the Pig fails (TAILSCALE_UNREACHABLE), blocking Pig-side work.",
+      "description": "The 23:41 MDT route watch found the Pig unavailable through the Tailscale tunnel path. The proxy itself is healthy, but the CONNECT tunnel step fails with an empty proxy response, so this is an access-infrastructure issue, not a Pig outage. Logged to ~/memory/2026-09-26.md.",
+      "effective_at": "2026-09-27T05:41:41Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Pig unreachable (tunnel layer failure)",
+      "update_id": "goal_update_b6941a40ff34",
+      "updated_at": "2026-09-27T05:41:41Z"
+    },
+    {
+      "created_at": "2026-09-27T05:31:42Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer on 2026-09-26; the proxy is reachable but the tunnel to the Pig returned an empty response.",
+      "description": "The scheduled health check reached the egress proxy but could not open the Tailscale tunnel to the Pig, so the Pig route is unavailable while the proxy itself is fine.",
+      "effective_at": "2026-09-27T05:31:42Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel failed",
+      "update_id": "goal_update_9243aedd8016",
+      "updated_at": "2026-09-27T05:31:42Z"
+    },
+    {
+      "created_at": "2026-09-27T05:21:40Z",
+      "current_state": "Pig route check returned TAILSCALE_UNREACHABLE: proxy TCP OK, CONNECT tunnel failed.",
+      "description": "The egress proxy accepted the TCP connection but the Tailscale tunnel could not be established, so Pig access infrastructure is the problem and the Pig itself is not confirmed down; OAuth investigation work stays paused until the route recovers.",
+      "effective_at": "2026-09-27T05:21:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_9f51d2c8ae3c",
+      "updated_at": "2026-09-27T05:21:40Z"
+    },
+    {
+      "created_at": "2026-09-27T05:11:40Z",
+      "current_state": "Route to the Pig is down at the tunnel layer: proxy reachable but Tailscale CONNECT tunnel failed.",
+      "description": "The scheduled route check found the local proxy reachable but the Tailscale tunnel to the Pig refusing the connection, so this is an access-path issue on this machine, not a Pig outage; nothing on the Pig itself could be tested.",
+      "effective_at": "2026-09-27T05:11:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel failure",
+      "update_id": "goal_update_6b3effae7f85",
+      "updated_at": "2026-09-27T05:11:40Z"
+    },
+    {
+      "created_at": "2026-09-27T05:01:40Z",
+      "current_state": "Pig reachability check failed at the Tailscale tunnel layer; the egress proxy itself is healthy.",
+      "description": "The scheduled Pig health check found the egress proxy accepting connections, but the Tailscale CONNECT tunnel returned an empty response, so the Pig cannot be reached through the tunnel right now.",
+      "effective_at": "2026-09-27T05:01:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_32bb984b9c3a",
+      "updated_at": "2026-09-27T05:01:40Z"
+    },
+    {
+      "created_at": "2026-09-27T04:51:39Z",
+      "current_state": "Pig unreachable at the Tailscale tunnel layer; the egress proxy itself is healthy.",
+      "description": "The scheduled route check found the egress proxy up but the CONNECT tunnel to the Pig failing, so Pig SSH cannot be reached right now; investigation work continues once the tunnel is back.",
+      "effective_at": "2026-09-27T04:51:39Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale layer unreachable",
+      "update_id": "goal_update_9b796a892f8b",
+      "updated_at": "2026-09-27T04:51:39Z"
+    },
+    {
+      "created_at": "2026-09-27T04:41:43Z",
+      "current_state": "Pig unreachable: proxy TCP is up but the Tailscale CONNECT tunnel fails (empty proxy response).",
+      "description": "The layered Pig route check at 22:41 MDT found Layer 1 (proxy TCP) healthy but the Tailscale tunnel layer failed, so Pig SSH access is unavailable from this network path; the proxy accepts connections but does not establish the CONNECT tunnel.",
+      "effective_at": "2026-09-27T04:41:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_f3686daeb885",
+      "updated_at": "2026-09-27T04:41:43Z"
+    },
+    {
+      "created_at": "2026-09-27T04:31:41Z",
+      "current_state": "Pig route unreachable at the Tailscale tunnel layer; proxy TCP is healthy.",
+      "description": "The 22:31 route check found the egress proxy reachable but the Tailscale CONNECT tunnel to the Pig failing, an access-infrastructure issue rather than a Pig outage.",
+      "effective_at": "2026-09-27T04:31:41Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: tunnel failure detected",
+      "update_id": "goal_update_86f3b9bbd381",
+      "updated_at": "2026-09-27T04:31:41Z"
+    },
+    {
+      "created_at": "2026-09-27T04:21:45Z",
+      "current_state": "Pig tunnel unreachable at the Tailscale layer; proxy is healthy.",
+      "description": "The route watch found the egress proxy responding but the Tailscale CONNECT tunnel failing with an empty proxy response, so this is a tunnel infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-27T04:21:45Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale layer unreachable",
+      "update_id": "goal_update_305522824093",
+      "updated_at": "2026-09-27T04:21:45Z"
+    },
+    {
+      "created_at": "2026-09-27T04:11:42Z",
+      "current_state": "Tailscale tunnel to the Pig failed while the egress proxy itself accepted TCP.",
+      "description": "The 22:11 MDT route check found the proxy reachable but the CONNECT tunnel into the Pig unresponsive, so the Pig route is currently unavailable at the Tailscale layer (not a Pig outage); will keep watch on the next scheduled check.",
+      "effective_at": "2026-09-27T04:11:42Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale layer unreachable",
+      "update_id": "goal_update_bbaeb7aacde2",
+      "updated_at": "2026-09-27T04:11:42Z"
+    },
+    {
+      "created_at": "2026-09-27T04:01:45Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; proxy is fine.",
+      "description": "The scheduled Pig route check could not reach the Pig: the egress proxy accepted the connection but the Tailscale CONNECT tunnel returned an empty response, so the issue is in the tunnel plumbing rather than the Pig itself.",
+      "effective_at": "2026-09-27T04:01:45Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_01ddf788ebf1",
+      "updated_at": "2026-09-27T04:01:45Z"
+    },
+    {
+      "created_at": "2026-09-27T03:51:51Z",
+      "current_state": "Pig tunnel unreachable at the Tailscale layer: proxy TCP OK, but the CONNECT tunnel returned an empty response.",
+      "description": "Two consecutive pig-route-watch runs (~40 minutes apart) both failed at the Tailscale layer while the proxy accepted TCP; this is an access-path issue, not evidence of a Pig outage.",
+      "effective_at": "2026-09-27T03:51:51Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_a45837a6228d",
+      "updated_at": "2026-09-27T03:51:51Z"
+    },
+    {
+      "created_at": "2026-09-27T03:41:46Z",
+      "current_state": "The egress proxy accepts TCP connections but the Tailscale CONNECT tunnel to the Pig failed, so the Pig is not currently reachable.",
+      "description": "The nightly route check found the proxy healthy while the Tailscale tunnel layer returned an unexpected empty response; this is an access-path issue, not a Pig outage, and monitoring continues.",
+      "effective_at": "2026-09-27T03:41:46Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel layer unreachable",
+      "update_id": "goal_update_76e6af0fd492",
+      "updated_at": "2026-09-27T03:41:46Z"
+    },
+    {
+      "created_at": "2026-09-27T03:31:44Z",
+      "current_state": "Route check failed at the Tailscale tunnel layer; Pig itself is not implicated.",
+      "description": "The egress proxy accepted the TCP connection, but the tunnel request to the Pig failed, so the OAuth investigation is blocked until that route recovers.",
+      "effective_at": "2026-09-27T03:31:44Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_3f48d3cef51e",
+      "updated_at": "2026-09-27T03:31:44Z"
+    },
+    {
+      "created_at": "2026-09-27T03:21:43Z",
+      "current_state": "Pig access tunnel is down at the Tailscale layer; proxy TCP is healthy.",
+      "description": "The layered health check passed the proxy TCP layer but the CONNECT tunnel through Tailscale returned an empty response, so Pig-side work is blocked until the tunnel recovers.",
+      "effective_at": "2026-09-27T03:21:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel failed",
+      "update_id": "goal_update_57d84d6162be",
+      "updated_at": "2026-09-27T03:21:43Z"
+    },
+    {
+      "created_at": "2026-09-27T03:11:44Z",
+      "current_state": "Pig route to the Copilot OAuth investigation host is down at the Tailscale layer (proxy healthy, CONNECT tunnel failing).",
+      "description": "The scheduled reachability check found the egress proxy reachable but the Tailscale CONNECT tunnel refused, so any Pig-side OAuth log inspection is blocked until the tunnel recovers.",
+      "effective_at": "2026-09-27T03:11:44Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel failing",
+      "update_id": "goal_update_29e808d049ed",
+      "updated_at": "2026-09-27T03:11:44Z"
+    },
+    {
+      "created_at": "2026-09-27T03:01:48Z",
+      "current_state": "Pig route down at the Tailscale layer since ~20:54-20:59 MDT; proxy is up but the CONNECT tunnel fails.",
+      "description": "Route watch hit TAILSCALE_UNREACHABLE: the egress proxy accepted TCP but the tunnel to the Pig failed, so Pig-side OAuth log inspection is blocked until the route recovers.",
+      "effective_at": "2026-09-27T03:01:48Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_7023168039ef",
+      "updated_at": "2026-09-27T03:01:48Z"
+    },
+    {
+      "created_at": "2026-09-26T01:12:10Z",
+      "current_state": "Route to the Pig is broken at the Tailscale tunnel layer; proxy TCP works but CONNECT tunneling fails.",
+      "description": "The route watcher found the Tailscale tunnel unreachable (the egress proxy accepted TCP but the CONNECT tunnel failed), so no Pig-side work can be dispatched until the tunnel recovers.",
+      "effective_at": "2026-09-26T01:12:10Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_e2e60e7dfcd9",
+      "updated_at": "2026-09-26T01:12:10Z"
+    },
+    {
+      "created_at": "2026-09-25T22:22:06Z",
+      "current_state": "Pig route check at 16:21 MDT failed at the Tailscale tunnel layer; proxy TCP is reachable but the CONNECT tunnel returned an empty response.",
+      "description": "The Pig itself is not confirmed down; this is an access infrastructure issue on the Tailscale tunnel proxy layer, so Pig-side OAuth log inspection is blocked until the route recovers.",
+      "effective_at": "2026-09-25T22:22:06Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_38d6ba90d875",
+      "updated_at": "2026-09-25T22:22:06Z"
+    },
+    {
+      "created_at": "2026-09-25T17:42:07Z",
+      "current_state": "Pig route unreachable at the Tailscale proxy layer (proxy TCP OK, CONNECT tunnel failing); SSH layer not reached.",
+      "description": "Pig tunnel health check at 11:41 MDT showed the egress proxy responding but the Tailscale CONNECT tunnel failing, so Pig-side investigation work is blocked until the proxy/tunnel layer recovers.",
+      "effective_at": "2026-09-25T17:42:07Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route unreachable (proxy layer)",
+      "update_id": "goal_update_0cfe97430a0e",
+      "updated_at": "2026-09-25T17:42:07Z"
+    },
+    {
+      "created_at": "2026-09-25T17:32:14Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; proxy TCP is fine but the CONNECT tunnel returned an empty response.",
+      "description": "The scheduled Pig route watch ran and found the Pig unreachable via Tailscale (the egress proxy accepts connections, but the tunnel to the Pig fails), so Pig-side work stays on hold until the route recovers; this is a network route issue, not a confirmed Pig outage.",
+      "effective_at": "2026-09-25T17:32:14Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_08b6d3f6f008",
+      "updated_at": "2026-09-25T17:32:14Z"
+    },
+    {
+      "created_at": "2026-09-25T17:22:52Z",
+      "current_state": "Pig route check failed at the Tailscale layer (proxy TCP OK, CONNECT tunnel returned an empty response on both attempts); Pig itself is not confirmed down.",
+      "description": "The scheduled route watch ran the layered health check twice at 11:21 MDT; both reached the egress proxy but the Tailscale CONNECT tunnel failed, so this is a Pig access infrastructure issue, not a confirmed Pig outage.",
+      "effective_at": "2026-09-25T17:22:52Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale layer failure",
+      "update_id": "goal_update_97cbe994cfde",
+      "updated_at": "2026-09-25T17:22:52Z"
+    },
+    {
+      "created_at": "2026-09-25T13:32:08Z",
+      "current_state": "Pig Tailscale route unreachable; proxy layer itself healthy.",
+      "description": "The scheduled Pig route check found the egress proxy healthy but the Tailscale tunnel to the Pig failed, so Pig availability could not be confirmed this pass.",
+      "effective_at": "2026-09-25T13:32:08Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_16d0e0c87b6b",
+      "updated_at": "2026-09-25T13:32:08Z"
+    },
+    {
+      "created_at": "2026-09-24T22:21:59Z",
+      "current_state": "The Pig is not reachable right now: the Tailscale tunnel proxy failed to open its connection, even though the proxy itself is up.",
+      "description": "The scheduled route check found the egress proxy healthy but the Tailscale CONNECT tunnel failing, so Pig-dependent work is blocked until the tunnel path recovers.",
+      "effective_at": "2026-09-24T22:21:59Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_8a2c86a5b3f5",
+      "updated_at": "2026-09-24T22:21:59Z"
+    },
+    {
+      "created_at": "2026-09-24T22:12:14Z",
+      "current_state": "Pig route check failed at the Tailscale layer; the tunnel proxy is healthy.",
+      "description": "The egress proxy accepts TCP but the CONNECT tunnel to the Pig failed, so Pig-dependent work is paused until the route recovers; this is an infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-24T22:12:14Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_0b7346fb13a6",
+      "updated_at": "2026-09-24T22:12:14Z"
+    },
+    {
+      "created_at": "2026-09-24T18:12:05Z",
+      "current_state": "Pig unreachable at the Tailscale tunnel layer; proxy TCP layer healthy.",
+      "description": "The route watch detected a failure at the Tailscale tunnel layer: the egress proxy accepted the TCP connection but the CONNECT tunnel to the Pig did not establish, so the Pig could not be reached from here. This points at Pig access infrastructure, not a Pig outage.",
+      "effective_at": "2026-09-24T18:12:05Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_c7a2175b16fa",
+      "updated_at": "2026-09-24T18:12:05Z"
+    },
+    {
+      "created_at": "2026-09-24T13:32:11Z",
+      "current_state": "Pig tunnel unreachable: proxy TCP OK, CONNECT tunnel failed (TAILSCALE_UNREACHABLE).",
+      "description": "Scheduled route watch found the egress proxy accepting connections but the Tailscale tunnel to the Pig failing, so this is an access-infrastructure issue, not a Pig outage. Logged to today's memory file.",
+      "effective_at": "2026-09-24T13:32:11Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel down",
+      "update_id": "goal_update_ee89e1848edf",
+      "updated_at": "2026-09-24T13:32:11Z"
+    },
+    {
+      "created_at": "2026-09-23T22:41:54Z",
+      "current_state": "Pig route check failed at the Tailscale layer; the egress proxy is reachable but the CONNECT tunnel to the Pig is not.",
+      "description": "The 16:41 check found the proxy accepting connections but the tunnel to the Pig failing, so this is an access infrastructure issue, not a Pig outage; the SSH layer was not tested.",
+      "effective_at": "2026-09-23T22:41:54Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_f67d1db7d992",
+      "updated_at": "2026-09-23T22:41:54Z"
+    },
+    {
+      "created_at": "2026-09-23T21:41:56Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; the egress proxy itself responds.",
+      "description": "The scheduled availability check reached the egress proxy but the CONNECT tunnel to the Pig failed, so Pig-side log inspection for the OAuth investigation is unreachable until the tunnel layer recovers.",
+      "effective_at": "2026-09-23T21:41:56Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale layer unreachable",
+      "update_id": "goal_update_a979a7657e4c",
+      "updated_at": "2026-09-23T21:41:56Z"
+    },
+    {
+      "created_at": "2026-09-23T16:41:58Z",
+      "current_state": "Pig access path degraded at the Tailscale layer; proxy itself is reachable.",
+      "description": "The layered health check found the egress proxy accepting TCP but the Tailscale CONNECT tunnel failing with an empty response, so Pig-side OAuth log inspection is blocked until the tunnel path recovers; the Pig itself is not implicated.",
+      "effective_at": "2026-09-23T16:41:58Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_a40662389dd5",
+      "updated_at": "2026-09-23T16:41:58Z"
+    },
+    {
+      "created_at": "2026-09-23T16:31:52Z",
+      "current_state": "Route check failed at the Tailscale tunnel layer; the proxy accepts TCP but the CONNECT tunnel returned an empty response.",
+      "description": "The scheduled Pig route check found the egress proxy reachable but the Tailscale tunnel failing, so the Pig can't be reached through this path right now. This is an access-infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-23T16:31:52Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_d64c368cb02f",
+      "updated_at": "2026-09-23T16:31:52Z"
+    },
+    {
+      "created_at": "2026-09-22T22:22:08Z",
+      "current_state": "Pig unreachable via Tailscale tunnel; proxy TCP connects but the CONNECT tunnel fails (16:21 MDT check).",
+      "description": "The egress proxy accepted the connection but the Tailscale tunnel to the Pig failed, so Pig-side work like the OAuth investigation is paused until the tunnel route recovers. This is an access-infrastructure issue, not a Pig outage.",
+      "effective_at": "2026-09-22T22:22:08Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unreachable",
+      "update_id": "goal_update_9fe626848f8f",
+      "updated_at": "2026-09-22T22:22:08Z"
+    },
+    {
+      "created_at": "2026-09-22T21:18:26Z",
+      "current_state": "Pig reachable through the verified Tailscale forward with never-sleep-on-AC; the tailnet URL returns 200.",
+      "description": "The forward was verified from the Windows side, which is the exact path the phone takes, and the Pig was set to never sleep on AC; the URL dies only if WSL restarts and changes its internal IP.",
+      "effective_at": "2026-09-22T17:44:30Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Tailscale forward verified; Pig set to never sleep on AC",
+      "update_id": "goal_update_640283320627",
+      "updated_at": "2026-09-22T21:18:26Z"
+    },
+    {
+      "created_at": "2026-09-22T21:18:26Z",
+      "current_state": "Pig bridge verified back, so the stalled OAuth log inspection can resume.",
+      "description": "After the tunnel flap, Nolan confirmed the Pig is back and the bridge was verified, unblocking the failed-run log inspection.",
+      "effective_at": "2026-09-22T13:43:20Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig tunnel recovered; log inspection unblocked",
+      "update_id": "goal_update_5505c98bfab4",
+      "updated_at": "2026-09-22T21:18:26Z"
+    },
+    {
+      "created_at": "2026-09-22T13:42:40Z",
+      "current_state": "Pig access check failed at the Tailscale tunnel layer on two consecutive runs at 07:41 MDT.",
+      "description": "The proxy accepted the TCP connection but dropped the tunnel request with no response, so this is an access-path infrastructure issue; the Pig itself was not proven down and the SSH layer was never reached.",
+      "effective_at": "2026-09-22T13:42:40Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch flagged a tunnel-layer failure",
+      "update_id": "goal_update_9e16508e8640",
+      "updated_at": "2026-09-22T13:42:40Z"
+    },
+    {
+      "created_at": "2026-09-22T13:31:59Z",
+      "current_state": "Pig route check at 07:31 MDT: egress proxy reachable, but the Tailscale tunnel (CONNECT) is failing.",
+      "description": "The egress proxy accepted TCP but the Tailscale CONNECT tunnel failed, so Pig access via the Tailscale route is unavailable right now; this is an infrastructure route issue, not a confirmed Pig outage.",
+      "effective_at": "2026-09-22T13:31:59Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_46b79a8d16ea",
+      "updated_at": "2026-09-22T13:31:59Z"
+    },
+    {
+      "created_at": "2026-09-22T09:02:54Z",
+      "current_state": "Pig route down at the Tailscale tunnel layer; proxy TCP layer OK but tunnel handshake failed.",
+      "description": "The 03:01 MDT route watch found the egress proxy reachable but the Tailscale CONNECT tunnel failing with an empty proxy response; consistent with the earlier heartbeat finding that the Pig went unreachable between 02:41 and 02:56 MDT. This is an access infrastructure issue, not a confirmed Pig-side outage.",
+      "effective_at": "2026-09-22T09:02:54Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: tunnel unreachable",
+      "update_id": "goal_update_ca7534f788d4",
+      "updated_at": "2026-09-22T09:02:54Z"
+    },
+    {
+      "created_at": "2026-09-22T08:53:25Z",
+      "current_state": "Pig unreachable at the Tailscale layer; proxy TCP healthy, tunnel CONNECT returning empty response.",
+      "description": "The scheduled route check found the egress proxy accepting TCP but the Tailscale CONNECT tunnel failing on two attempts, so this is an access infrastructure issue on the tunnel path, not a confirmed Pig outage.",
+      "effective_at": "2026-09-22T08:53:25Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel down",
+      "update_id": "goal_update_d95ba7fecbbf",
+      "updated_at": "2026-09-22T08:53:25Z"
+    },
+    {
+      "created_at": "2026-09-21T22:02:16Z",
+      "current_state": "Tailscale tunnel unreachable: proxy TCP to hatch-egress-proxy:3130 is OK, but the CONNECT tunnel to the Pig fails.",
+      "description": "The scheduled 16:01 MDT check found the egress proxy healthy but the Tailscale route to the Pig failing, during the known 4pm commute blackout window when the Pig drops off the network.",
+      "effective_at": "2026-09-21T22:02:16Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_b9484c5c9a2e",
+      "updated_at": "2026-09-21T22:02:16Z"
+    },
+    {
+      "created_at": "2026-09-21T13:41:58Z",
+      "current_state": "Tailscale tunnel through the egress proxy is not reaching the Pig; proxy TCP itself is fine.",
+      "description": "The proxy accepted the TCP connection but the secure tunnel to the Pig came back empty, so this is a route issue at the Tailscale layer, not the Pig being offline. It may also be tied to the morning commute window when the Pig drops around 7am.",
+      "effective_at": "2026-09-21T13:41:58Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale layer unreachable",
+      "update_id": "goal_update_d15ec1b62735",
+      "updated_at": "2026-09-21T13:41:58Z"
+    },
+    {
+      "created_at": "2026-09-21T13:32:00Z",
+      "current_state": "Pig route down at the Tailscale layer as of 07:31 MDT; proxy TCP fine, tunnel CONNECT failing.",
+      "description": "The route watch found the egress proxy reachable but the Tailscale tunnel refusing connection, so the Pig is unreachable right now; this is an access/tunnel issue, not a Pig outage, and likely the 7am commute blackout window.",
+      "effective_at": "2026-09-21T13:32:00Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_e47996da18f6",
+      "updated_at": "2026-09-21T13:32:00Z"
+    },
+    {
+      "created_at": "2026-09-20T23:31:58Z",
+      "current_state": "Pig unreachable via Tailscale: egress proxy TCP connects but the CONNECT tunnel returned an empty response.",
+      "description": "This is a tunnel/proxy access-layer issue, not evidence the Pig itself is down; scheduled monitoring continues.",
+      "effective_at": "2026-09-20T23:31:58Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel failed",
+      "update_id": "goal_update_a55514ac19d6",
+      "updated_at": "2026-09-20T23:31:58Z"
+    },
+    {
+      "created_at": "2026-09-20T18:21:53Z",
+      "current_state": "Pig unreachable over the Tailscale tunnel; proxy accepts TCP but the CONNECT tunnel fails.",
+      "description": "Scheduled route check found the egress proxy reachable but the Tailscale tunnel to the Pig failing, so Pig-side OAuth log inspection is blocked until the tunnel path recovers.",
+      "effective_at": "2026-09-20T18:21:53Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale tunnel unavailable",
+      "update_id": "goal_update_f24d16adfc09",
+      "updated_at": "2026-09-20T18:21:53Z"
+    },
+    {
+      "created_at": "2026-09-20T06:11:50Z",
+      "current_state": "Pig reachable again via the Tailscale tunnel proxy at 00:11 MDT after the outage.",
+      "description": "The layered health check passed all three layers (proxy TCP, Tailscale tunnel, SSH banner), so the Pig route is working again after the 2026-09-19 outage.",
+      "effective_at": "2026-09-20T06:11:50Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: reachable again",
+      "update_id": "goal_update_33d56f04153a",
+      "updated_at": "2026-09-20T06:11:50Z"
+    },
+    {
+      "created_at": "2026-09-19T22:21:50Z",
+      "current_state": "Pig reachable again at 16:21 MDT after the 15:26 outage.",
+      "description": "The layered route watch passed all three checks (proxy TCP, Tailscale tunnel, SSH banner), so the Pig is back without any intervention.",
+      "effective_at": "2026-09-19T22:21:50Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Pig reachable again",
+      "update_id": "goal_update_97f084c59ac7",
+      "updated_at": "2026-09-19T22:21:50Z"
+    },
+    {
+      "created_at": "2026-09-18T22:15:45Z",
+      "current_state": "Pig route check failed at the Tailscale tunnel layer; the proxy itself is healthy.",
+      "description": "The 4:11 PM route check found the proxy accepting TCP connections but the Tailscale CONNECT tunnel to the Pig not establishing, timed with the afternoon commute drop. This is a tunnel route issue, not a Pig outage.",
+      "effective_at": "2026-09-18T22:15:45Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: tunnel unreachable",
+      "update_id": "goal_update_fd56a5f5b99d",
+      "updated_at": "2026-09-18T22:15:45Z"
+    },
+    {
+      "created_at": "2026-09-18T22:12:09Z",
+      "current_state": "Pig route check failed at the Tailscale layer; a retry after the 10-minute hold gave the same result.",
+      "description": "The egress proxy accepted the TCP connection, but the CONNECT tunnel to the Pig failed on both the initial check and a retry 10 minutes later. This is a route/infrastructure issue, not a confirmed Pig outage, and the run fell inside the 4pm commute window, so a commute-related dropout is likely.",
+      "effective_at": "2026-09-18T22:12:09Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale unreachable",
+      "update_id": "goal_update_b04ddf17be9c",
+      "updated_at": "2026-09-18T22:12:09Z"
+    },
+    {
+      "created_at": "2026-09-18T21:51:49Z",
+      "current_state": "Pig route failed at the Tailscale tunnel layer; proxy is up, so this is access infrastructure, not a Pig outage.",
+      "description": "The 15:51 MDT check showed the proxy accepting TCP but the Tailscale CONNECT tunnel failing, so no OAuth or SSH work on the Pig can proceed until the route recovers.",
+      "effective_at": "2026-09-18T21:51:49Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_1f4d72df2df9",
+      "updated_at": "2026-09-18T21:51:49Z"
+    },
+    {
+      "created_at": "2026-09-18T14:11:57Z",
+      "current_state": "Pig unreachable at 08:11 MDT: Tailscale tunnel failed (proxy TCP fine).",
+      "description": "Route check passed the egress proxy but could not open the tunnel to the Pig, so Pig-side work is blocked until the route recovers. Logged the result; no Pig-side action taken.",
+      "effective_at": "2026-09-18T14:11:57Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check failed at Tailscale layer",
+      "update_id": "goal_update_73614ee5a632",
+      "updated_at": "2026-09-18T14:11:57Z"
+    },
+    {
+      "created_at": "2026-09-18T14:01:56Z",
+      "current_state": "Pig unreachable via tunnel at 8:01 AM MDT; proxy TCP healthy, CONNECT to Tailscale failed.",
+      "description": "Layered health check failed at the Tailscale layer (proxy accepted TCP but the CONNECT tunnel got an empty proxy response); consistent with the ~7am commute blackout, so this is an infrastructure-layer issue, not a Pig outage, and no retry hammering.",
+      "effective_at": "2026-09-18T14:01:20Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: tunnel failure at Tailscale layer",
+      "update_id": "goal_update_5322472304eb",
+      "updated_at": "2026-09-18T14:01:56Z"
+    },
+    {
+      "created_at": "2026-09-18T13:52:51Z",
+      "current_state": "Tailscale tunnel to the Pig remains unreachable; the egress proxy itself is healthy.",
+      "description": "The 07:52 check confirmed the proxy accepts TCP but the tunnel to the Pig fails, matching the expected 7am commute window, so no retry until the window passes.",
+      "effective_at": "2026-09-18T13:52:51Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route check: TAILSCALE_UNREACHABLE (commute window)",
+      "update_id": "goal_update_82fd9a9a23f7",
+      "updated_at": "2026-09-18T13:52:51Z"
+    },
+    {
+      "created_at": "2026-09-18T13:22:00Z",
+      "current_state": "Pig route check at 07:21 MDT found the Tailscale tunnel unreachable; proxy layer healthy.",
+      "description": "The route watch confirmed the egress proxy connects fine but the CONNECT tunnel to the Pig fails, an infrastructure-layer issue consistent with the 7am commute blackout (the Pig was briefly reachable around 07:14, then dropped). Not a Pig outage verdict.",
+      "effective_at": "2026-09-18T13:22:00Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale layer unreachable at 07:21 MDT",
+      "update_id": "goal_update_344bb5b3645a",
+      "updated_at": "2026-09-18T13:22:00Z"
+    },
+    {
+      "created_at": "2026-09-17T22:32:06Z",
+      "current_state": "Pig still unreachable through the Tailscale tunnel; proxy layer itself is healthy.",
+      "description": "The layered health check found the egress proxy accepts TCP but the CONNECT tunnel to Tailscale failed with an empty proxy response, so this is a route issue, not the Pig being down. Check ran at 16:31 MDT, inside the 4pm commute window, so Nolan may just be driving.",
+      "effective_at": "2026-09-17T22:32:06Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale layer unreachable",
+      "update_id": "goal_update_bdde9db9d7f3",
+      "updated_at": "2026-09-17T22:32:06Z"
+    },
+    {
+      "created_at": "2026-09-18T08:40:02Z",
+      "current_state": "The three deliverables now hold explicit engineering guardrails and a regression checklist.",
+      "description": "Converted the investigation lessons into prevention rules covering single responsibility, process ownership, live-process state, and layer-specific failure reporting, without redesigning the supervisor.",
+      "effective_at": "2026-09-17T21:56:45Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "After-action record and guardrails written",
+      "update_id": "goal_update_bc0a568f465d",
+      "updated_at": "2026-09-18T08:40:02Z"
+    },
+    {
+      "created_at": "2026-09-18T08:40:02Z",
+      "current_state": "Supervisor is running with the Pig reachable and auto-reconnect verified.",
+      "description": "Deployed the one-script autossh supervisor on the existing SSH config; kill testing showed detection in under 2s and reconnect after backoff, with no duplicate tunnels or orphans.",
+      "effective_at": "2026-09-17T21:47:45Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Phase 1 Pig tunnel supervisor live",
+      "update_id": "goal_update_bb42cf695aea",
+      "updated_at": "2026-09-18T08:40:02Z"
+    },
+    {
+      "created_at": "2026-09-17T21:41:01Z",
+      "current_state": "Root cause report complete; awaiting Nolan's decision on Phase 1 vs Phase 2.",
+      "description": "Aggressive root-cause investigation complete. Found: proxy has an allowlist (Pig:22 and internet:443 allowed; others blocked/dropped). Outage was transient Tailscale tunnel failure, unobservable root cause due to proxy black box. Muse has Tailscale identity (100.70.58.42) but container cannot use it directly. Report covers A-F plus two-phase proposal: Phase 1 (autossh supervisor, zero new infra) and Phase 2 (WebSocket rendezvous, true proxy independence). Full report at hidden_files/root-cause-report-2026-09-17.md. Nothing deployed; awaiting Nolan's approval.",
+      "effective_at": "2026-09-17T21:41:01Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Root cause investigation complete",
+      "update_id": "goal_update_009ca9eaff7d",
+      "updated_at": "2026-09-17T21:41:01Z"
+    },
+    {
+      "created_at": "2026-09-17T21:31:50Z",
+      "current_state": "Pig route unavailable at the Tailscale layer; proxy TCP is healthy.",
+      "description": "The route to the Pig failed at the Tailscale CONNECT tunnel (empty proxy response), while the egress proxy itself connected fine; Pig-side OAuth testing stays blocked until the tunnel recovers.",
+      "effective_at": "2026-09-17T21:31:50Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Route check: Tailscale tunnel unreachable",
+      "update_id": "goal_update_ab214a4e8c33",
+      "updated_at": "2026-09-17T21:31:50Z"
+    },
+    {
+      "created_at": "2026-09-17T21:22:48Z",
+      "current_state": "TAILSCALE_UNREACHABLE persistent; proxy TCP OK but CONNECT tunnel fails.",
+      "description": "Layered health check detected TAILSCALE_UNREACHABLE at 2026-09-17 21:22 UTC (15:22 MDT). Proxy TCP to hatch-egress-proxy:3130 succeeds, but HTTP CONNECT to 100.79.154.43:22 returns empty/unexpected response instead of 200. Confirmed persistent across two checks 25s apart. Pig itself likely fine; issue is at proxy->Tailscale layer. This is the first specific-layer failure caught by the upgraded watch.",
+      "effective_at": "2026-09-17T21:22:48Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route failure: TAILSCALE_UNREACHABLE",
+      "update_id": "goal_update_a20ca62fe08d",
+      "updated_at": "2026-09-17T21:22:48Z"
+    },
+    {
+      "created_at": "2026-09-17T21:21:55Z",
+      "current_state": "Pig route unreachable at the Tailscale layer; proxy TCP connects but the CONNECT tunnel fails.",
+      "description": "The route watcher found the Pig path broken at the Tailscale tunnel step (the proxy itself accepts connections), so Pig-side work stays blocked until the tunnel is back. This is a network-access issue, not the Pig being down.",
+      "effective_at": "2026-09-17T21:21:55Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route watch: Tailscale layer unreachable",
+      "update_id": "goal_update_12c4c90c665d",
+      "updated_at": "2026-09-17T21:21:55Z"
+    },
+    {
+      "created_at": "2026-09-17T20:35:46Z",
+      "current_state": "Pig-side services verified; watch upgraded to layered check.",
+      "description": "With broad permissions, verified Pig-side: Tailscale online (100.79.154.43), Windows SSH running with AUTO_START. Updated pig-route-watch to use layered health check distinguishing PROXY_UNAVAILABLE, TAILSCALE_UNREACHABLE, PIG_UNREACHABLE, SSH_UNAVAILABLE, ROUTE_UNAVAILABLE, PIG_REACHABLE. Limit: proxy (hatch-egress-proxy:3130) is external runtime infrastructure; cannot control its process, logs, or fix transient failures. Pig is configured for maximum reliability on its side.",
+      "effective_at": "2026-09-17T20:35:46Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Permissions applied; Pig-side hardened",
+      "update_id": "goal_update_8220944c0ec7",
+      "updated_at": "2026-09-17T20:35:46Z"
+    },
+    {
+      "created_at": "2026-09-17T20:31:54Z",
+      "current_state": "Proxy chain mapped and working; transient failure not reproduced in 3min probe.",
+      "description": "Mapped the full access chain: runtime -> hatch-egress-proxy:3130 (IPv6) -> Tailscale -> Pig:22. Proxy requires no auth for tailnet. 3-minute sustained probe showed 100% PIG_REACHABLE across all layers (TCP, CONNECT tunnel, SSH banner). The earlier 5-10 minute outage (Broken pipe) did not reproduce. Root cause of transient failure undetermined; proxy is external runtime infrastructure without accessible logs. Built layered health check distinguishing 6 states.",
+      "effective_at": "2026-09-17T20:31:54Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Access chain diagnosed; proxy stable for 3min",
+      "update_id": "goal_update_5a7acf86099b",
+      "updated_at": "2026-09-17T20:31:54Z"
+    },
+    {
+      "created_at": "2026-09-17T20:31:43Z",
+      "current_state": "Pig reachable via the Tailscale tunnel proxy; the live loopback/OAuth diagnostic is unblocked.",
+      "description": "The route watcher got PIG_OK through the tunnel proxy, so the Copilot OAuth post-auth investigation can now run its live diagnostic: CLI listener lifecycle, bind interface, and Windows-to-WSL2 loopback probing.",
+      "effective_at": "2026-09-17T20:31:43Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig route recovered, OAuth investigation unblocked",
+      "update_id": "goal_update_98e31728d033",
+      "updated_at": "2026-09-17T20:31:43Z"
+    },
+    {
+      "created_at": "2026-09-17T20:26:42Z",
+      "current_state": "Diagnostic plan ready; pig-route-watch fixed to use proxy; awaiting Pig access for live test.",
+      "description": "Updated pig-route-watch to explicitly use the Tailscale proxy route (ssh -F pig-config) for monitoring only. Created detailed loopback diagnostic plan covering 7 hypotheses (A-G) with phased elimination steps. Ready for live investigation when Pig access is restored and Nolan is available for the auth click-through.",
+      "effective_at": "2026-09-17T20:26:42Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Watch fixed, diagnostic plan ready",
+      "update_id": "goal_update_8070eabc4093",
+      "updated_at": "2026-09-17T20:26:42Z"
+    },
+    {
+      "created_at": "2026-09-17T20:24:03Z",
+      "current_state": "Lifecycle bug fixed and tested; live loopback investigation blocked (no Pig access).",
+      "description": "Fixed the orphaned CLI bug: cleanup_current_session now terminates copilot login on all EXIT paths including Ctrl-C. Added deterministic regression test. Suite is 54/54 green. README and MEMORY updated. The Tailscale tunnel stopped working after brief success; cannot reach Pig for the live loopback interface/bind investigation. Awaiting Pig access or Nolan's availability for a live auth attempt.",
+      "effective_at": "2026-09-17T20:24:03Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Lifecycle fix complete; blocked on Pig access",
+      "update_id": "goal_update_bc8c897d0a8b",
+      "updated_at": "2026-09-17T20:24:03Z"
+    },
+    {
+      "created_at": "2026-09-17T20:21:56Z",
+      "current_state": "Pig reachable via proxy tunnel; verifying OAuth completion.",
+      "description": "SSH via the Tailscale tunnel (pigwsl config) succeeds with PIG_OK. The Pig was never down; all prior probes used the wrong network path. Now verifying the CLI's OAuth token exchange and active identity count.",
+      "effective_at": "2026-09-17T20:21:56Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Pig reachable; verifying OAuth state",
+      "update_id": "goal_update_e40f0bbc3483",
+      "updated_at": "2026-09-17T20:21:56Z"
+    },
+    {
+      "created_at": "2026-09-17T20:20:00Z",
+      "current_state": "Root cause found: direct SSH cannot reach tailnet from controller; proxy method requires Nolan's tunnel approval.",
+      "description": "Diagnosed the SSH failure: this container's ordinary networking cannot reach the Tailscale network. All prior 'Pig down' readings (hangs, Operation not permitted) were the container's network policy, not the Pig being offline. The correct path is the runtime HTTP proxy on port 3130 with CONNECT support. Tunnel access needs Nolan's separate approval before first use.",
+      "effective_at": "2026-09-17T20:20:00Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "SSH root cause: wrong network path, need tunnel approval",
+      "update_id": "goal_update_7500d4e36fef",
+      "updated_at": "2026-09-17T20:20:00Z"
+    },
+    {
+      "created_at": "2026-09-17T20:19:22Z",
+      "current_state": "Browser shows 'Authorization received'; CLI token exchange unconfirmed (Pig unreachable).",
+      "description": "Nolan reports the browser now shows 'Authorization received. Return to your terminal to finish signing in.' The OAuth callback succeeded. However, the Pig remains unreachable from the controller (SSH: Operation not permitted), so the CLI's token exchange and identity activation cannot be verified yet. Nolan should check the terminal where authorize.sh is running for completion.",
+      "effective_at": "2026-09-17T20:19:22Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Browser OAuth succeeded; awaiting CLI confirmation",
+      "update_id": "goal_update_9f5cde8c7440",
+      "updated_at": "2026-09-17T20:19:22Z"
+    },
+    {
+      "created_at": "2026-09-17T20:17:31Z",
+      "current_state": "Symptom clarified to ERR_CONNECTION_REFUSED on 127.0.0.1 callback; GitHub OAuth itself succeeded.",
+      "description": "Nolan reports the current symptom is ERR_CONNECTION_REFUSED on http://127.0.0.1:PORT/callback, not GitHub's \"What?\" page. This means the GitHub sign-in and Authorize steps succeeded, but Windows Chrome cannot reach the CLI's loopback listener in WSL2. Investigation shifts from CSRF/session to loopback connectivity: CLI liveness, bind interface, WSL2 localhost forwarding, or firewall.",
+      "effective_at": "2026-09-17T20:17:31Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Symptom clarified: loopback refused, not GitHub error",
+      "update_id": "goal_update_f55d87da9e8e",
+      "updated_at": "2026-09-17T20:17:31Z"
+    },
+    {
+      "created_at": "2026-09-17T20:11:18Z",
+      "current_state": "Waiting for Pig SSH route to recover, then investigating the post-auth session failure.",
+      "description": "Nolan's two fresh-session browser OAuth attempts both got GitHub's \"What?\" page AFTER completing the sign-in and Authorize steps. Lead hypothesis is a _gh_sess/CSRF token staleness at the post-auth boundary. When the Pig is reachable, inspect the failed-run logs and OAuth lifecycle, identify the exact request that triggers the failure, implement the smallest fix with a regression test, then live-test the full flow to identity ACTIVE with cleanup verified.",
+      "effective_at": "2026-09-17T20:11:18Z",
+      "goal_id": "goal_9025c0222a63",
+      "title": "Added Copilot OAuth post-auth failure investigation",
+      "update_id": "goal_update_5cabb5aed74f",
+      "updated_at": "2026-09-17T20:11:18Z"
+    }
+  ]
+}

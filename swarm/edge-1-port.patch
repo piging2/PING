@@ -1,0 +1,2018 @@
+diff --git a/jest.config.cjs b/jest.config.cjs
+index 560b0dd..db7ab2a 100644
+--- a/jest.config.cjs
++++ b/jest.config.cjs
+@@ -18,6 +18,7 @@ module.exports = {
+     "<rootDir>/src/fyd/owner/__tests__/*.test.ts",
+     "<rootDir>/src/fyd/regen/__tests__/*.test.ts",
+     "<rootDir>/src/fyd/ui/__tests__/*.test.tsx",
++    "<rootDir>/src/fyd/edge/__tests__/*.test.ts",
+   ],
+   moduleNameMapper: {
+     "^@/(.*)$": "<rootDir>/src/$1",
+diff --git a/server/dev-server.ts b/server/dev-server.ts
+index eae21e2..5048c09 100644
+--- a/server/dev-server.ts
++++ b/server/dev-server.ts
+@@ -39,7 +39,9 @@ import {
+   MobileCircles,
+   circlesClientScript,
+ } from "@/fyd/ui/margin-circles";
+-import { VISITOR_VIEWER, type Viewer } from "@/fyd/visibility/policy";
++import { VISITOR_VIEWER, canSee, type Viewer } from "@/fyd/visibility/policy";
++import { buildObjectSheet } from "@/fyd/edge/resolve";
++import { edgeClientScript } from "@/fyd/edge/client";
+ import { answerVisitorQuestion } from "@/fyd/ask/visitor";
+ import { whyThis } from "@/fyd/why/why-this";
+ import { loadObservations } from "@/fyd/why/load-observations";
+@@ -305,6 +307,7 @@ ${mobileCircles}
+ </footer>
+ <script>${slug ? clientScript(slug, demoOwner) : ""}</script>
+ ${mobileCircles ? `<script>${circlesClientScript()}</script>` : ""}
++${slug ? `<script>${edgeClientScript(slug, demoOwner)}</script>` : ""}
+ </body>
+ </html>`;
+ }
+@@ -418,7 +421,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
+ 
+   if (req.method === "POST" && pathname === "/api/ask") {
+     try {
+-      const body = JSON.parse(await readBody(req)) as { site?: string; question?: string };
++      const body = JSON.parse(await readBody(req)) as { site?: string; question?: string; objectId?: string };
+       if (!body.site || !SITES[body.site] || typeof body.question !== "string" || body.question.trim().length === 0) {
+         json(res, 400, { error: "site and a non-empty question are required" });
+         return;
+@@ -426,6 +429,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
+       const answer = answerVisitorQuestion({
+         siteSlug: body.site as "happy-place" | "coppersmith-plumbing",
+         question: body.question,
++        objectId: typeof body.objectId === "string" && body.objectId.length > 0 ? body.objectId : undefined,
+         graph: SITES[body.site].graph,
+       });
+       json(res, 200, answer);
+@@ -435,6 +439,28 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
+     return;
+   }
+ 
++  if (req.method === "GET" && pathname === "/api/edge/object") {
++    // Edge-object sheet: the compact object expansion. The sheet is built
++    // through the FYD-010 visibility gate inside buildObjectSheet; an
++    // invisible object yields null, mapped here to 404, indistinguishable
++    // from "unknown". No oracle, no bypass.
++    const site = u.searchParams.get("site") ?? "";
++    const objectId = u.searchParams.get("objectId") ?? "";
++    if (!SITES[site] || !objectId) {
++      json(res, 400, { found: false, reason: "site and objectId are required" });
++      return;
++    }
++    const viewer: Viewer = demoOwner
++      ? { id: "demo-owner", displayName: null, mode: "demo_owner" }
++      : VISITOR_VIEWER;
++    const sheet = buildObjectSheet(SITES[site].graph, objectId, viewer);
++    if (!sheet) {
++      json(res, 404, { found: false, reason: "FYD has no record of that entry for this viewer." });
++      return;
++    }
++    json(res, 200, sheet);
++    return;
++  }
+   if (req.method === "GET" && pathname === "/api/why-this") {
+     const site = u.searchParams.get("site") ?? "";
+     const objectId = u.searchParams.get("objectId") ?? "";
+@@ -443,8 +469,37 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
+       json(res, 400, { found: false, reason: "site and objectId are required" });
+       return;
+     }
++    const viewer: Viewer = demoOwner
++      ? { id: "demo-owner", displayName: null, mode: "demo_owner" }
++      : VISITOR_VIEWER;
++    const target = SITES[site].graph.objects.find((o) => o.id === objectId);
++    if (!target || !canSee(target, viewer)) {
++      json(res, 200, { found: false, reason: "FYD has no record of that entry, so it cannot say why it is shown." });
++      return;
++    }
+     const observations = loadObservations(site);
+-    json(res, 200, whyThis({ graph: SITES[site].graph, observations, objectId, field }));
++    const whyResult = whyThis({ graph: SITES[site].graph, observations, objectId, field });
++    if (!whyResult.found && !field) {
++      // The root business object carries no field-level evidence_ref (the
++      // why lane was built for bindings with evidence). Fall back to the
++      // object's own provenance: an honest, fail-closed source statement
++      // from the existing record, never an invented observation.
++      const prov = (target as { provenance?: { ref?: string; derivedAt?: string } }).provenance;
++      const sourceUrl = typeof prov?.ref === "string" ? prov.ref.replace(/^website-ingestion:/, "") : "";
++      if (sourceUrl) {
++        json(res, 200, {
++          found: true,
++          objectTitle: target.title,
++          fieldLabel: `The "${target.title}" entry`,
++          source: sourceUrl,
++          observedValue: target.title,
++          observationTime: prov?.derivedAt ?? "",
++          extractionMethod: "object-level provenance: recorded by website ingestion (no field-level evidence reference on this object)",
++        });
++        return;
++      }
++    }
++    json(res, 200, whyResult);
+     return;
+   }
+ 
+diff --git a/server/site.css b/server/site.css
+index b2b9794..411af5a 100644
+--- a/server/site.css
++++ b/server/site.css
+@@ -251,3 +251,192 @@ article[data-fyd-object-id] {
+   .fyd-circles-fab { display: none; }
+   .fyd-circles-sheet { display: none; }
+ }
++
++/* ------------------------------------------------------------------
++ * FYD EDGE-OBJECT EXPERIENCE (edge lane)
++ * Compact object sheet: bottom sheet on mobile, docked panel on desktop.
++ * INVARIANT: AN EDGE OBJECT IS NOT SUCCESSFULLY RENDERED UNTIL IT
++ * PROVIDES A FUNCTIONAL DOORWAY INTO THE AUTHORIZED BUSINESS GRAPH.
++ * ------------------------------------------------------------------ */
++
++.fyd-sr-only {
++  position: absolute; width: 1px; height: 1px;
++  padding: 0; margin: -1px; overflow: hidden;
++  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
++}
++
++/* Tappable affordance on every object binding (cards, circles). */
++[data-fyd-object-id] { cursor: pointer; }
++[data-fyd-object-id]:focus-visible {
++  outline: 3px solid var(--accent, #C9A227);
++  outline-offset: 2px;
++}
++
++/* Body scroll lock while the sheet is open: the page scroll position is
++ * preserved and restored; the sheet never destroys page state. */
++body.fyd-edge-lock { overflow: hidden; }
++
++.fyd-edge-overlay {
++  position: fixed; inset: 0;
++  background: rgba(20, 16, 12, 0.45);
++  z-index: 60;
++}
++.fyd-edge-overlay[hidden] { display: none !important; }
++
++.fyd-edge-sheet {
++  position: fixed; left: 0; right: 0; bottom: 0;
++  max-width: 100vw; box-sizing: border-box;
++  max-height: 88vh; max-height: 88dvh;
++  display: flex; flex-direction: column;
++  background: var(--surface, #FFFFFF);
++  color: var(--ink, #232033);
++  border-radius: 1rem 1rem 0 0;
++  box-shadow: 0 -6px 32px rgba(20, 16, 12, 0.28);
++  z-index: 61;
++  overflow-x: hidden;
++  padding-bottom: env(safe-area-inset-bottom, 0px);
++}
++.fyd-edge-sheet[hidden] { display: none !important; }
++
++.fyd-edge-grab {
++  width: 44px; height: 5px; border-radius: 999px;
++  background: rgba(35, 32, 51, 0.22);
++  margin: 0.6rem auto 0;
++  flex: none;
++}
++.fyd-edge-head { padding: 0.75rem 1.25rem 0.5rem; flex: none; }
++.fyd-edge-backrow {
++  display: flex; align-items: center; gap: 0.75rem;
++  margin-bottom: 0.5rem;
++}
++.fyd-edge-back, .fyd-edge-close {
++  min-height: 44px; padding: 0.5rem 1rem;
++  border: 1px solid var(--border, #e5e0d5); border-radius: 999px;
++  background: var(--background, #faf8f3); color: inherit;
++  font-size: 0.95rem; cursor: pointer;
++}
++.fyd-edge-back[hidden] { display: none; }
++.fyd-edge-crumb { margin-right: auto; font-size: 0.8rem; opacity: 0.6; }
++.fyd-edge-title { font-size: 1.35rem; margin: 0; line-height: 1.25; }
++.fyd-edge-title:focus { outline: none; }
++.fyd-edge-type { margin: 0.25rem 0 0; font-size: 0.85rem; opacity: 0.75; }
++
++.fyd-edge-scroll { overflow-y: auto; overscroll-behavior: contain; }
++.fyd-edge-main { padding: 0.25rem 1.25rem 2rem; box-sizing: border-box; max-width: 100%; }
++.fyd-edge-summary { font-size: 1rem; line-height: 1.55; margin: 0.75rem 0 0.25rem; }
++.fyd-edge-prov { font-size: 0.75rem; opacity: 0.6; margin: 0 0 0.75rem; overflow-wrap: anywhere; }
++
++.fyd-claim {
++  display: inline-block; font-size: 0.68rem; font-weight: 600;
++  padding: 0.15rem 0.5rem; border-radius: 999px;
++  border: 1px solid currentColor; vertical-align: middle;
++  margin-left: 0.35rem; white-space: nowrap;
++}
++.fyd-claim-cc-direct { color: #1d6f42; }
++.fyd-claim-cc-derived { color: #8a6d1b; }
++.fyd-claim-cc-owner { color: #5b4bc4; }
++.fyd-claim-cc-generated { color: #8a8a8a; }
++
++.fyd-edge-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1rem; }
++.fyd-edge-action {
++  min-height: 44px; padding: 0.6rem 1.1rem;
++  border-radius: 999px; border: 1px solid var(--border, #e5e0d5);
++  background: var(--accent, #C9A227); color: var(--accent-foreground, #1c1917);
++  font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none;
++  display: inline-flex; align-items: center;
++}
++button.fyd-edge-action[data-edge-act="why_this"],
++button.fyd-edge-action[data-edge-act="reference"] {
++  background: transparent; color: inherit; font-weight: 500;
++}
++
++.fyd-edge-group { margin: 1rem 0 0; border-top: 1px solid var(--border, #eee9dc); padding-top: 0.75rem; }
++.fyd-edge-grouphead { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
++.fyd-edge-grouphead h3 { font-size: 1rem; margin: 0; }
++.fyd-edge-count {
++  display: inline-block; min-width: 1.6em; text-align: center;
++  font-size: 0.78rem; font-weight: 700;
++  background: rgba(35, 32, 51, 0.08); border-radius: 999px; padding: 0.1em 0.4em;
++}
++.fyd-edge-why-g {
++  min-height: 44px; padding: 0.4rem 0.8rem; font-size: 0.82rem;
++  background: transparent; border: 1px dashed var(--border, #e5e0d5);
++  border-radius: 999px; cursor: pointer; color: inherit;
++}
++.fyd-edge-why-panel { font-size: 0.85rem; margin: 0.5rem 0; }
++.fyd-edge-why-panel[hidden] { display: none; }
++
++.fyd-edge-items { list-style: none; margin: 0.5rem 0 0; padding: 0; }
++.fyd-edge-items li { margin: 0 0 0.4rem; }
++.fyd-edge-item {
++  display: flex; align-items: center; gap: 0.6rem;
++  width: 100%; box-sizing: border-box;
++  min-height: 48px; padding: 0.55rem 0.75rem;
++  background: var(--background, #faf8f3);
++  border: 1px solid var(--border, #e5e0d5); border-radius: 0.6rem;
++  font-size: 0.95rem; cursor: pointer; text-align: left; color: inherit;
++}
++.fyd-edge-item:active { transform: scale(0.99); }
++.fyd-edge-tag {
++  flex: none; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
++  letter-spacing: 0.04em; padding: 0.2rem 0.5rem; border-radius: 0.35rem;
++  background: rgba(201, 162, 39, 0.16); color: #7a6116;
++}
++.fyd-edge-item-title { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
++.fyd-edge-item-go { flex: none; font-size: 1.3rem; opacity: 0.5; }
++.fyd-edge-more {
++  min-height: 44px; width: 100%; margin-top: 0.25rem;
++  background: transparent; border: 1px solid var(--border, #e5e0d5);
++  border-radius: 0.6rem; font-size: 0.9rem; cursor: pointer; color: inherit;
++}
++
++.fyd-edge-askpanel, .fyd-edge-whypanel {
++  border: 1px solid var(--border, #e5e0d5); border-radius: 0.6rem;
++  padding: 0.75rem; margin: 0.75rem 0;
++}
++.fyd-edge-askpanel[hidden], .fyd-edge-whypanel[hidden] { display: none; }
++.fyd-edge-askctx { margin: 0 0 0.5rem; font-size: 0.85rem; opacity: 0.8; }
++.fyd-edge-askform { display: flex; gap: 0.5rem; }
++.fyd-edge-askform input {
++  flex: 1 1 auto; min-width: 0; min-height: 44px;
++  border: 1px solid var(--border, #e5e0d5); border-radius: 0.6rem;
++  padding: 0.5rem 0.75rem; font-size: 1rem; color: inherit; background: #fff;
++}
++.fyd-edge-askform button {
++  flex: none; min-height: 44px; min-width: 64px; padding: 0.5rem 1rem;
++  border-radius: 0.6rem; border: none; cursor: pointer;
++  background: var(--accent, #C9A227); color: var(--accent-foreground, #1c1917);
++  font-weight: 600; font-size: 0.95rem;
++}
++.fyd-edge-askresult { font-size: 0.92rem; line-height: 1.5; margin-top: 0.5rem; }
++.fyd-edge-evh { font-weight: 700; margin: 0.5rem 0 0.25rem; }
++.fyd-evidence-list { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; }
++.fyd-unknowns { font-size: 0.85rem; opacity: 0.85; }
++.fyd-fail { color: #a33; }
++.fyd-why-dl { margin: 0; font-size: 0.88rem; }
++.fyd-why-dl dt { font-weight: 700; margin-top: 0.4rem; }
++.fyd-why-dl dd { margin: 0; overflow-wrap: anywhere; }
++
++.fyd-edge-claims h3, .fyd-edge-evidence h3 { font-size: 1rem; margin: 1rem 0 0.4rem; }
++.fyd-edge-claims dl { margin: 0; }
++.fyd-edge-claimrow { padding: 0.45rem 0; border-bottom: 1px dashed var(--border, #eee9dc); }
++.fyd-edge-claimrow dt { font-weight: 600; font-size: 0.85rem; }
++.fyd-edge-claimrow dd { margin: 0.15rem 0 0; font-size: 0.92rem; overflow-wrap: anywhere; }
++.fyd-edge-evidence ul { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; }
++.fyd-edge-evidence code { overflow-wrap: anywhere; }
++.fyd-edge-empty { opacity: 0.65; font-size: 0.92rem; }
++
++/* Desktop: the sheet docks as a side panel; the center stays the website. */
++@media (min-width: 1024px) {
++  .fyd-edge-sheet {
++    left: auto; right: 0; top: 0; bottom: 0;
++    width: min(430px, 38vw); max-height: none; max-height: none;
++    border-radius: 0; padding-bottom: 0;
++    box-shadow: -6px 0 32px rgba(20, 16, 12, 0.2);
++  }
++  .fyd-edge-grab { display: none; }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .fyd-edge-item:active { transform: none; }
++}
+diff --git a/src/fyd/ask/load-fixture.ts b/src/fyd/ask/load-fixture.ts
+index ab1d71a..b8abc78 100644
+--- a/src/fyd/ask/load-fixture.ts
++++ b/src/fyd/ask/load-fixture.ts
+@@ -163,6 +163,20 @@ function collectEvidence(
+   return resolved;
+ }
+ 
++/**
++ * The ask lane's allowed capabilities for the visitor boundary.
++ * Exported so the edge-object sheet resolves its actions through the SAME
++ * capability path the ask lane enforces (read/ask affordances only;
++ * nothing here authorizes publishing, messages, purchases, advertising,
++ * provider actions, or business-data mutations). Single source of truth:
++ * buildInputForSite consumes this constant too.
++ */
++export const VISITOR_ALLOWED_CAPABILITIES: readonly string[] = [
++  "ask_question",
++  "view_evidence",
++  "view_why_this",
++];
++
+ export interface BuildInputOptions {
+   question: string;
+   objectId?: string;
+@@ -211,6 +225,6 @@ export function buildInputForSite(
+     relationships,
+     evidenceRefs: collectEvidence(graph, siteSlug, records),
+     visibility: "public",
+-    allowedCapabilities: ["ask_question", "view_evidence", "view_why_this"],
++    allowedCapabilities: [...VISITOR_ALLOWED_CAPABILITIES],
+   };
+ }
+diff --git a/src/fyd/edge/README.md b/src/fyd/edge/README.md
+new file mode 100644
+index 0000000..e653615
+--- /dev/null
++++ b/src/fyd/edge/README.md
+@@ -0,0 +1,91 @@
++# FYD Edge-Object Experience (EDGE-1)
++
++AN OBJECT IS NOT A CARD. AN OBJECT IS A NODE WITH EDGES.
++
++## Invariant
++
++**AN EDGE OBJECT IS NOT SUCCESSFULLY RENDERED UNTIL IT PROVIDES A
++FUNCTIONAL DOORWAY INTO THE AUTHORIZED BUSINESS GRAPH.**
++
++Every edge item maps to a real object id: EDGE ITEM -> OBJECT ID ->
++OBJECT TYPE -> RELATIONSHIPS -> EVIDENCE -> VISIBILITY -> CAPABILITIES ->
++EXPANDED PROJECTION. No decorative images, no presentation-only
++pseudo-objects, no hardcoded business cards, no business-name
++conditionals. The same code renders Happy Place and Coppersmith; only
++the graph data differs.
++
++## Interaction contract (mobile defines it, 375x812)
++
++```
++OBJECT -> TAP -> EXPAND -> EDGES APPEAR -> TRAVERSE EDGE -> NEXT OBJECT -> EXPAND/ACT/ASK/RETURN
++```
++
++- FIRST TAP on any `[data-fyd-object-id]` (service card, margin circle)
++  opens the compact object sheet: identity/title, type, evidence-backed
++  summary, PRIMARY EDGES, capability-resolved actions.
++- SECOND TAP on an edge target traverses to that object's sheet.
++- BACK returns to the previous graph position. Scroll position is
++  preserved; the page is never destroyed; there are no dead-end pages.
++- Desktop: the sheet docks as a side panel. No hover-only paths anywhere.
++
++## Module map
++
++- `types.ts` — ObjectSheet, EdgeGroup, EdgeTargetItem, SheetAction,
++  ClaimClass, and the invariant constant.
++- `resolve.ts` — pure sheet builder. Visibility goes through
++  `filterGraphForViewer` (FYD-010) FIRST; invisible -> null -> HTTP 404,
++  indistinguishable from "unknown". Edge kinds resolve from
++  (predicate, target schema role); unknown predicates fall through to
++  `generic_edge`. Actions resolve through the EXISTING capability path
++  (`capabilityOptions` in `sitespec/schemas.ts` intersected with the ask
++  lane's `VISITOR_ALLOWED_CAPABILITIES`): only actions that exist render.
++  `request_quote` is not a capability in this tree, so no Request-quote
++  button is rendered. Every claim is classified DIRECT_FACT /
++  DERIVED_FACT / OWNER_AUTHORED / GENERATED_COPY; generated copy never
++  masquerades as direct fact.
++- `client.ts` — `edgeClientScript(siteSlug, demoOwner)`: vanilla JS for
++  tap-to-expand, sheet render, traversal stack, Ask FYD with object
++  context (`POST /api/ask` now accepts `objectId`), [Why this?] object
++  and per-edge-group provenance, Open full node, Copy reference.
++- `__tests__/resolve.test.ts` — 20 unit tests over both fixture graphs.
++- `__tests__/q2-hostile.test.ts` — FYD-Q2: HIDE the address, then attack
++  via business edge, Ask FYD, search, related-object traversal, and the
++  why-this gate. Zero public disclosure on every attempt; the demo-owner
++  control proves hiding is a visibility policy, not deletion of the fact.
++
++## Server surface (server/dev-server.ts)
++
++- `GET /api/edge/object?site=&objectId=` -> ObjectSheet JSON (visitor or
++  demo-owner viewer). Hidden/unknown -> 404 `{found:false}`.
++- `POST /api/ask` accepts optional `objectId`: Ask FYD follows the same
++  edges the sheet shows (current object + authorized neighborhood +
++  bound evidence). Humans and agents traverse the same graph.
++- `GET /api/why-this` now checks `canSee` before traversing: the route
++  is the consumer and must gate, per FYD-010.
++
++## Attention model
++
++`EDGE_ATTENTION_LIMIT = 8`: the client renders 8 edge items per group,
++then "Show N more" reveals 8 more. The payload carries every authorized
++item so progressive disclosure never invents objects. The graph may hold
++100 objects; the edge never shows 100 at once.
++
++## Address decision (locked)
++
++The pipeline does NOT own whether a business publishes its address.
++OBSERVED VALUE != PUBLICATION DECISION. Fact, visibility policy, and
++owner override stay separate. A conservative initial visibility is a
++policy, never a deletion of the fact.
++
++## No claim authority (locked)
++
++This module creates no claims and no ClaimAuthority. Render projection
++emits only factual bindings whose provenance resolves to graph/evidence
++or explicit owner-authored content.
++
++## What this lane does NOT own
++
++Graph visualization, a graph database, RelationshipAuthority, another
++canonical store, customer-specific edge components, protocol/federation/
++campaign work. The Ask FYD pipeline and the privacy mask are consumed,
++not rebuilt; the D-IMPL sister lane owns the mask's evolution.
+diff --git a/src/fyd/edge/__tests__/q2-hostile.test.ts b/src/fyd/edge/__tests__/q2-hostile.test.ts
+new file mode 100644
+index 0000000..e198cda
+--- /dev/null
++++ b/src/fyd/edge/__tests__/q2-hostile.test.ts
+@@ -0,0 +1,167 @@
++/**
++ * FYD-Q2 HOSTILE TEST (mandatory): privacy survives expansion.
++ *
++ * Scenario: the owner HIDES the business address. The hidden location
++ * object (visibility "private") must be unrecoverable through every
++ * expansion path a visitor can reach:
++ *
++ *   1. business edge -> location (object sheet traversal)
++ *   2. Ask FYD -> location (object-scoped ask)
++ *   3. search -> location (query resolution)
++ *   4. related object -> location (traverse from any visible object)
++ *   5. why-this -> location (the route's visibility gate)
++ *
++ * ZERO public disclosure on every attempt. The edge graph must never
++ * become a privacy bypass.
++ *
++ * The hostile graph is built in-memory (fixtures are machine-generated
++ * and must not be hand-edited): Coppersmith + a private location object
++ * carrying a street address the fixtures never contain. All attacks run
++ * through the REAL code paths the HTTP layer calls (buildObjectSheet,
++ * answerVisitorQuestion, resolveQuery, canSee). The demo-owner control
++ * proves the fact survives hiding (visibility policy, not deletion):
++ * the owner still sees the seam-labeled private state.
++ */
++
++import { buildObjectSheet } from "../resolve";
++import { VISITOR_VIEWER, canSee } from "../../visibility/policy";
++import { answerVisitorQuestion } from "../../ask/visitor";
++import { resolveQuery } from "../../components/renderer";
++import { COPPERSMITH_PLUMBING_GRAPH } from "../../proceduralize/__fixtures__/coppersmith-plumbing-graph";
++import type { ObjectGraph } from "../../sitespec/types";
++import type { PingObject, PingRelationship } from "@/lib/ping/types";
++
++const COPPER_BUSINESS = "website-business-0061cd1c2f8f4d0b";
++const HIDDEN_LOCATION_ID = "test-hidden-location-0001";
++const HIDDEN_ADDRESS = "742 Hidden Lane, Grand Junction, CO 81501";
++
++/** The hostile graph: Coppersmith plus a HIDDEN location. The address
++ *  string appears nowhere in the fixtures, so any appearance in an
++ *  attack result is a leak, full stop. */
++function hostileGraph(): ObjectGraph {
++  const location: PingObject = {
++    id: HIDDEN_LOCATION_ID,
++    schema: "ping.social.location@1",
++    controllerId: "identity_fyd_compiler_test",
++    visibility: "private", // OWNER HIDES THE ADDRESS
++    title: "Coppersmith Plumbing & HVAC headquarters",
++    description: "The business street address.",
++    fields: {
++      claimKind: "website_statement",
++      street_address: HIDDEN_ADDRESS,
++      evidence_ref: "service-cards:contact:address",
++    },
++    createdAt: "2026-09-24T00:00:00Z",
++    updatedAt: "2026-09-24T00:00:00Z",
++    provenance: {
++      kind: "website-derived",
++      ref: "website-ingestion:https://coppersmith.example/",
++      derivedAt: "2026-09-24T00:00:00Z",
++    },
++  };
++  const edge: PingRelationship = {
++    id: "rel-test-hidden-located-at",
++    subject: COPPER_BUSINESS,
++    predicate: "located_at",
++    object: HIDDEN_LOCATION_ID,
++    status: "active",
++    createdAt: "2026-09-24T00:00:00Z",
++    evidenceRef: "service-cards:contact:address",
++  };
++  return {
++    objects: [...COPPERSMITH_PLUMBING_GRAPH.objects, location],
++    relationships: [...COPPERSMITH_PLUMBING_GRAPH.relationships, edge],
++  };
++}
++
++const DEMO_OWNER = { id: "demo-owner", displayName: null, mode: "demo_owner" } as const;
++
++describe("FYD-Q2: HIDE address, then attack", () => {
++  test("sanity: the hostile address is unique to the hostile graph", () => {
++    const clean = JSON.stringify(COPPERSMITH_PLUMBING_GRAPH);
++    expect(clean).not.toContain(HIDDEN_ADDRESS);
++    expect(JSON.stringify(hostileGraph())).toContain(HIDDEN_ADDRESS);
++  });
++
++  test("ATTACK 1: business edge -> location yields nothing", () => {
++    const sheet = buildObjectSheet(hostileGraph(), COPPER_BUSINESS, VISITOR_VIEWER)!;
++    expect(sheet).not.toBeNull();
++    // No located_at group survives the gate.
++    expect(sheet.edgeGroups.some((g) => g.predicate === "located_at")).toBe(false);
++    // No edge item anywhere targets the hidden object.
++    for (const g of sheet.edgeGroups) {
++      for (const item of g.items) {
++        expect(item.targetObjectId).not.toBe(HIDDEN_LOCATION_ID);
++      }
++    }
++    // The serialized sheet a visitor receives contains no trace.
++    expect(JSON.stringify(sheet)).not.toContain(HIDDEN_ADDRESS);
++    expect(JSON.stringify(sheet)).not.toContain(HIDDEN_LOCATION_ID);
++  });
++
++  test("ATTACK 2: Ask FYD -> location discloses nothing", () => {
++    const answer = answerVisitorQuestion({
++      siteSlug: "coppersmith-plumbing",
++      objectId: COPPER_BUSINESS,
++      question: "Where is the business located? What is the street address?",
++      graph: hostileGraph(),
++    });
++    const serialized = JSON.stringify(answer);
++    expect(serialized).not.toContain(HIDDEN_ADDRESS);
++    expect(serialized).not.toContain(HIDDEN_LOCATION_ID);
++    expect(serialized).not.toContain("742 Hidden Lane");
++  });
++
++  test("ATTACK 3: search -> location finds nothing", () => {
++    const graph = hostileGraph();
++    const all = resolveQuery(
++      { kind: "all", schema: "ping.social.location@1" },
++      graph,
++      COPPER_BUSINESS,
++      VISITOR_VIEWER,
++    );
++    expect(all).toHaveLength(0);
++    const related = resolveQuery(
++      { kind: "related", from: COPPER_BUSINESS, predicate: "located_at" },
++      graph,
++      COPPER_BUSINESS,
++      VISITOR_VIEWER,
++    );
++    expect(related).toHaveLength(0);
++  });
++
++  test("ATTACK 4: no visible object traverses to the hidden location", () => {
++    const graph = hostileGraph();
++    for (const o of graph.objects) {
++      if (o.visibility !== "public") continue;
++      const sheet = buildObjectSheet(graph, o.id, VISITOR_VIEWER);
++      expect(sheet).not.toBeNull();
++      const serialized = JSON.stringify(sheet);
++      expect(serialized).not.toContain(HIDDEN_ADDRESS);
++      expect(serialized).not.toContain(HIDDEN_LOCATION_ID);
++    }
++  });
++
++  test("ATTACK 5: the why-this gate refuses the hidden object", () => {
++    const graph = hostileGraph();
++    const hidden = graph.objects.find((o) => o.id === HIDDEN_LOCATION_ID)!;
++    // This is exactly the check the /api/why-this route performs before
++    // calling the why lane. A hidden object fails closed here.
++    expect(canSee(hidden, VISITOR_VIEWER)).toBe(false);
++  });
++
++  test("CONTROL: the demo owner still sees the seam-labeled private state", () => {
++    // ADDRESS DECISION (locked): hiding is a visibility policy, never a
++    // deletion of the fact. The owner preview keeps the fact visible.
++    const sheet = buildObjectSheet(hostileGraph(), COPPER_BUSINESS, DEMO_OWNER);
++    expect(sheet).not.toBeNull();
++    const located = sheet!.edgeGroups.find((g) => g.predicate === "located_at");
++    expect(located).toBeDefined();
++    expect(
++      located!.items.some((i) => i.targetObjectId === HIDDEN_LOCATION_ID),
++    ).toBe(true);
++    const hidden = buildObjectSheet(hostileGraph(), HIDDEN_LOCATION_ID, DEMO_OWNER);
++    expect(hidden).not.toBeNull();
++    expect(JSON.stringify(hidden)).toContain(HIDDEN_ADDRESS);
++  });
++});
+diff --git a/src/fyd/edge/__tests__/resolve.test.ts b/src/fyd/edge/__tests__/resolve.test.ts
+new file mode 100644
+index 0000000..38e1b36
+--- /dev/null
++++ b/src/fyd/edge/__tests__/resolve.test.ts
+@@ -0,0 +1,315 @@
++/**
++ * EDGE-1 resolve tests: the object sheet builder.
++ *
++ * Proves, on BOTH fixture graphs with ZERO business-name conditionals:
++ * - every edge item maps to a real object id (the invariant)
++ * - edge-kind resolution from (predicate, target schema)
++ * - unknown predicates fall through to generic_edge (never a dead end)
++ * - capability-resolved actions only (no invented buttons; no
++ *   request_quote because the capability does not exist in this tree)
++ * - deterministic ordering
++ * - claim classification on summary and claims
++ * - the visibility gate: hidden objects yield null (the HTTP layer maps
++ *   null to 404, indistinguishable from "unknown")
++ */
++
++import { buildObjectSheet, resolveEdgeKind, predicateLabel } from "../resolve";
++import { EDGE_RENDER_INVARIANT } from "../types";
++import { VISITOR_VIEWER } from "../../visibility/policy";
++import { HAPPY_PLACE_GRAPH } from "../../proceduralize/__fixtures__/happy-place-graph";
++import { COPPERSMITH_PLUMBING_GRAPH } from "../../proceduralize/__fixtures__/coppersmith-plumbing-graph";
++import type { ObjectGraph } from "../../sitespec/types";
++import type { PingObject } from "@/lib/ping/types";
++
++const HPP_BUSINESS = "website-business-9d13c4196b4f1092";
++const COPPER_BUSINESS = "website-business-0061cd1c2f8f4d0b";
++
++describe("the invariant is written down", () => {
++  test("EDGE_RENDER_INVARIANT names the functional doorway", () => {
++    expect(EDGE_RENDER_INVARIANT).toContain("FUNCTIONAL DOORWAY");
++    expect(EDGE_RENDER_INVARIANT).toContain("AUTHORIZED BUSINESS GRAPH");
++  });
++});
++
++describe.each([
++  ["happy-place", HAPPY_PLACE_GRAPH, HPP_BUSINESS, 5],
++  ["coppersmith-plumbing", COPPERSMITH_PLUMBING_GRAPH, COPPER_BUSINESS, 4],
++])("business sheet (%s): same system, different data", (_slug, graph, bizId, serviceCount) => {
++  test("sheet resolves with identity, type, summary, edges, actions", () => {
++    const sheet = buildObjectSheet(graph, bizId, VISITOR_VIEWER);
++    expect(sheet).not.toBeNull();
++    const s = sheet!;
++    expect(s.objectId).toBe(bizId);
++    expect(s.title.length).toBeGreaterThan(0);
++    expect(s.typeLabel).toBe("Business");
++    expect(s.schemaRole).toBe("business");
++    expect(s.summary.length).toBeGreaterThan(0);
++    expect(s.edgeGroups.length).toBeGreaterThan(0);
++    expect(s.actions.length).toBeGreaterThan(0);
++    expect(s.visibility).toBe("public");
++  });
++
++  test("offers group holds the services, each a real doorway", () => {
++    const s = buildObjectSheet(graph, bizId, VISITOR_VIEWER)!;
++    const offers = s.edgeGroups.find((g) => g.predicate === "offers");
++    expect(offers).toBeDefined();
++    expect(offers!.totalCount).toBe(serviceCount);
++    const byId = new Map(graph.objects.map((o) => [o.id, o]));
++    for (const item of offers!.items) {
++      // INVARIANT: every edge item maps to a real object id.
++      const target = byId.get(item.targetObjectId);
++      expect(target).toBeDefined();
++      expect(target!.schema).toBe("ping.social.service@1");
++      expect(item.kind).toBe("service_edge");
++      expect(item.targetTitle).toBe(target!.title);
++      expect(item.evidenceRef.length).toBeGreaterThan(0);
++    }
++  });
++
++  test("actions come from the capability path only", () => {
++    const s = buildObjectSheet(graph, bizId, VISITOR_VIEWER)!;
++    const kinds = s.actions.map((a) => a.kind);
++    expect(kinds).toContain("ask");
++    expect(kinds).toContain("why_this");
++    expect(kinds).toContain("open_full_node");
++    expect(kinds).toContain("reference");
++    // "request_quote" is not a resolved capability in this tree, so no
++    // Request-quote button may be rendered. If the capability lands, its
++    // action appears with zero UI changes.
++    expect(kinds).not.toContain("request_quote");
++    for (const a of s.actions) {
++      expect(a.capability.length).toBeGreaterThan(0);
++    }
++  });
++
++  test("summary is an evidence-backed direct fact, not marketing copy", () => {
++    const s = buildObjectSheet(graph, bizId, VISITOR_VIEWER)!;
++    expect(s.summaryClaimClass).toBe("DIRECT_FACT");
++    expect(s.provenanceRef).toContain("website-ingestion");
++  });
++
++  test("edge ordering is deterministic across runs", () => {
++    const a = JSON.stringify(buildObjectSheet(graph, bizId, VISITOR_VIEWER));
++    const b = JSON.stringify(buildObjectSheet(graph, bizId, VISITOR_VIEWER));
++    expect(a).toBe(b);
++  });
++});
++
++describe("service sheets", () => {
++  test("a service expands to description, evidence, and Ask/Reference actions", () => {
++    const service = HAPPY_PLACE_GRAPH.objects.find(
++      (o) => o.schema === "ping.social.service@1",
++    )!;
++    const s = buildObjectSheet(HAPPY_PLACE_GRAPH, service.id, VISITOR_VIEWER)!;
++    expect(s.typeLabel).toBe("Service");
++    expect(s.summary).toBe(service.description);
++    const kinds = s.actions.map((a) => a.kind);
++    expect(kinds).toContain("ask");
++    expect(kinds).toContain("reference");
++    expect(kinds).toContain("why_this");
++    // No website field on services -> no open_website action invented.
++    expect(kinds).not.toContain("open_website");
++  });
++
++  test("business with a website field resolves open_website with a safe href", () => {
++    const s = buildObjectSheet(HAPPY_PLACE_GRAPH, HPP_BUSINESS, VISITOR_VIEWER)!;
++    const web = s.actions.find((a) => a.kind === "open_website");
++    expect(web).toBeDefined();
++    expect(web!.href).toBe("https://happyplacecarpentry.com");
++  });
++});
++
++describe("edge-kind resolution", () => {
++  test("matrix: predicate + schema role decide, nothing else", () => {
++    expect(resolveEdgeKind("offers", "ping.social.service@1")).toBe("service_edge");
++    expect(resolveEdgeKind("provides", "ping.social.service@1")).toBe("service_edge");
++    expect(resolveEdgeKind("located_at", "ping.social.location@1")).toBe("location_edge");
++    expect(resolveEdgeKind("works_for", "ping.social.person@1")).toBe("person_edge");
++    expect(resolveEdgeKind("employs", "ping.social.person@1")).toBe("person_edge");
++    expect(resolveEdgeKind("links_to", "ping.social.location@1")).toBe("external_identity_edge");
++    expect(resolveEdgeKind("has_website", "ping.social.business@1")).toBe("external_identity_edge");
++    expect(resolveEdgeKind("references", "ping.social.post@1")).toBe("reference_edge");
++    expect(resolveEdgeKind("provided_by", "ping.social.business@1")).toBe("business_edge");
++  });
++
++  test("UNKNOWN predicate falls through to the generic renderer, never dropped", () => {
++    expect(resolveEdgeKind("mystery_predicate", "ping.social.service@1")).toBe("service_edge");
++    expect(resolveEdgeKind("mystery_predicate", "ping.social.post@1")).toBe("reference_edge");
++    expect(resolveEdgeKind("mystery_predicate", "ping.social.unknown@9")).toBe("generic_edge");
++  });
++
++  test("unknown predicate still renders a labeled, traversable group", () => {
++    const graph: ObjectGraph = {
++      objects: [
++        makeObject("b1", "ping.social.business@1", "B Co"),
++        makeObject("x1", "ping.social.unknown@9", "X Thing"),
++      ],
++      relationships: [
++        {
++          id: "r1",
++          subject: "b1",
++          predicate: "mystery_predicate",
++          object: "x1",
++          status: "active",
++          createdAt: "2026-09-24T00:00:00Z",
++          evidenceRef: "service-cards:probe:x",
++        },
++      ],
++    };
++    const s = buildObjectSheet(graph, "b1", VISITOR_VIEWER)!;
++    expect(s.edgeGroups).toHaveLength(1);
++    const g = s.edgeGroups[0];
++    expect(g.kind).toBe("generic_edge");
++    expect(g.label).toBe("Mystery Predicate");
++    expect(g.items).toHaveLength(1);
++    expect(g.items[0].targetObjectId).toBe("x1");
++  });
++});
++
++describe("predicate labels", () => {
++  test("vocabulary labels without business conditionals", () => {
++    expect(predicateLabel("offers")).toBe("Services offered");
++    expect(predicateLabel("located_at")).toBe("Location");
++    expect(predicateLabel("works_for")).toBe("People");
++    expect(predicateLabel("links_to")).toBe("Connected");
++    expect(predicateLabel("some_new_predicate")).toBe("Some New Predicate");
++  });
++});
++
++describe("the visibility gate", () => {
++  test("a hidden object yields null: no sheet, no oracle", () => {
++    const hidden: ObjectGraph = {
++      objects: HAPPY_PLACE_GRAPH.objects.map((o) =>
++        o.id === HPP_BUSINESS ? { ...o, visibility: "private" } : o,
++      ),
++      relationships: [...HAPPY_PLACE_GRAPH.relationships],
++    };
++    expect(buildObjectSheet(hidden, HPP_BUSINESS, VISITOR_VIEWER)).toBeNull();
++  });
++
++  test("hidden edge targets never appear in any sheet", () => {
++    const serviceId = HAPPY_PLACE_GRAPH.objects.find(
++      (o) => o.schema === "ping.social.service@1",
++    )!.id;
++    const hidden: ObjectGraph = {
++      objects: HAPPY_PLACE_GRAPH.objects.map((o) =>
++        o.id === serviceId ? { ...o, visibility: "private" } : o,
++      ),
++      relationships: [...HAPPY_PLACE_GRAPH.relationships],
++    };
++    const s = buildObjectSheet(hidden, HPP_BUSINESS, VISITOR_VIEWER)!;
++    const offers = s.edgeGroups.find((g) => g.predicate === "offers")!;
++    expect(offers.totalCount).toBe(4);
++    expect(
++      offers.items.some((i) => i.targetObjectId === serviceId),
++    ).toBe(false);
++    // The edge touching the hidden object is dropped too.
++    expect(JSON.stringify(s)).not.toContain(serviceId);
++  });
++
++  test("unknown object id yields null", () => {
++    expect(
++      buildObjectSheet(HAPPY_PLACE_GRAPH, "no-such-object", VISITOR_VIEWER),
++    ).toBeNull();
++  });
++});
++
++describe("attention model", () => {
++  test("the payload carries every authorized item; the client caps rendering", () => {
++    const objects = [makeObject("b1", "ping.social.business@1", "B Co")];
++    const relationships = [];
++    for (let i = 0; i < 20; i++) {
++      objects.push(makeObject("s" + i, "ping.social.service@1", "Service " + i));
++      relationships.push({
++        id: "r" + i,
++        subject: "b1",
++        predicate: "offers",
++        object: "s" + i,
++        status: "active",
++        createdAt: "2026-09-24T00:00:00Z",
++        evidenceRef: "service-cards:probe:s" + i,
++      });
++    }
++    const graph: ObjectGraph = { objects, relationships };
++    const sheet = buildObjectSheet(graph, "b1", VISITOR_VIEWER)!;
++    const offers = sheet.edgeGroups.find((g) => g.predicate === "offers")!;
++    // All 20 authorized items are in the payload (progressive disclosure
++    // never invents objects); the client renders EDGE_ATTENTION_LIMIT
++    // at a time. The graph may hold 100 objects; the edge never shows
++    // 100 at once.
++    expect(offers.totalCount).toBe(20);
++    expect(offers.items).toHaveLength(20);
++    for (const item of offers.items) {
++      expect(objects.some((o) => o.id === item.targetObjectId)).toBe(true);
++    }
++  });
++});
++
++describe("claim classification", () => {
++  test("every claim carries a class; generated copy never poses as fact", () => {
++    const s = buildObjectSheet(HAPPY_PLACE_GRAPH, HPP_BUSINESS, VISITOR_VIEWER)!;
++    const classes = new Set(s.claims.map((c) => c.claimClass));
++    expect(classes.has("DIRECT_FACT")).toBe(true);
++    // The neighborhood-size claim is computed -> DERIVED_FACT.
++    const derived = s.claims.find((c) => c.label === "Connected objects");
++    expect(derived).toBeDefined();
++    expect(derived!.claimClass).toBe("DERIVED_FACT");
++    for (const c of s.claims) {
++      expect(["DIRECT_FACT", "DERIVED_FACT", "OWNER_AUTHORED", "GENERATED_COPY"]).toContain(c.claimClass);
++    }
++  });
++});
++
++describe("group ordering", () => {
++  test("offers ranks before unknown predicates", () => {
++    const graph: ObjectGraph = {
++      objects: [
++        makeObject("b1", "ping.social.business@1", "B Co"),
++        makeObject("s1", "ping.social.service@1", "S One"),
++        makeObject("x1", "ping.social.unknown@9", "X Thing"),
++      ],
++      relationships: [
++        {
++          id: "r2",
++          subject: "b1",
++          predicate: "zzz_custom",
++          object: "x1",
++          status: "active",
++          createdAt: "2026-09-24T00:00:00Z",
++          evidenceRef: "service-cards:probe:x",
++        },
++        {
++          id: "r1",
++          subject: "b1",
++          predicate: "offers",
++          object: "s1",
++          status: "active",
++          createdAt: "2026-09-24T00:00:00Z",
++          evidenceRef: "service-cards:probe:s",
++        },
++      ],
++    };
++    const s = buildObjectSheet(graph, "b1", VISITOR_VIEWER)!;
++    expect(s.edgeGroups.map((g) => g.predicate)).toEqual(["offers", "zzz_custom"]);
++  });
++});
++
++function makeObject(id: string, schema: string, title: string): PingObject {
++  return {
++    id,
++    schema,
++    controllerId: "identity_fyd_compiler_test",
++    visibility: "public",
++    title,
++    description: title + " description.",
++    fields: { claimKind: "website_statement" },
++    createdAt: "2026-09-24T00:00:00Z",
++    updatedAt: "2026-09-24T00:00:00Z",
++    provenance: {
++      kind: "website-derived",
++      ref: "website-ingestion:https://example.com/",
++      derivedAt: "2026-09-24T00:00:00Z",
++    },
++  };
++}
++
+diff --git a/src/fyd/edge/client.ts b/src/fyd/edge/client.ts
+new file mode 100644
+index 0000000..7988155
+--- /dev/null
++++ b/src/fyd/edge/client.ts
+@@ -0,0 +1,441 @@
++/**
++ * FYD EDGE-OBJECT EXPERIENCE: client behavior.
++ *
++ * edgeClientScript(siteSlug, demoOwner): vanilla JS (string concatenation
++ * only, no nested template literals) implementing the mobile-first edge
++ * interaction contract:
++ *
++ *   OBJECT -> TAP -> EXPAND (compact object sheet) -> EDGES APPEAR
++ *   -> TRAVERSE EDGE -> NEXT OBJECT -> EXPAND / ACT / ASK / RETURN
++ *
++ * - FIRST TAP on any [data-fyd-object-id] opens the compact object sheet:
++ *   identity/title, type, evidence-backed summary, PRIMARY EDGES,
++ *   capability-resolved actions.
++ * - SECOND TAP on an edge target traverses: the sheet shows the target
++ *   object. BACK returns to the previous graph position.
++ * - Scroll position is preserved across open/traverse/back/close; the
++ *   page is never destroyed and there are no dead-end pages.
++ * - Ask FYD in the sheet posts { site, question, objectId }: the answer
++ *   context is the current object + authorized neighborhood + bound
++ *   evidence (the same edges the sheet shows).
++ * - [Why this?] serves edge/object provenance; it is the trust path, not
++ *   the primary workflow.
++ * - No hover-only paths. Touch targets are >= 44px. aria-expanded /
++ *   role=dialog / aria-live announce state to screen readers.
++ * - Resize/rotate never destroys sheet state (state lives in JS, not in
++ *   layout).
++ *
++ * The script never invents objects: every edge item comes from
++ * GET /api/edge/object, which serves only viewer-authorized graph state.
++ */
++
++export function edgeClientScript(
++  siteSlug: string,
++  demoOwner: boolean,
++): string {
++  return (
++    "(function () {\n" +
++    '  var SITE = ' +
++    JSON.stringify(siteSlug) +
++    ";\n" +
++    '  var DEMO = ' +
++    (demoOwner ? "true" : "false") +
++    ";\n" +
++    '  var ATTENTION = 8;\n' +
++    '  var EDGE_ENDPOINT = "/api/edge/object";\n' +
++    "\n" +
++    "  function esc(s) {\n" +
++    '    return String(s == null ? "" : s)\n' +
++    '      .replace(/&/g, "&amp;")\n' +
++    '      .replace(/</g, "&lt;")\n' +
++    '      .replace(/>/g, "&gt;")\n' +
++    '      .replace(/"/g, "&quot;");\n' +
++    "  }\n" +
++    "\n" +
++    "  // ---- sheet chrome (built once, lazily) ----\n" +
++    '  var overlay = null, sheet = null, sheetScroll = null, sheetMain = null, live = null;\n' +
++    '  var stack = [];\n' +
++    '  var current = null;\n' +
++    '  var triggerEl = null;\n' +
++    '  var savedScrollY = 0;\n' +
++    '  var fullNode = false;\n' +
++    '  var revealed = {};\n' +
++    "\n" +
++    "  function ensureChrome() {\n" +
++    "    if (sheet) return;\n" +
++    '    live = document.createElement("div");\n' +
++    '    live.id = "fyd-edge-live";\n' +
++    '    live.className = "fyd-sr-only";\n' +
++    '    live.setAttribute("aria-live", "polite");\n' +
++    "    document.body.appendChild(live);\n" +
++    '    overlay = document.createElement("div");\n' +
++    '    overlay.className = "fyd-edge-overlay";\n' +
++    '    overlay.hidden = true;\n' +
++    "    document.body.appendChild(overlay);\n" +
++    '    sheet = document.createElement("section");\n' +
++    '    sheet.id = "fyd-edge-sheet";\n' +
++    '    sheet.className = "fyd-edge-sheet";\n' +
++    '    sheet.setAttribute("role", "dialog");\n' +
++    '    sheet.setAttribute("aria-modal", "false");\n' +
++    '    sheet.setAttribute("aria-label", "Object details");\n' +
++    '    sheet.hidden = true;\n' +
++    '    sheet.innerHTML =\n' +
++    '      "<div class=\\"fyd-edge-grab\\" aria-hidden=\\"true\\"></div>" +\n' +
++    '      "<div class=\\"fyd-edge-head\\">" +\n' +
++    '      "<div class=\\"fyd-edge-backrow\\">" +\n' +
++    '      "<button type=\\"button\\" class=\\"fyd-edge-back\\" data-edge-nav=\\"back\\" hidden>Back</button>" +\n' +
++    '      "<span class=\\"fyd-edge-crumb\\" aria-hidden=\\"true\\"></span>" +\n' +
++    '      "<button type=\\"button\\" class=\\"fyd-edge-close\\" data-edge-nav=\\"close\\" aria-label=\\"Close object details\\">Close</button>" +\n' +
++    '      "</div>" +\n' +
++    '      "<div class=\\"fyd-edge-titlewrap\\"><h2 class=\\"fyd-edge-title\\" tabindex=\\"-1\\"></h2>" +\n' +
++    '      "<p class=\\"fyd-edge-type\\"></p></div>" +\n' +
++    '      "</div>" +\n' +
++    '      "<div class=\\"fyd-edge-scroll\\"><div class=\\"fyd-edge-main\\"></div></div>";\n' +
++    "    document.body.appendChild(sheet);\n" +
++    '    sheetScroll = sheet.querySelector(".fyd-edge-scroll");\n' +
++    '    sheetMain = sheet.querySelector(".fyd-edge-main");\n' +
++    '    overlay.addEventListener("click", closeSheet);\n' +
++    '    sheet.addEventListener("click", onSheetClick);\n' +
++    '    sheet.addEventListener("submit", onSheetSubmit);\n' +
++    '    document.addEventListener("keydown", function (e) {\n' +
++    '      if (e.key === "Escape" && sheet && !sheet.hidden) { closeSheet(); }\n' +
++    "    });\n" +
++    "  }\n" +
++    "\n" +
++    "  function announce(msg) {\n" +
++    "    if (live) live.textContent = msg;\n" +
++    "  }\n" +
++    "\n" +
++    "  function claimBadge(cc) {\n" +
++    '    var labels = { DIRECT_FACT: "Website statement", DERIVED_FACT: "Derived", OWNER_AUTHORED: "Owner", GENERATED_COPY: "FYD copy" };\n' +
++    '    var cls = { DIRECT_FACT: "cc-direct", DERIVED_FACT: "cc-derived", OWNER_AUTHORED: "cc-owner", GENERATED_COPY: "cc-generated" };\n' +
++    '    return "<span class=\\"fyd-claim fyd-claim-" + (cls[cc] || "cc-derived") + "\\" title=\\"Claim class: " + esc(cc) + "\\">" + esc(labels[cc] || cc) + "</span>";\n' +
++    "  }\n" +
++    "\n" +
++    "  function kindTag(kind) {\n" +
++    '    var map = { service_edge: "Service", location_edge: "Location", person_edge: "Person", business_edge: "Business", external_identity_edge: "Link", reference_edge: "Reference", generic_edge: "Related" };\n' +
++    '    return "<span class=\\"fyd-edge-tag fyd-kind-" + esc(kind) + "\\">" + esc(map[kind] || "Related") + "</span>";\n' +
++    "  }\n" +
++    "\n" +
++    "  function actionHtml(a) {\n" +
++    '    if (a.kind === "open_website" && a.href) {\n' +
++    '      return "<a class=\\"fyd-edge-action\\" href=\\"" + esc(a.href) + "\\" target=\\"_blank\\" rel=\\"noopener\\">" + esc(a.label) + "</a>";\n' +
++    "    }\n" +
++    '    return "<button type=\\"button\\" class=\\"fyd-edge-action\\" data-edge-act=\\"" + esc(a.kind) + "\\">" + esc(a.label) + "</button>";\n' +
++    "  }\n" +
++    "\n" +
++    "  function groupHtml(g, data) {\n" +
++    '    var shown = revealed[g.predicate] || ATTENTION;\n' +
++    '    var items = g.items.slice(0, shown);\n' +
++    '    var html = "<section class=\\"fyd-edge-group\\" data-edge-group=\\"" + esc(g.predicate) + "\\">";\n' +
++    '    html += "<div class=\\"fyd-edge-grouphead\\"><h3>" + esc(g.label) + " <span class=\\"fyd-edge-count\\">" + g.totalCount + "</span></h3>";\n' +
++    '    html += "<button type=\\"button\\" class=\\"fyd-edge-why-g\\" data-edge-why-group=\\"" + esc(g.predicate) + "\\" aria-expanded=\\"false\\">Why these?</button></div>";\n' +
++    '    html += "<div class=\\"fyd-edge-why-panel\\" hidden></div>";\n' +
++    '    html += "<ul class=\\"fyd-edge-items\\">";\n' +
++    "    for (var i = 0; i < items.length; i++) {\n" +
++    "      var it = items[i];\n" +
++    '      html += "<li><button type=\\"button\\" class=\\"fyd-edge-item\\" data-edge-target=\\"" + esc(it.targetObjectId) + "\\" aria-label=\\"" + esc(it.targetTitle) + ", " + esc(it.targetTypeLabel) + ". Open details.\\">";\n' +
++    '      html += kindTag(it.kind) + "<span class=\\"fyd-edge-item-title\\">" + esc(it.targetTitle) + "</span>";\n' +
++    '      html += "<span class=\\"fyd-edge-item-go\\" aria-hidden=\\"true\\">&rsaquo;</span></button></li>";\n' +
++    "    }\n" +
++    '    html += "</ul>";\n' +
++    "    if (g.totalCount > shown) {\n" +
++    '      html += "<button type=\\"button\\" class=\\"fyd-edge-more\\" data-edge-more=\\"" + esc(g.predicate) + "\\" aria-expanded=\\"false\\">Show " + Math.min(ATTENTION, g.totalCount - shown) + " more</button>";\n' +
++    "    }\n" +
++    '    html += "</section>";\n' +
++    "    return html;\n" +
++    "  }\n" +
++    "\n" +
++    "  function renderSheet(data) {\n" +
++    "    ensureChrome();\n" +
++    '    var titleEl = sheet.querySelector(".fyd-edge-title");\n' +
++    '    var typeEl = sheet.querySelector(".fyd-edge-type");\n' +
++    '    titleEl.textContent = data.title;\n' +
++    '    typeEl.innerHTML = esc(data.typeLabel) + " " + claimBadge(data.summaryClaimClass);\n' +
++    '    sheet.setAttribute("aria-label", data.title + " object details");\n' +
++    '    var html = "<p class=\\"fyd-edge-summary\\">" + esc(data.summary) + "</p>";\n' +
++    '    html += "<p class=\\"fyd-edge-prov\\">Source: " + esc(data.provenanceRef) + "</p>";\n' +
++    "\n" +
++    "    if (fullNode) {\n" +
++    '      html += "<section class=\\"fyd-edge-claims\\"><h3>Details</h3><dl>";\n' +
++    "      for (var c = 0; c < data.claims.length; c++) {\n" +
++    "        var cl = data.claims[c];\n" +
++    '        html += "<div class=\\"fyd-edge-claimrow\\"><dt>" + esc(cl.label) + " " + claimBadge(cl.claimClass) + "</dt><dd>" + esc(cl.value) + "</dd></div>";\n' +
++    "      }\n" +
++    '      html += "</dl></section>";\n' +
++    "      if (data.evidence && data.evidence.length) {\n" +
++    '        html += "<section class=\\"fyd-edge-evidence\\"><h3>Evidence</h3><ul>";\n' +
++    "        for (var e = 0; e < data.evidence.length; e++) {\n" +
++    "          var ev = data.evidence[e];\n" +
++    '          html += "<li><code>" + esc(ev.ref) + "</code><br><span>" + esc(ev.source) + " &middot; observed " + esc(ev.observedAt) + "</span></li>";\n' +
++    "        }\n" +
++    '        html += "</ul></section>";\n' +
++    "      }\n" +
++    "    }\n" +
++    "\n" +
++    '    html += "<div class=\\"fyd-edge-actions\\">";\n' +
++    "    for (var a = 0; a < data.actions.length; a++) { html += actionHtml(data.actions[a]); }\n" +
++    '    html += "</div>";\n' +
++    '    html += "<div class=\\"fyd-edge-askpanel\\" hidden>" +\n' +
++    '      "<p class=\\"fyd-edge-askctx\\">Asking about <strong></strong></p>" +\n' +
++    '      "<form class=\\"fyd-edge-askform\\"><label class=\\"fyd-sr-only\\" for=\\"fyd-edge-askq\\">Ask FYD</label>" +\n' +
++    '      "<input id=\\"fyd-edge-askq\\" name=\\"q\\" type=\\"text\\" placeholder=\\"Ask about this\\" autocomplete=\\"off\\">" +\n' +
++    '      "<button type=\\"submit\\">Ask</button></form>" +\n' +
++    '      "<div class=\\"fyd-edge-askresult\\" aria-live=\\"polite\\"></div></div>";\n' +
++    '    html += "<div class=\\"fyd-edge-whypanel\\" hidden></div>";\n' +
++    "\n" +
++    "    if (!data.edgeGroups || !data.edgeGroups.length) {\n" +
++    '      html += "<p class=\\"fyd-edge-empty\\">No related objects recorded for this entry.</p>";\n' +
++    "    } else {\n" +
++    "      for (var gi = 0; gi < data.edgeGroups.length; gi++) { html += groupHtml(data.edgeGroups[gi], data); }\n" +
++    "    }\n" +
++    '    sheetMain.innerHTML = html;\n' +
++    '    var askCtx = sheetMain.querySelector(".fyd-edge-askctx strong");\n' +
++    '    if (askCtx) askCtx.textContent = data.title;\n' +
++    '    var askBtn = sheetMain.querySelector(\'[data-edge-act="ask"]\');\n' +
++    '    if (askBtn && !askBtn.hasAttribute("aria-expanded")) askBtn.setAttribute("aria-expanded", "false");\n' +
++    '    var backBtn = sheet.querySelector(".fyd-edge-back");\n' +
++    '    if (backBtn) backBtn.hidden = stack.length === 0;\n' +
++    '    var crumb = sheet.querySelector(".fyd-edge-crumb");\n' +
++    '    if (crumb) crumb.textContent = stack.length > 0 ? (stack.length + " deep") : "";\n' +
++    "  }\n" +
++    "\n" +
++    "  function showSheet() {\n" +
++    "    ensureChrome();\n" +
++    "    savedScrollY = window.scrollY || window.pageYOffset || 0;\n" +
++    '    document.body.classList.add("fyd-edge-lock");\n' +
++    "    overlay.hidden = false;\n" +
++    "    sheet.hidden = false;\n" +
++    "    if (sheetScroll) sheetScroll.scrollTop = 0;\n" +
++    '    var closeBtn = sheet.querySelector(".fyd-edge-close");\n' +
++    "    if (closeBtn) closeBtn.focus();\n" +
++    "  }\n" +
++    "\n" +
++    "  function hideSheet(restoreFocus) {\n" +
++    "    if (!sheet || sheet.hidden) return;\n" +
++    "    sheet.hidden = true;\n" +
++    "    overlay.hidden = true;\n" +
++    '    document.body.classList.remove("fyd-edge-lock");\n' +
++    "    if (typeof savedScrollY === \"number\") window.scrollTo(0, savedScrollY);\n" +
++    "    if (restoreFocus !== false && triggerEl && document.contains(triggerEl)) triggerEl.focus();\n" +
++    "    current = null;\n" +
++    "    stack = [];\n" +
++    "    fullNode = false;\n" +
++    "  }\n" +
++    "\n" +
++    "  function openObject(objectId, trigger) {\n" +
++    "    ensureChrome();\n" +
++    "    if (trigger) triggerEl = trigger;\n" +
++    '    var url = EDGE_ENDPOINT + "?site=" + encodeURIComponent(SITE) +\n' +
++    '      "&objectId=" + encodeURIComponent(objectId) + (DEMO ? "&demo_owner=1" : "");\n' +
++    "    announce(\"Loading details.\");\n" +
++    "    fetch(url).then(function (r) {\n" +
++    "      if (!r.ok) throw new Error(\"not found\");\n" +
++    "      return r.json();\n" +
++    "    }).then(function (data) {\n" +
++    "      current = { objectId: objectId, data: data };\n" +
++    "      revealed = {};\n" +
++    "      renderSheet(data);\n" +
++    "      showSheet();\n" +
++    '      announce("Opened " + data.title + ". " + data.edgeGroups.length + " relationship groups.");\n' +
++    "    }).catch(function () {\n" +
++    '      announce("That entry is not available.");\n' +
++    "    });\n" +
++    "  }\n" +
++    "\n" +
++    "  function traverse(targetId) {\n" +
++    "    if (!current) return;\n" +
++    "    stack.push({ objectId: current.objectId, data: current.data, scrollY: savedScrollY });\n" +
++    "    fullNode = false;\n" +
++    "    openObject(targetId, null);\n" +
++    "  }\n" +
++    "\n" +
++    "  function goBack() {\n" +
++    "    var prev = stack.pop();\n" +
++    "    if (!prev) { closeSheet(); return; }\n" +
++    "    ensureChrome();\n" +
++    "    fullNode = false;\n" +
++    "    revealed = {};\n" +
++    "    current = { objectId: prev.objectId, data: prev.data };\n" +
++    "    renderSheet(prev.data);\n" +
++    "    savedScrollY = prev.scrollY;\n" +
++    '    document.body.classList.add("fyd-edge-lock");\n' +
++    "    overlay.hidden = false;\n" +
++    "    sheet.hidden = false;\n" +
++    "    if (sheetScroll) sheetScroll.scrollTop = 0;\n" +
++    '    announce("Back to " + prev.data.title + ".");\n' +
++    "  }\n" +
++    "\n" +
++    "  function closeSheet() { hideSheet(true); }\n" +
++    "\n" +
++    "  function toggleAsk(btn) {\n" +
++    '    var panel = sheetMain.querySelector(".fyd-edge-askpanel");\n' +
++    "    if (!panel) return;\n" +
++    "    panel.hidden = !panel.hidden;\n" +
++    '    if (btn) btn.setAttribute("aria-expanded", panel.hidden ? "false" : "true");\n' +
++    "    if (!panel.hidden) {\n" +
++    '      var input = panel.querySelector("input");\n' +
++    "      if (input) input.focus();\n" +
++    "    }\n" +
++    "  }\n" +
++    "\n" +
++    "  function toggleWhyObject() {\n" +
++    '    var panel = sheetMain.querySelector(".fyd-edge-whypanel");\n' +
++    "    if (!panel || !current) return;\n" +
++    "    if (!panel.hidden) { panel.hidden = true; return; }\n" +
++    "    panel.hidden = false;\n" +
++    '    panel.innerHTML = "<p>Checking the evidence...</p>";\n' +
++    '    var url = "/api/why-this?site=" + encodeURIComponent(SITE) +\n' +
++    '      "&objectId=" + encodeURIComponent(current.objectId);\n' +
++    "    fetch(url).then(function (r) { return r.json(); }).then(function (w) {\n" +
++    "      if (!w.found) { panel.innerHTML = \"<p class=\\\"fyd-fail\\\">\" + esc(w.reason) + \"</p>\"; return; }\n" +
++    '      panel.innerHTML = "<dl class=\\"fyd-why-dl\\">" +\n' +
++    '        "<dt>Source</dt><dd>" + esc(w.source) + "</dd>" +\n' +
++    '        "<dt>Observed value</dt><dd>" + esc(w.observedValue) + "</dd>" +\n' +
++    '        "<dt>Observation time</dt><dd>" + esc(w.observationTime) + "</dd>" +\n' +
++    '        "<dt>Extraction method</dt><dd>" + esc(w.extractionMethod) + "</dd></dl>";\n' +
++    "    }).catch(function () { panel.innerHTML = \"<p class=\\\"fyd-fail\\\">Could not load evidence.</p>\"; });\n" +
++    "  }\n" +
++    "\n" +
++    "  function toggleWhyGroup(btn) {\n" +
++    '    var section = btn.closest(".fyd-edge-group");\n' +
++    "    if (!section || !current) return;\n" +
++    '    var panel = section.querySelector(".fyd-edge-why-panel");\n' +
++    "    if (!panel) return;\n" +
++    '    var open = panel.hidden;\n' +
++    '    btn.setAttribute("aria-expanded", open ? "true" : "false");\n' +
++    "    if (!open) { panel.hidden = true; return; }\n" +
++    "    panel.hidden = false;\n" +
++    '    var predicate = btn.getAttribute("data-edge-why-group");\n' +
++    "    var first = null;\n" +
++    "    for (var gi = 0; gi < current.data.edgeGroups.length; gi++) {\n" +
++    "      var g = current.data.edgeGroups[gi];\n" +
++    "      if (g.predicate === predicate && g.items.length) { first = g.items[0]; break; }\n" +
++    "    }\n" +
++    "    if (!first) { panel.innerHTML = \"<p class=\\\"fyd-fail\\\">No edge recorded.</p>\"; return; }\n" +
++    '    panel.innerHTML = "<p>Checking the evidence...</p>";\n' +
++    '    var url = "/api/why-this?site=" + encodeURIComponent(SITE) +\n' +
++    '      "&objectId=" + encodeURIComponent(first.targetObjectId) +\n' +
++    '      "&field=" + encodeURIComponent(predicate);\n' +
++    "    fetch(url).then(function (r) { return r.json(); }).then(function (w) {\n" +
++    "      if (!w.found) { panel.innerHTML = \"<p class=\\\"fyd-fail\\\">\" + esc(w.reason) + \"</p>\"; return; }\n" +
++    '      panel.innerHTML = "<dl class=\\"fyd-why-dl\\">" +\n' +
++    '        "<dt>Source</dt><dd>" + esc(w.source) + "</dd>" +\n' +
++    '        "<dt>Observed value</dt><dd>" + esc(w.observedValue) + "</dd>" +\n' +
++    '        "<dt>Observation time</dt><dd>" + esc(w.observationTime) + "</dd>" +\n' +
++    '        "<dt>Extraction method</dt><dd>" + esc(w.extractionMethod) + "</dd></dl>";\n' +
++    "    }).catch(function () { panel.innerHTML = \"<p class=\\\"fyd-fail\\\">Could not load evidence.</p>\"; });\n" +
++    "  }\n" +
++    "\n" +
++    "  function onSheetClick(e) {\n" +
++    '    var nav = e.target.closest("[data-edge-nav]");\n' +
++    '    if (nav) { if (nav.getAttribute("data-edge-nav") === "back") goBack(); else closeSheet(); return; }\n' +
++    '    var more = e.target.closest("[data-edge-more]");\n' +
++    "    if (more) {\n" +
++    '      var pred = more.getAttribute("data-edge-more");\n' +
++    "      revealed[pred] = (revealed[pred] || ATTENTION) + ATTENTION;\n" +
++    '      var expanded = more.getAttribute("aria-expanded") === "true";\n' +
++    '      more.setAttribute("aria-expanded", expanded ? "false" : "true");\n' +
++    "      if (current) renderSheet(current.data);\n" +
++    "      return;\n" +
++    "    }\n" +
++    '    var whyG = e.target.closest("[data-edge-why-group]");\n' +
++    "    if (whyG) { toggleWhyGroup(whyG); return; }\n" +
++    '    var act = e.target.closest("[data-edge-act]");\n' +
++    "    if (act) {\n" +
++    '      var kind = act.getAttribute("data-edge-act");\n' +
++    '      if (kind === "ask") { toggleAsk(act); return; }\n' +
++    '      if (kind === "why_this") { toggleWhyObject(); return; }\n' +
++    '      if (kind === "open_full_node") {\n' +
++    "        fullNode = !fullNode;\n" +
++    '        var fnBtn = sheetMain.querySelector(\'[data-edge-act="open_full_node"]\');\n' +
++    '        if (fnBtn) fnBtn.textContent = fullNode ? "Compact view" : "Open full node";\n' +
++    "        if (current) renderSheet(current.data);\n" +
++    "        return;\n" +
++    "      }\n" +
++    '      if (kind === "reference") {\n' +
++    '        var text = "FYD object " + current.objectId + " (" + current.data.title + ")";\n' +
++    "        announce(\"Reference copied.\");\n" +
++    "        if (navigator.clipboard && navigator.clipboard.writeText) {\n" +
++    "          navigator.clipboard.writeText(text).catch(function () {});\n" +
++    "        }\n" +
++    "        return;\n" +
++    "      }\n" +
++    "      return;\n" +
++    "    }\n" +
++    '    var tgt = e.target.closest("[data-edge-target]");\n' +
++    "    if (tgt) { traverse(tgt.getAttribute(\"data-edge-target\")); return; }\n" +
++    "  }\n" +
++    "\n" +
++    "  function onSheetSubmit(e) {\n" +
++    '    var form = e.target.closest(".fyd-edge-askform");\n' +
++    "    if (!form || !current) return;\n" +
++    "    e.preventDefault();\n" +
++    '    var input = form.querySelector("input");\n' +
++    '    var result = sheetMain.querySelector(".fyd-edge-askresult");\n' +
++    "    var q = input.value.trim();\n" +
++    "    if (!q || !result) return;\n" +
++    '    result.innerHTML = "<p>Asking FYD...</p>";\n' +
++    "    fetch(\"/api/ask\", {\n" +
++    '      method: "POST",\n' +
++    '      headers: { "content-type": "application/json" },\n' +
++    "      body: JSON.stringify({ site: SITE, question: q, objectId: current.objectId }),\n" +
++    "    }).then(function (r) { return r.json(); }).then(function (a) {\n" +
++    '      var html = "<p><strong>Answer:</strong> " + esc(a.answer) + "</p>";\n' +
++    "      if (a.evidence && a.evidence.length) {\n" +
++    '        html += "<p class=\\"fyd-edge-evh\\">Evidence</p><ul class=\\"fyd-evidence-list\\">";\n' +
++    "        a.evidence.forEach(function (c) {\n" +
++    '          html += "<li>[" + c.n + "] " + esc(c.label) + " &middot; " + esc(c.basis) + "</li>";\n' +
++    "        });\n" +
++    '        html += "</ul>";\n' +
++    "      }\n" +
++    "      if (a.unknowns && a.unknowns.length) {\n" +
++    '        html += "<p class=\\"fyd-unknowns\\"><strong>Not established by the evidence:</strong> " + a.unknowns.map(esc).join("; ") + "</p>";\n' +
++    "      }\n" +
++    "      if (a.refusal) html += \"<p><em>FYD could not answer that.</em></p>\";\n" +
++    "      result.innerHTML = html;\n" +
++    "    }).catch(function () { result.innerHTML = \"<p class=\\\"fyd-fail\\\">Something went wrong asking FYD.</p>\"; });\n" +
++    "  }\n" +
++    "\n" +
++    "  // ---- tap-to-expand: every rendered object binding is a doorway ----\n" +
++    "  document.addEventListener(\"click\", function (e) {\n" +
++    '    if (sheet && !sheet.hidden && e.target.closest("#fyd-edge-sheet")) return;\n' +
++    '    if (e.target.closest(".why-this-btn")) return;\n' +
++    '    if (e.target.closest(".why-this-panel")) return;\n' +
++    '    if (e.target.closest("a, button")) return;\n' +
++    '    var binding = e.target.closest("[data-fyd-object-id]");\n' +
++    "    if (!binding) return;\n" +
++    '    var id = binding.getAttribute("data-fyd-object-id");\n' +
++    "    if (!id) return;\n" +
++    "    e.preventDefault();\n" +
++    "    openObject(id, binding);\n" +
++    "  });\n" +
++    "\n" +
++    "  // ---- keyboard: cards and circles open with Enter/Space ----\n" +
++    "  document.addEventListener(\"keydown\", function (e) {\n" +
++    '    if (e.key !== "Enter" && e.key !== " ") return;\n' +
++    '    var t = e.target;\n' +
++    "    if (!t || !t.getAttribute) return;\n" +
++    '    if (!t.hasAttribute("data-fyd-object-id")) return;\n' +
++    '    if (e.target.closest(".why-this-btn")) return;\n' +
++    "    e.preventDefault();\n" +
++    '    openObject(t.getAttribute("data-fyd-object-id"), t);\n' +
++    "  });\n" +
++    "\n" +
++    "  // ---- mark bindings operable (no visual change) ----\n" +
++    "  function markBindings() {\n" +
++    '    document.querySelectorAll("[data-fyd-object-id]").forEach(function (el) {\n' +
++    '      if (el.hasAttribute("tabindex")) return;\n' +
++    '      el.setAttribute("tabindex", "0");\n' +
++    '      el.setAttribute("role", "button");\n' +
++    '      el.setAttribute("aria-label", (el.querySelector("h3") || {}).textContent || el.textContent || "object");\n' +
++    "    });\n" +
++    "  }\n" +
++    "  if (document.readyState === \"loading\") {\n" +
++    '    document.addEventListener("DOMContentLoaded", markBindings);\n' +
++    "  } else {\n" +
++    "    markBindings();\n" +
++    "  }\n" +
++    "})();\n"
++  );
++}
+diff --git a/src/fyd/edge/resolve.ts b/src/fyd/edge/resolve.ts
+new file mode 100644
+index 0000000..aa5bbd3
+--- /dev/null
++++ b/src/fyd/edge/resolve.ts
+@@ -0,0 +1,462 @@
++/**
++ * FYD EDGE-OBJECT EXPERIENCE: edge resolution and object-sheet builder.
++ *
++ * Pure, deterministic, browser-safe (no DOM, no network, no secrets).
++ *
++ * Pipeline:
++ *   (graph, objectId, viewer)
++ *     -> filterGraphForViewer (FYD-010: THE privacy gate; nothing in this
++ *        module does its own visibility check)
++ *     -> resolve target object (absent/invisible -> null; the HTTP layer
++ *        maps null to 404, indistinguishable from "unknown")
++ *     -> group ACTIVE outgoing edges by predicate
++ *     -> resolveEdgeKind(predicate, targetSchema) for presentation
++ *     -> capabilityOptions (sitespec/schemas.ts: the EXISTING capability
++ *        resolution path) intersected with the ask lane's allowed
++ *        capabilities -> sheet actions. Only actions that resolve render.
++ *     -> classify every claim (DIRECT_FACT / DERIVED_FACT /
++ *        OWNER_AUTHORED / GENERATED_COPY)
++ *
++ * INVARIANT: AN EDGE OBJECT IS NOT SUCCESSFULLY RENDERED UNTIL IT
++ * PROVIDES A FUNCTIONAL DOORWAY INTO THE AUTHORIZED BUSINESS GRAPH.
++ * Every EdgeTargetItem carries a real targetObjectId; buildObjectSheet
++ * never emits decorative or presentation-only items.
++ */
++
++import type { PingObject, PingRelationship } from "@/lib/ping/types";
++import type { ObjectGraph } from "../sitespec/types";
++import {
++  filterGraphForViewer,
++  type Viewer,
++} from "../visibility/policy";
++import {
++  capabilityOptions,
++  getSchemaDef,
++  schemaRole,
++  type FYDActionKind,
++} from "../sitespec/schemas";
++import { safeWebsiteHref } from "../sitespec/safe-link";
++import { RELATED_PREDICATE_PRIORITY } from "../ui/margin-circles";
++import { VISITOR_ALLOWED_CAPABILITIES } from "../ask/load-fixture";
++import type {
++  ClaimClass,
++  EdgeGroup,
++  EdgeKind,
++  EdgeTargetItem,
++  ObjectSheet,
++  SheetAction,
++  SheetClaim,
++  SheetEvidence,
++} from "./types";
++
++/** How many edge items the client renders before "show more". The graph
++ *  may hold 100 objects; the edge never shows 100 at once. The payload
++ *  still carries every authorized item so progressive disclosure never
++ *  invents objects. */
++export const EDGE_ATTENTION_LIMIT = 8;
++
++/** Pipeline-internal field keys: never rendered as claims. These are the
++ *  lane's own bookkeeping, not business facts. (Not business data, so not
++ *  business-name conditionals.) */
++const INTERNAL_FIELD_KEYS = new Set([
++  "claimKind",
++  "source_url",
++  "source_type",
++  "source_digest",
++  "observed_at",
++  "evidence_ref",
++  "service_key",
++  "service_href",
++]);
++
++/** Predicate -> human group label. Predicate vocabulary only; no
++ *  business names, no per-site branches. */
++const PREDICATE_LABELS: Record<string, string> = {
++  offers: "Services offered",
++  provides: "Services offered",
++  located_at: "Location",
++  works_for: "People",
++  employs: "People",
++  employed_by: "People",
++  links_to: "Connected",
++  has_website: "Website",
++  references: "References",
++  provided_by: "Offered by",
++  publishes: "Posts",
++  published_by: "Published by",
++};
++
++/** Predicates that resolve to a person edge regardless of schema role. */
++const PERSON_PREDICATES = new Set(["works_for", "employs", "employed_by"]);
++/** Predicates that resolve to an external-identity edge. */
++const EXTERNAL_PREDICATES = new Set(["links_to", "has_website"]);
++
++/**
++ * resolveEdgeKind: (predicate, targetSchema) -> EdgeKind.
++ *
++ * Resolution order: predicate + schema role together decide. Unknown
++ * predicates fall through to "generic_edge": a functional generic
++ * relationship renderer, never a dead end, never dropped.
++ */
++export function resolveEdgeKind(
++  predicate: string,
++  targetSchema: string,
++): EdgeKind {
++  const role = schemaRole(targetSchema);
++  if (EXTERNAL_PREDICATES.has(predicate)) return "external_identity_edge";
++  if (predicate === "references") return "reference_edge";
++  if (PERSON_PREDICATES.has(predicate) || role === "person")
++    return "person_edge";
++  if (role === "location" && predicate === "located_at")
++    return "location_edge";
++  if (role === "service") return "service_edge";
++  if (role === "business") return "business_edge";
++  if (role === "post") return "reference_edge";
++  return "generic_edge";
++}
++
++/** Human label for a predicate. Schema relationship meaning wins when
++ *  the source schema declares it; otherwise the static vocabulary map;
++ *  otherwise the prettified predicate. Deterministic. */
++export function predicateLabel(
++  predicate: string,
++  sourceSchema?: string,
++): string {
++  if (sourceSchema) {
++    const def = getSchemaDef(sourceSchema);
++    const rule = def?.relationships.find((r) => r.predicate === predicate);
++    if (rule && rule.meaning) {
++      // Meaning sentences are verbose; the static map holds the compact
++      // labels, so prefer it and keep meaning as documentation.
++    }
++  }
++  const mapped = PREDICATE_LABELS[predicate];
++  if (mapped) return mapped;
++  return predicate
++    .split("_")
++    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
++    .join(" ");
++}
++
++/**
++ * classifyClaim: every rendered claim carries its class.
++ * - provenance kind starting with "owner" -> OWNER_AUTHORED
++ * - computed by the sheet builder (counts, groupings) -> DERIVED_FACT
++ * - verbatim source observation -> DIRECT_FACT
++ * - renderer template/marketing copy -> GENERATED_COPY (labeled at the
++ *   call site; this function only classifies data claims)
++ */
++export function classifyClaim(args: {
++  provenanceKind: string;
++  computed: boolean;
++}): ClaimClass {
++  if (args.computed) return "DERIVED_FACT";
++  if (args.provenanceKind.startsWith("owner")) return "OWNER_AUTHORED";
++  return "DIRECT_FACT";
++}
++
++/** Sort key for edge groups: the shared predicate priority first
++ *  (RELATED_PREDICATE_PRIORITY), unknown predicates alphabetical after. */
++function groupSortKey(predicate: string): [number, number, string] {
++  const idx = RELATED_PREDICATE_PRIORITY.indexOf(predicate);
++  if (idx >= 0) return [0, idx, ""];
++  return [1, 0, predicate];
++}
++
++function compareGroupKeys(
++  a: [number, number, string],
++  b: [number, number, string],
++): number {
++  if (a[0] !== b[0]) return a[0] - b[0];
++  if (a[1] !== b[1]) return a[1] - b[1];
++  return a[2] < b[2] ? -1 : a[2] > b[2] ? 1 : 0;
++}
++
++/** Map the EXISTING capability resolution to sheet actions. Only actions
++ *  that resolve are returned: no invented buttons.
++ *
++ *  - "ask" (capabilityOptions) + ask lane "ask_question" -> Ask FYD
++ *  - "reference" -> Copy reference
++ *  - "open_website" + safe href -> Open website
++ *  - "open" -> Open full node (sheet full-node mode; edge items ARE the
++ *    traverse affordance, so "open" is not a second button per item)
++ *  - ask lane "view_why_this" -> Why this?
++ *
++ *  "request_quote" is NOT a resolved capability in this tree, so no
++ *  Request-quote button is rendered. When a capability lands, its action
++ *  appears here with zero UI changes.
++ */
++function resolveActions(
++  object: PingObject,
++  schemaId: string,
++  allowedCapabilities: readonly string[],
++): SheetAction[] {
++  const def = getSchemaDef(schemaId);
++  const websiteRaw = object.fields["website"];
++  const website =
++    typeof websiteRaw === "string" ? safeWebsiteHref(websiteRaw) : null;
++  const kinds: FYDActionKind[] = def
++    ? capabilityOptions(def, {
++        viewerId: null,
++        controllerId: object.controllerId,
++        hasWebsite: website !== null,
++      })
++    : (["open", "ask", "reference"] as FYDActionKind[]);
++
++  const actions: SheetAction[] = [];
++  const has = (k: FYDActionKind) => kinds.includes(k);
++  if (has("ask") && allowedCapabilities.includes("ask_question")) {
++    actions.push({ kind: "ask", label: "Ask FYD", capability: "ask_question" });
++  }
++  if (allowedCapabilities.includes("view_why_this")) {
++    actions.push({
++      kind: "why_this",
++      label: "Why this?",
++      capability: "view_why_this",
++    });
++  }
++  if (has("open")) {
++    actions.push({
++      kind: "open_full_node",
++      label: "Open full node",
++      capability: "open",
++    });
++  }
++  if (has("reference")) {
++    actions.push({
++      kind: "reference",
++      label: "Copy reference",
++      capability: "reference",
++    });
++  }
++  if (has("open_website") && website) {
++    actions.push({
++      kind: "open_website",
++      label: "Open website",
++      capability: "open_website",
++      href: website,
++    });
++  }
++  return actions;
++}
++
++/** Human-meaningful claims from an object: schema-def fields first, then
++ *  any non-internal field. Title/description are identity/summary and are
++ *  not repeated here. */
++function buildClaims(object: PingObject): SheetClaim[] {
++  const def = getSchemaDef(object.schema);
++  const defLabels = new Map<string, string>();
++  if (def) {
++    for (const f of def.fields) defLabels.set(f.name, f.label);
++  }
++  const claims: SheetClaim[] = [];
++  const seen = new Set<string>();
++  const push = (name: string, label: string, value: string | string[]) => {
++    if (seen.has(name)) return;
++    seen.add(name);
++    const text = Array.isArray(value) ? value.join(", ") : value;
++    if (!text || !text.trim()) return;
++    claims.push({
++      label,
++      value: text,
++      claimClass: classifyClaim({
++        provenanceKind: object.provenance.kind,
++        computed: false,
++      }),
++      evidenceRef:
++        typeof object.fields["evidence_ref"] === "string"
++          ? (object.fields["evidence_ref"] as string)
++          : undefined,
++    });
++  };
++  // Schema-defined fields first, in schema order (skip title/description).
++  if (def) {
++    for (const f of def.fields) {
++      if (f.name === "title" || f.name === "description") continue;
++      const raw = object.fields[f.name];
++      if (raw !== undefined) push(f.name, f.label, raw);
++    }
++  }
++  // Then any other non-internal field, alphabetical for determinism.
++  const extra = Object.keys(object.fields)
++    .filter(
++      (k) =>
++        k !== "title" &&
++        k !== "description" &&
++        !INTERNAL_FIELD_KEYS.has(k) &&
++        !seen.has(k),
++    )
++    .sort();
++  for (const k of extra) {
++    const raw = object.fields[k];
++    if (raw === undefined) continue;
++    const label = k
++      .split("_")
++      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
++      .join(" ");
++    push(k, label, raw);
++  }
++  return claims;
++}
++
++function typeLabel(schemaId: string): string {
++  const def = getSchemaDef(schemaId);
++  if (def) return def.label;
++  const role = schemaRole(schemaId);
++  if (role) return role.charAt(0).toUpperCase() + role.slice(1);
++  return "Object";
++}
++
++function toEdgeItem(
++  rel: PingRelationship,
++  target: PingObject,
++  label: string,
++): EdgeTargetItem {
++  return {
++    edgeId: rel.id,
++    predicate: rel.predicate,
++    predicateLabel: label,
++    targetObjectId: target.id,
++    targetTitle: target.title,
++    targetTypeLabel: typeLabel(target.schema),
++    kind: resolveEdgeKind(rel.predicate, target.schema),
++    evidenceRef: rel.evidenceRef,
++    claimClass: "DIRECT_FACT",
++  };
++}
++
++export interface BuildSheetOptions {
++  /** Ask-lane allowed capabilities; defaults to the visitor set. */
++  allowedCapabilities?: readonly string[];
++}
++
++/**
++ * buildObjectSheet: (graph, objectId, viewer) -> ObjectSheet | null.
++ *
++ * Returns null when the object is absent or invisible to this viewer.
++ * The HTTP layer maps null -> 404, indistinguishable from "unknown".
++ * The input graph is never mutated.
++ */
++export function buildObjectSheet(
++  graph: ObjectGraph,
++  objectId: string,
++  viewer: Viewer,
++  opts: BuildSheetOptions = {},
++): ObjectSheet | null {
++  // THE gate (FYD-010). Everything below sees only authorized state.
++  const visible = filterGraphForViewer(graph, viewer);
++  const byId = new Map<string, PingObject>();
++  for (const o of visible.objects) byId.set(o.id, o);
++
++  const object = byId.get(objectId);
++  if (!object) return null;
++
++  // Outgoing ACTIVE edges only. Incoming edges (e.g. provided_by) are
++  // reachable by traversing to the source; the sheet shows the object's
++  // own outgoing primary edges.
++  const outgoing: PingRelationship[] = [];
++  for (const r of visible.relationships) {
++    if (r.subject !== objectId) continue;
++    if (r.status !== "active") continue;
++    if (r.object === objectId) continue; // self-loop is not an edge out
++    if (!byId.has(r.object)) continue; // belt: gate already drops these
++    outgoing.push(r);
++  }
++
++  // Group by predicate, deterministic group order.
++  const byPredicate = new Map<string, PingRelationship[]>();
++  for (const r of outgoing) {
++    const list = byPredicate.get(r.predicate);
++    if (list) list.push(r);
++    else byPredicate.set(r.predicate, [r]);
++  }
++  const predicates = Array.from(byPredicate.keys()).sort((a, b) =>
++    compareGroupKeys(groupSortKey(a), groupSortKey(b)),
++  );
++
++  const edgeGroups: EdgeGroup[] = predicates.map((predicate) => {
++    const rels = (byPredicate.get(predicate) as PingRelationship[]).slice();
++    const label = predicateLabel(predicate, object.schema);
++    const items = rels
++      .map((r) => toEdgeItem(r, byId.get(r.object) as PingObject, label))
++      // Deterministic: title, then id. Never insertion order.
++      .sort((a, b) =>
++        a.targetTitle < b.targetTitle
++          ? -1
++          : a.targetTitle > b.targetTitle
++            ? 1
++            : a.targetObjectId < b.targetObjectId
++              ? -1
++              : a.targetObjectId > b.targetObjectId
++                ? 1
++                : 0,
++      );
++    // Dominant kind: the kind of the first item (all items in a group
++    // usually share it); ties are impossible by construction.
++    return {
++      predicate,
++      label,
++      kind: items.length > 0 ? items[0].kind : "generic_edge",
++      items,
++      totalCount: items.length,
++    };
++  });
++
++  const allowedCapabilities =
++    opts.allowedCapabilities ?? VISITOR_ALLOWED_CAPABILITIES;
++  const actions = resolveActions(object, object.schema, allowedCapabilities);
++
++  const summary = object.description || object.title;
++  const summaryClaimClass: SheetClaim["claimClass"] = object.description
++    ? classifyClaim({ provenanceKind: object.provenance.kind, computed: false })
++    : "DERIVED_FACT";
++
++  const evidence: SheetEvidence[] = [];
++  const seenRefs = new Set<string>();
++  const pushEvidence = (ref: string) => {
++    if (!ref || seenRefs.has(ref)) return;
++    seenRefs.add(ref);
++    evidence.push({
++      ref,
++      source: object.provenance.ref,
++      observedAt: object.provenance.derivedAt,
++    });
++  };
++  pushEvidence(object.provenance.ref);
++  const objEvidenceRef = object.fields["evidence_ref"];
++  if (typeof objEvidenceRef === "string") pushEvidence(objEvidenceRef);
++  for (const g of edgeGroups) {
++    for (const item of g.items) pushEvidence(item.evidenceRef);
++  }
++
++  const claims = buildClaims(object);
++  // Derived-fact claim: the edge-derived neighborhood size. Computed from
++  // the authorized graph, labeled as derived, never as direct fact.
++  if (edgeGroups.length > 0) {
++    const total = edgeGroups.reduce((n, g) => n + g.totalCount, 0);
++    claims.push({
++      label: "Connected objects",
++      value:
++        String(total) +
++        " across " +
++        String(edgeGroups.length) +
++        (edgeGroups.length === 1 ? " relationship" : " relationships"),
++      claimClass: "DERIVED_FACT",
++    });
++  }
++
++  return {
++    objectId: object.id,
++    title: object.title,
++    typeLabel: typeLabel(object.schema),
++    schemaRole: schemaRole(object.schema),
++    summary,
++    summaryClaimClass,
++    claims,
++    edgeGroups,
++    actions,
++    evidence,
++    provenanceRef: object.provenance.ref,
++    visibility: "public",
++  };
++}
+diff --git a/src/fyd/edge/types.ts b/src/fyd/edge/types.ts
+new file mode 100644
+index 0000000..39bc46d
+--- /dev/null
++++ b/src/fyd/edge/types.ts
+@@ -0,0 +1,156 @@
++/**
++ * FYD EDGE-OBJECT EXPERIENCE: types.
++ *
++ * Law: AN OBJECT IS NOT A CARD. AN OBJECT IS A NODE WITH EDGES.
++ * OBJECT -> TAP -> EXPAND -> EDGES APPEAR -> TRAVERSE EDGE -> NEXT OBJECT
++ * -> EXPAND / ACT / ASK / RETURN.
++ *
++ * INVARIANT (binding on every renderer of this module):
++ * AN EDGE OBJECT IS NOT SUCCESSFULLY RENDERED UNTIL IT PROVIDES A
++ * FUNCTIONAL DOORWAY INTO THE AUTHORIZED BUSINESS GRAPH.
++ *
++ * Every edge item carries a real target object id. No decorative images,
++ * no presentation-only pseudo-objects, no hardcoded business cards, no
++ * business-name conditionals. The same code renders Happy Place and
++ * Coppersmith; only the graph data differs.
++ *
++ * Privacy: sheets are built from a viewer-filtered graph (FYD-010
++ * filterGraphForViewer). An object the viewer may not see yields null,
++ * which the HTTP layer maps to 404, indistinguishable from "unknown".
++ * The edge graph is never a privacy bypass.
++ *
++ * Claim authority: this module creates no claims. Render projection emits
++ * only factual bindings whose provenance resolves to graph/evidence or
++ * explicit owner-authored content. Every rendered claim carries a
++ * ClaimClass; generated marketing copy is labeled GENERATED_COPY and must
++ * never masquerade as direct fact.
++ */
++
++/** How a claim rendered in the edge experience is classified. */
++export type ClaimClass =
++  | "DIRECT_FACT" // verbatim source observation (website statement, owner statement)
++  | "DERIVED_FACT" // computed from the graph (counts, groupings, summaries)
++  | "OWNER_AUTHORED" // explicit owner-authored content, provenance kind owner-*
++  | "GENERATED_COPY"; // template/marketing copy produced by the renderer
++
++/**
++ * Edge presentation kind. Resolved from (predicate, target schema role),
++ * never from business names. UNKNOWN predicates fall through to
++ * "generic_edge": a functional generic relationship renderer, never a
++ * dead end.
++ */
++export type EdgeKind =
++  | "service_edge"
++  | "location_edge"
++  | "person_edge"
++  | "business_edge"
++  | "external_identity_edge"
++  | "reference_edge"
++  | "generic_edge";
++
++/** One traversable edge item. targetObjectId is ALWAYS a real object id. */
++export interface EdgeTargetItem {
++  /** Relationship id this item was resolved from. */
++  edgeId: string;
++  /** Raw predicate, e.g. "offers". */
++  predicate: string;
++  /** Human label for the predicate, e.g. "Services offered". */
++  predicateLabel: string;
++  /** REAL object id of the edge target. Never null, never decorative. */
++  targetObjectId: string;
++  targetTitle: string;
++  /** Schema role label, e.g. "Service", "Location", "Business". */
++  targetTypeLabel: string;
++  kind: EdgeKind;
++  /** Edge provenance: why FYD thinks this edge exists. */
++  evidenceRef: string;
++  /** The edge itself is a claim: website_statement here. */
++  claimClass: ClaimClass;
++}
++
++/** Edges grouped by predicate: the PRIMARY EDGES of an object sheet. */
++export interface EdgeGroup {
++  predicate: string;
++  /** Human label for the group, e.g. "Services offered". */
++  label: string;
++  /** Dominant presentation kind of the group's items. */
++  kind: EdgeKind;
++  /** Items in deterministic order (title, then id). Render-capped by the
++   *  client attention limit; totalCount reports the full authorized set. */
++  items: EdgeTargetItem[];
++  /** Full authorized item count; items.length may be smaller only when the
++   *  client caps rendering. The payload carries every authorized item so
++   *  progressive disclosure never invents objects. */
++  totalCount: number;
++}
++
++/** One claim row in the object sheet, classified. */
++export interface SheetClaim {
++  label: string;
++  value: string;
++  claimClass: ClaimClass;
++  evidenceRef?: string;
++}
++
++/**
++ * One action the sheet may offer. Actions resolve through the EXISTING
++ * capability path (capabilityOptions in sitespec/schemas.ts, intersected
++ * with the ask lane's allowedCapabilities). Only actions that actually
++ * resolve are rendered: no invented buttons.
++ */
++export interface SheetAction {
++  kind: "ask" | "why_this" | "open_full_node" | "reference" | "open_website";
++  label: string;
++  /** The resolved capability that authorized this action. */
++  capability: string;
++  /** Present only for open_website: the safe, validated href. */
++  href?: string;
++}
++
++/** Evidence backing the sheet's summary. */
++export interface SheetEvidence {
++  ref: string;
++  source: string;
++  observedAt: string;
++}
++
++/**
++ * The compact object sheet: identity, type, evidence-backed summary,
++ * primary edges, available actions. Served by GET /api/edge/object and
++ * rendered by the edge client as a bottom sheet (mobile) / side panel
++ * (desktop).
++ */
++export interface ObjectSheet {
++  objectId: string;
++  title: string;
++  /** Schema role label: "Business", "Service", "Location", "Person", ... */
++  typeLabel: string;
++  schemaRole: string | null;
++  /** Evidence-backed summary: the object's own description when it is a
++   *  verbatim observation, else a derived summary. Never marketing copy
++   *  masquerading as fact; see summaryClaimClass. */
++  summary: string;
++  summaryClaimClass: ClaimClass;
++  /** Claim-classified scalar fields. */
++  claims: SheetClaim[];
++  /** Primary edges, grouped by predicate, deterministic order. */
++  edgeGroups: EdgeGroup[];
++  /** Capability-resolved actions only. */
++  actions: SheetAction[];
++  evidence: SheetEvidence[];
++  /** Object-level provenance pointer. */
++  provenanceRef: string;
++  /** Sheets are only ever built for viewers through the visibility gate;
++   *  a sheet that exists is public-to-that-viewer by construction. */
++  visibility: "public";
++}
++
++/**
++ * The binding invariant, exported so renderers, tests, and docs reference
++ * one canonical string. A render function satisfies it only when the
++ * rendered element opens a functional doorway (tap -> sheet -> traverse)
++ * into the authorized graph.
++ */
++export const EDGE_RENDER_INVARIANT =
++  "AN EDGE OBJECT IS NOT SUCCESSFULLY RENDERED UNTIL IT PROVIDES A " +
++  "FUNCTIONAL DOORWAY INTO THE AUTHORIZED BUSINESS GRAPH.";

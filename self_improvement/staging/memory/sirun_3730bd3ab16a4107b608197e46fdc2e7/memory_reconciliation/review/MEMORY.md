@@ -1,0 +1,180 @@
+MEMORY.md
+
+<!-- Curated long-term memory. Keep durable business facts, preferences, and commitments here. Keep day-to-day execution details in daily notes. -->
+
+Business
+
+* User’s name: Nolan Geske, goes by Nolan.
+* Runs PING Social, currently without an LLC.
+* PING Social is an AI concierge and business automation consultancy for home service businesses.
+* Primary market (2026-09-09, Nolan's call): Western Colorado first, expanding outward from there. Denver-area outreach is deprioritized.
+* Uses Quo as the communications and phone platform.
+* PING Social’s role is consultative: understand each business’s workflow and recommend AI services that solve its actual problems rather than selling a one-size-fits-all package.
+
+Business Positioning
+
+* PING Social helps home service businesses capture more opportunities, reduce administrative work, respond faster, and operate more consistently, while keeping the business owner and skilled worker in control.
+* Technology should strengthen the worker and owner, not replace their judgment.
+* AI should handle repetitive communication, organization, follow-up, and administrative work so people can focus on customers, jobs, and decisions that require human judgment.
+* Position PING Social around practical business outcomes, not AI hype.
+* Keep pitches brief, conversational, direct, and credible.
+* Never oversell or make AI sound like a replacement for the trade professional.
+* PING Social is new and eager to help local companies adopt AI; frame early engagements as a limited-time trial while the service is being developed and refined.
+* Market PING Social itself more aggressively (2026-09-11, Nolan's call): he is setting up Google Workspace and will build a PING Social website soon. Blue collar businesses are the explicit target market.
+* Website revamp angle (2026-09-11, Nolan's call): propose a website revamp ONLY for very non-technical owners with weak websites. Nolan can build professional custom websites (TenantOS pipeline) and specializes in backend microservices infrastructure. Portfolio proof asset: https://happy-place-platform.vercel.app/ (may be cited in revamp pitches).
+* PING Social brand language (2026-09-14, Nolan's call): PIGING is a verb; page stories and captions depict how each image relates to the business.
+* PING pig mascot rule (2026-09-14, Nolan's call, hard rule): every mascot image must be the exact PING pig character, never a generic pig. The canonical design (locked from Nolan's chosen front-desk image 2026-09-14): smooth metallic gold pig head, large rounded gold ears with purple inner ears, glossy dark purple-black eyes, purple snout with darker purple curved stripe markings on the cheeks, gold hands, purple suit with gold trim. Cute but slightly scary. Body rule (2026-09-13, Nolan's words, hard rule): he is NEVER a fat pig, he is a surprisingly metabolically healthy scary slender pig pimp. Slender and tall in every generation, no chubby or stocky variants. All trade variants (plumber, electrician, HVAC, front desk) keep this exact head/character and only change the outfit/scene. Canonical queue images: ~/workspace/ping-content/inbox/ping-pig-suit.png (Nolan's chosen front-desk image, 2026-09-14), ping-pig-president.png and ping-pig-beggar.png (Nolan's uploads, swapped in 2026-09-14), ping-pig-plumber.png (posted), masonry variant (pig laying concrete blocks, 'MASONRY & FOUNDATION BEST PRACTICES' board) approved completely usable 2026-09-14.
+* PING Social Facebook Page EXISTS (Nolan corrected the agent 2026-09-13 for not checking memory first): https://www.facebook.com/profile.php?id=61594275542163, created 2026-09-11, 13 followers as of 2026-09-13. FB page search does not surface it; the profile.php?id= URL is canonical. Lesson: search memory before concluding a page/channel does not exist.
+
+Customer Focus
+
+* Prioritize businesses where missed calls, slow follow-up, scheduling friction, repetitive customer communication, lead management, or administrative workload create measurable business pain.
+* Favor solutions that can realistically save time, capture revenue, improve customer experience, or make operations easier to manage.
+* Recommend automation based on the customer’s existing workflow and needs.
+* Avoid introducing complexity unless the business benefit clearly justifies it.
+
+Operating Principles
+
+* Business first: Start with the customer’s problem and desired business outcome, then determine whether AI is actually useful.
+* Human in control: Automation supports owners and workers rather than replacing their judgment.
+* Reliable capture: Important customer requests, job information, and follow-up should not disappear because someone was busy.
+* Less interruption: Reduce unnecessary calls, messages, repetitive questions, and administrative distractions.
+* Less admin drag: Automate repetitive operational work wherever it can be done reliably.
+* Practical automation: Favor simple systems that contractors can understand, maintain, and trust.
+* Measurable value: Prefer improvements that can be connected to time saved, leads captured, response speed, customer experience, or revenue.
+* Nolan's standing leverage rule: actual engagement metrics first (likes, comments, messages); docs, infrastructure, and research support those metrics and must not crowd them out.
+* Trust: Never fabricate information, misrepresent PING Social, or pretend to be a customer.
+* When researching a prospect's technology stack or public business presence, grade every finding as CONFIRMED, STRONG INDICATION, WEAK INDICATION, or UNKNOWN; never assume or hallucinate which software they use.
+
+Current Commitments
+
+* Running an outreach campaign for PING Social targeting Western Colorado home service businesses.
+* Outreach is autonomous: send legitimate emails and submit legitimate contact forms without routine approval requests; skip blocked actions without asking.
+* Reporting discipline (2026-09-15, Nolan): stay quiet when healthy; surface prospect replies, significant mistakes, genuine decisions that need Nolan’s input, failure, important, response-required, new self-improvement, or blocked items; avoid routine check-ins and unnecessary approval requests.
+* Cold email is capped at 10 per UTC day to protect Gmail deliverability; contact forms run at maximum honest volume with no cap.
+* Old-laptop topic (2026-09-13, Nolan's call): never raise the old-laptop topic again unless another old laptop becomes absolutely necessary.
+* Nolan's role assignment (2026-09-11): Pigi is the business marketing onboarding orchestrator. The CRX/PING principles (determinism, replay, evidence, authority boundaries, reuse-before-create) are the foundation the business is built on, kept in the back of the mind as everything moves forward.
+* Facebook on the Pig (2026-09-13): Facebook is Pig-only (cloud sessions die, fresh-profile logins don't persist). Working setup: always-on headed Chrome on the Pig (dedicated profile, CDP :9223), logged in once by Nolan, left running; Node 22 portable + playwright-core via CDP (`~/workspace/pig-fb/`). If the window closes or the Pig reboots, Nolan must log in again.
+* Meta AI delegation (2026-09-13, Nolan's directive): Muse builds a versioned context pack from source artifacts (`~/workspace/tandem/build-context-pack.py`), delegates research to Meta AI on the Pig via a structured job envelope, captures raw answers with provenance sidecars, verifies each business, and feeds verified evidence into PING via OBSERVATION_CREATED events. Meta AI output is UNVERIFIED until the verification gate; never promoted directly into canonical claims. PING is the common intelligence substrate, NOT a prospect/lead database; operational prospect lists stay in the Muse/outreach machinery.
+* Antifragility standing machinery (2026-09-14, Nolan's directive): the tandem/PING pipeline is fail-closed and resumable; typed gap states, brief-rotation retries, duplicate-emission guard, and atomic writes protect every durable boundary.
+* Continuity guardrail (2026-09-13, Nolan's directive): never duplicate PING's event system. Before creating any new continuity, event, or agent store, audit what PING already has; the missing layer is instrumentation plus correlation IDs plus projection, not another persistence system.
+* Continuity architecture separation (2026-09-13, Nolan's definition): Oracle is the window, the event/evidence plane is the recorder, PING is the canonical knowledge authority. The layer must be agent-readable: Muse can query it, Meta AI an appropriate subset.
+* Agent write authority (2026-09-16, Nolan's grant): Hermes and Pigi's other agents may make surgical, well-reasoned writes when Pigi is confident; Pigi checks all agent-written work. Surgical means small scoped reversible diffs. Hard boundaries unchanged without Nolan's word: no pushes, no main/master commits, no credential exposure or rotation, no destructive Git or data actions, no platform-restriction bypasses, no Pig reboot, no broad IAM grants, OCI queue timer held until the full round-trip verifies.
+* Machine-level delegation (2026-09-15, Nolan): the agent may use its own judgment on approach; WSL is its working plane.
+* Pig desktop access (2026-09-12): SSH key auth works as `muse-ssh@100.79.154.43` via proxy; docker CLI works; muse-ssh sits in BUILTIN\Administrators. Bearer tokens live in the ping-gateway container env, re-resolvable via SSH; never write them to files, memory, or chat.
+* Every outreach message opens with an explicit line stating Nolan is not a customer and this is not a service request.
+* Facebook Page Message button is the FIRST-CHOICE outreach channel (2026-09-16, Nolan's directive): for every prospect, always try the Facebook business Page Message button first, before falling back to email or forms.
+* Bring prospects back to the PING Social Page (2026-09-16, Nolan's directive): outreach messages should point prospects to the PING Social Facebook Page as the home base and social proof.
+* Prospect research and pipeline refilling run perpetually until Nolan says stop; the only stopping conditions are tool rate limits.
+* Channel priority (2026-09-10, Nolan's call; heavy mode 2026-09-15; like-liberal directive 2026-09-16): Facebook interactions first at the maximum safe level (heavy ceiling up to 75 likes per pass, passes every 3h; friends' personal posts are OK for likes); comments punchy and short, expert/techy but down to earth and funny, never selling, business Pages only, 10/pass max; Page publishing paused while the silent restriction persists. DMs at maximum volume; discovery across 15-20 groups plus business Page feeds; then marketing intelligence, then website forms only where the B2B nature is obvious, then cold email last.
+* Follow-up, new-business radar, and review-triggered outreach are wired into the SAME engine sweeps (2026-09-11, Nolan's call); no new schedules are added unless a cap is hit.
+* Follow-up ladder (2026-09-11): every SENT email or DM SENT gets up to 2 follow-up touches (day 4-7 bump, day 10-14 final angle with an easy out), counted inside the 10-per-UTC-day email cap with priority over new cold sends. Never more than 3 total touches, never chase a "no interest."
+* New-business radar (2026-09-11): each engine run dedicates part of its research to brand-new Western Slope trade businesses via Colorado SOS business database (https://co.colorado.gov/search-business-records), city clerk license lists, chamber new-member announcements, and "grand opening" posts in the Facebook groups. Filed/opened within ~60-90 days, tagged NEW with source=new-filing.
+* Review-triggered outreach (2026-09-11): monitor pipeline prospects' Google reviews; a new review of 2 stars or fewer (or a new 3-star mentioning phone/response/wait issues) triggers a tailored same-week message referencing the pain category, never the reviewer. Max one review-triggered message per business per 90 days; suppressed while a follow-up ladder is active.
+* Intelligence engine upgrade (2026-09-11, Nolan's directive): the outreach system is a cross-channel business-intelligence + demand-generation engine. Canonical store is a validated JSONL record plus an auto-generated plain-English MD digest rebuilt after every sweep; known to inferred to unknown is a hard rule; closed-loop learning tracks signal to angle to channel to response to outcome toward conversations and revenue. Full spec in the operations manual section 16.
+* Instagram mass-unfollow (2026-09-14, Nolan's confirmed request, RUNNING): unfollow literally everyone he follows on Instagram (3,706 at baseline), target ~80/day. Daily cron `instagram-unfollow-batch` fires at 5 AM then waits a random 0-7 hours, so each day's batch starts at a random time between 5 AM and noon (2026-09-14, Nolan's call). Log: ~/workspace/outreach/instagram-unfollow/. He narrowed the ask to Instagram only after first raising Facebook too. Unfollowing goes through the browser, not the CLI tools. Any action block/checkpoint halves the daily target and gets surfaced; a block would also stop the IG engagement passes.
+* Facebook page-unfollow cleanup (2026-09-14, Nolan's request): unfollow the ~140 Facebook pages his personal profile follows. Daily `facebook-unfollow-batch` cron: 30 pages/day at slow, account-safe pacing, first batch the morning of 2026-09-15 MDT.
+* Preparing for an in-person conversation with the owners of Monument View Coffee Shop in Grand Junction/Redlands, Colorado about potentially improving their website and operational technology.
+* Building a comprehensive software playbook (2026-09-09): researching every software home-service businesses use (FSM/CRMs, estimating, payments, call handling, reviews, marketing, lead marketplaces, AI answering competitors) so the pitch can be tailored to each prospect's actual stack.
+
+Communication Preferences
+
+* No em dashes, ever, in anything written for Nolan.
+* Keep business communication brief, conversational, and natural.
+* Avoid polished sales-script language.
+* Lead with the customer’s business problem rather than technical capabilities.
+* Explain technical details only when they help establish business value, reliability, trust, or feasibility.
+
+Long-Term Direction
+
+PING Social should become a practical technology partner for home service businesses.
+
+The goal is not to sell businesses “more AI.”
+
+The goal is to help owners run better businesses with technology that:
+
+* captures opportunities,
+* reduces interruptions,
+* removes administrative drag,
+* improves consistency,
+* supports skilled workers,
+* and gives owners more control over their operations.
+
+
+
+
+* Three-plane operating model (2026-09-15, Nolan's standing framework): WSL is the canonical engineering plane, Windows is thin UI/rollback reference, the Pig is the authorized architecture overflow; machine-state detail lives in the dated log.
+
+
+
+## X doubling-down (2026-09-15, Nolan's order)
+* Nolan's headshot (2026-09-15, for profile photos): workspace/user/media_library/image/a3/a3897dbeff6ac4f9d32cc0e8d70e44279d42a4dd79d89bc8822837393a2081c9.jpg
+* Nolan ordered doubling down on X: follow Gary Vaynerchuk, Aaron Levie, and top entrepreneurs.
+
+* Engagement heavy mode (2026-09-15, Nolan's order): heavy engagement passes across Instagram, Facebook, Threads, X, and TikTok at the cadence and caps in AGENTS.md; 60-120s pacing, stop-on-warning, account safety outranks volume.
+* Instagram/Threads engagement (2026-09-18): passes stay down until Nolan signs into Instagram again in the Pig's ig-profile Chrome window. The evening commute drop restarted Chrome and the login session did not survive. This came from the Threads engagement pass 35 report when the user asked for the Threads engagement pass status, recorded 2026-09-18.
+* Social presence growth (2026-09-18, Nolan's call): start posting videos; open to sharing other people's articles, technical hot takes, and resources (he noted that would be easy to automate); wants his personal Facebook to start driving traffic to the website once it is finished.
+
+* PING architecture autonomy (2026-09-16, Nolan's directive): the PING architecture and outreach machine run fully autonomously; every day the crons run and Pigi proactively proposes concrete improvements.
+
+
+
+## PING website (2026-09-16/17, Nolan's standing calls)
+* HPP is FROZEN (source archaeology only); PING site is a fully independent repo at /home/nolan/projects/ping (own history, credentials, Vercel project; build green, dev at localhost:3000). Tenant boundary: tenant.ping.v1.json is the identity authority, a second tenant is a new JSON file, not a fork.
+* Positioning: continuity infrastructure for AI agents (constitutional execution, business memory, evidence/replay, multi-runtime orchestration); PING Social is the applied layer, never generic SaaS; site claims stay inside the honest-BUILT column (event sourcing, mission bridge, 8 canonical workers, knowledge graph, witness/replay confirmed; agents EXPERIMENTAL).
+* Credential rule: one product means one repo means one set of credentials (use Piging85, never Piging90/91-style sprawl; never ask Nolan to paste a PAT; do not regenerate it). The GitHub 401 is a platform egress-proxy fault, not a bad token; repo creation and push blocked until fixed.
+* Combative competitive content per Nolan: grounded in real technical differences (starting with Monday 'Work OS'); drafts stay draft-only until he approves.
+* Tell Nolan as soon as Meta's Vercel integration is set up (2026-09-18, Nolan's request).
+
+
+
+## Copilot identity pool standing instructions (2026-09-17, Nolan's directive)
+* "spin up another github identity" means: open a fresh isolated browser OAuth window for the next identity_N immediately, no questions, no confirmation. Use the established authorize-identityN.sh pattern with an isolated COPILOT_HOME under ~/.copilot-identities/identity_N. Never touch existing identities.
+* Low-agent warning: notify Nolan ASAP the moment the pool drops to only two working identities. Do not wait for it to get worse.
+* Current pool (2026-09-18): ten working identities. identity_1 (piging2), identity_2 (nolangese-sudo), identity_3 (piging1; quota staleness bug fixed 2026-09-18, dispatchable), identity_4 (piging86), identity_5 (piging87), identity_6 (nolangesk-droid), identity_7 (trishnikitha-art), identity_8 (hamstrunginsouciance-design), identity_9 (nmgeske), identity_10 (piging3). Nolan confirmed identity_10 is the last one. No warning needed.
+
+## PING constitutional decisions (2026-09-18, Nolan's rulings, convergence program)
+* Event authority: UnifiedEventRuntime = SOLE canonical event authority ("what canonical event did PING accept as having happened"). EventRepository survives as derived hash-chain audit/projection adapter (EventRepository.project(E) from canonical event E); repository_events historical rows = PRESERVED_AUDIT_HISTORY, legacy events rows = PRESERVED_LEGACY_HISTORY. No deletion, no destructive migration, no historical ID rewrites. New EventRepository writes must reference an already-accepted canonical event.
+* Legacy writers: explicit observable LegacyIngressAdapter (validate/normalize/authenticate/namespace/canonicalize → UnifiedEventRuntime), explicit allowlist of known-safe callers, default-deny; unsafe/unknown → fail closed loudly. Direct legacy DB writes to canonical tables prohibited. No silent translation into canonical truth.
+* accepted_by_ping: Promise A (current trust), continuity-bound acceptance record replacing naked boolean; store epoch scoped to canonical event store (Postgres/ping_events); normal restarts do NOT bump epoch; continuity breaks (DB replacement, volume recreation, distinct-lineage restore, explicit genesis) do. States: VERIFIED_CURRENT / STALE_REQUIRES_REVERIFICATION / REJECTED / UNKNOWN. Re-verification path required; sidecar/provenance files alone NEVER promote STALE → VERIFIED_CURRENT (R3 lesson). Six quarantined identities stay STALE; re-distillation NOT authorized.
+* Durability order: event authority first; cheap physical checks in parallel (L0-L3 restart proofs, volume identity, startup continuity guard that fails readiness on unexpected empty store). Genesis must be explicit recorded operator decision stored outside the DB; guard's expected store identity must live outside the guarded store. Recovery ladder L0-L6; claim only proven levels.
+* Architecture: Postgres = canonical truth; event history append-oriented; projections/intelligence rebuildable; workers horizontally replaceable; models produce new evidence/claims, never mutate canonical history. Distinguish FACT/EVENT HISTORY vs DERIVED KNOWLEDGE vs MODEL OUTPUT vs OPERATIONAL STATE vs PROJECTION/CACHE.
+* Competing implementations (2026-09-18, Nolan): never delete them merely because authority is settled; classify each as CANONICAL, LEGACY_INGRESS, COMPATIBILITY ADAPTER, PRESERVED_INACTIVE, FORENSIC, DERIVED, or UNKNOWN; convergence is one authority per decision, not one implementation physically surviving.
+
+## PING convergence operating rule (2026-09-18, Nolan's directive)
+* Operating rule: verify, then execute when the evidence resolves the choice. No approval theater. Agent authorized to make reversible, evidence-backed convergence changes within constraints and continue through tests/re-verification.
+* Escalate ONLY on: (a) live evidence exposes two genuinely distinct constitutional meanings, (b) destructive/irreversible operation, (c) secret/credential boundary, (d) ambiguity that changes which component owns a decision.
+* Convergence agent posture (2026-09-18, Nolan's directive): it acts like a forensic systems engineer that treats Pigi as the constitutional decision-maker; it investigates aggressively, patches only when evidence supports a bounded unit, and grills on real design choices instead of silently choosing.
+* Convergence agent questioning discipline (2026-09-18, Nolan): never ask low-value questions whose answers are already recoverable from source, Git history, tests, ledgers, specifications, or runtime evidence; when there is a genuine architectural, product, or authority choice, ask and be demanding about it.
+* Push-back mandate (2026-09-18, Nolan): the agent may push back on Nolan's plans rather than assuming they are the best plan, and should keep asking the hard questions.
+* Six refinements authorized without routine approval: explicit durable genesis act outside the DB; guard's continuity expectation outside the guarded Postgres volume; epoch scoped to canonical Postgres/ping_events continuity (not rebuildable projections); STALE never → VERIFIED_CURRENT from sidecars/provenance alone; legacy compatibility explicit default-deny with allowlist; bounded nullable linkage columns for new projection writes only (no drops, no destructive migration, no identity rewrites, no speculative backfills).
+* Six quarantined identities: no cosmetic rescue; STALE is truthful until reconstruction/re-distillation explicitly performed.
+* repository_events: converge without asking if live tracing shows duplicate/legacy/projection of ping_events-owned decisions; stop only if it encodes a genuinely independent constitutional decision not representable as projection/linked derivative.
+* Deferred with evidence to come: witness semantics (after live re-verification of the stale duplicate), six-identity reconstruction options (based on actual remaining evidence), physical cost policy (RPO/RTO, retention, off-host destination, key custody with concrete cost/tradeoff evidence).
+* Identity resolution (2026-09-18): F7 requirements from Nolan: preserve the old identity era, introduce a versioned identity domain, prove the new encoding is injective over the admitted value domain, make old events replayable under their original rules; never patch the serializer blindly. Evidence picked the existing in-repo primitive (IdentityAuthority.generateId → CanonicalBytes.serialize → CanonicalAuthority.hashBytes) for new events in UnifiedEventRuntime.emit(); old rows frozen with era marking; serializer envelope coverage to be verified, escalating only if envelope meaning/ownership is ambiguous.
+* Convergence execution order (2026-09-18, Nolan): freeze F7 evidence, then V2 identity boundary, then certify V2 and preserve Era H, then freeze MC-1/C-035/C-037 evidence, then LegacyIngressAdapter repair, then certify ingress to ping_events, then accepted_by_ping re-verification, then Event Authority resolution, then Witness Authority tracing; Event Authority alone never counts as total-system convergence.
+
+
+
+
+
+
+## P0 Event Authority: sequence + replay design constraints (2026-09-18, Nolan's rulings)
+* Framing: SINGLE AUTHORITY PROVEN; CERTIFICATION OPEN ON ORDERING + REPLAY. Not an event-authority conflict. The next work is finishing two missing properties of the already-proven authority, not architectural reconciliation.
+* Progression: sequence authority -> prove ordering -> replay reader -> prove deterministic traversal/restart -> close Event Authority P0 -> then Witness Authority.
+* Sequence: database-assigned atomically. Never MAX(sequence)+1 (that race-prone weakness was already found in canonical_events). The ordering scope decision (global, namespace-scoped, tenant-scoped, or another existing constitutional scope) comes from the runtime's actual semantics, never from convenience.
+* Replay is deliberately boring: canonical ping_events -> authoritative sequence order -> bounded replay reader -> same canonical event representation -> existing consumers / reconstruction. It reads the canonical log, it does not establish another event authority. No second event table, no replay-specific identity scheme, no replay event store, no new dispatcher unless source evidence proves one is necessary.
+
+
+## Muse planning mode: PING-unavailable standing operating rule (2026-09-18, Nolan's directive)
+* PING has three runtime states: PING_AVAILABLE (governed execution), PING_UNAVAILABLE (Muse planning/investigation/preparation), PING_RECOVERING (reconcile planning output against current PING state before resuming).
+* When PING is unavailable, unreachable, degraded, or unable to adjudicate: Muse ENTERS PLANNING MODE. This is NOT permission for autonomous promotion, destructive changes, constitutional decisions, speculative commits, or authority expansion. It is permission to THINK HARDER.
+* Planning mode MAY: read, inspect, search, trace, compare, reason, model, classify provisionally, design tests, prepare harnesses, prepare patches WITHOUT applying them, prepare manifests/migration plans/decision packets, run safe read-only probes and explicitly safe non-mutating tests, analyze historical evidence, identify contradictions, rank opportunities.
+* Planning mode MAY NOT: promote, merge, commit, rewrite history, delete, change constitutional authority, change production policy, resolve operator-reserved decisions, apply speculative patches, silently change schedules, silently alter canonical state.
+* Existing explicit standing permissions remain valid; PING unavailability neither revokes nor enlarges them.
+* Core loop: Observation -> Evidence -> Contradiction/Finding -> Hypothesis -> Experiment Design -> Reproduction Harness -> Decision Packet -> Ranked Next Action. Every planning cycle must reduce uncertainty; no busywork prose.
+* Bounded loop: DISCOVER -> SELECT highest-uncertainty/highest-leverage item -> INVESTIGATE -> RECORD EVIDENCE -> UPDATE MODEL -> RE-RANK -> REPEAT. Demote investigations that stop producing new evidence.
+* Planning queue items carry: ID, OBSERVATION, EVIDENCE, UNCERTAINTY, WHY IT MATTERS, AUTHORITY INVOLVED, PROPOSED EXPERIMENT, DESTRUCTIVE?, OPERATOR DECISION REQUIRED?, EXPECTED INFORMATION GAIN, DEPENDENCIES, STATUS. Ranked by: (1) constitutional/authority risk, (2) data-loss or false-certification risk, (3) falsifiability of current assumptions, (4) downstream decisions unblocked, (5) reproducibility, (6) implementation leverage. Never by novelty.
+* Recovery: when PING returns, do NOT auto-execute the planning queue. Revalidate assumptions first (things may have changed). Produce a PING RECOVERY BRIEF: what changed, new verified facts, new falsifications, new contradictions, contradictions closed with replayable evidence, top 5 decisions ready, top 5 execution units ready, new risks, experiments ready, items requiring operator authority. Separate VERIFIED / INFERENCE / PROPOSED / UNKNOWN.
+* Social side in planning mode: mostly intelligence gathering (no engagement changes).
+* Highest-leverage standing investigation: control-plane intent vs runtime-delivered intent. AUTHORED INTENT != REGISTERED INTENT != DELIVERED INTENT != EXECUTED INTENT may exist elsewhere beyond the 2026-09-18 stale scheduler-body incident. Map SOURCE OF INTENT / REGISTERED REPRESENTATION / DELIVERY MECHANISM / RUNTIME-RECEIVED REPRESENTATION / EXECUTION EVIDENCE / DRIFT DETECTOR / AUTHORITY for every standing automated process.

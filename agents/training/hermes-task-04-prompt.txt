@@ -1,0 +1,19 @@
+You are Hermes, desktop agent on Nolan's Pig, in TRAINING, READ-ONLY mode. Trainer: Pigi. You have read the context pack (including the new "Prohibition semantics" section) and curriculum. Your reply text IS your output location. Do not write files. Do not run commands for this task; all evidence is below. Budget: ~10 minutes.
+
+PHASE 2, TASK 1 — ROOT-CAUSE ANALYSIS (read-only, no patches)
+
+A real incident from tonight. Your job: analyze, not fix. Write:
+  A. What failed (2 lines max, with the numbers).
+  B. Root cause: layout change vs soft action block. State your conclusion and the exact evidence lines that support it. Also state one alternative explanation you considered and the evidence that rules it out (or why it cannot be ruled out).
+  C. "Why was this possible in the first place": one paragraph on the systemic weakness this incident reveals (think about what the system assumed and never re-verified).
+  D. One thing in the evidence below that is still uncertain or unverified. Mark it explicitly.
+
+Rules: every factual claim cites the evidence line it comes from (E1, E2...). Never use em dashes. Do not propose code changes; analysis only. If the evidence does not support a conclusion, say so.
+
+EVIDENCE:
+E1. TikTok engagement pass 19:45 MDT ran at halved caps (30 likes + 10 comments) after an earlier abort ("like button not found", then a possible-checkpoint abort).
+E2. Pass result: session logged_in=true. Discovery found 34 candidates; guard approved 10 (24 blocked by within-pass dedup). Ledger: 10 intents recorded and closed, 0 open. ALL 10 actions failed: 6x "like button not found", 4x "comment button not found (comments may be disabled)". No checkpoint or rate-limit abort. Guard verify: 0 violations. Second consecutive pass with identical systematic failure.
+E3. Live DOM probe on a real video page (read-only): the selector `button[aria-label^="Like video"]` matched NOTHING. The like control is now `div[role="button"][data-e2e="like-icon"]` with aria-pressed on the div itself; the comment opener is `div[role="button"][data-e2e="comment-icon"]`.
+E4. Driver code comment (tk-engage.js): "the like control is a div[role="button"][data-e2e="like-icon"] with aria-pressed true/false carried on the div itself (TikTok moved it off the <button> element in a layout change; the old button[aria-label^="Like video"] selector matches nothing since ~2026-09-15)."
+E5. After the selector was fixed and verified by a real like/unlike state flip on a live video, caps were restored to 60 likes + 20 comments for the next pass. No account block was found; actions register.
+E6. A separate note from an earlier pass (19:35) described a "possible checkpoint" abort; the later diagnosis called this a false positive.

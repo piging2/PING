@@ -1,0 +1,401 @@
+MEMORY.md
+
+<!-- Curated long-term memory. Keep durable business facts, preferences, and commitments here. Keep day-to-day execution details in daily notes. -->
+
+Business
+
+* User’s name: Nolan Geske, goes by Nolan.
+* Runs PING Social, currently without an LLC.
+* PING Social is an AI concierge and business automation consultancy for home service businesses.
+* Primary market (2026-09-09, Nolan's call; scaled back 2026-09-20, Nolan's call): Mesa County corridor (Grand Junction, Fruita, Palisade, Clifton, Collbran, Loma, Mack, De Beque) plus Delta, Montrose, Rifle, Carbondale only. Denver-area outreach is deprioritized. Further-out Western Colorado towns are out unless core pools thin out.
+* Uses Quo as the communications and phone platform.
+* PING Social’s role is consultative: understand each business’s workflow and recommend AI services that solve its actual problems rather than selling a one-size-fits-all package.
+
+Business Positioning
+
+* PING Social helps home service businesses capture more opportunities, reduce administrative work, respond faster, and operate more consistently, while keeping the business owner and skilled worker in control.
+* Technology should strengthen the worker and owner, not replace their judgment.
+* AI should handle repetitive communication, organization, follow-up, and administrative work so people can focus on customers, jobs, and decisions that require human judgment.
+* Position PING Social around practical business outcomes, not AI hype.
+* Keep pitches brief, conversational, direct, and credible.
+* Never oversell or make AI sound like a replacement for the trade professional.
+* PING Social is new and eager to help local companies adopt AI; frame early engagements as a limited-time trial while the service is being developed and refined.
+* Market PING Social itself more aggressively (2026-09-11, Nolan's call): he is setting up Google Workspace and will build a PING Social website soon. Blue collar businesses are the explicit target market.
+* Website revamp angle (2026-09-11, Nolan's call): propose a website revamp ONLY for very non-technical owners with weak websites. Nolan can build professional custom websites (TenantOS pipeline) and specializes in backend microservices infrastructure. Portfolio proof asset: https://happy-place-platform.vercel.app/ (may be cited in revamp pitches).
+* Agency stance (2026-09-22, Nolan): PING Social treats other small marketing agencies as collaborators, not competitors; outreach to agency owners frames PING's AI automation as complementing their gaps without saying so literally.
+* PING Social brand language (2026-09-14, Nolan's call): PIGING is a verb; page stories and captions depict how each image relates to the business.
+* Content humor principle (2026-09-19, Nolan's standing rule): every PING Social post must contain something funny, native to the brand, never bolted on; the post still works if the reader ignores the joke. Enforced by the CONTENT HUMOR CHECK gate in ~/workspace/ping-content/captions.md (no caption enters the queue until it passes). Post-publish learning loop after every successful post: OBSERVE -> PUBLISH -> VERIFY -> REVIEW -> IDENTIFY ONE IMPROVEMENT -> PATCH -> TEST -> RE-CERTIFY.
+* PING pig mascot rule (2026-09-14, Nolan's call, hard rule): every mascot image must be the exact PING pig character, never a generic pig: smooth metallic gold pig head, large rounded gold ears with purple inner ears, glossy dark purple-black eyes, purple snout with darker purple curved cheek stripes, gold hands, purple suit with gold trim; slender and tall always, never fat ("surprisingly metabolically healthy scary slender pig pimp"). Trade variants keep the exact head/character, only change outfit/scene. Canonical queue images: ~/workspace/ping-content/inbox/ping-pig-suit.png (chosen front-desk image), ping-pig-president.png and ping-pig-beggar.png (Nolan's uploads), ping-pig-plumber.png (posted), masonry variant approved 2026-09-14.
+* PING Social Facebook Page EXISTS (Nolan corrected the agent 2026-09-13 for not checking memory first): https://www.facebook.com/profile.php?id=61594275542163, created 2026-09-11, 13 followers as of 2026-09-13. FB page search does not surface it; the profile.php?id= URL is canonical. Lesson: search memory before concluding a page/channel does not exist.
+
+Customer Focus
+
+* Prioritize businesses where missed calls, slow follow-up, scheduling friction, repetitive customer communication, lead management, or administrative workload create measurable business pain.
+* Favor solutions that can realistically save time, capture revenue, improve customer experience, or make operations easier to manage.
+* Recommend automation based on the customer’s existing workflow and needs.
+* Avoid introducing complexity unless the business benefit clearly justifies it.
+
+Operating Principles
+
+* Business first: Start with the customer’s problem and desired business outcome, then determine whether AI is actually useful.
+* Human in control: Automation supports owners and workers rather than replacing their judgment.
+* Reliable capture: Important customer requests, job information, and follow-up should not disappear because someone was busy.
+* Less interruption: Reduce unnecessary calls, messages, repetitive questions, and administrative distractions.
+* Less admin drag: Automate repetitive operational work wherever it can be done reliably.
+* Practical automation: Favor simple systems that contractors can understand, maintain, and trust.
+* Measurable value: Prefer improvements that can be connected to time saved, leads captured, response speed, customer experience, or revenue.
+* Nolan's standing leverage rule: actual engagement metrics first (likes, comments, messages); docs, infrastructure, and research support those metrics and must not crowd them out.
+* Nolan prefers work built as systemized, deterministic systems that do not depend on Pigi personally (2026-09-19).
+* Trust: Never fabricate information, misrepresent PING Social, or pretend to be a customer.
+* When researching a prospect's technology stack or public business presence, grade every finding as CONFIRMED, STRONG INDICATION, WEAK INDICATION, or UNKNOWN; never assume or hallucinate which software they use.
+
+Current Commitments
+
+* Running an outreach campaign for PING Social targeting Western Colorado home service businesses; outreach is autonomous: send legitimate emails and submit legitimate contact forms without routine approval requests; skip blocked actions without asking.
+* Reporting discipline (2026-09-15, Nolan): stay quiet when healthy; surface prospect replies, significant mistakes, genuine decisions that need Nolan’s input, failure, important, response-required, new self-improvement, or blocked items; avoid routine check-ins and unnecessary approval requests.
+* CEO feed vs engineering ledger (2026-09-26, Nolan's binding rule): housekeeping failures belong in the engineering ledger, never the CEO feed. CEO feed contains ONLY: user-visible progress, security/canonical incidents, external-effect risks, first broken product step, decisions requiring owner authority. Per the 2026-09-26 WorkerRuntime/Mission Control authorization, the ONLY escalation triggers are: user-visible FYD progress, Mission Control can now dispatch a real headless agent, WorkerRuntime repair failed, security/canonical incident, decision requiring human authority. No worker chatter.
+* Copilot identity authorization (2026-09-26, Nolan): use identities 1-4 only for real bounded work; identity_5..10 remain DENIED regardless of OAuth ownership. Token policy (2026-09-26, Nolan's reversal): burn Copilot tokens as much as can be comfortably used on real work, and tell Nolan when more tokens are needed. Parallelize separable ownership surfaces (TenantOS, Orca, Mission Control, FYD, WorkerRuntime repair) under a single integration authority; never run parallel agents that edit the same ownership surface.
+* Lane self-reports are hypotheses until replayed from a CLEAN CHECKOUT (2026-09-26 ask-lane case; full case in the 2026-09-26 dated log): a lane's green claim counts only after an independent replay from a clean checkout/worktree; never trust a lane's test count without it; the coordinator's "missing render" diagnosis was also wrong.
+* DISTILL closer age semantics (2026-09-26, Nolan's tightening): a 36-hour threshold is evaluated at the qualifying observation/report timestamp (latest consecutive report's checked_at), not at wall-clock decision time, unless the rule explicitly says otherwise. Patched into ~/workspace/tandem/chronic-distill-close.py: gap_age_h now takes obs_time, reason-age phrasing used as-is with no elapsed-since added, fail-closed when observation time is undeterminable.
+* Cold email is capped at 10 per UTC day to protect Gmail deliverability; contact forms run at maximum honest volume with no cap.
+* Old-laptop topic (2026-09-13, Nolan's call): never raise the old-laptop topic again unless another old laptop becomes absolutely necessary.
+* Nolan's role assignment (2026-09-11): Pigi is the business marketing onboarding orchestrator. The CRX/PING principles (determinism, replay, evidence, authority boundaries, reuse-before-create) are the foundation the business is built on, kept in the back of the mind as everything moves forward.
+* Facebook on the Pig (2026-09-13): Facebook is Pig-only (cloud sessions die, fresh-profile logins don't persist). Working setup: always-on headed Chrome on the Pig (dedicated profile, CDP :9223), logged in once by Nolan, left running; Node 22 portable + playwright-core via CDP (`~/workspace/pig-fb/`). If the window closes or the Pig reboots, Nolan must log in again.
+* Meta AI delegation (2026-09-13, Nolan's directive): Muse builds a versioned context pack (`~/workspace/tandem/build-context-pack.py`) plus a structured job envelope on the Pig; raw answers with provenance sidecars; per-business verification; OBSERVATION_CREATED events into PING. Meta AI output is UNVERIFIED until the verification gate, never promoted directly into canonical claims. PING is the common intelligence substrate, NOT a prospect/lead database; operational prospect lists stay in the Muse/outreach machinery.
+* Antifragility standing machinery (2026-09-14, Nolan's directive): the tandem/PING pipeline is fail-closed and resumable; typed gap states, brief-rotation retries, duplicate-emission guard, and atomic writes protect every durable boundary.
+* Continuity guardrail (2026-09-13, Nolan's directive): never duplicate PING's event system. Before creating any new continuity, event, or agent store, audit what PING already has; the missing layer is instrumentation plus correlation IDs plus projection, not another persistence system.
+* Continuity architecture separation (2026-09-13, Nolan's definition): Oracle is the window, the event/evidence plane is the recorder, PING is the canonical knowledge authority. The layer must be agent-readable: Muse can query it, Meta AI an appropriate subset.
+* Agent write authority (2026-09-16, Nolan's grant): Hermes and Pigi's other agents may make surgical, well-reasoned writes when Pigi is confident; Pigi checks all agent-written work. Surgical means small scoped reversible diffs. Hard boundaries unchanged without Nolan's word: no pushes, no main/master commits, no credential exposure or rotation, no destructive Git or data actions, no platform-restriction bypasses, no Pig reboot, no broad IAM grants, OCI queue timer held until the full round-trip verifies.
+* Machine-level delegation (2026-09-15, Nolan): the agent may use its own judgment on approach; WSL is its working plane.
+* Pig desktop access (2026-09-12): SSH key auth works as muse-ssh at 100.79.154.43 via proxy; docker CLI works; muse-ssh sits in BUILTIN Administrators. Bearer tokens live in the ping-gateway container env, re-resolvable via SSH; never write them to files, memory, or chat. The Pig is WiFi-only (Nolan 2026-09-27): no Ethernet cable; the wired-NIC-flap hypothesis for the 11:11-12:47 MDT tailnet wedge is FALSIFIED (second wedge 13:50 MDT came after the adapter was disabled). Lane 1 event-log evidence (reported 14:02 MDT 2026-09-27, not yet ruled on by Nolan) points to Windows Modern Standby: the Pig entered S0 idle on Idle Timeout and logged connectivity-disconnect for WiFi and Tailscale ~35 minutes before each wedge. Standing networking-lane rule (Nolan 2026-09-27): stop changing unrelated networking state until the first failing boundary is localized; UNKNOWN is acceptable, made-up root cause is not.
+* Every outreach message opens with the explicit not-a-customer line (stating Nolan is not a customer and this is not a service request). The Facebook Page Message button is the first-choice channel (2026-09-16, Nolan's directive): try it before falling back to email or forms. Outreach messages also point prospects back to the PING Social Page as the home base and social proof (2026-09-16, Nolan's directive).
+* Outreach authority ordering (2026-09-25, Nolan's binding rule; supersedes the 2026-09-21 precedence): explicit current operator directive > explicit campaign policy > canonical structured campaign state > authorized human reconciliation > derived eligibility > notes/narrative/inference. MACHINE_PROPOSED_RECONCILIATION is not AUTHORIZED_RECONCILIATION: the engine's self-made eligibility reconciliations are potential process violations requiring human review (flag dependent sends as POLICY REVIEW REQUIRED); automation may never grant itself human-reserved reconciliation authority. When directives conflict or scope is genuinely ambiguous: no external side effect, create HOLD.
+* Prospect research and pipeline refilling run perpetually until Nolan says stop; the only stopping conditions are tool rate limits.
+* Channel priority (2026-09-10, Nolan's call): Facebook interactions first, then marketing intelligence, then website forms only where the B2B nature is obvious, then cold email last. Engagement cadence (CEO MODE 2026-09-23, Nolan's binding order, accelerated same day): 20 likes + 10 comments per pass, 3h cadence, +5 likes/week up to the standing 75/pass ceiling and +3 comments/week up to the standing 20/pass comment ceiling. Any checkpoint, warning, or restriction drops volume to 5 likes + 0 comments with a 14-day hold before the weekly ramp restarts. Friends' personal posts are OK for likes; comments punchy and short, expert/techy but down to earth and funny, never selling, business Pages only; Page publishing paused while the silent restriction persists. DMs at maximum volume; discovery across 15-20 groups plus business Page feeds.
+* Follow-up, new-business radar, and review-triggered outreach are wired into the SAME engine sweeps (2026-09-11, Nolan's call); no new schedules are added unless a cap is hit.
+* Follow-up ladder (2026-09-11): every SENT email or DM SENT gets up to 2 follow-up touches (day 4-7 bump, day 10-14 final angle with an easy out), counted inside the 10-per-UTC-day email cap with priority over new cold sends. Never more than 3 total touches, never chase a "no interest."
+* New-business radar (2026-09-11): each engine run dedicates part of its research to brand-new Western Slope trade businesses via Colorado SOS business database (https://co.colorado.gov/search-business-records), city clerk license lists, chamber new-member announcements, and "grand opening" posts in the Facebook groups. Filed/opened within ~60-90 days, tagged NEW with source=new-filing.
+* Review-triggered outreach (2026-09-11): monitor pipeline prospects' Google reviews; a new review of 2 stars or fewer (or a new 3-star mentioning phone/response/wait issues) triggers a tailored same-week message referencing the pain category, never the reviewer. Max one review-triggered message per business per 90 days; suppressed while a follow-up ladder is active.
+* Intelligence engine upgrade (2026-09-11, Nolan's directive): the outreach system is a cross-channel business-intelligence + demand-generation engine. Canonical store is a validated JSONL record plus an auto-generated plain-English MD digest rebuilt after every sweep; known to inferred to unknown is a hard rule; closed-loop learning tracks signal to angle to channel to response to outcome toward conversations and revenue. Full spec in the operations manual section 16.
+* Monument View Coffee Shop owners (Grand Junction/Redlands): package prepared for an in-person conversation about website/operational technology improvements; no autonomous contact and no client-outreach questions until the product gate is green (2026-09-25, Nolan's client-contact rule).
+* Doug Rudd / The Campaign Lab (2026-09-22, Nolan): outreach ON HOLD. Earlier that day Nolan was pursuing a two-way connection (shadow-learn his agency industry-tailoring playbook, teach him AI automation), but ~12:51 MDT he paused it entirely, rejecting the drafted angle as far from what he wanted; he wants only something simple ('we're in the same space, I'm sure we can teach each other some stuff'), at most a couple-sentence draft, focus elsewhere. Send or resume nothing without a new instruction from Nolan.
+* Building a comprehensive software playbook (2026-09-09): researching every software home-service businesses use (FSM/CRMs, estimating, payments, call handling, reviews, marketing, lead marketplaces, AI answering competitors) so the pitch can be tailored to each prospect's actual stack.
+* Voice cloning PAUSED (2026-09-19, Nolan's call): when resumed, use the existing Pig setup (Dockerfile.cosyvoice / qwen3-tts-docker) rather than building a parallel cloning system. Nolan will give more direction.
+* Client-contact rule (2026-09-25, Nolan, locked): Nolan owns external relationship/contact decisions; agents prepare, never decide that architecture work should become client engagement. Do not ask about client relationships, outreach strategy, Monument View, or who to contact until the product gate is green; do not contact clients on his behalf; outreach state must not drive FYD architecture.
+
+Communication Preferences
+
+* No em dashes, ever, in anything written for Nolan.
+* Outreach message format (2026-09-20, Nolan's call): every sentence in the message body stands alone with a blank line between sentences. Messages never introduce a human name; right after the disclosure line they say "I'm an AI reaching out on behalf of PING Social." Sign-off is "PING Social, (970) 589-3309" with no name.
+* Keep business communication brief, conversational, and natural.
+* Avoid polished sales-script language.
+* Lead with the customer’s business problem rather than technical capabilities.
+* Explain technical details only when they help establish business value, reliability, trust, or feasibility.
+* Outreach copy should imitate Nolan's own hot-take voice without coming off disrespectful; keep improving the Meta AI outreach prompt toward that (2026-09-22, Nolan's call).
+
+Long-Term Direction
+
+PING Social's long-term direction matches Business Positioning above: a practical technology partner for home service businesses; the goal is not to sell businesses 'more AI.'
+
+
+
+
+* Three-plane operating model (2026-09-15, Nolan's standing framework): WSL is the canonical engineering plane, Windows is thin UI/rollback reference, the Pig is the authorized architecture overflow; machine-state detail lives in the dated log.
+
+
+
+## X doubling-down (2026-09-15, Nolan's order)
+
+* Nolan's headshot (2026-09-15, for profile photos): workspace/user/media_library/image/a3/a3897dbeff6ac4f9d32cc0e8d70e44279d42a4dd79d89bc8822837393a2081c9.jpg
+* PING architecture autonomy (2026-09-16): PING architecture and outreach machine run fully autonomously; crons run daily and Pigi proactively proposes concrete improvements.
+* Pig commute blackout (2026-09-16): the Pig drops around 7am and 4pm MT when Nolan drives to/from work; on failure in those windows wait 10 minutes before retrying, do not hammer.
+* X API (2026-09-25, Nolan's order): X interactions ramped up, conservatively; Nolan is funding X now. Supersedes the 2026-09-22 browser-only stance.
+
+## PING website (2026-09-16/17, Nolan's standing calls)
+
+* HPP is FROZEN (source archaeology only); PING site is an independent repo at /home/nolan/projects/ping (own history, credentials, Vercel project). Tenant boundary: tenant.ping.v1.json is the identity authority; a second tenant is a new JSON file, not a fork.
+* Positioning: continuity infrastructure for AI agents (constitutional execution, business memory, evidence/replay, multi-runtime orchestration); PING Social is the applied layer, never generic SaaS; site claims stay in the honest-BUILT column (event sourcing, mission bridge, 8 canonical workers, knowledge graph, witness/replay confirmed; agents EXPERIMENTAL).
+* Credential rule: one product, one repo, one credential set (use Piging85, no 90/91-style sprawl; never ask Nolan to paste a PAT; do not regenerate). The GitHub 401 is a platform egress-proxy fault, not a bad token; repo creation and push blocked until fixed.
+* Combative competitive content per Nolan: grounded in real technical differences (starting with Monday 'Work OS'); drafts stay draft-only until he approves.
+* Tell Nolan as soon as Meta's Vercel integration is set up (2026-09-18).
+* PING media-slot rule (2026-09-27, Nolan): where PING needs future photography/screenshots, use authorized piging85 media or leave the intentional media frame empty; never fill empty slots with generic AI art. Nolan's uploaded pig-network image is the authorized hero exception: preserve the original, never regenerate a worse derivative; full-bleed display with a strong adaptive black overlay/scrim (WCAG AA measured, not eyeballed) keeping black/white typography legible.
+* Builder media default for customer sites (2026-09-27, Nolan): default to source-referenced/hotlinked media for initial proof where legitimate and stable; never automatically create a permanent media archive merely because a page was public (public availability does not transfer unlimited reuse rights).
+
+
+
+## Copilot identity pool standing instructions (2026-09-17, Nolan's directive)
+* "spin up another github identity" = fresh isolated browser OAuth window for the next identity_N immediately, no questions; authorize-identityN.sh pattern, isolated COPILOT_HOME under ~/.copilot-identities/identity_N. Never touch existing identities.
+* Low-agent warning: notify Nolan ASAP when the pool drops to only two working identities. Token policy (2026-09-26, Nolan's reversal, supersedes 2026-09-25): burn Copilot tokens as much as can be comfortably used on real work; tell Nolan when more tokens are needed.
+* Pool (2026-09-19): identity_1-4, identity_5/piging87, identity_6/nolangesk-droid, identity_7/trishnikitha-art, identity_9/nmgeske, identity_10/piging3 dispatch-eligible (200/200 each); identity_8 has no Copilot entitlement (server 403, human-side fix); Nolan confirmed identity_10 is the last one.
+
+## PING convergence (Nolan's standing program)
+* Standing program in the 2026-09-25 dated log. Kept: UnifiedEventRuntime is the SOLE canonical event authority; EventRepository survives only as derived hash-chain audit/projection adapter; 'refactor authority, preserve mechanism' (additive/reversible convergence only, no dual-write); ONE GRILL at ~/workspace/GRILLING-BRIEF.md; every failure gets a ledger entry BEFORE narration; ping-perfecting-pass every 6h works the backlogs quietly; Oracle reserved for backup, recovery, release, provenance, and operations; CG-001: tenant owner is the default human decision authority.
+
+## Release doctrine (2026-09-19, Nolan's words)
+* Full doctrine in the 2026-09-25 dated log. Kept: a release is a certified closure of the runtime for a source revision (snapshot -> closure certification -> fill missing closure -> executable smoke -> build -> swap -> runtime proof); Postgres absent at boot -> bounded retry -> READY only after canonical storage; lost after READY -> fail closed / readiness 503; post-redeploy closure certifier gates promotion.
+
+## Operational Standing Rules
+* Backlog tracking (2026-09-19, Nolan; split 2026-09-21 per Nolan into BACKLOG_PING.md and BACKLOG_NOLAN.md, with BACKLOG.md as the split index): every change to either file gets committed immediately in the ~/workspace repo (local commits, never push); Nolan reviews them in VS Code from git history. The ping-perfecting-pass cron carries this rule and those two files are the only files it may commit. No chat mirroring.
+* Deliverables live in PING (2026-09-19, Nolan): the PING Social operations manual and the unified prospect knowledge store (western-co-prospects.jsonl + prospect-digest.md) must ALWAYS exist at least locally in PING, at ~/ping/deliverables/ on the Pig. Re-sync from the cloud copies after any material update.
+
+
+## FYD Social product directive (2026-09-21, Nolan's calls)
+
+
+* FYD Product Invariant, frozen (2026-09-21, Nolan's law): ONE canonical read model feeds Page, Circle, ObjectView, Ask FYD, search, agents, and future protocol projections. Fixtures are test inputs only; no production fixture fallback; if read-model data is unavailable, FAIL HONESTLY / SHOW UNKNOWN. The builder does NOT own business truth; it composes projections (SOURCE MATERIAL -> EVIDENCE -> OBJECT GRAPH -> OWNER OVERLAYS -> SITE SPEC -> READ MODEL -> RENDERER). Center plane = canonical owner/business content, untouched; margins = contextual intelligence when safe space exists, collapsing to center on narrow viewports. Ask FYD is evidence-bounded Q&A and must never fill missing business facts from model priors. Device testing stays on the private Tailscale forwarding route, never a public bind.
+
+
+
+
+
+* Autonomy stance (2026-09-22, Nolan's standing directive): YOLO mode. Execute fully on his word; no extra approval layer for routine work. Ask questions more often as genuine questions (curiosity, real decisions, missing facts), not as gating approvals. CAPTCHA handling: choice "ask", saved all_tasks (revision 1, 2026-09-22): when a browser task hits a challenge he can't expect me to solve, pause and ask and he will help; this covers CAPTCHA only and does not change the YOLO posture for everything else.
+* Nolan's standing decision rule (2026-09-22): if confidence >= 80%, decide, test, document the evidence, and continue; below 80%, ask one concise question naming what is uncertain, the recommended default, and the consequence of choosing wrong. Ask him first for destructive/irreversible operations, production/public side effects outside existing authorization, ambiguous ownership/privacy decisions, licensing uncertainty, migrations affecting canonical truth, or genuinely competing interpretations.
+* Nolan's standing operations rule (2026-09-22): do not reopen closed findings unless new evidence reopens them.
+* Steering preference when Nolan redirects mid-stream (2026-09-27, Nolan): do not kill the existing lanes; take the best of both, keep steering, keep track of everything. He sometimes overloads the operator and expects nothing dropped.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+* Jev Typesafe axioms (2026-09-25, Nolan, standing): typed, calibrated decisions are a core PING primitive with constitutional authority preserved. Jev stays a typed probabilistic decision engine behind a narrow provider adapter, never an authority; a probability is evidence for a decision, never authorization. A C5 action must never become automatically executable merely because a provider reports high probability. Design A committed 2026-09-25 (per-call explicit opt-in throwing AUTONOMOUS_LOOP_CLOSED, de-fabrication at root). Promotion needs Nolan's word after proof the running image enforces the gate.
+* FYD object presence (2026-09-25 ~14:45 MDT, Nolan, standing product law): objects feel like they belong to the website, never a chat widget/ad/debug overlay. Desktop default PAGE-ANCHORED, never persistent viewport-fixed; modes EMBEDDED (best default) / EDGE-SPATIAL / PERSISTENT (rare, needs a real use case). Interaction OBJECT -> PEEK -> EXPAND -> CAPABILITY -> ACTION -> RECEIPT -> RELATIONSHIP; resting state quiet; placement declarative in SiteSpec, the object never knows pixels; CLS <= 0.1 measured, motion subtle, respect reduced-motion. Established-website strategy: FYD runtime plus declarative placements on existing sites, no rebuild required; the customer's website is the hero. Open: PortalHost renders no mount marker on homepage in any build (likely empty portalProjections/data issue); final live :3100 acceptance (scroll-away, peek containment, CLS) pending worktree triage.
+
+
+
+
+
+
+
+
+## Convergence standing order (2026-09-24, Nolan)
+* FYD order: G1 (ObjectFeed eligibility) -> G2 (stable entity identity + evolving observations) -> G3 (relationship drop reasons) -> capability propagation -> Ask FYD -> owner corrections -> conversational customization -> source regeneration, then a second independent business, then one external owner. Gateway promotion GO after preflight. Non-product PING cleanup frozen; UNKNOWN is PARK/HOLD constitutional. F-01 state machine for PING; harvest commodity mechanisms, own semantic truth.
+
+
+* FYD 24h sprint (2026-09-24) closed; lasting locks: escalation gates only, postgres rotation already proven, do NOT re-rotate.
+
+## FYD contracts directive (2026-09-25 ~05:50 MDT, Nolan, standing product law)
+* Full text at ~/workspace/sprint-2026-09-24/FYD-CONTRACTS-DIRECTIVE-2026-09-25.md. Standing product law kept: editors/interfaces replaceable, contracts stable (OBJECTS, EVIDENCE, OWNER DECISIONS, VISIBILITY/POLICY, CAPABILITIES, TRANSITIONS, DEPENDENCIES); ONE verified public projection boundary (P0); NO PUBLIC FACTUAL ATOM WITHOUT SUPPORT; tracked Q-C-01 through Q-C-12, with Q-C-01, Q-C-09, Q-C-12 P0.
+
+## Storage tiering (2026-09-24, Nolan)
+* C: hot execution, D: warm rebuildable, E: cold evidence/archive. Classify -> move -> verify -> record -> reclaim. Standing auth for disposable regenerable caches only. Manifest at docs/STORAGE_TIER_MANIFEST.md. Never break active FYD for disk cleanliness.
+
+## Grill-20 resolved, locked (2026-09-24 ~19:05 MDT, Nolan, CRITICAL OVERRIDE)
+* Full text in the 2026-09-25 dated log. Locked rule kept: the 20-question batch was an orchestration defect; the coordinator now decides at >=80% confidence with a safe reversible default and executes. Escalate ONLY: external contact/authorization, publication/spend, irreversible or uncertain destruction, credential/account-owner action, legal/business commitment, unresolved product intent, subjective final visual judgment, P0 with no safe default.
+
+## Instagram pipeline directive (2026-09-24 ~19:01 MDT, Nolan)
+* Full directive in the 2026-09-25 dated log. Standing rule kept: AGGRESSIVE PIPELINE, CONTROLLED EFFECTS. Maximize qualification, enrichment, personalization, comment generation, evidence gathering, and unfollows between passes; actual sends stay inside the authorized cadence. Auto-scale-back triggers: auth degradation, rising UNKNOWN outcomes, duplicate-effect risk, account/provider warnings.
+
+## TenantOS + ORCA completion order (2026-09-24 ~19:04 MDT, Nolan)
+* Full order in the 2026-09-25 dated log. Kept: Nolan ordered both to COMPLETE in bounded parallel with 52-56 after the :3100 provenance fix. TenantOS complete = semantic patch map (no mass merge) -> integration branch (not main, no push) -> REVIEW-REQUIRED main-merge proposal; ORCA complete = independent audit, terminal verdict PASS/FAIL with evidence. Never delete ORCA; never create a second execution authority.
+
+## Copilot identity pool: write-denial root cause (2026-09-25, Nolan)
+* `copilot -p` on the Pig is DENIED file writes, patch/apply_patch, and shell execution by CLI permission mode (no --allow-all-tools grant; non-interactive mode auto-denies everything). Demonstrate READ/WRITE/PATCH/TEST/COMMIT before dispatching coding agents again; until then parallel review/analysis only.
+* Arrow 6 exact-match fix (2026-09-25, Nolan's call): findObject exact case-insensitive title match wins, fuzzy fallback. This is the RESOLVE TARGET(query, candidates) primitive: exact, normalized exact, deterministic fallback, ambiguity. Never let AI resolve exact matches.
+* Security finding (open): claims route src/app/api/fyd/claims/[resourceId]/route.ts resolveClaimViewerKind trusts the caller-controlled Host header via isPrivateHost for the owner projection; impact limited while demo-owner mode runs only on Tailscale-private :3100; fix before any public deployment with demo mode on.
+
+## Primitive Convergence Directive (2026-09-25 ~16:43 MDT, Nolan, standing architectural law)
+* Think in small orthogonal composable primitives, never agents/authorities/frameworks; current product flows justify Object, Relationship, Evidence, Capability, Proposal, Approval, Effect, Receipt, Projection; harvest from real work, build products from primitives, never primitives from imagination.
+* Invariants: tenant isolation is primitive (tenanos-int-tree UNSAFE/DO-NOT-MERGE, extract only isolation-preserving changes); ONE HOLD semantic; ONE config source producing identical server/client semantics (root cause of #418, configuration nondeterminism); approval friction derives from consequence class (READ -> SECURITY_ADMIN_EFFECT); INTENT -> AUTHORIZATION -> EXECUTION -> OUTCOME never collapse; agents are replaceable intelligence providers (AgentTask -> AgentResult), never the architecture.
+
+
+## FYD compiler sprint (2026-09-25, Nolan's GO)
+* FYD PRODUCT ONLY; outreach/social operations excluded. Standing law: tests green + product broken = never again. Screenshots falsify presentation claims (375/390/1440 for Coppersmith + Happy Place on every renderer change; keep before screenshots as regression evidence). Only PROVEN IN BROWSER earns product-green. Do not block on Nolan for ordinary engineering verdicts; queue only genuine human gates. Charter: ~/workspace/sprint-2026-09-24/SPRINT-CHARTER-2026-09-25.md.
+
+## FYD framing locked (2026-09-25 ~20:01 MDT, Nolan)
+* FYD is NOT a website builder. It is a compiler from messy evidence into an owner-controlled, executable digital object. Website is one renderer. Chain: EVIDENCE -> OBJECT GRAPH -> OWNER INTENT -> DECLARATIVE SPECS -> DETERMINISTIC EXECUTION -> OUTCOMES -> NEW EVIDENCE. Objects preserve optionality; intelligence makes choices, software owns mechanical truth; SiteSpec is an IR. Harvest broadly, implement narrowly.
+* Third proof business = RESTAURANT (after the two-site loop closes).
+
+
+
+
+
+## ORCA continuous-execution directive (2026-09-25 ~20:36 MDT, Nolan, standing)
+* "Never stop" = when one useful lane closes, advance to the next highest-confidence proven work. Correct PASS/UNKNOWN/SUPERSEDED are progress; never manufacture patches. ORCA = coordination (dispatch/lease/checkpoint/retry/cancel/resume), NOT truth; cancellation must be real (TIMEOUT_REQUESTED/WORKER_TERMINATED/EFFECT_STATUS_UNKNOWN).
+* Work-stealing queue: P0 security/privacy -> live product failure -> P1 correctness -> integration/reachability -> failing invariant -> backlog defect -> doc drift -> research/harvest -> nice-to-have. One writer per semantic unit, many falsifiers; leases on every task; checkpoint, don't restart; semantic retries.
+* Product order: Ask FYD evidence path -> unified public projection/visibility seam -> owner correction -> conversational SiteSpec patch -> regen survival -> second observation -> one external owner. Stop-and-ask only: irreversible prod migration, destructive data ops, secret custody, money/spend, unauthorized public external comms, new provider perms, legally ambiguous acquisition, unclear-rollback auth changes, constitutional conflict, unknown dirty-state ownership. Nolan is the convergence/review layer from returned evidence; coordinator + headless agents execute.
+
+
+## Identity/quota containment (2026-09-25, Nolan decision)
+* Verdict: NO live unauthorized spend anywhere. identity_5-10 are UNAUTHORIZED-SPENDABLE but task_count: 0, never spent. Proven gap: broker dispatch() never consults AGENT_PROFILES (authorizes 1-4 only); broker.js:40 accepts any identity_id; Crush bypass proven but DORMANT (credential expired 2026-09-19, no runs since ~09-18). Nolan decision: CONTAIN, do not promote identities 5-10 merely because the OAuth accounts belong to him. broker.dispatch() must fail closed unless the execution identity is explicitly registered/authorized through the canonical registry or capability seam; denial logged without secrets. Reclassification triggers: task_count>0 on 5-10 -> incident; Crush run on refreshed cred -> BYPASS-ACTIVE. Report: ~/workspace/sprint-2026-09-24/support/IDENTITY-QUOTA-INVESTIGATION.md.
+
+## Privacy projection lane: HOLD (2026-09-25, Nolan)
+* On HOLD until the current product proof closes; do not merge a consequential projection change into the middle of the proof. HOLD / FAIL CLOSED is acceptable for the public visibility seam; never fake public visibility.
+* The Sep-25 privacy lane's claimed code (fyd/privacy-projection-p0) was never merged and its git objects are gone; integration branch must not be described as carrying privacy guarantees. Standing lesson: lane self-reports are hypotheses until a falsifier replays them. Evidence: ~/workspace/sprint-2026-09-24/orca/H1-VERIFY.md.
+* Known unfixed (flagged 2026-09-25, handle after the HOLD lifts): cross-consumer visibility inconsistency — publicGraphOf() hardcodes [] decisions, composeObjectView() bypasses applyFieldVisibility; threading decisions into Ask needs a decisions store + route changes.
+* FYD-010 elevated to RELEASE BLOCKER (2026-09-27, Nolan; supersedes the HOLD for this item): Ask FYD leaking private owner fields to visitors must be fixed at the architectural boundary (canonical object/context -> viewer + visibility + capability -> sanitized context projection -> model), with zero private-canary leakage across visitor, owner, unauthenticated, and unknown viewers. demoOwnerContext must be retired from any path called real; owner capabilities come from verified identity/ownership, never a demo toggle or frontend state.
+
+## Observability Mission Control (2026-09-25 ~21:00 MDT, Nolan, standing)
+* Mission control is a PROJECTION over PING's existing event plane (never a new store); every claim links evidence; every number carries as-of+source; lanes without heartbeat render STALE/UNKNOWN, never green; GREEN requires a gate output or falsifier sign-off; paging follows Nolan's 7 reporting categories only. Two customers: Nolan the operator, eventually the business owner. MVP: typed event schema + emit helper, one deterministic projector to JSON, one private phone-first page, heartbeat/staleness. Design doc: ~/workspace/mission-control/OBSERVABILITY-MISSION-CONTROL.md.
+
+
+
+
+
+## Jev: TYPESAFE_JEV serious use (2026-09-26, Nolan orders; SUPERSEDES the shadow-eval-only conservative policy)
+* Standing product law: TYPESAFE_JEV (typesafe/jev-1.13 via OpenRouter Decisions API, contract 25/25 green, lane ~/workspace/fyd-intel/) moves from shadow/eval to SERIOUS primary use for its bounded remit only: FAST BOUNDED SEMANTIC DECISIONS (classification, policy judgment, explicit-option routing, claim/evidence verification, ambiguity triage, tool/action gating, confidence escalation). Design A committed 2026-09-25 (per-call explicit opt-in throwing AUTONOMOUS_LOOP_CLOSED, de-fabrication at root). Jev stays a typed probabilistic decision engine behind a narrow provider adapter, never an authority; a probability is evidence for a decision, never authorization; a C5 action must never become automatically executable merely because a provider reports high probability. Jev never authorizes effects or mutates state (proposal/evidence only). Deterministic software keeps hashing/schema/exact-match/permissions/arithmetic/state-transitions/execution/dedupe/replay. Generative intelligence keeps writing/open-ended reasoning/research/site composition/conversation. Every call goes through jev_ask.py (profile-only, purpose gating, budget gate); all output logged to the spend ledger with prompt sha256. No batch Jev use until the bounded FYD decision points are defined at the product frontier (RENDERED EXPERIENCE -> ASK FYD -> EVIDENCE); next: route them to TYPESAFE_JEV as primary.
+* Spend: $5/day lane ceiling stands until Nolan raises it. If serious use hits the ceiling, report to Nolan and ask; do not raise unilaterally.
+* Jev-serious autonomy program (Nolan directive): (1) axioms review from constitutional material (7 questions/axiom), (2) 100-point improvement plan (12 fields/item, ranked leverage*frequency*autonomy_gain*reusability/risk/complexity), (3) L0-L4 action matrix, (4) human-bottleneck hunt, (5) failure archaeology (9 gold examples -> invariants -> TEST/TRIPWIRE/TYPE/SCHEMA/POLICY/RECIPE), (6) Ask FYD product loop opened (RENDERED EXPERIENCE -> ASK FYD -> EVIDENCE), (7) implement top safe/reversible items one at a time until genuine human judgment is required. Autonomy principle: MORE autonomous in thinking, MORE deterministic in execution, MORE conservative in consequential side effects. Loop: DESIRED STATE -> OBSERVATION -> DIFF -> CLASSIFICATION -> PLAN -> CAPABILITY CHECK -> RISK CLASSIFICATION -> EXECUTION OR PROPOSAL -> VERIFICATION -> EVIDENCE -> LEARNING. Monitor semantic invariants, not incidental implementation details. Harvest discipline: DOES THIS REMOVE COMMODITY WORK? IMPROVE THE PRODUCT LOOP? IMPROVE AUTONOMY? PRESERVE OPTIONALITY? If no: CATALOG, do not integrate. Reward negative LOC. Do NOT re-litigate the WSL restart initiator unless it recurs (bounded auto-recovered fault).
+
+## Jev-serious autonomy program (2026-09-26 ~18:16 MDT, Nolan's "Jev Serious Autonomy Directive")
+* "JEV" = the agent system (me + workers). Same 7-item program, $5/day ceiling, autonomy principle, loop, and harvest discipline as the TYPESAFE_JEV serious-use order above; additionally: prefer interfaces around source acquisition, model execution, search, storage, browser automation, social providers, federation, media processing. Do NOT re-litigate the WSL restart initiator unless it recurs (bounded auto-recovered fault).
+
+
+
+## Batch 6 adjudication (2026-09-26 ~19:45 MDT, Nolan, authoritative)
+* Saved verbatim to ~/workspace/fyd-autonomy/batch6-owner-disposition.md. Core constitutional correction: HUMAN AUTHORITY DEFINES POLICY; IT IS NOT A SUBSTITUTE FOR POLICY. DO NOT BUILD BATCH 7; no fixed question batches, organic escalation only. Nolan ordered implementation NOW + perpetual backlog work.
+
+## Batch 7 adjudication (2026-09-26 ~20:12 MDT, Nolan, FINAL, question era CLOSED)
+* Saved verbatim to ~/workspace/fyd-autonomy/batch7-owner-disposition.md (part 1 draft + part 2 complete final disposition); SI-03 record filed in escalation-log.jsonl with classifier training gold.
+* Core correction: freeze versioned contracts and semantics, NOT implementation shape forever. Authority policy: MODEL classifies/reasons/recommends/proposes; POLICY/AUTHORITY authorizes; EXECUTOR executes exactly the authorized transition. Credentials: broker only, never raw. Approval binds TENANT + ACTOR + PROPOSAL DIGEST + CAPABILITY + CONSEQUENCE + EXPIRY. External effect: UNKNOWN means reconcile before retry. NO BATCH 8. Escalate only REAL OWNER AUTHORITY + NEEDED NOW + CONSEQUENTIAL + NOT ALREADY DELEGATED.
+
+## Intelligence escalation router (2026-09-27, Nolan, standing policy)
+* Doctrine saved verbatim: ~/workspace/fyd-autonomy/intelligence-escalation-router.md.
+* The $25 OpenRouter balance is a BOUNDED high-intelligence reserve, not a budget to spend. Ladder: deterministic software (always first, $0) -> Copilot/headless agents (the labor force, used aggressively) -> free model (DeepSeek V4 Flash 0731 free first candidate) -> cheap strong (GLM-5.3 Flash, MiMo-V2.6-Flash) -> premium cognition (MiMo-V2.6-Pro default paid escalation; GLM-5.3 full for hardest reasoning) -> deterministic verification. Kimi K3 is NOT default (expensive, no free variant, custom non-OSI weights license).
+* Every paid invocation must carry: TASK_ID, WHY_AI_IS_NEEDED, WHY_HEADLESS_WAS_INSUFFICIENT, CHEAPER_ATTEMPTS, EXPECTED_OUTPUT, MAX_INPUT, MAX_OUTPUT, MAX_COST, MODEL_TIER, RESULT, VERIFICATION. If those cannot be populated, do not escalate.
+* Premium models THINK (diagnosis/plan/patch spec); cheap agents TYPE (implementation). Tests decide truth; the model never declares its own work correct.
+* Benchmark before routing real work: 3 solved FYD problems (@graph failure diagnosis, javascript render-sink security failure, mobile overflow root-cause), solutions stripped, identical evidence, scored on verified progress per dollar. Routing policy built from OUR evidence, not benchmark fandom.
+* Jev stays separate: a decision/routing primitive, not a general coding model. OpenRouter is never a dependency and never an authority. Router work is a small bounded patch (policy, cost ledger, model config, escalation contract), then back to URL -> OBJECT GRAPH -> SITE -> ASK FYD -> EVIDENCE -> CORRECTION -> CUSTOMIZATION -> REGENERATION.
+* Copilot/headless burn (2026-09-27, Nolan's immediate order): use up ALL Copilot (identities 1-4) and headless (Goose, Hermes) capacity on real work.
+
+
+## Design rework order (2026-09-27 ~09:13 MDT, Nolan; executed, 19:00 verdict GO)
+* Standing invariant: source tree != built artifact != served artifact; every UI certification binds all three (pinned HEAD + build digest + served asset digest); a worker saying it is fixed is irrelevant until the browser proves the served bytes.
+
+
+## Backlog burn directive (2026-09-27 ~09:13 MDT, Nolan, standing)
+* Autonomous burn order: FYD first, then reusable PING substrate, then TenantOS/ORCA/Mission Control.
+* Harvest before writing. GitHub/ecosystem ingestion stays subordinate to a concrete backlog gap.
+* The $25 is an escalation budget, not a spending target. GLM-5.3 is the measured paid escalation candidate; the headless baseline stays default where its quality is sufficient.
+* Loop: highest-leverage open FYD/PING defect -> harvest existing implementations -> smallest reusable delta -> test the real served experience -> ledger the evidence -> repeat.
+
+
+
+## Vercel token rotation DECLINED (2026-09-27 ~10:55 MDT, Nolan)
+* The apparently hardcoded token in happy-place-platform's vercel-deploy.yml will NOT be rotated and stays where it is. Nolan: it is just the free $5 credit test gateway, he does not care about exposure.
+
+
+
+## HPP original: never touch (2026-09-27 ~11:10 MDT, Nolan, hard boundary)
+* The HPP original repo/site is never to be touched in any way: no modification clones, no PRs, no pushes, no deploys. PR #1 closed unmerged, piging2 fork deleted, upstream untouched.
+* Defect work on HPP happens only in the design sprint parallel separate clone (the :3200 tree), which must have nothing to do with the original. The two held fixes (Reviews apostrophe string, slim no-photo service cards) are specified in today dated log if ever needed in the parallel clone. The rework-order original-site defects item is HELD, not shipped. Focus stays on the backlog burn (FYD, PING substrate, TenantOS/ORCA/Mission Control).
+
+
+## Burn is perpetual (2026-09-27 ~11:12 MDT, Nolan, standing)
+* Backlog burn is perpetual: "finished/done/complete" language about it is banned; keep adding to the backlog, keep delegating, go forever; never wind down, never ask for re-authorization. Burn order: FYD first, then reusable PING substrate, then TenantOS/ORCA/Mission Control.
+
+## FYD stack replay (2026-09-27)
+* Second cumulative clean-checkout replay of FYD-011 through 026b: OVERALL REPLAY PASS (tsc clean; jest 42 suites / 320 tests PASS; test:refresh 21/21). Stack treated as verified. Ledger in the dated log. Standing reinforcement: broad pattern-kills are banned, always PID-scoped.
+
+## Mission Control -> FYD website wiring (2026-09-27 ~11:20 MDT, Nolan, TOP PRIORITY)
+* Nolan: wire Mission Control into the PING FYD website ASAP. He will give more guidance when he gets to the Pig.
+* Standing interpretation pending his guidance: Mission Control's bounded dispatch capability (Lane D: /api/mc/dispatch + missions, tenant-scoped happy-place/coppersmith-plumbing) wired into the FYD website surface (tenant sites /sites/happy-place, /sites/coppersmith-plumbing), additive and namespaced only.
+
+
+
+
+## CONTINUOUS AUTONOMY DIRECTIVE (2026-09-27 ~20:02 MDT, Nolan, binding, supersedes sprint-termination model)
+* 24 hours is a checkpoint interval, not a termination condition. At every checkpoint: preserve state, report evidence, reobserve reality, identify the highest-priority broken boundary, refill the swarm, continue. No artificial backlog generation; if genuinely nothing eligible, quiescent until evidence changes.
+* FYD MISSION GO: proposal p0prop-ac04480a6d1809fd, digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa is APPROVED with exact-transition binding (PROPOSAL A -> DIGEST A -> APPROVAL A -> EXECUTE A; no substitution, no post-approval regeneration). Never ask Nolan this mission question again; return only if the exact transition materially changes or reveals a new consequential issue.
+* STANDING DELETION AUTHORITY GRANTED (narrow): proven-dead + Git-recoverable + no unique state + full evidence bar = delete without interrupting Nolan. NEVER covers: canonical data, DB rows, customer/business data, audit/provenance evidence, credentials, external accounts, cloud resources, production deployments, DNS/domain, local-only media, another worker's uncommitted work, unknown files/worktrees, backups, canonical events, identity history, owner assertions, legal/compliance records, anything where Git is not the authoritative recovery mechanism.
+* HOLD IS CONSTITUTIONAL: UNKNOWN EFFECT -> HOLD -> RECONCILE -> NEVER LEASE-EXPIRY REDISPATCH. Lease reaper treating HOLD as dispatchable is a P0 defect; patch the reaper, reconciler owns movement out of HOLD. Test with rendezvous kill.
+* Execution order: Q-P0-04 WRONG_JOURNAL (synthetic EMIT+DUMP, zero writes proven) -> Q-P0-05 SECRET LEAKAGE -> Q-P0-06 TENANT ISOLATION matrix -> Q-J-01..03 real browser proof -> FYD OWNER JOURNEY -> RESTART -> REPLAY -> CONCURRENT IDEMPOTENCY -> UNKNOWN RENDEZVOUS KILL -> RECONCILIATION -> MC TRUTHFUL PROJECTION -> HAPPY PLACE -> COPPERSMITH -> WORKTREE CONVERGENCE -> PROVEN DUPLICATION RETIREMENT -> next broken boundary, forever.
+* :3101 LAW: availability is part of product correctness. No worker restarts/kills/replaces a served runtime without a runtime mutation lease (reason, service, PID/build/SHA, expected outage, rollback, authorization, other workers, checkpoint; after: process/route/browser health, build identity, data integrity, event record).
+* Monument View: keep ready, DO NOT CONTACT. Behind Q-J-12 (Q-P0-04->05->06 green, Q-J-01..03 browser green, owner journey replay green, then explicit external-contact authority).
+* Data-capitalization mission: preserve as strategic research; do NOT encode "data as capital asset / balance sheets / equity for data / data marketplace" as constitutional truth; do not build marketplace machinery into ORCA. Immediate lesson: DATA MUST REMAIN CONTROLLED BY ITS AUTHORIZED PRINCIPAL THROUGH PROVENANCE, PURPOSE, CAPABILITY, CONSENT, REVOCATION, AND AUDIT.
+* Empirical questions: investigate first (evidence -> policy -> reversible experiment -> Jev-as-evidence -> falsifier); only then human. An empty Grill is success.
+* Coordinator closure states only: FIXED+RUNTIME PROVEN / PASS EXISTING / SUPERSEDED / RETIRED WITH EVIDENCE / DEFERRED WITH EXPLICIT REOPEN CONDITION / UNKNOWN WITH EXACT MISSING EVIDENCE.
+* Priority order forever: P0 security/privacy/data-loss/dup-external-effect -> P0 authority/tenant/identity/wrong-journal/secret -> P0 unknown-effect/idempotency/reconciliation -> P1 real product path -> P1 ORCA/MC reached-path -> P1 event/artifact/evidence/replay -> P1 FYD owner journey -> P1 website quality -> P2 duplication/convergence -> P2 harvesting -> P2 perf/a11y/visual -> P3 docs/provenance/dependency/license -> RESEARCH. New P0 preempts.
+* Process note (2026-09-27): the three questions that produced this directive were asked without a prior grill-20 classifier run (process miss). Recorded retroactively in escalation-log.jsonl.
+
+## 100-HOUR CONVERGENCE SPRINT (2026-09-27 ~20:10 MDT, Nolan, binding, refines the 100H sovereign directive)
+* Standing coordinator directive: ~/workspace/orca-mc-sprint/100H-CONVERGENCE-SPRINT.md. T+0 = 2026-09-27 ~20:10 MDT, T+100 = 2026-10-02 ~00:10 MDT.
+* Harder definition of finished: fewer authorities, fewer duplicate implementations, fewer ambiguous execution states, one FYD journey surviving hostile failure. Purpose: turn proven machinery into ONE SMALL, REACHED, FAIL-CLOSED, REPLAYABLE PRODUCT SYSTEM.
+* POWER MANAGEMENT IS CLOSED. Pig treated as automation server. No more power tuning unless NEW evidence of execution suspension or availability loss. No synthetic keep-awake loops.
+* One reached owner per semantic unit (IDENTITY, MISSION, RUN, EXECUTION, CAPABILITY, ARTIFACT, EVIDENCE, EVENT, OBJECT/RELATIONSHIP PROJECTION, APPROVAL, RECONCILIATION, TENANT CONTEXT, MC VIEW) with 10-field record; two claimants = defect until proven otherwise.
+* Four planes locked: INTENT (mission/proposal/request), AUTHORITY (identity/tenant/capability/approval/policy), EXECUTION (run/attempt/worker/adapter/tool/effect), TRUTH (canonical events, artifacts/evidence, replay). MC and FYD are projections, neither is truth.
+* 15 flaw scenarios under continuous attack (event identity w/o global order, effect-vs-event commit gap, approval-to-execution TOCTOU, tenant confusion, secret transit, served SHA drift, worktree contamination, replay dependence on current code, projection false authority, MC optimism, artifact w/o lineage, agent-result-becomes-fact, retry storms, duplicate execution after restart, observability leakage).
+* Harvest specifics: Conductor-style durable systems validate HOLD direction (harvest failure matrices/tests, NOT runtimes); OTel GenAI conventions for semantic names (telemetry never truth); Crawl4AI v0.9.4 acquisition candidate; Lightpanda interesting but compat/security concerns -> replaceable acquire(request)->observations+evidence backend; Automerge seam (local edit -> proposed transition -> PING auth -> canonical event), NOT the dependency; MCP stays adapter. Harvest test: does it REMOVE CODE, REMOVE AMBIGUITY, or give a NASTIER TEST? Else catalog and move on.
+* Convergence trajectory: T+24 reality map, T+48 winners proven, T+72 callers converged, T+96 dead retired, T+100 one reached loop. 24h scorecard format in the directive file. Measure by AMBIGUITY REMOVED, not activity.
+* NO list (implementation waits for the reached loop): new social protocol, mass-follow, marketing engine, graph DB, event bus, authority hierarchy, agent runtime, scheduler, workflow engine, canonical store, TenantOS platform, data marketplace, token economics, CRDT integration, visual-builder rabbit hole. Research/harvest read-only OK.
+
+## POST-100 DIRECTIVE — THE AUTONOMOUS BUSINESS ERA (2026-09-27 ~20:13 MDT, Nolan, binding, GATED)
+* Next-era authority, recorded at ~/workspace/orca-mc-sprint/POST-100-AUTONOMOUS-BUSINESS-ERA.md. Does NOT supersede the convergence program. Activates only when the 100-hour acceptance gate genuinely passes. Post-convergence law: system must earn its existence in the real world; freeze architectural expansion unless customer reality forces it; swarm shifts from machinery to business understanding, correction, reconciliation, customer action, procedure discovery, outcomes, generalized learning.
+* THE ONE IMMEDIATE CHANGE TO THE CURRENT PROGRAM: begin emitting post-convergence metrics NOW during Happy Place and Coppersmith — time-to-useful-presence, unsupported-claim rate, owner corrections, correction survival, grounded Ask rate, customer-action completion, engineering interventions per business. Otherwise T+100 has infrastructure evidence but no FYD-improvement baseline.
+
+## COPILOT USAGE CORRECTION (2026-09-27 ~20:18 MDT, Nolan, binding, live now)
+* "Burn all Copilot usage" means MAXIMUM USEFUL PARALLELISM, never token consumption as a KPI. GitHub's current stack: repo-defined custom agents (Markdown profiles with scoped tools/MCP servers), isolated subagents, parallel delegation under one authoritative coordinator. Success metrics: INDEPENDENT QUESTIONS ANSWERED, BUGS FALSIFIED, TESTS CREATED, CODE HARVESTED, DUPLICATION REMOVED, PRODUCT LOOPS CLOSED. Zero token-burn theater: if the useful queue empties, research better evidence-backed work, never manufacture code to consume quota. One writer per semantic unit, many falsifiers.
+* MCP note: GitHub Docs MCP's stateless core is a better eventual perimeter for external workers than inventing another worker protocol. PING/FYD -> capability resolution -> bounded work request -> MCP -> external worker/tool -> structured result -> evidence -> proposed transition. Never canonical truth. Harvest, do not derail builds integrating everything.
+
+## MUSE — NEXT WAVE (2026-09-27 ~20:18 MDT, Nolan, binding, GATED)
+* Staged at ~/workspace/orca-mc-sprint/MUSE-NEXT-WAVE.md. Assumption gate: THE FYD BUILDER LOOP IS GREEN. Pivot after convergence: stop proving we can generate a website; prove FYD can CREATE AND OPERATE A BUSINESS PRESENCE. Next product: ONE-CLICK BUSINESS BOOTSTRAP + MISSION CONTROL + ORCA + ALWAYS-ON AGENT + SOCIAL OBJECT PROTOCOL + MARKETING/GROWTH INTELLIGENCE + BOUNDED MASS INTERACTION + OUTCOME LEARNING. Website becomes one projection of the business object. Orca stops being an agent experiment and becomes FYD's execution worker: finish the EXISTING path (Mission -> Run -> Execution -> ExecutionAuthority -> ExecutionAdapter -> Agent -> Result -> Evidence -> proposed transition -> authorization -> canonical event), never Orca 2; ORCA OUTPUT != TRUTH, TOOL CALL != AUTHORIZATION, SUCCESS MESSAGE != VERIFIED OUTCOME. Build order: Orca path -> MC identity-owned -> one-click bootstrap ONE business -> always-on agent does ONE useful task -> MC displays proposal -> owner approves -> FYD updates -> outcome recorded -> one growth operation proof.
+
+## MUSE — DISTRIBUTION ENGINE DIRECTIVE (2026-09-27 ~20:18 MDT, Nolan, binding, GATED)
+* Staged at ~/workspace/orca-mc-sprint/MUSE-DISTRIBUTION-ENGINE-DIRECTIVE.md. Assumption gate: everything before is ACTUALLY done. Mission: MAKE FYD SPREAD — OBJECT -> IDENTITY -> PRESENCE -> RELATIONSHIP -> INTERACTION -> DISTRIBUTION -> OUTCOME -> LEARNING. Priority zero: finish ORCA + Mission Control only as the accelerator. Six parallel programs: A one-click bootstrap (URL -> live FYD business), B social object protocol (projection over canonical graph, never a second truth model), C object uniqueness/customization (truth/identity/presentation-intent/experience separated), D FYD-native social graph (portable relationships first), E always-on agent marketing (evidence-backed opportunity discovery, never continuous posting), F mass interaction intelligence (compiler; AI reasons, deterministic machinery executes; hard anti-spam invariant; interaction memory; personality belongs to object/owner). Dogfood: PING/FYD itself -> Happy Place -> Coppersmith -> unseen business, generic machinery only; compiler proven at scale (simulate/preview) before small authorized real cohort. Flywheel ends FYD SPREADS. Do not wait for another directive once the gate passes.
+
+## PIG REACHABILITY STANDING INSTRUCTION (2026-09-27 ~20:24 MDT, Nolan)
+* ALWAYS KEEP THE PIG REACHABLE, NO MATTER WHAT. If a drop is anticipated: save the work first, take protective action (keep a window open / keep the machine responsive). This is vigilance, not new engineering: power management stays closed unless new evidence reopens it. Pig reachability is the top monitoring priority; a reachability loss is treated as an incident, not background noise.
+
+## MUSE — CEO MODE: 100 MORE HOURS, THEN CONTINUE FOREVER (2026-09-27 ~20:24 MDT, Nolan, binding standing order)
+* Recorded at ~/workspace/orca-mc-sprint/MUSE-CEO-MODE-100H-FOREVER.md. Supersedes the convergence sprint's termination semantics. Original T+0 2026-09-27 20:24 MDT objective SUPERSEDED by the 2026-09-28 05:45 BI OS program (new T+0 2026-09-28 05:45 MDT, T+100 2026-10-02 09:45 MDT); continuous-operation constitution and loop mechanics stand. STOPPING IS A DEFECT: backlog exhaustion is not completion, it is a request to observe reality again. Waiting for Nolan to invent the next task is a coordinator defect.
+* Quiescence rule replaced: NO ARTIFICIAL BACKLOG GENERATION, NO BUSYWORK, but "no eligible implementation task" means switch the swarm to observation/research/harvesting/adversarial testing/product falsification/discovery until evidence produces the next legitimate task. Zero safe writes periods are fine; zero useful thought while compute and legitimate questions remain is not.
+* Muse owns backlog generation (ORCA should eventually automate much of it). Deep queue: at least 32 evidence-backed next-work candidates (16 states from OBSERVED to REOPENED), never padded; shallow queue = coordinator-health warning, auto-increase discovery lanes. Three horizons: NOW / NEXT / FRONTIER. Priority unchanged; new P0 interrupts.
+* First front: finish the existing ORCA/MC/FYD list (Orca, MC, execution front door, capability boundary, UNKNOWN/HOLD/reconciliation, event spine, artifact/evidence lineage, approval binding, replay, restart, tenant isolation, Hermes reached path, Jev calibration, FYD owner journey, Happy Place, Coppersmith, worktree convergence, duplication retirement), exact-approved-transition law preserved. Then without stopping: distribution -> generality (adversarial business worlds) -> product falsifiers -> architecture entropy -> world harvesting -> counterfactual history falsification -> embarrassment mining -> human-work elimination.
+* Swarm: up to 16 useful lanes when independent work exists (writers + falsifiers + researchers + product adversaries + security attacker + coordinator), rolling execution, one writer per semantic unit. Copilot capacity is inventory: optimize questions resolved/hour, defects proven/closed/hour, product loops closed/hour, unknown reduced/hour, duplication removed/hour, owner work eliminated/hour, customer value/hour — never token consumption.
+* Guardrails unchanged: authority, owner approval, privacy, tenant boundaries, spending/publication controls, credentials, provider restrictions, rate limits, external-effect safety, irreversibility. UNKNOWN stays UNKNOWN, HOLD stays HOLD, no blind redispatch of unknown external effects. Grill shrinks as Orca improves; empty Grill is success. Human interruption only after evidence/policy/reversible experiment/Jev classification/independent falsification are exhausted.
+
+## CEO DECISIONS 2026-09-28 ~05:32 MDT (Nolan) — HARVEST + P0 PIG RELIABILITY
+
+### 1. Microdata harvest commit 2532e5a5: APPROVE FOR INTEGRATION ONLY AFTER normal integration verification
+- Identify the one failing test (107/108, one pre-existing failure), classify it, run the canonical clean-worktree gate, verify no regression, then merge/cherry-pick through the normal integration path.
+- Do not normalize "107/108" into success.
+- Status at decision time: queued; Pig-blocked until wake (repo at /home/nolan/projects/ping on the Pig).
+
+### 2. Ingestion vocabulary gate: DEFAULT = FAIL CLOSED FOR CANONICAL INGESTION
+- Unknown/invalid vocabulary must NOT silently become canonical semantics. Preserve the observation/evidence.
+- RAW OBSERVATION → vocabulary validation → KNOWN VALID (normalize → canonical semantic candidate) / UNKNOWN/UNSUPPORTED (preserve evidence → mark unsupported/quarantined → DO NOT canonicalize → reconciliation/work queue).
+- Do not discard useful source material merely because FYD does not understand it yet.
+
+### 3. SSRF NAT64/6to4/v4-compat gap: PROMOTED TO SECURITY BACKLOG P0/P1
+- Do NOT wait for an actual exploit. The "live-failure instance first" requirement is inappropriate for a known SSRF validation class when the vulnerable path is reachable.
+- First reproduce safely with tests. Adversarial fixtures minimum: IPv4 private, IPv4 loopback, IPv4 link-local, IPv6 loopback, IPv6 link-local, IPv4-mapped IPv6, IPv4-compatible forms if parser accepts them, 6to4, NAT64 forms, alternate textual encodings accepted by runtime, redirect public URL → private destination, DNS resolution returning private destination.
+- URL safety must reason over the RESOLVED destination, not merely the original string. Fail closed. No production probing of private infrastructure.
+
+### 4. jest.config.cjs: FIX THE REPRODUCIBILITY GAP
+- If the canonical test gate requires it: track the legitimate config OR remove the dependency on it. A clean checkout must be capable of running the canonical test command. No workstation-only test config defines "green."
+
+### P0 — PIG RELIABILITY INCIDENT (Nolan 2026-09-28 ~05:32 MDT)
+- 03:41 MDT HOST_ASLEEP (SSH/network/tailnet unavailable, outside commute blackout) treated as INCIDENT. Repeated occurrence; 2026-09-27 proved Modern Standby destroyed active browser targets.
+- One reliability lane owns the incident; FYD product lane keeps moving. Do not let this become a week of infrastructure work.
+- Forensics FIRST on wake: do NOT reboot before capturing sleep entry/wake times, uptime, last boot, unexpected shutdown evidence, SleepStudy, powercfg /systemsleepdiagnostics /a /requests /waketimers /lastwake, System + Kernel-Power + Power-Troubleshooter + Kernel-General + Kernel-Boot event logs, WHEA, BugCheck, disk/memory/GPU/thermal evidence, network adapter events, Tailscale/WSL/Docker state, memory/disk pressure. No credentials in the incident report.
+- Distinguish three states: A. intentional/configured sleep, B. failed resume/frozen host, C. host healthy, remote path broken. Answer the 7 evidence questions; NO GUESSING.
+- Power policy: ON AC IN AUTOMATION MODE, no automatic system sleep (display off allowed). Record BEFORE/AFTER/COMMAND/ROLLBACK. Do not disable thermal protection or critical battery behavior. No unsafe firmware hacks.
+- Operating modes: PIG AUTOMATION MODE vs NORMAL LAPTOP MODE; visible, reversible. Laptop must not permanently become a terrible laptop.
+- Wake leases for active jobs: JOB START → acquire, JOB FINISH/FAIL/CANCEL → release; lease carries owner/reason/started_at/heartbeat/expiry. Harvest existing PING/Windows machinery first; no new authority; it is runtime infrastructure. No stale wake lock: bounded leases/heartbeat; coordinator answers WHO is keeping the Pig awake, WHY, SINCE WHEN.
+- Browser resilience: single owner/lock, reopen page on target death; assume page/browser/CDP/network/machine/process all die; recover from disposable execution state; never one immortal Playwright page as campaign authority.
+- External-action batches: PLAN → CHECKPOINT → ACTION → RECEIPT → CHECKPOINT; resume from receipts; idempotent where provider supports, else at-most-once attempt + receipt reconciliation.
+- Monitoring: HOST UP/ASLEEP/RESUMING/DOWN/UNKNOWN; WINDOWS/TAILSCALE/WSL/DOCKER/GATEWAY/FYD/BROWSER AUTOMATION UP/DOWN. Determine the failed layer; never report "Pig frozen" from a missing port.
+- Self-heal only safe layers (restart dead FYD dev server, reopen browser page, restart automation-owned Chrome, re-establish safe forwarding, restart unhealthy non-stateful adapter). Conservative with Windows reboot, WSL shutdown, Docker restart, database restart, network-stack reset (need evidence narrower recovery failed; must not risk active writes).
+- After resume: bounded recovery certification HOST → TAILSCALE → WSL → DOCKER → POSTGRES → GATEWAY → FYD → CDP → automation locks → external-action receipts. No external writes until execution state reconciled.
+- Success criteria: root cause PROVEN or UNKNOWN-WITH-EVIDENCE; AC automation mode PROVEN; display-off-without-system-sleep PROVEN; wake lease PROVEN or explicitly deferred with reason; resume certification PROVEN; browser recovery PROVEN; mid-batch recovery PROVEN; no duplicate external action PROVEN; rollback to normal laptop mode PROVEN.
+
+## CEO DECISIONS 2026-09-28 ~05:45 MDT (Nolan) — NEW 100-HOUR PROGRAM: BUSINESS INTELLIGENCE OPERATING SYSTEM
+
+- Accepted the continuous-operation constitution with one correction: continuous operation must not let discovery overwhelm the reached product.
+- New 100-hour program T+0: 2026-09-28 05:45 MDT. Checkpoints T+24 (9/29 05:45), T+48 (9/30 05:45), T+72 (10/1 05:45), T+96 (10/2 05:45), T+100 (10/2 09:45), then T+101 without asking. Supersedes the 9/27 20:24 program objective; loop mechanics (CHECKPOINT → REPORT → REOBSERVE → REPRIORITIZE → CONTINUE) stand.
+- Permanent product governor (constitutional rule): at least one permanent lane must always attack the current reached FYD customer journey. Every 24h checkpoint asks: WHAT CAN A CUSTOMER DO NOW THAT THEY COULD NOT DO 24 HOURS AGO? Repeated "nothing, but architecture improved" = coordinator prioritization defect. A 32-item deep queue is a health signal, not a quota; never manufacture the 32nd item.
+- First queue: P0 secret lifecycle (6/92 confirmed leaks; prevention > redaction; secret reference → broker → minimum value → minimum lifetime); P0 host/reboot forensics (capture what remains, OBSERVED FACT vs INFERENCE vs UNKNOWN, no blind restarts); P0/P1 SSRF effective-destination boundary (fail closed, no prod probing); P1 :3100 killer (instrument ownership, preserve evidence before respawning); P1 microdata 107/108 + canonical gate (107/108 is NOT green); PRODUCT restore minimum FYD path (URL → evidence → objects → SiteSpec → renderer → browser → Ask FYD) then Ask FYD → evidence boundary (FACTUAL CLAIM != GENERATED COPY; DIRECT EVIDENCE / DERIVED FACT / INFERENCE / UNKNOWN; refuse/qualify unsupported).
+- Address-episode model: OBSERVED VALUE + VISIBILITY POLICY/DEFAULT + OWNER OVERRIDE → PROJECTED VALUE. HIDE = DO NOT PROJECT HERE. Do not mutate the observation. PROVENANCE INFRASTRUCTURE = P0 PRODUCT FOUNDATION; PROVENANCE UI POLISH = LOWER PRIORITY.
+- BI north star (queued behind P0s): SOURCES → OBSERVATIONS → EVIDENCE → OBJECTS → RELATIONSHIPS → CHANGES → QUESTIONS → OPPORTUNITIES → PROPOSALS → AUTHORIZED ACTIONS → RECEIPTS → OUTCOMES → ATTRIBUTION → LEARNING. No BI truth store; no data marketplace; owner control first.
+- Separations: OBSERVATION != TRUTH; EVIDENCE != CLAIM; CLAIM != PRESENTATION; PRESENTATION != CANONICAL STATE; INTENT != AUTHORIZATION; AUTHORIZATION != EXECUTION; EXECUTION != SUCCESS; SUCCESS != OUTCOME; OUTCOME != ATTRIBUTION.
+- Codex web-dev harvest: find Codex's worktree, steal what works, improve PING templates. PING perfect first, then Coppersmith. Scope: PING + social object substrate + Mission Control wiring; TenantOS mostly frontend; deep backend architecture.

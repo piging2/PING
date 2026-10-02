@@ -1,0 +1,286 @@
+# Memory file `memory/2026-09-26.md`
+
+```markdown
+
+## ops-watch-gateway (2026-09-26 19:14 MDT)
+- check-gateway-health.sh: OK — gateway healthy, /health=200 body=healthy.
+- check-gateway-health-degrades.sh: OK — gateway healthy, consecutive-failure counter reset.
+- Baseline healthy; no user notification warranted.
+
+## ops-watch-gateway run (2026-09-26 19:19 MDT)
+- check-gateway-health.sh: exit 0 OK — gateway healthy, /health=200 body=healthy, running since 2026-09-24T11:55:36Z.
+- check-gateway-health-degrades.sh: exit 0 OK — consecutive-failure counter reset, status=healthy.
+- No incidents; no user notification warranted.
+
+## FB Collect (19:20 MDT cron) — clean, nothing new
+- collect_pass.sh exit 0: {"results_collected":0,"results_failed":0,"progress_lines_recorded":0,"progress_failed":0,"skipped_collected":60}. 8 unfollow artifacts skipped as non-engagement; no ledger failures.
+- One STALE notice: fb-20260924-175129.json dispatched 55h ago, no result and no progress lines. Same known repeat since 2026-09-24 16:05 MDT; sweep did not re-mark it (already carries a dispatch_lifecycle RECONCILIATION_REQUIRED record). Intents stay open and refused by the guard; no FAILED inferred, nothing retryable. Reconciliation remains owned by the 2h facebook-engagement-pass schedule.
+- Sweep result: marked 0, skipped all dispatches (already have lifecycle records or observation records). Idempotent, no duplicates.
+- 19:21 MDT pig-route-watch: PIG_REACHABLE (proxy TCP OK, Tailscale tunnel OK, SSH banner OK). Healthy, no action.
+
+## ops-watch-oom (19:24 MDT)
+- container-oom-risk check: OK. All containers well under 1GiB ceiling (ping-gateway=11.47%, ping-postgres=3.72%, ping-qdrant=3.66%). No notification warranted.
+## 19:24 MDT ops-watch-gateway
+- gateway-health: OK (exit 0) - /health=200 body=healthy, gateway healthy since 2026-09-24T11:55:36Z
+- gateway-health-degrades: OK (exit 0) - healthy; consecutive-failure counter reset
+
+
+## ~19:15 MDT — UPDATE: Mission Control north star tightened from inventory-first convergence to one control-plane story for every consequential operation
+- Replaces the earlier framing that the convergence track should first produce a 100-gap inventory/essay. Nolan directed that every observation, proposal, and mission on this device flow through Pigi and Mission Control, then clarified that the gap list is only a living inventory around the work and must not become documentation theater.
+- The critical reached-path spine is now: OBSERVATION -> CANONICAL EVENT -> MISSION -> DECISION -> CAPABILITY/AUTHORITY -> DISPATCH -> EXECUTION -> RESULT -> VERIFICATION -> EVIDENCE -> REPLAY -> MISSION CONTROL PROJECTION. Mission Control projects and controls existing authorities; it does not become authority and must not create a new truth store.
+- Foundational invariants are identity, tenant, canonical event ingress, Mission->Run->Execution dispatch, capability evaluation, effect state, HOLD/UNKNOWN, proposal/approval, execution receipt, audit, and replay. Root fixes should collapse multiple inventory gaps; do not implement a nominal 1-through-100 patch queue or build dashboard abstractions before the spine works.
+- Minimum Mission Control surfaces: Overview, Missions, Approvals, Runs, Objects, Events/Evidence, and System Health. For each mission it must expose semantic state, tenant/initiator, causation/correlation, objective, criticality/reversibility, required authority, capability decision, executor and dispatch attempts, external-effect state, evidence/verification, HOLD/UNKNOWN reason, timestamps, and replay path. Missing heartbeat, process liveness, HTTP 200, worker report, or passing test may not be presented as capability health or reached-path proof.
+- The pass-health/deterministic social pipeline is an instance of this north star, not a separate architecture. Every social pass becomes a mission/run; every external action carries eligibility, capability/policy, dedupe, attempt, receipt, and outcome. Prose remains an audit artifact and never overrides canonical suppression/state.
+- The convergence coordinator was sent this revised directive asynchronously; no completed spine implementation or verification had returned by 19:26 MDT.
+
+## ~19:17 MDT — UPDATE: ASK 37 Questions Batch 5 completed, replacing the earlier pending note
+- Coordinator handoff reported Batch 5 complete and verified at `~/workspace/your_files/ask-37-questions-batch5-2026-09-26/ASK 37 Questions (Batch 5).md`: exactly 37 question headings, all four required elements per question, zero em dashes, and no repeats of batches 3 or 4. Prior unanswered count was 0.
+- The corresponding SI-03 escalation record was appended to `~/workspace/fyd-autonomy/escalation-log.jsonl` with all checks/evidence and an `escalate` verdict.
+- Nolan rejected the premise that all 37 should be answered individually: he accepted the recommended defaults as a batch with explicit overrides and said the batch itself proves the escalation boundary is too permissive. Human escalation is for consequential commitments, authority changes, irreversible/destructive effects, publication, spend beyond policy, new credentials/access, unresolved privacy/security policy, and irreducible owner taste; reversible judgments should resolve through policy, evidence gathering, experimentation, Jev classification, reasoning, and independent verification.
+- The authoritative disposition was saved at `~/workspace/fyd-autonomy/batch5-owner-disposition.md` and sent asynchronously to the convergence coordinator. Formal operating axioms O1-O17 were appended to `~/workspace/fyd-autonomy/scratch/axioms.md`.
+
+## ~19:20 MDT — Batch 5 product/sprint decisions locked; website mission continues past its checkpoint
+- Keep a stable/current judged build and a clearly labeled candidate/preview build. Never silently mutate the URL Nolan is actively judging; promote only after gates pass. A passing build is pinned/frozen while further hardening and experiments compete in isolation.
+- T+24 is an honest PASSING/PARTIAL/FAILED checkpoint, not a stop condition and not deployment evidence. Continue afterward if quality trails the target. Cutover requires clean-checkout one-click proof and acceptance gates, not elapsed time.
+- Run both tests: frozen graph for controlled renderer/compiler comparison and a separate fresh URL -> acquisition -> evidence -> graph -> SiteSpec -> render end-to-end test.
+- Thin evidence should produce the smallest truthful presence plus a clear statement of what is missing, not fabricated richness or an automatic hard refusal. Publication may still refuse when minimum safety/truth requirements are unmet.
+- Ask FYD remains in the product proof as one small, real, evidence-backed interaction; do not build a broad chatbot or remove an already-working Ask path merely to isolate projection testing.
+- Scheduled/on-demand observation is distinct from acceptance, regeneration, and publication: OBSERVATION -> DIFF -> EVIDENCE -> PROPOSED UPDATE -> OWNER POLICY/APPROVAL -> REGENERATION/PUBLICATION. Observation never implies automatic live-site mutation.
+- Lab remains read-only developer/operator inspection; actions route through Mission Control. Lab and Mission Control stay separate but cross-linked by stable IDs. Customer sites recompose/omit missing media; PING may intentionally reserve media space as an owner-directed art choice.
+- FYD is the extraordinary customer product, PING the small reusable substrate, and Mission Control the truthful control plane. No shared UI mega-project.
+
+## ~19:20 MDT — Jev, Hermes, and swarm operating roles clarified for Mission Control
+- Jev enters Mission Control in SHADOW mode as a cheap typed decision plane with zero execution authority. Record state digest, decision schema, model/version, typed answer and probability/distribution, actual policy decision, eventual independently verified outcome, latency, and cost. Probability is evidence input, never authorization. Promotion path, if earned by Replay evidence, is SHADOW -> ADVISORY -> CONFIDENCE-GATED -> AUTOMATED LOW-RISK.
+- Hermes is an executor candidate, not authority. Before depending on it, re-prove the full Windows caller -> batch bridge -> PowerShell -> WSL Hermes -> exit status -> artifact/result -> Mission Control event/evidence path across success, nonzero exit, malformed invocation, timeout/cancellation, missing WSL/Hermes, interrupted worker, and result after potential external effect. Once the effect boundary may have been crossed, disappearance/failure can be EFFECT_UNKNOWN/HOLD; exit 1 does not prove no effect.
+- The rolling 16-task swarm is to move behind Mission Control with a typed dispatch contract and preflight. Coordinator setup errors such as nonexistent workdirs are DISPATCH_PRECONDITION_FAILED, not worker/provider failures. Consequential changes retain implementer plus independent falsifier; security/authority/external-effect work adds a semantic reviewer. Implementers never certify themselves.
+- These were directives sent to the coordinator; no reached-path implementation was yet reported complete.
+
+## ~19:21 MDT — UPDATE: Pig AC power policy reversed again by Nolan; implementation not yet observed
+- Supersedes the earlier same-day scoped-wake-lease/30-minute-AC-sleep policy for the Pig specifically. In the authoritative Mission Control finish directive, Nolan said: “NEVER SLEEP ON AC WHILE IT IS SERVING AS AN AUTOMATION HOST.”
+- Application-level resilience still remains mandatory: worker locks, dead-page recovery, idempotency, and HOLD on unknown consequential effects. Power settings are infrastructure defense, not a substitute for resilient execution. Battery/non-host devices continue using bounded wake locks for active work.
+- No tool result in this conversation showed the Pig’s AC sleep setting being changed back to never by 19:26 MDT, so this policy change is recorded as directed but not implemented/verified.
+
+## ~19:22 MDT — ASK 37 Questions Batch 6 delegated; pending
+- Nolan asked to formalize the final axioms and ask another 37. O1-O17 were written, and a new worker was dispatched to build Batch 6.
+- Batch 6’s stricter requirement is to ask only questions where human constitutional authority is genuinely required, with no repeats of any decided prior batch. If 37 genuine authority questions do not exist, the worker must report the honest smaller count rather than pad the batch with reversible product uncertainties.
+- At 19:26 MDT the worker was still running and reading prior batches; no Batch 6 artifact or classifier record had been delivered.
+
+## ~19:24 MDT — X audience-growth pass incomplete; stale intents deliberately reconciled
+- The ~19:14 MDT X pass prepared five eligible follow targets (`@GJAirport`, `@KannahCreekBrew`, `@palisadebrewco`, `@881Kafm`, `@workizinc`) and wrote intents under pass `x-20260927-011403`, but Phase B never ran. The first read-only discovery probe was killed by a sandbox restart; the bounded retry was still running without an output file when the worker turn ended. No candidate file, comments, likes, follows, or user-visible engagement resulted; no restriction/action-block signal was observed.
+- Pigi deliberately reconciled those five current-pass intents as NOT_ATTEMPTED based on the absent runner/outcome files and worker report that Phase B never executed.
+- Five additional stale pre-execution intents from dead pass `x-20260926-211429` were reconciled NOT_ATTEMPTED/superseded: that pass had only Phase A artifacts, while the identical five follows were later executed and driver-verified under `x-20260926-231400`.
+- Ledger verification after reconciliation showed 0 open X intents. The incomplete pass and both reconciliation batches were appended to `~/workspace/outreach/x-engagement.md`. The schedule remains enabled and retries at full ramped caps.
+
+## FB Pass 2026-09-26 19:26 MDT — FALLBACK route used, still NOT_ATTEMPTED
+- Degraded probe exit 2, signature stefi-500+timeline-403; 8th consecutive NOT_ATTEMPTED. Fallback (fb-url-fallback.py): 43 pool entries, 35 ledger-blocked at build time, 1 validated (like on Shental Bloom group post). run_pass.sh guard blocked the sole action fail-closed (ambiguous identity; eligible=0 blocked=1); nothing dispatched. Outcome recorded as stefi-outage. Pig Chrome/CDP healthy; retry at next scheduled pass. Held quiet; stefi outage already surfaced in the 05:00 bundle.
+
+- 19:26 MDT pig-health-heartbeat: UP (exit 0). Domains HOST/NETWORK/FYD all UP; ssh ok, wsl uptime_s=24159, docker ok, CDP 4/4, FYD + Ask read path healthy. No alert.
+## 19:29 MDT - ops-watch-gateway
+Both ping-core-01 gateway health checks OK (exit 0). gateway-health: gateway healthy, /health=200 body=healthy. gateway-health-degrades: consecutive-failure counter reset, status=healthy. No incident, no user notification warranted.
+
+## 20:15 MDT - discovery-research run (19:21 MDT lane, scheduled 6h)
+Chimney/fireplace + septic segment research; 5 NEW candidates staged to pipeline.md (canonical JSONL untouched at 305 rows / 300 active cap, round-136 at-cap procedure): Parachute Chimney Sweep Professionals (WATCH, (303) area-code anomaly), Flue Doctor (WATCH, GBP "possibly closed"), Eagle Plumbing and Septic (WARM, GoDaddy-site revamp candidate), Hot2O LLC (WARM, GJ plumbing, community-endorsed), Simply Service LLC (WATCH, GJ handyman, BBB A+ phone). Excluded: Stove Depot & Chimney Works (near-miss; already JSONL WARM + pipeline SUBMITTED - re-check caught the worker's miss), Damon Thompson (identity unverifiable), Effortless Portables/DT's Home Service (no contact), Western Plumbing Solutions (out-of-area).
+New-business radar: 1,184 in-window SOS filings -> 80 trade-filtered -> 19 verified -> ZERO qualified (cohort too new for web presence); re-run presence verification on the 19 names in 30-60 days.
+New signal: OT Electric (pipeline) - own-public IG launch 2026-09-12, contracting starts Oct 2026; treat as new-business radar hit (engine job).
+Review triggers: none across 8 HOT/WARM. SEO/AEO: Living Waters WEAK, Lady Bug MODERATE, Monument Lighting MODERATE.
+FB groups endpoint: 6th consecutive NOT_ATTEMPTED (HTTP 500, ~26h outage). Meta AI ingest: reconciled 2 pending sidecars (210417, 210611) to ingested; DISTILL skipped both (no generalizable intelligence). Summary: goals/ping-social-outreach-campaign/hidden_files/discovery-2026-09-27-0121.md.
+- ops-watch-gateway (19:34 MDT): check-gateway-health.sh and check-gateway-health-degrades.sh both exit 0 / OK. Gateway healthy (/health=200, body=healthy); degrades counter reset, no consecutive failures. No notification warranted.
+
+## FB Collect (2026-09-26 19:35 MDT)
+- collect_pass.sh: ok, results_collected 0, results_failed 0, progress_lines_recorded 0, progress_failed 0, skipped_collected 60 (unfollow artifacts skipped, as usual).
+- STALE notice (repeat, already known/escalated): fb-20260924-175129.json dispatched 55h ago, no result and no progress lines. Sweep did not re-mark it: dispatch_lifecycle record already exists; 42 intents stay UNKNOWN_EXECUTION, fail-closed via the refuse filter. No FAILED inferred, nothing retryable. Reconciliation remains owned by the 2h facebook-engagement-pass schedule.
+- sweep-stale-dispatches (--platform facebook --max-age-hours 8): marked=[], dry_run false. All dispatches skipped (fb-20260924-175129: "dispatch_lifecycle already recorded"; others: "has observation records"). No new lifecycle records.
+## ops-watch-listener (19:39 MDT)
+- check-unexpected-listener: OK, no new listening ports; 9 ports match baseline. No notification needed.
+- 2026-09-26 19:39 MDT ops-watch-gateway: gateway-health OK (exit 0), gateway-health-degrades OK (exit 0). Baseline healthy, no notification.
+
+## ops-watch-oom (2026-09-26 19:39 MDT)
+- container-oom-risk check: OK (exit 0). ping-gateway=11.52%, ping-postgres=3.72%, ping-qdrant=3.68% of 1GiB ceiling. Memory containment healthy, no notification warranted.
+- pig-route-watch (19:41 MDT): health check healthy, PIG_REACHABLE (proxy TCP OK, Tailscale tunnel OK, SSH banner OK).
+- 19:41 MDT: Pig health heartbeat: UP (all domains HOST/NETWORK/FYD up; ssh ok, wsl ok, docker ok, postgres/gateway ok, CDP 4/4, disk 11%).
+
+## ~19:26 MDT — UPDATE: Instagram manual pass completed its bounded run; replaces the ~19:11 queued/pending note
+- The Pig Instagram session was healthy and already logged in as `nolanpigi`; no 2FA challenge appeared, so Nolan's one-time approval was not needed. The one-time 2FA item was removed from the Instagram cron body; the standing explicit-approval carve-out remains.
+- Phase P produced the same stale 14-candidate set seen in recent passes. The guard left one eligible account, `@aspenwoodllc`; 13 were blocked (12 already engaged, one ambiguous identity). The account was admitted under Nolan's newly authorized closest-first expansion into the rest of Colorado based on public Southern Colorado/Pueblo business evidence.
+- In-run recovery spent the bounded discovery budget: three web strategies found no verifiable new handles, and one CDP probe across six rest-of-Colorado searches failed on all six, confirming continuing Instagram search/typeahead surface drift.
+- A closed action set containing one like and one post-specific comment for `@aspenwoodllc` was dispatched under pass `ig-20260927-011324`, but no driver result, guard record, or surviving process was observed before the run closed. The two intents therefore remain open at EXECUTION with `UNKNOWN_EXECUTION`; they must be deliberately reconciled and are mechanically refused from retry in the meantime. No action block, checkpoint, verification challenge, or rate-limit warning was observed. The schedule remains enabled at full ramped caps.
+
+## ~19:27 MDT — UPDATE: ASK 37 Questions Batch 6 completed, replacing the ~19:22 pending note
+- The completed artifact is `~/workspace/your_files/ask-37-questions-batch6-2026-09-26/ASK 37 Questions (Batch 6).md`.
+- Independent checks reported exactly 37 question headings, all four required fields for every question, zero em/en dashes, and no repeated decided question from batches 3 through 5. Prior-batch unanswered count remains 0.
+- The questions are limited to genuine authority-requiring areas: Mission Control and executor authority changes, publication/launch decisions, spend, new credentials/access, privacy/security policy, legal/business commitments, and irreducible owner taste. Jev ceiling, cloud standby, uptime SLA, and Pig hardware-refresh questions were deliberately omitted as premature or already governed.
+- A schema-compliant SI-03 escalation record was appended to `~/workspace/fyd-autonomy/escalation-log.jsonl` with an `escalate` verdict, eight failed checks, per-question evidence, recommended defaults, cost-of-error, and the cut list.
+
+## ~19:35 MDT — UPDATE: ORCA/Mission Control convergence investigation completed; replaces the earlier inventory-pending state, but phase-2 cutover and dogfoods remain pending
+- All nine convergence workstreams completed. Phase-0 inventory was reconciled into gap clusters C1-C12; the 100-gap list was delivered; the safe engagement-pipeline subset independently replayed 63/63; and the phase-1 Mission Control spine for an X pass was independently certified on all 8 claims with a clean fabrication audit.
+- Jev shadow mode completed 11/11 checks and recorded three real bounded decisions; it remains non-authoritative. A Mission Control event shape was proposed, not promoted into an execution authority.
+- Hermes is **not a candidate** for the reached-path spine yet. Independent falsification confirmed the Windows-to-WSL launcher fails at `hermes-run.sh` line 11 with exit 127 and no stdout because the referenced environment is a Linux venv. The regression window was narrowed to approximately 13:38-15:05 UTC. The verified repair recipe exists in `~/workspace/INTEGRATION.md`, but no repair was attempted because it was outside the lane's allowed paths and the desktop app may share that environment.
+- A second Hermes/Mission Control defect remains: the outcome model has no external-effect-state dimension, authority runs before dispatch, constraints do not reach the worker prompt, and the launcher does not pass safe mode. `EFFECT_UNKNOWN`/HOLD semantics must exist before any effectful grant.
+- Phase-2 spine cutover was specified but not executed. Happy Place and Coppersmith dogfoods remain pending afterward. Integration decisions also remain for the nested `ping-ui-contract` repository shape, the untracked-at-base `mission-control/` tree, and whether AIRuntime should become a registry executor or be removed from the vocabulary.
+- The design sprint was not modified by this convergence work, and engagement schedules continued running.
+
+## ~19:43 MDT — UPDATE: Batch 6 recommendations adjudicated; replaces treating all 37 as genuine current owner decisions
+- Nolan said Batch 6 was materially better but still confused “a human eventually decides this” with “Nolan must decide it now.” He rejected human constitutional authority as permanent runtime micromanagement: Nolan defines policy, risk appetite, delegation, publication, money, credentials, privacy posture, and irreversible commitments; deterministic software operates automatically inside those preauthorized boundaries.
+- The authority path is now: intent -> capability -> consequence classification -> policy -> automatic execution or human approval. Consequence is policy metadata, not a new authority, with dimensions including reversibility, external effect, money, publication, privacy, credential access, destructive scope, and commitment. Jev may classify ambiguous consequence but never authorizes. Do not create MissionControlAuthority, ConsequenceAuthority, ApprovalAuthority, PrivacyAuthority, SpendAuthority, or PublicationAuthority.
+- Mission Control projects authority and submits intent; it does not own authority. The narrow convergence contract is `MissionIntent -> validate -> authorize -> dispatch -> observe`, migrated one mission class at a time with no flag day. After a migrated class is replay-proven, direct bypass for that class becomes illegal.
+- Chat and Mission Control are presentations of the same canonical `ApprovalRequest`, bound to an exact proposal digest, capability, actor, and consequence. Neither surface owns approval. Silence is never consent; default expiry is HOLD, with only explicitly authorized deny/cancel/replan variants and never generic expire-approve.
+- Nolan owns delegation authority, not every future click. Delegations must be explicit, scoped, revocable, expiring, and bounded by capability/resource/effect class/spend/duration. First promotion of a consequential decision class requires Nolan; later low-risk promotion may follow a Nolan-approved promotion policy after the mechanism is proven.
+- Append-only applies to semantic audit history, not to secrets or erasable PII. Immutable events should contain minimal audit metadata, digests, and revocable references; sensitive payloads remain separately capability-gated, lifecycle-managed, and erasable. Corrections use superseding events. Identity verification should retain the smallest claim/receipt possible rather than defaulting to a permanent identity-document vault on the Pig.
+- Mission budgets are capability constraints: token, money, wall-clock, tool-call, and loop ceilings. Publication is an external effect. Approval and execution policy should classify consequence classes rather than grant an executor blanket consequential authority.
+- Data handling is policy-based by class (PUBLIC / OWNER / CONFIDENTIAL / SECRET / REGULATED-SENSITIVE) and approved destination, not per-packet owner approval. Provider tokens never enter model context. Visitor interactions are purpose-limited; no raw conversation training by default. Static generated sites do not receive a blanket “AI-generated” badge absent legal/product evidence, while Ask FYD should identify transparently as an AI concierge and never impersonate a human.
+- Tenant/owner scope belongs on missions, events, objects, relationships, approvals, and capabilities now, while current enforcement remains single-tenant. Do not build a parallel Mission Control tenant authority or overbuild multi-tenant infrastructure; before a second external tenant, run hostile cross-tenant isolation tests and enforce storage/query boundaries.
+- Other durable dispositions: keep Mission Control on an authenticated private control channel (tailnet is current transport, not constitutional); offsite backups must cover canonical/critical encrypted state and are unproven until restore succeeds; no automated system may quote an unauthorized price; PING publication and customer portfolio use require explicit scoped authorization/consent; FYD announcement remains held; LinkedIn remains held; prospect replies remain draft-only with future delegation by reply consequence; customer DNS remains untouched until value, publication authorization, and rollback/handoff are clear.
+- Legal/business items remain separated from technical proof: entity and contracting posture before paying customers, qualified counsel for real commitments, product-research pilots distinguished from commercial service, trademark decision held pending clearance, and the first pilot kept minimally scoped. Harvested executable code must retain source, license, version/SHA, purpose, wrapper, and test provenance.
+- Batch 6 itself is classifier training data. The system must distinguish TRUE OWNER AUTHORITY, CONSTITUTION ALREADY ANSWERED, NEEDS RESEARCH/EVIDENCE, and PREMATURE/DEFAULT SUFFICIENT. Nolan ordered this to be the last artificial fixed-size question exercise: no Batch 7; future escalations are organic and should optimize human decisions per unit of consequence rather than question count.
+- The adjudication was captured at `~/workspace/fyd-autonomy/batch6-owner-disposition.md`. This file is the implementation handoff; no claim is made here that all implementation is complete.
+
+## ~19:43 MDT — Batch 6 implementation and perpetual backlog program dispatched; pending
+- Nolan followed with: “DO LAST 37 NOW MAKE THEM GOOD AND STAY ADDING TO THE BACKLOG WORKING CONSTATLY FOREVER.” In context, this directs implementation of the adjudicated Batch 6 decisions, not creation of another 37-question batch.
+- A new Mission Control convergence coordinator was asynchronously dispatched to absorb the Batch 6 disposition, inventory every active worktree and overlap, build the narrow MissionIntent front door, add consequence metadata as policy input, project `WAITING_APPROVAL`, unify chat and Mission Control on the same approval object, add mission budget constraints, train SI-03 from Batch 6, and migrate one engagement pass through dispatch/hold/approve/deny/timeout/worker-death/UNKNOWN/receipt/replay proof before migrating others.
+- The coordinator was also directed to keep a rolling queue of at least 16 meaningful tasks while real work exists, with one writer per semantic unit, many investigators/falsifiers, independent certification, clean-checkout replay where consequential, and no manufactured busywork. The 24-hour FYD design sprint must continue independently and must not be interrupted or have engineering semantics leaked into visitor pages.
+- Dispatch acceptance proves only that the coordinator was queued; no Batch 6 implementation result, worktree inventory, reached-path proof, or integration was reported before this flush. All of that remains pending.
+
+## TikTok engagement pass 72 — 19:45 MDT (no-scale-back probe)
+
+- Temp comment block still active (~58h): probe landed 1 comment (@learntocodewithali, Python-on-Pi video), then the driver fail-closed on the "temporarily blocked" banner, same as passes 70/71. 15 retry-pool candidates guarded/refused/intented, 14 closed NOT_ATTEMPTED on the abort. Verify 0 violations, ledger 0 open.
+- Scoreboard since Pass 3: likes 16 applied of 95 attempted; comments 84 applied of 95 attempted.
+- Like state stays BLOCKED (durable cap 0, probes frozen pending recorded review). Classification ABORTED (restriction, not genuine-empty). Schedule ENABLED; next pass 21:45 MDT retries per the no-scale-back order.
+
+## ops-watch-gateway (19:44 MDT)
+- check-gateway-health: OK (exit 0) — /health=200 body=healthy
+- check-gateway-health-degrades: OK (exit 0) — failure counter reset
+- Verdict: gateway health baseline healthy, no notification warranted.
+## Ops watch: gateway health (19:49 MDT)
+- check-gateway-health.sh: OK (exit 0) - gateway healthy, /health=200 body=healthy, running since 2026-09-24
+- check-gateway-health-degrades.sh: OK (exit 0) - consecutive-failure counter reset
+- No notification warranted.
+
+## Pig route watch (19:51 MDT)
+- Health check: PIG_REACHABLE (proxy TCP OK, Tailscale tunnel OK, SSH banner OK).
+- No notification; infrastructure healthy.
+- 19:52 MDT dormant-authority tripwire: QUIET (ce=0 re=0 listeners=1 procs=1 identity_ok=1). No alert, no action.
+
+## Ops watch: ping-core-01 gateway health (19:54 MDT cron run)
+- check-gateway-health.sh: exit 0, OK, gateway healthy, /health=200 body=healthy (running since 2026-09-24T11:55:36Z).
+- check-gateway-health-degrades.sh: exit 0, OK, consecutive-failure counter reset, status=healthy.
+- No action taken; baseline healthy, no notification warranted.
+
+## ops-watch-oom (2026-09-26 19:54 MDT)
+- Ran ./check-container-oom-risk.sh (ping-core-01). Exit 0, status OK.
+- All containers well under 1GiB ceiling: ping-gateway=11.50%, ping-postgres=3.71%, ping-qdrant=3.66%.
+- Memory containment healthy. No user notification warranted.
+
+## 19:56 MDT - pig-health-heartbeat
+- Pig health UP: SSH ok, WSL ok (uptime 25958s), Docker ok, postgres/gateway ok, CDP 4/4 alive, all domains (HOST/NETWORK/FYD) UP. health-state.json status=UP, exit 0. No alert.
+
+## ops-watch-gateway 19:59 MDT
+- check-gateway-health: OK (exit 0) - gateway healthy, /health=200 body=healthy, running since 2026-09-24T11:55:36Z.
+- check-gateway-health-degrades: OK (exit 0) - consecutive-failure counter reset; state.json mutation expected bookkeeping.
+- No action taken; baseline healthy, no user notification warranted.
+- 20:04 MDT ops-watch-gateway: check-gateway-health OK (gateway healthy, /health=200); check-gateway-health-degrades OK (consecutive-failure counter reset). Baseline healthy, no notification needed.
+
+## FB Collect 20:05 MDT
+- collect_pass.sh: ok, results_collected=0, results_failed=0, progress_lines_recorded=0, progress_failed=0, skipped_collected=53. Nothing new to collect.
+- STALE dispatch warning: fb-20260924-175129.json dispatched 56h ago, no result and no progress lines (worker died before writing). Sweep did not mark it again: dispatch_lifecycle already recorded, so it is already reconciled once; intents stay open and the refuse filter keeps them fail-closed. No action needed unless repeats.
+- sweep-stale-dispatches: marked=[], dry_run=false; all skipped (lifecycle already recorded or has observation records).
+
+## ping-perfecting-pass 2026-09-26 ~19:55-20:35 MDT (goal ping-agent-execution-stack)
+
+Item 1 — visibility-composeObjectView-bypass (P1, OPEN, Stream B finding): verified the defect is real and delivered a tested patch.
+- Leak reproduced in a clean worktree of fyd/builder-rebuild-v1@85faad1 (main checkout's object lane is a dirty mix of generations and cannot run its own tests — ledgered as FL-20260926-209). Falsification probe with a digest-recomputed fieldVisibility block hiding Happy Place's phone (+15412865190): pre-patch loadObjectView leaked the phone (1 failing test); post-patch 7/7 green (loader-level hide, hide/members/owner-viewer opts, no-opts backward compat, source graph unmutated).
+- Patch (not committed — this pass commits only backlog files): composeObjectView gains ComposeObjectViewOpts {decisions, viewer} and applies applyFieldVisibility before any field read; loadObjectView resolves decisions from projection.fieldVisibility with a public viewer; visibilityDecisionsFromBlock moved from customize/server.ts into the canonical sitespec/field-visibility.ts (one visibility authority). tsc clean on touched files.
+- Artifacts in goals/ping-agent-execution-stack/hidden_files/perfecting-pass-2026-09-26/: composeview-visibility.patch, view-visibility.probe.test.ts, composeview-visibility-check.py (PASS on patched, FAIL on unpatched). BACKLOG_PING.md updated with evidence; owning lane (fyd-build) to land on fyd/builder-rebuild-v1. Committed backlog only (ba653ac, exactly 1 file, explicit pathspec; 2 unrelated pre-staged mission-control files left untouched).
+
+Item 2 — failure-ledger sweep: reviewed FAILURE_LEDGER.md end to end (196 entries); re-verified FL-20260924-202 end to end (tandem test-negative-signals-pipeline.py, HEALED, "all unit cases pass", exit 0) — no reopen. Added FL-20260926-209 + sweep-clean entry. Sweep clean.
+
+## ops-watch-listener (20:09 MDT)
+- Unexpected-listener check: OK, exit 0, no new listening ports; 9 ports match baseline. No alert warranted, no user notification requested.
+
+## ops-watch-oom (20:09 MDT)
+- check-container-oom-risk.sh exit 0 (OK). Detail: all containers well under 1GiB ceiling: ping-gateway=11.49%, ping-postgres=3.71%, ping-qdrant=3.66%. No notification warranted.
+
+## ops-watch-gateway (20:09 MDT)
+- check-gateway-health: OK (exit 0) - gateway healthy, /health=200 body=healthy.
+- check-gateway-health-degrades: OK (exit 0) - gateway healthy; consecutive-failure counter reset.
+- No notification warranted; baseline healthy.
+2026-09-26 20:11 MDT pig-health-heartbeat: UP (exit 0). All checks ok: SSH, WSL uptime 26858s, Docker, ping-postgres, ping-gateway, CDP 4/4, FYD page healthy, Ask FYD ok. No state transition.
+
+## 2026-09-26 20:14 MDT - ops-watch-gateway (ping-core-01)
+- Ran ./check-gateway-health.sh and ./check-gateway-health-degrades.sh from /home/hatch/workspace/ops-watches/.
+- Both exited 0 (OK). Gateway baseline healthy: /health=200 body=healthy, consecutive-failure counter reset. No notification warranted.
+- ops-watch-gateway 20:19 MDT: both checks OK (gateway-health OK, health=healthy; degrades OK, failure counter reset). No incident.
+
+## Outreach engine round 151 (2026-09-26 ~20:15 MDT / 2026-09-27 UTC)
+- Fired the 2026-09-27 UTC follow-up batch: 9 emails Gmail-accepted and verified in sent mail (6 F1s: PQ Plumbing, Jo Mama's Movers, WBS Coatings, Keenan's, PAR Mechanical, APS Alpine; 2 F2 final touches: Waypoint RV, Irrigation Monkey, both ladders ended at 3 touches; 1 cold: Alpine Fencing & Supplies, Delta, re-voiced round-30 draft, chain independence re-verified). 2026-09-27 UTC cap 9/10.
+- PARKED: Jack Of All Junction LLC F2 final touch. Gate discrepancy DISC-20260927021533-ace747 (SENT-before-name row format evades the parser; checker undercounted touches). First live test of the 2026-09-25 authority-order rule: machine parks, does not self-reconcile. Flagged POLICY REVIEW REQUIRED; F2 window open 09-26..09-30 for a later run after Nolan's word.
+- Reply check: 0 prospect replies, 0 new bounces. Last reply 2026-09-10 (Roaring Fork Landscapes, declined).
+- Consumed discovery-2026-09-27-0121 (5 chimney/septic candidates): all phone/form-route, kept NEW. Sweep summary: goals/ping-social-outreach-campaign/hidden_files/sweep-2026-09-27-round151.md.
+- 20:21 MDT pig-route-watch: PIG_REACHABLE (proxy TCP OK, Tailscale tunnel OK, SSH banner OK). Healthy, no notification.
+
+## ops-watch-oom (20:24 MDT)
+- container-oom-risk: OK. All containers well under the 1GiB ceiling: ping-gateway=11.47%, ping-postgres=3.71%, ping-qdrant=3.65%. No action needed.
+
+## ops-watch-gateway run (2026-09-26 20:24 MDT)
+- check-gateway-health.sh: OK (exit 0) — gateway healthy, /health=200 body=healthy, running since 2026-09-24T11:55:36Z
+- check-gateway-health-degrades.sh: OK (exit 0) — consecutive-failure counter reset, status=healthy
+- Baseline healthy; no user notification warranted.
+
+## ~20:12-20:24 MDT — UPDATE: Batch 7 final adjudication closes the fixed-question era; supersedes the earlier “no Batch 7” Batch 6 note
+- Nolan supplied the complete final Batch 7 owner disposition and explicitly closed the fixed 37-question era: no Batch 8, no new governance roadmap, and no questions answerable by constitution, existing policy, evidence, deterministic rules, research, or reversible experiments. Escalation now requires all four: real owner authority, needed now, consequential, and not already delegated.
+- The disposition was saved verbatim to `~/workspace/fyd-autonomy/batch7-owner-disposition.md` (part 2 is authoritative); a resolving SI-03 record was appended to `~/workspace/fyd-autonomy/escalation-log.jsonl`. Nolan identified questions 2, 7, 9, 10, 11, 12, 14, 16, 20, 22, 23, 24, 26, 30, 31, 32, 33, 35, and 36 as classifier false escalations that should have been resolved from existing rules/evidence/experiments.
+- Core final rulings: freeze versioned semantics/contracts and replay meaning, not implementation shape or magic noun counts; models classify/reason/recommend/propose, policy/authority authorizes, and executors execute only the authorized transition. Approval binds exact tenant, actor, proposal digest, capability, consequence, and expiry. Credential use is brokered; agents do not receive raw credentials. After possible external dispatch, `UNKNOWN` is a real state and requires reconciliation before retry.
+- Important corrections: no universal 30-day/24-hour delegation defaults; duration follows capability/relationship semantics. ApprovalRequest is not frozen to six fields; its invariant is one exact proposal under one exact authority context. The twelve Mission Control concepts are a semantic model, not constitutionally frozen database nouns. Jev promotion requires class-specific representative/adversarial evidence and independent falsification, not a magic count of 100. Historical tenant scope must never be fictionalized by automatic default-tenant backfill; use UNKNOWN or provenance-backed annotations without rewriting canonical history.
+- FYD product execution now outranks further authority theory. Locked order: P0 preserve the certified audit/PII repair and unrelated staged work without reset/clean/blind staging/overwrite; P1 identify the first component denying runtime spawn and keep DENIED/FAILED/UNKNOWN/RETRYABLE distinct; P2 choose one executor of record from evidence; P3 prove the canonical path to the external-effect boundary and stop unless exact authorization exists; P4 attack crash-after-call/timeout/missing-receipt uncertainty; P5 return to rendered experience -> Ask FYD -> evidence, then owner correction/customization/regeneration survival.
+- A new brutal-CEO execution coordinator was dispatched with that P0-P5 order. Dispatch only proves the work was queued; completion and integration remain pending.
+
+## ~20:24 MDT — Permanent autonomous execution order recorded
+- Nolan issued a standing “never ever stop” execution order for Pigi + Mission Control, bounded by the existing constitutional/safety/authority rules. North star remains: everything flows through Pigi + Mission Control; no new authority, no new truth store, wire instead of rewrite, and never destabilize a running mission.
+- Maintain a continuously replenished rolling swarm of up to 16 useful independent lanes when evidence-backed work exists, dynamically balanced among implementation, archaeology/harvest, independent falsification, and product/runtime/research. This is not authorization for 16 writers; one writer per semantic unit and never create writes merely to occupy workers.
+- Maintain at least 32 evidence-backed candidate tasks across READY / RESEARCHING / PROVEN_DEFECT / IMPLEMENTING / FALSIFYING / INTEGRATING / RUNTIME_PROVING / PRODUCT_PROVING / BLOCKED_AUTHORITY / SUPERSEDED / CLOSED. Queue depletion while useful work exists is a coordination defect. Every completion immediately replenishes capacity with the next highest-value safe task.
+- The 100-gap inventory is a hypothesis mine, not 100 build tickets. Each gap must be reobserved, mapped to an owner and existing machinery/bypasses, reproduced and classified, then closed by reuse/adapt/retire/write, falsification, clean-checkout proof, and runtime proof; “no change required,” obsolete, documentation drift, or duplicate-retirement are valid closures.
+- Permanent priority is the load-bearing reached path: dispatch identity/context/executor/capability/authorization/lineage/budget/timeout/idempotency/execution/receipt/evidence/verification/canonical outcome/event/projection/replay. Existing broker, claim machinery, CapabilityAuthority, FYD proposal/approval precedent, journal/emit path, WorkerRuntime, ORCA adapter, evidence, and replay machinery should be converged rather than replaced.
+- FYD runs as a permanent website-quality lab. Original Happy Place is the first adversarial benchmark and Coppersmith prevents customer-specific cheating. Diagnose the earliest generic loss point across ingestion, objects, relationships, media, planner, SiteSpec, renderer, tokens, responsive composition, projection contamination, repetition, and model visual blindness. Every meaningful design change must render, screenshot, inspect, falsify, run on both businesses, and keep only generalized improvements. Public website, owner controls, provenance/explainability, and developer diagnostics remain separate projections.
+- Silence remains the default. Do not send Nolan lane chatter, routine recoverable failures, research narration, or evidence-answerable questions. Escalate only consequential irreversible owner authority, conflicting owner objectives, privacy/security policy, meaningful spend beyond budget, unauthorized real-world publication/action, or a blocker only Nolan can resolve, using one exact approval object.
+
+## ~20:24 MDT — UPDATE: Hermes bridge repaired; replaces the earlier “repair not attempted / not a reached-path candidate” state
+- The Hermes bridge was moved from volatile Windows Temp to persistent `C:\Users\nolan\hermes-bridge\` (`hermes-run.sh`, `hermes-launch.py`, `hermes-prompt.txt`); Temp copies were removed after the eight-condition proof re-passed. Do not move it back to Temp or into the desktop app’s `AppData\Local\hermes` domain.
+- The accidentally replaced Linux venv was preserved as `venv.broken-2026-09-26`; a fresh Windows venv was rebuilt from the real uv-managed Windows Python directory and the editable Hermes package was installed through Windows `cmd` with Windows-form paths. The launcher now passes `--safe-mode`, has typed argv validation, and a live smoke exited successfully with plugin discovery skipped.
+- This proves bridge health only. It does not promote Hermes to execution authority or resolve the separate external-effect-state/UNKNOWN-HOLD contract; executor-of-record selection still requires the canonical execution proof and independent evidence.
+
+## ~20:24 MDT — Correction: 100-gap inventory delivery status
+- The earlier assistant reply saying the 100-gap inventory had “never been sent” was incorrect. The current durable record states `~/workspace/orca-mc-convergence/MC-GAPS-100.md` was delivered, and Nolan was viewing that file when issuing the permanent execution order. Treat it as delivered but living/stale-by-design, to be continuously reconciled rather than presented as a finished architecture plan.
+
+## ~20:24 MDT — Security note from pasted browser payload
+- Nolan’s pasted browser/page dump contained live-looking authentication/session material and personal account/device/network metadata. No secret value is copied into memory. Treat the exposed credential/session as a security incident requiring revocation or expiry verification through the owning service’s secure path before reuse; do not place it in prompts, logs, artifacts, or events.
+
+## 20:26 MDT — pig-health heartbeat
+- Status: UP (was UP), exit 0. SSH ok, WSL uptime 27759s, Docker ok, postgres ok, gateway ok, journal-gateway :18199 ok, Ask FYD ok, disk 11%, win_disk 13.2% free, CDP 4/4 alive, FYD WSL-local+tailnet 200, watchdog_fyd HEALTHY (last recovery 18:01 relaunching :18199, recoveries=3). All domains HOST/NETWORK/FYD UP.
+
+## ~20:27 MDT — FINAL 24-hour Mission Control convergence sprint; supersedes treating the 100-gap inventory as an implementation plan
+- Nolan issued the final 24-hour target: converge existing machinery into one reached, falsifiable Pigi + Mission Control path, then run a real Happy Place mission and the identical mission definition against Coppersmith, deliberately break the path, reconcile UNKNOWN outcomes, replay it, and prove Mission Control remains honest.
+- Required reached path: mission definition -> dispatcher identity -> deterministic bounded context -> registered executor -> named capability -> existing authority decision -> bounded dispatch -> existing backend -> observation/receipt -> typed outcome -> evidence -> existing journal/event path -> independent verification/falsification -> replayable state -> honest projection.
+- The 100 gaps remain archaeology and contradiction evidence, not 100 tickets. The sprint centers the dispatch front door, capability enforcement at the effect boundary, unavoidable event ingestion, executor discovery/registry, typed outcomes, idempotency, and reconcile-before-retry. Mission Control routes; existing authorities authorize; executors execute; the event authority records; evidence supports; verification determines support; projections explain.
+- Explicit non-builds: no AIRuntime, new authority, new truth/event store, new general scheduler, new workflow/agent framework, elaborate mission DSL, secret manager, giant UI, speculative orchestration universe, or customer-specific HPP path. Cron is projected before migration; fan-out waits until single dispatch is boring; worktrees are only one lineage mechanism for effect classes that need them.
+- Product remains visible during the control-plane sprint. Happy Place and Coppersmith are mandatory dogfoods, not end-of-sprint afterthoughts. Success is one real surface with zero consequential bypasses through identity -> capability -> execution -> evidence -> canonical event, plus truthful interruption, UNKNOWN, replay, and projection behavior.
+
+## ~20:27 MDT — UPDATE: brutal-CEO coordinator produced concrete P0-P5 findings after the earlier “dispatched, completion pending” note
+- P0 truth preservation completed according to the coordinator report: the staged audit/payload files were a byte-identical pre-repair revert, were surgically reconciled to the certified follow-up repair, and the audit, spine, policy, secret-shape, erasure-gating, and timezone checks passed. No reset/clean/blind overwrite was used.
+- Executor-of-record evaluation selected the Lane-C ORCA adapter as executor of record; raw Hermes remains transport, not an executor. The persistent Hermes bridge repair is now green, but effect-state/UNKNOWN handling remains a separate open contract before effectful capability use.
+- Migration supersession re-proof did not green-light migration: 8/12 conditions passed, while dispatch/receipt/replay failed because the real authority denied the proof mission as an unknown exterior agent. The earlier dispatch proof was stub-dependent as already caveated. No engagement pass migrates yet.
+- External-effect red team found a real S5 defect: retry after UNKNOWN can invoke transport and commit the remote effect repeatedly, and a same-execution retry can overwrite the prior UNKNOWN artifact. Idempotency, prior-outcome lookup, reconciliation gating, and never-overwrite evidence remain queued for repair.
+- Front-door hostile tests reported 19 passes and 3 failures: returned executor failure can be recorded as completed, effect-then-crash collapses to FAILED instead of UNKNOWN/HOLD, and revocation is absent. A single-writer front-door hardening lane was dispatched; completion remains pending.
+- Tenant hostile tests reported 14 failures and 11 passes. Tenant identity is still accepted from an untrusted request body, ApprovalRequest lacks tenant binding, read/projection/export paths are tenant-blind, and forged journal terminal records can influence folds. Do not onboard a second external tenant until the queued tenant-hardening work is independently proven.
+
+## ~20:27 MDT — Design sprint T+2 checkpoint reached; later checkpoints still pending
+- The design coordinator completed the root-cause comparison and ranked hypotheses. The current generated HPP is an engineering harness with internal/debug material occupying the customer projection; original HPP derives much of its quality from photography-led composition, larger typography, wider spacing, and human/business framing.
+- Baseline screenshots were captured across six widths for PING, Happy Place, and Coppersmith with no page errors. The first build lane is public/debug separation; the no-new-public-feature constraint remains in force until that projection boundary is fixed.
+- The T+24 fresh one-click URLs, render-quality verdict, HPP/Coppersmith generality proof, and final honest-gaps report remain pending.
+
+## ~20:27 MDT — Instagram pass 135 HOLD and cap-record correction
+- Pass 135 left two Instagram intents at EXECUTION with UNKNOWN_EXECUTION and no result artifact: one like and one comment for the same target. They remain open and block duplicate retry until deliberate reconciliation; zero effects are confirmed.
+- Correct current weekly-ramped Instagram ceiling is 55 likes + 15 comments per pass. The engagement log header was updated from stale 50+12, and pass 135's “55+12” line was annotated as a transcription error. Only one comment was dispatched, so no cap breach is indicated.
+
+## ~20:27 MDT — Four new convergence archaeology lanes dispatched, all still pending
+```
+
+<!-- More: yes. Fetch more from `memory/2026-09-26.md` with `memory_get` parameters {"path":"memory/2026-09-26.md","from":3180}. -->
