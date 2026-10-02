@@ -162,19 +162,30 @@ export function applyOverrides(
   return { spec: next, reapplied };
 }
 
+/**
+ * The deterministic commit marker for a proposal: "st-" + digestCanonical
+ * over (proposalId, beforeDigest, afterDigest). Stable across restores, so
+ * a persisted journal can recognize a retried commit without trusting an
+ * in-memory applied-set. Exported for hosts that persist transitions.
+ */
+export function transitionIdFor(proposal: PatchProposal): string {
+  return (
+    "st-" +
+    digestCanonical({
+      proposalId: proposal.id,
+      beforeDigest: proposal.beforeDigest,
+      afterDigest: proposal.afterDigest,
+    })
+  );
+}
+
 function transitionFor(
   proposal: PatchProposal,
   appliedAt: string,
 ): SpecTransition {
   return {
     kind: "proposals.spec-transition@1",
-    transitionId:
-      "st-" +
-      digestCanonical({
-        proposalId: proposal.id,
-        beforeDigest: proposal.beforeDigest,
-        afterDigest: proposal.afterDigest,
-      }),
+    transitionId: transitionIdFor(proposal),
     proposalId: proposal.id,
     beforeDigest: proposal.beforeDigest,
     afterDigest: proposal.afterDigest,
@@ -195,7 +206,10 @@ export interface ApplyOptions {
  * Apply an approved proposal to the owner layer state. Pure: returns a
  * new state, never mutates inputs. Refuses (never partially applies)
  * when the proposal is not approved, is tampered, is stale, or fails
- * validation. Re-applying an applied proposal is an idempotent no-op.
+ * validation. Re-applying an applied proposal is an idempotent no-op,
+ * recognized two ways: the applied-set, or the deterministic transition
+ * id already present in the journal (so a partial restore after a crash
+ * can never double-apply).
  */
 export function applyProposal(
   state: ProposalsState,
@@ -213,6 +227,20 @@ export function applyProposal(
       transition: null,
       alreadyApplied: true,
       summary: "already applied (idempotent no-op)",
+    };
+  }
+  if (state.transitions.some((t) => t.transitionId === transitionIdFor(proposal))) {
+    // The journal records this deterministic commit even though the
+    // applied-set does not (partial restore after a crash). Re-applying
+    // would append a second transition with the same transition id: the
+    // effect is already committed, so this is an idempotent no-op.
+    return {
+      ok: true,
+      state,
+      proposal: { ...proposal, status: "applied" },
+      transition: null,
+      alreadyApplied: true,
+      summary: "already applied (journal holds the deterministic commit)",
     };
   }
   if (proposal.status !== "approved" || !proposal.approval) {
