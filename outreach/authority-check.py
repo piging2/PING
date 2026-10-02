@@ -107,6 +107,20 @@ RATE_LIMIT_RE = re.compile(r"\brate[- ]limits?\b", re.IGNORECASE)
 # rate-limit AND gate/log-marker vocabulary are stripped.
 META_PROSE_RE = re.compile(
     r"log-tail|markers|reconciliation|pacing prose", re.IGNORECASE)
+# Explicit prose classification (2026-10-02 linkedin incident): a line that
+# explicitly states its quoted/discussed content "is PROSE, not restriction
+# events" (or equivalent) is documenting, not reporting. Without this, the
+# gate fires on the quoted trigger phrases inside the worker's own
+# diagnostic note, self-reinforcing every pass (the scanner DENY-CONFLICTs
+# on its own documentation -- the same loop class as the 2026-10-01 x
+# "held=false" incident). A real restriction event is never described by the
+# worker as prose/non-events. Kept narrow: only lines carrying an explicit
+# classification assertion are touched, and only their double-quoted spans
+# are removed; unquoted affirmative markers on the same line still fire.
+PROSE_CLASSIFICATION_RE = re.compile(
+    r"\bprose\b[^.;]{0,120}?\bnot\b[^.;]{0,60}?\brestriction",
+    re.IGNORECASE)
+QUOTED_SPAN_RE = re.compile(r'"[^"]*"')
 # One-driver browser-lock mechanics (x pass 2026-09-29 ~13:14 MDT:
 # 'the follow driver held the one-driver X Chrome lock', 'Gate held clean').
 # 'held' as a verb describing lock mechanics is not an account hold. A real
@@ -115,6 +129,11 @@ META_PROSE_RE = re.compile(
 # clauses are stripped.
 HELD_RE = re.compile(r"\bheld\b", re.IGNORECASE)
 LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
+# Timing-coordination prose (2026-10-02 facebook incident: '>30 min stagger
+# held' between IG/FB passes) is not an account hold. Kept narrow: the exact
+# phrase in order. A real hold phrased near stagger talk ('account held;
+# stagger the next pass') keeps firing because the phrase order won't match.
+STAGGER_HELD_RE = re.compile(r"\bstagger held\b", re.IGNORECASE)
 # Explicit prose negation of a hold-state claim ('x not held', 'X is not
 # on hold', "x isn't held") is a claim of NOT held, never a hold. This is a
 # NEW defect class from the 2026-10-01 19:14 MDT x incident: the gate fired
@@ -297,6 +316,12 @@ def strip_negated_clauses(line, surface=None):
     checking facebook). Only strips when the clause names another surface
     and does NOT name the checked surface; ambiguous clauses still fire.
     """
+    # Explicit prose classification: a line asserting its quoted content "is
+    # PROSE, not restriction events" is documenting, not reporting. Remove
+    # the quoted spans (the discussed prose) but keep scanning the rest of
+    # the line: a real event asserted outside the quotes must still fire.
+    if PROSE_CLASSIFICATION_RE.search(line):
+        line = QUOTED_SPAN_RE.sub(" ", line)
     kept = []
     for clause in re.split(r"[.;\n]", line):
         # Explicitly-negated machine hold state ('holds.json: x held=false',
@@ -323,6 +348,9 @@ def strip_negated_clauses(line, surface=None):
         # held clean') is not an account hold. This branch does not require a
         # RESTRICTION_TERM_RE hit because 'held' lives only in AFFIRMATIVE_RES.
         if HELD_RE.search(clause) and LOCK_MECHANICS_RE.search(clause):
+            continue
+        # Timing 'stagger held' is coordination prose, not a hold.
+        if STAGGER_HELD_RE.search(clause):
             continue
         # Bare "on hold" restriction state ("deployment is on hold"). Strip
         # only meta-prose about holds (reporting/documenting/testing),

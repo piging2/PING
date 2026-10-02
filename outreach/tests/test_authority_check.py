@@ -405,6 +405,64 @@ class GateTest(unittest.TestCase):
             self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
             self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
+    def test_prose_classification_diagnostic_allows(self):
+        # 2026-10-02 linkedin incident: the worker's diagnostic note
+        # explicitly classifying quoted markers as "PROSE, not restriction
+        # events" must not fire the gate on the quoted trigger phrases.
+        # Without the carve-out the scanner DENY-CONFLICTs on its own
+        # documentation, self-reinforcing every pass.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-02 - Pass li-1\n"
+                        "- The 3 \"log-tail markers\" are header-rules "
+                        "PROSE, not restriction events: (1) \"Fail-closed "
+                        "on any checkpoint/CAPTCHA/restriction/"
+                        "verification wall.\" (policy statement); (2) "
+                        "\"Two restriction signals in 7 days pauses the "
+                        "channel.\" (policy statement).\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_real_event_beside_prose_classification_still_denies(self):
+        # Narrowing guard: the prose-classification carve-out must not hide
+        # a real restriction event asserted outside the quoted spans.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-02 - Pass li-1\n"
+                        "- The 3 \"log-tail markers\" are header-rules "
+                        "PROSE, not restriction events.\n"
+                        "- Anomalies: temporarily blocked from liking.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_stagger_held_timing_prose_allows(self):
+        # 2026-10-02 facebook incident: '>30 min stagger held' between IG/FB
+        # passes is timing coordination, not an account hold.
+        self.write_authority({"facebook": "ACTIVE"})
+        self.write_file("facebook-engagement.md",
+                        "## 2026-10-02 - Pass fb-1\n"
+                        "- IG stagger: no overlap (last IG pass 202 "
+                        "completed; >30 min stagger held).\n")
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_real_hold_beside_stagger_talk_still_denies(self):
+        # Narrowing guard: the stagger carve-out requires the exact phrase
+        # in order; a real hold asserted near stagger talk still fires.
+        self.write_authority({"facebook": "ACTIVE"})
+        self.write_file("facebook-engagement.md",
+                        "## 2026-10-02 - Pass fb-1\n"
+                        "- Account held by owner order; stagger the next "
+                        "pass by 60 min.\n")
+        r = self.run_gate("facebook")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
 
 # ---- held-state negation fixtures (2026-10-01 19:14 MDT x incident) ----
 # Semantic classification of the hold-state claim family, driven by fixture
