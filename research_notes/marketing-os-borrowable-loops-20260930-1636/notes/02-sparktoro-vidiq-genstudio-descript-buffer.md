@@ -1,0 +1,39 @@
+# Notes: SparkToro, vidIQ, Adobe GenStudio, Descript, Buffer
+
+Read 2026-09-30 (index).
+
+## SparkToro — audience attention modeling
+- Datos case study (https://datos.live/blog/how-sparktoro-uses-datos-to-power-a-new-standard-in-audience-intelligence/): SparkToro blends search results, LinkedIn profiles, social profiles + Datos clickstream panel (tens of millions of real devices). Multilayer: (1) estimate audience size from searches; (2) website affinity scoring vs. average internet user; (3) social network engagement (LinkedIn/Reddit/Quora/Medium vs Twitter/GitHub in the example).
+- sparktoro.com blog methodology (https://sparktoro.com/blog/election-polls-vs-results-can-help-explain-how-sparktoros-data-works/): "data methodology is more like election results than election polls" — actual behavior (accounts followed, content shared, bio words) but coverage is sample-like (2-20% of true audience); confidence = sample size × behavior homogeneity; shown on Audience Insights tab.
+- sparktoro.com media insights (https://sparktoro.com/blog/analyze-your-audiences-political-media-behavior-in-sparktoro/): 1 "vote" per profile per site/account — frequent sharers can't overweight affinity.
+- SlideShare beta deck (https://www.slideshare.net/slideshow/sparktoro-beta-sneak-peek/154454493): crawl billions of pages/social accounts, build connections between matching profiles; 70M+ profiles; aggregate + anonymize, no PII; per profile: bio/job title, about pages, shared sites, followed accounts, words/phrases, hashtags.
+- CoSchedule podcast w/ Rand Fishkin (https://coschedule.com/blog/how-to-do-remarkable-customer-research-with-rand-fishkin-from-sparktoro): query like "interior designers" → 17,000 matching profiles → Venn/intersect of shared podcasts/sites; density = uniqueness to audience; clickstream estimates podcast visits → listener estimates.
+- Case studies: Truly Inc (https://Sparktoro.com/case-studies/truly-inc): margins 7%→37%, "save weeks of work"; podcast discovery data; editorial targeting. Contact Any Celebrity (https://sparktoro.com/case-studies/contact-any-celebrity): corrected media assumptions, removed Fox News from emails.
+- Randommonicle skill (https://github.com/randommonicle/1f916/blob/HEAD/.claude/skills/customer-research/references/source-guides.md): use SparkToro first for where ICP spends time; manual research (Reddit/G2) for raw language/why; key queries: "follows @competitor", "talks about [topic]", "bio contains [job title]", "visits yourdomain.com".
+
+## vidIQ
+- vidiq.com audit tool FAQ (https://vidiq.com/audit/): channel audit score from 5 growth signals across recent videos: upload consistency, SEO optimization, engagement rate, views-to-subscriber ratio, posting regularity; weighted by influence on recommendation algorithm.
+- vidiq.com audit framework blog (https://vidiq.com/blog/post/youtube-audit-framework-for-brands/): prompts run in AI Coach (Max Mode) wired to data layer: keyword scores, outlier detection, competitor benchmarking, channel analytics, rising keyword trends; audit cadence monthly; 30-60 day lag before re-checking.
+- vidiq.com coaching stories (https://vidiq.com/youtube-coaching-stories/): Sobrina 120→1,150 subs in 8 months; Allyssa Megan 18→4,000 subs + 3.2M views, monetized in 6 months; Midnight Prayer Retreat 1.4K→54K subs in 5 months (also at https://vidiQ.com/blog/post/understanding-youtube-algorithm/).
+- Independent reviews: wetransformacademyhub.com (https://www.wetransformacademyhub.com/post/vidiq-review-2025-is-it-still-the-best-youtube-optimization-tool-to-grow-your-channel): strengths = AI tools, keyword accuracy, competitor tracking. ventress.app (https://ventress.app/blog/ventress-vs-vidiq-youtube-growth-tools-2025/): 30-day twin-channel test — VidIQ channel +47% impressions, +35% views vs baseline (but 3.2x lower engagement rate than script-focused channel).
+- Keyword mechanics: Overall Score (search volume vs competition), VPH (views per hour) outlier score.
+
+## Adobe GenStudio for Performance Marketing
+- Adobe Experience League release notes (https://experienceleague.adobe.com/en/docs/genstudio-for-performance-marketing/user-guide/release-notes): features — Create (Canvas structured prompting; system managers train on brand guidelines: branding, personas, product descriptions), Content (curated approved assets; find/edit/repurpose/share), Reviews & Approvals (stakeholder review before saving/exporting), Campaigns (visualize/plan/track), Insights (real-time performance assessment).
+- Adobe newsroom (http://news.adobe.com/news/2024/10/101424-genstudio-for-performance-marketing): brand check AI inspects generated content, alerts on out-of-brand; automated multi-step review workflows via Workfront; AEM Assets two-way sync.
+- adobedocs campaigns overview (https://github.com/adobedocs/genstudio-for-performance-marketing.en/blob/HEAD/help/user-guide/campaigns/overview.md): Create → Content (post-approval) → Review & Approvals → Campaigns → Insights (CTR, conversion, engagement per element and campaign); "insights can fuel creative reworking of assets in Create" — explicit feedback loop; Activate publishes ad experiences to channels.
+- brainvire.com (https://www.brainvire.com/blog/adobe-genstudio-performance-marketing/): Insights identifies resonant attributes (styles, colors, objects, audio genres); direct performance analytics from Meta (Snap/TikTok planned).
+
+## Descript
+- TechCrunch 2017 (http://techcrunch.com/2017/12/12/descript-gets-5m-to-make-sound-editing-like-a-word-document/?ncid=rss): founding mechanic — transcript as editable document; cut word in transcript = cut in sound file; NLP to understand intent of audio.
+- social-media-skills SKILL.md (https://github.com/social-media-skills/skills/blob/HEAD/skills/descript/SKILL.md): "the transcript is the timeline"; ~60-70% editing-time cuts reported for talk content; Overdub consent-verified own-voice-only; mandatory accuracy pass (transcript errors → wrong edits AND wrong captions).
+- therundown.ai (https://www.therundown.ai/tools/descript): workflow — record/import → correct transcript → rough cut in transcript → Underlord/cleanup → review rights → export; brand studio collaboration; API + MCP workflows (Underlord via API).
+- fahimai.com independent 90-day review (https://www.fahimai.com/descript): paid out of pocket, 50+ videos over 90 days vs 5 alternatives; saved 10+ hours/week; 4.5/5; 7M+ creators claimed.
+- yetiai.com case study (https://yetiai.com/case-study-editing-podcasts-with-descript/): hours→minutes for cleanup tasks; multitrack alignment; real-time collaboration.
+- aivideogeneratorsfree.com (https://aivideogeneratorsfree.com/usecases-ai-video-tools/descript-ai-video-podcast): >70% editing time reduction; one recording → podcast episode + social clips + blog post = ~3x content output.
+
+## Buffer
+- Buffer Help Center (https://support.buffer.com/article/602-getting-started-with-buffers-analytics-features): analytics = "Insights": aggregated cross-channel view + per-channel Summary, Metrics chart, Performance per Post table; AI Takeaways surfacing what works; covers IG, FB, X, LinkedIn, TikTok, Pinterest, Threads, Bluesky, YouTube, Mastodon (not Google Business Profiles).
+- buildberg.co (https://www.buildberg.co/blog/social-media-analytics-tools): Buffer free 3 channels 30-day history; Essentials $5/mo/channel; Team $10/mo/channel.
+- getease.io comparison (http://getease.io/know-how/comparisons/shieldapp-linkedin-analytics-vs-buffer): Buffer strengths — cross-platform comparison, best-time-to-post, audience demographics, custom UTM reports, branded reports, comment insights; weakness — less LinkedIn granularity than Shield.
+- UTM taxonomy pattern (https://github.com/indranilbanerjee/digital-marketing-pro/blob/HEAD/docs/cross-channel-sync.md): standardized utm_source/medium/campaign/content makes campaign-level cross-channel table possible; without it, the table doesn't exist.

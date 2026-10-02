@@ -1,0 +1,18 @@
+{
+  "condition": 6,
+  "name": "missing Hermes",
+  "pass": true,
+  "evidence": {
+    "chain_audit": {
+      "hermes-run.sh": "present (reconstructed 2026-09-25)",
+      "hermes-launch.py": "present",
+      "hermes_cli/main.py": "present",
+      "hermes.exe": "present (AppData/Local/hermes/bin/)",
+      "venv/Scripts/python.exe": "MISSING - venv is now a Linux venv (pyvenv.cfg home=.../cpython-3.11-linux-x86_64-gnu); no Windows python anywhere on the Pig"
+    },
+    "live_symptom": "hermes-run.sh line 11: exec of missing interpreter -> bash 127, stderr 'No such file or directory' (observed directly on the Pig; prompt-hermes.sh discards it via 2>/dev/null)",
+    "adapter_handling": "cond1 artifact: exitCode=127, outcome=unknown, reason=worker_protocol_failure, recorded=false; ESCALATED, non-retryable, never reached canonical event authority, never collapsed to failed",
+    "history": "matches the known 2026-09-25 signature (exit 127, empty output) when the Temp runner was lost; last known-good smoke 2026-09-26 13:21 UTC",
+    "defect": "DEFECT-1: Windows venv for hermes-agent lost/replaced by a Linux venv after 2026-09-26 13:21; repair = rebuild Windows venv per INTEGRATION.md 2026-09-15 recipe (Windows cpython + uv pip install -e hermes-agent). Out of this lane's allowed paths; filed as precise defect report."
+  }
+}

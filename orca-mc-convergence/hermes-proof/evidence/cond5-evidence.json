@@ -1,0 +1,12 @@
+{
+  "condition": 5,
+  "name": "missing WSL",
+  "pass": false,
+  "evidence": {
+    "positive_leg": "WSL present; distros Ubuntu(default,Running)+docker-desktop(Running); 'wsl -u nolan -- whoami' -> nolan rc=0 (note: 'nolan' is the WSL username, not a distro)",
+    "negative_leg_channel": "wsl -d no-such-distro-xyz -> RC=255, stdout='There is no distribution with the supplied name. Error code: Wsl/Service/WSL_E_DISTRO_NOT_FOUND' (UTF-16), stderr empty",
+    "bridge_note": "prompt-hermes.sh discards only ssh stderr; wsl.exe error text arrives on stdout so it survives into the adapter's stdoutTail",
+    "adapter_trace": "nonzero exit + no JSON envelope -> worker_protocol_failure -> ESCALATED, honestOutcome=unknown, non-retryable, never failed (mechanism observed live in cond1)",
+    "not_fired": "full E2E with WSL actually removed: destructive, forbidden by lane contract; negative leg verified at channel level + adapter code path instead"
+  }
+}

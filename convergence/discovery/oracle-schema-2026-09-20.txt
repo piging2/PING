@@ -1,0 +1,439 @@
+=== TABLES ===
+public.agent_workspaces
+public.ai_workspace_results
+public.canonical_events
+public.capability_requests
+public.commits
+public.customers
+public.deployment_registry
+public.event_outbox
+public.event_processing
+public.execution_graphs
+public.exterior_agent_credentials
+public.google_reviews
+public.graph_node_states
+public.hpp_project_artifacts
+public.hpp_projects
+public.knowledge_edges
+public.knowledge_nodes
+public.mission_events
+public.mission_executions
+public.ping_bridge_cursors
+public.ping_events
+public.ping_missions
+public.repository_dead_letters
+public.repository_events
+public.repository_objects
+public.repository_snapshots
+public.repository_store_migrations
+public.review_flags
+public.runtime_registry
+public.telemetry_metrics
+public.tenant_registry
+=== COLUMNS ===
+public.agent_workspaces.agent_id|character varying||NO
+public.agent_workspaces.canonical_repository|boolean|false|YES
+public.agent_workspaces.created_at|timestamp without time zone|now()|YES
+public.agent_workspaces.repository_id|character varying||YES
+public.agent_workspaces.repository_path|character varying||YES
+public.agent_workspaces.workspace_path|character varying||NO
+public.ai_workspace_results.confidence|real||YES
+public.ai_workspace_results.created_at|timestamp with time zone|now()|NO
+public.ai_workspace_results.id|text||NO
+public.ai_workspace_results.input_hash|text||NO
+public.ai_workspace_results.model|text||YES
+public.ai_workspace_results.operation|text||NO
+public.ai_workspace_results.project_id|text||NO
+public.ai_workspace_results.result|jsonb||NO
+public.ai_workspace_results.tenant_id|text|'hpp'::text|NO
+public.canonical_events.actor|character varying||NO
+public.canonical_events.causation_id|uuid||YES
+public.canonical_events.correlation_id|uuid||YES
+public.canonical_events.created_at|timestamp with time zone|now()|YES
+public.canonical_events.event_id|uuid||NO
+public.canonical_events.event_type|character varying||NO
+public.canonical_events.event_version|character varying|'1.0.0'::character varying|NO
+public.canonical_events.last_error|text||YES
+public.canonical_events.metadata|jsonb|'{}'::jsonb|NO
+public.canonical_events.payload|jsonb||NO
+public.canonical_events.processed_at|timestamp with time zone||YES
+public.canonical_events.processed|boolean|false|YES
+public.canonical_events.retries|integer|0|YES
+public.canonical_events.sequence|bigint||NO
+public.canonical_events.source|character varying||NO
+public.canonical_events.tenant_id|character varying||NO
+public.canonical_events.timestamp|timestamp with time zone||NO
+public.canonical_events.worker|character varying||YES
+public.capability_requests.agent_id|character varying||NO
+public.capability_requests.audit_status|character varying|'SUCCESS'::character varying|YES
+public.capability_requests.authz|jsonb||YES
+public.capability_requests.capability|character varying||NO
+public.capability_requests.created_at|timestamp without time zone|now()|YES
+public.capability_requests.event_id|character varying||YES
+public.capability_requests.granted|boolean||YES
+public.capability_requests.parameters|jsonb||YES
+public.capability_requests.policy_violation|text||YES
+public.capability_requests.request_id|character varying||NO
+public.capability_requests.result|jsonb||YES
+public.capability_requests.session_id|character varying||YES
+public.commits.author|character varying||YES
+public.commits.branch|character varying||YES
+public.commits.commit_id|character varying||NO
+public.commits.commit_message|text||NO
+public.commits.created_at|timestamp without time zone|now()|YES
+public.commits.git_commit_hash|character varying||NO
+public.commits.mission_id|character varying||YES
+public.commits.patch_id|character varying||YES
+public.commits.push_status|character varying||YES
+public.commits.pushed_at|timestamp without time zone||YES
+public.commits.pushed|boolean|false|YES
+public.commits.witness_hash|character varying||YES
+public.customers.address|jsonb||YES
+public.customers.biography|text||YES
+public.customers.birthday|date||YES
+public.customers.calendar_event_count|integer|0|YES
+public.customers.calendar_last_event_at|timestamp with time zone||YES
+public.customers.company|character varying||YES
+public.customers.created_at|timestamp with time zone|now()|YES
+public.customers.customer_id|character varying||NO
+public.customers.display_name|character varying||YES
+public.customers.emails|jsonb|'[]'::jsonb|YES
+public.customers.email|character varying||YES
+public.customers.family_name|character varying||YES
+public.customers.given_name|character varying||YES
+public.customers.gmail_last_message_at|timestamp with time zone||YES
+public.customers.gmail_thread_count|integer|0|YES
+public.customers.id|integer|nextval('customers_id_seq'::regclass)|NO
+public.customers.metadata|jsonb|'{}'::jsonb|YES
+public.customers.phones|jsonb|'[]'::jsonb|YES
+public.customers.phone|character varying||YES
+public.customers.photo_url|text||YES
+public.customers.source_id|character varying||YES
+public.customers.source_url|text||YES
+public.customers.source|character varying||NO
+public.customers.tenant_id|character varying||NO
+public.customers.title|character varying||YES
+public.customers.updated_at|timestamp with time zone|now()|YES
+public.customers.website|text||YES
+public.deployment_registry.active_slot|character varying||YES
+public.deployment_registry.blue_version|character varying||YES
+public.deployment_registry.build_timestamp|timestamp with time zone||YES
+public.deployment_registry.completed_at|timestamp with time zone||YES
+public.deployment_registry.container_image|character varying||YES
+public.deployment_registry.deployed_at|timestamp with time zone|now()|YES
+public.deployment_registry.deployment_id|uuid||NO
+public.deployment_registry.environment|character varying|'production'::character varying|YES
+public.deployment_registry.git_sha|character varying||NO
+public.deployment_registry.green_version|character varying||YES
+public.deployment_registry.health|character varying|'unknown'::character varying|YES
+public.deployment_registry.metadata|jsonb|'{}'::jsonb|YES
+public.deployment_registry.oracle_region|character varying||YES
+public.deployment_registry.rollback_target|character varying||YES
+public.deployment_registry.rolled_back_at|timestamp with time zone||YES
+public.deployment_registry.status|character varying|'deploying'::character varying|YES
+public.deployment_registry.tenant_id|character varying||NO
+public.deployment_registry.version|character varying||NO
+public.event_outbox.aggregate_id|text||NO
+public.event_outbox.aggregate_type|text||NO
+public.event_outbox.causation_id|text||YES
+public.event_outbox.correlation_id|text||YES
+public.event_outbox.created_at|timestamp with time zone|now()|NO
+public.event_outbox.event_data|jsonb|'{}'::jsonb|NO
+public.event_outbox.event_type|text||NO
+public.event_outbox.id|integer|nextval('event_outbox_id_seq'::regclass)|NO
+public.event_outbox.published|boolean|false|NO
+public.event_processing.created_at|timestamp with time zone|now()|NO
+public.event_processing.event_id|text||NO
+public.event_processing.last_error|text||YES
+public.event_processing.processed_at|timestamp with time zone||YES
+public.event_processing.processed|boolean|false|NO
+public.event_processing.retries|integer|0|NO
+public.event_processing.worker|text|'unknown'::text|NO
+public.execution_graphs.created_at|timestamp with time zone|now()|NO
+public.execution_graphs.graph_data|jsonb|'{}'::jsonb|NO
+public.execution_graphs.graph_id|text||NO
+public.execution_graphs.graph_status|text||NO
+public.execution_graphs.mission_id|text||NO
+public.execution_graphs.updated_at|timestamp with time zone|now()|NO
+public.exterior_agent_credentials.agent_id|character varying||NO
+public.exterior_agent_credentials.agent_name|character varying||YES
+public.exterior_agent_credentials.api_key|character varying||NO
+public.exterior_agent_credentials.created_at|timestamp without time zone|now()|YES
+public.exterior_agent_credentials.expires_at|timestamp without time zone||YES
+public.exterior_agent_credentials.is_active|boolean|true|YES
+public.exterior_agent_credentials.last_used_at|timestamp without time zone||YES
+public.google_reviews.comment|text||YES
+public.google_reviews.created_at|timestamp with time zone|now()|YES
+public.google_reviews.id|text||NO
+public.google_reviews.location_id|text||NO
+public.google_reviews.rating|integer||YES
+public.google_reviews.raw|jsonb|'{}'::jsonb|NO
+public.google_reviews.review_reply|text||YES
+public.google_reviews.review_time|text||NO
+public.google_reviews.reviewer_name|text||YES
+public.google_reviews.reviewer_photo_url|text||YES
+public.google_reviews.reviewer_profile_url|text||YES
+public.google_reviews.star_rating|integer||YES
+public.google_reviews.synced_at|timestamp with time zone|now()|YES
+public.google_reviews.tenant_id|text||NO
+public.google_reviews.update_time|text||YES
+public.graph_node_states.created_at|timestamp with time zone|now()|NO
+public.graph_node_states.graph_id|text||NO
+public.graph_node_states.node_data|jsonb|'{}'::jsonb|NO
+public.graph_node_states.node_id|text||NO
+public.graph_node_states.node_status|text||NO
+public.graph_node_states.updated_at|timestamp with time zone|now()|NO
+public.hpp_project_artifacts.artifact_type|text||NO
+public.hpp_project_artifacts.created_at|timestamp with time zone|now()|NO
+public.hpp_project_artifacts.file_size|integer||YES
+public.hpp_project_artifacts.file_url|text||YES
+public.hpp_project_artifacts.id|text||NO
+public.hpp_project_artifacts.metadata|jsonb|'{}'::jsonb|YES
+public.hpp_project_artifacts.mime_type|text||YES
+public.hpp_project_artifacts.project_id|text||NO
+public.hpp_project_artifacts.tenant_id|text|'hpp'::text|NO
+public.hpp_project_artifacts.title|text||NO
+public.hpp_projects.actual_end|date||YES
+public.hpp_projects.actual_start|date||YES
+public.hpp_projects.created_at|timestamp with time zone|now()|NO
+public.hpp_projects.crew_size|integer||YES
+public.hpp_projects.customer_id|text||YES
+public.hpp_projects.description|text||YES
+public.hpp_projects.estimate_amount|real||YES
+public.hpp_projects.estimate_approved_at|timestamp with time zone||YES
+public.hpp_projects.estimate_currency|text|'USD'::text|YES
+public.hpp_projects.estimate_sent_at|timestamp with time zone||YES
+public.hpp_projects.id|text||NO
+public.hpp_projects.materials|jsonb|'[]'::jsonb|YES
+public.hpp_projects.metadata|jsonb|'{}'::jsonb|YES
+public.hpp_projects.photos_after|jsonb|'[]'::jsonb|YES
+public.hpp_projects.photos_before|jsonb|'[]'::jsonb|YES
+public.hpp_projects.portfolio_eligible|boolean|false|YES
+public.hpp_projects.portfolio_published_at|timestamp with time zone||YES
+public.hpp_projects.priority|integer|0|YES
+public.hpp_projects.project_type|text||NO
+public.hpp_projects.review_id|text||YES
+public.hpp_projects.review_requested_at|timestamp with time zone||YES
+public.hpp_projects.review_submitted_at|timestamp with time zone||YES
+public.hpp_projects.scheduled_end|date||YES
+public.hpp_projects.scheduled_start|date||YES
+public.hpp_projects.status|text|'lead'::text|NO
+public.hpp_projects.tags|jsonb|'[]'::jsonb|YES
+public.hpp_projects.tenant_id|text|'hpp'::text|NO
+public.hpp_projects.title|text||NO
+public.hpp_projects.updated_at|timestamp with time zone|now()|NO
+public.knowledge_edges.created_at|timestamp with time zone|now()|NO
+public.knowledge_edges.data|jsonb|'{}'::jsonb|NO
+public.knowledge_edges.edge_id|character varying||NO
+public.knowledge_edges.edge_type|character varying||NO
+public.knowledge_edges.source_id|character varying||NO
+public.knowledge_edges.target_id|character varying||NO
+public.knowledge_edges.weight|real|1.0|YES
+public.knowledge_nodes.confidence_provenance|character varying||YES
+public.knowledge_nodes.confidence|real|1.0|YES
+public.knowledge_nodes.correlation_id|character varying||YES
+public.knowledge_nodes.created_at|timestamp with time zone|now()|NO
+public.knowledge_nodes.data|jsonb|'{}'::jsonb|NO
+public.knowledge_nodes.entity_id|character varying||YES
+public.knowledge_nodes.entity_type|character varying||YES
+public.knowledge_nodes.label|text||NO
+public.knowledge_nodes.namespace|character varying|'core::system'::character varying|NO
+public.knowledge_nodes.node_id|character varying||NO
+public.knowledge_nodes.node_type|character varying||NO
+public.knowledge_nodes.source_event_id|character varying||YES
+public.knowledge_nodes.status|character varying|'candidate'::character varying|NO
+public.knowledge_nodes.updated_at|timestamp with time zone|now()|NO
+public.mission_events.created_at|timestamp with time zone|now()|NO
+public.mission_events.event_data|jsonb|'{}'::jsonb|NO
+public.mission_events.event_id|text||NO
+public.mission_events.event_type|text||NO
+public.mission_events.processed|boolean|false|NO
+public.mission_executions.created_at|timestamp with time zone|now()|NO
+public.mission_executions.execution_data|jsonb|'{}'::jsonb|NO
+public.mission_executions.execution_id|text||NO
+public.mission_executions.execution_status|text||NO
+public.mission_executions.mission_id|text||NO
+public.mission_executions.updated_at|timestamp with time zone|now()|NO
+public.ping_bridge_cursors.last_event_id|text||NO
+public.ping_bridge_cursors.source|character varying||NO
+public.ping_bridge_cursors.updated_at|timestamp with time zone|now()|NO
+public.ping_events.created_at|timestamp with time zone|now()|NO
+public.ping_events.event_id|character varying||NO
+public.ping_events.event_type|character varying||NO
+public.ping_events.metadata|jsonb|'{}'::jsonb|NO
+public.ping_events.namespace|character varying|'core::system'::character varying|NO
+public.ping_events.payload|jsonb|'{}'::jsonb|NO
+public.ping_events.processed|boolean|false|NO
+public.ping_events.sequence|bigint|nextval('ping_events_sequence_seq'::regclass)|YES
+public.ping_events.source|character varying||NO
+public.ping_events.timestamp|timestamp with time zone|now()|NO
+public.ping_missions.assigned_to|character varying||YES
+public.ping_missions.claimed_at|timestamp with time zone||YES
+public.ping_missions.completed_at|timestamp with time zone||YES
+public.ping_missions.created_at|timestamp with time zone|now()|NO
+public.ping_missions.created_by|character varying||YES
+public.ping_missions.error|text||YES
+public.ping_missions.lease_until|timestamp with time zone||YES
+public.ping_missions.mission_id|character varying||NO
+public.ping_missions.mission_type|character varying||NO
+public.ping_missions.payload|jsonb|'{}'::jsonb|NO
+public.ping_missions.priority|integer|0|YES
+public.ping_missions.result|jsonb||YES
+public.ping_missions.retries|integer|0|YES
+public.ping_missions.retry_at|timestamp with time zone||YES
+public.ping_missions.started_at|timestamp with time zone||YES
+public.ping_missions.status|character varying|'created'::character varying|NO
+public.repository_dead_letters.authority_version|text||NO
+public.repository_dead_letters.authority|text||NO
+public.repository_dead_letters.causation_id|text||YES
+public.repository_dead_letters.correlation_id|text||YES
+public.repository_dead_letters.created_at|bigint||NO
+public.repository_dead_letters.dead_letter_id|text||NO
+public.repository_dead_letters.dead_lettered_at|bigint||NO
+public.repository_dead_letters.error_code|text||YES
+public.repository_dead_letters.error_message|text||NO
+public.repository_dead_letters.error_stack|text||YES
+public.repository_dead_letters.execution_id|text||YES
+public.repository_dead_letters.failure_reason|text||NO
+public.repository_dead_letters.job_type|text||NO
+public.repository_dead_letters.metadata|jsonb|'{}'::jsonb|YES
+public.repository_dead_letters.mission_id|text||YES
+public.repository_dead_letters.original_job_id|text||NO
+public.repository_dead_letters.payload|jsonb||NO
+public.repository_dead_letters.replayable|boolean|true|NO
+public.repository_dead_letters.retry_count|integer||NO
+public.repository_dead_letters.witness_hash|text||YES
+public.repository_dead_letters.witness|jsonb||YES
+public.repository_events.aggregate_type|text|'unknown'::text|NO
+public.repository_events.authority_version|text|'1.0.0'::text|NO
+public.repository_events.authority|text|'system'::text|NO
+public.repository_events.canonicaleventhash|text||YES
+public.repository_events.causation_id|text||YES
+public.repository_events.chain_root|text||YES
+public.repository_events.correlation_id|text||YES
+public.repository_events.created_at|timestamp with time zone|now()|NO
+public.repository_events.event_id|text||NO
+public.repository_events.event_type|text||NO
+public.repository_events.object_id|text||NO
+public.repository_events.payload|jsonb|'{}'::jsonb|NO
+public.repository_events.previouseventhash|text||YES
+public.repository_events.reducerhash|text||YES
+public.repository_events.replayhash|text||YES
+public.repository_events.runtimeid|text|'unknown'::text|NO
+public.repository_events.sequence|integer||NO
+public.repository_events.timestamp|timestamp with time zone|now()|NO
+public.repository_events.witnesshash|text||YES
+public.repository_events.witness|jsonb||YES
+public.repository_objects.canonical_bytes|bytea||YES
+public.repository_objects.created_at|timestamp with time zone|now()|NO
+public.repository_objects.data|jsonb|'{}'::jsonb|NO
+public.repository_objects.kind|text||NO
+public.repository_objects.metadata|jsonb|'{}'::jsonb|NO
+public.repository_objects.object_id|text||NO
+public.repository_objects.updated_at|timestamp with time zone|now()|NO
+public.repository_objects.version|integer|1|NO
+public.repository_snapshots.created_at|timestamp with time zone|now()|NO
+public.repository_snapshots.data|jsonb|'{}'::jsonb|NO
+public.repository_snapshots.object_id|text||NO
+public.repository_snapshots.snapshot_id|text||NO
+public.repository_snapshots.version|integer||NO
+public.repository_store_migrations.applied_at|timestamp with time zone|now()|NO
+public.repository_store_migrations.description|text||NO
+public.repository_store_migrations.version|integer||NO
+public.review_flags.flagged_at|timestamp with time zone|now()|YES
+public.review_flags.id|text||NO
+public.review_flags.reason|text|'manual'::text|NO
+public.review_flags.review_id|text||NO
+public.review_flags.tenant_id|text||NO
+public.runtime_registry.authority_version|character varying|'1.0.0'::character varying|YES
+public.runtime_registry.build_sha|character varying||YES
+public.runtime_registry.compiler_sha|character varying||YES
+public.runtime_registry.component_name|character varying||NO
+public.runtime_registry.component_type|character varying||NO
+public.runtime_registry.contract_hash|character varying||YES
+public.runtime_registry.cpu_usage_percent|numeric||YES
+public.runtime_registry.deployment_id|character varying||YES
+public.runtime_registry.error_rate|numeric||YES
+public.runtime_registry.event_version|character varying|'1.0.0'::character varying|YES
+public.runtime_registry.health_endpoint|character varying||YES
+public.runtime_registry.health_score|numeric|0.00|YES
+public.runtime_registry.health|character varying|'unknown'::character varying|YES
+public.runtime_registry.last_heartbeat|timestamp with time zone||YES
+public.runtime_registry.latency_ms|numeric||YES
+public.runtime_registry.memory_usage_bytes|bigint||YES
+public.runtime_registry.metadata|jsonb|'{}'::jsonb|YES
+public.runtime_registry.metrics_endpoint|character varying||YES
+public.runtime_registry.node_id|character varying||YES
+public.runtime_registry.queue_depth|integer||YES
+public.runtime_registry.registered_at|timestamp with time zone|now()|YES
+public.runtime_registry.runtime_id|character varying||NO
+public.runtime_registry.schema_version|character varying|'1.0.0'::character varying|YES
+public.runtime_registry.started_at|timestamp with time zone||YES
+public.runtime_registry.status|character varying|'unknown'::character varying|YES
+public.runtime_registry.tenant_id|character varying||NO
+public.runtime_registry.updated_at|timestamp with time zone|now()|YES
+public.runtime_registry.uptime_seconds|bigint||YES
+public.runtime_registry.version|character varying||YES
+public.telemetry_metrics.metric_id|integer|nextval('telemetry_metrics_metric_id_seq'::regclass)|NO
+public.telemetry_metrics.metric_name|text||NO
+public.telemetry_metrics.metric_value|numeric||NO
+public.telemetry_metrics.tags|jsonb|'{}'::jsonb|NO
+public.telemetry_metrics.timestamp|timestamp with time zone|now()|NO
+public.tenant_registry.auth_token_hash|character varying||YES
+public.tenant_registry.capabilities|ARRAY|'{}'::text[]|YES
+public.tenant_registry.deployment_id|character varying||YES
+public.tenant_registry.domains|ARRAY|'{}'::text[]|YES
+public.tenant_registry.environment|character varying|'production'::character varying|YES
+public.tenant_registry.events_endpoint|character varying||YES
+public.tenant_registry.git_sha|character varying||YES
+public.tenant_registry.health_endpoint|character varying||YES
+public.tenant_registry.last_heartbeat|timestamp with time zone||YES
+public.tenant_registry.logs_endpoint|character varying||YES
+public.tenant_registry.metadata|jsonb|'{}'::jsonb|YES
+public.tenant_registry.metrics_endpoint|character varying||YES
+public.tenant_registry.name|character varying||NO
+public.tenant_registry.registered_at|timestamp with time zone|now()|YES
+public.tenant_registry.status|character varying|'active'::character varying|YES
+public.tenant_registry.tenant_id|character varying||NO
+public.tenant_registry.traces_endpoint|character varying||YES
+public.tenant_registry.updated_at|timestamp with time zone|now()|YES
+public.tenant_registry.version|character varying||YES
+=== TRIGGERS ===
+=== SEQUENCES ===
+public.customers_id_seq
+public.event_outbox_id_seq
+public.ping_events_sequence_seq
+public.telemetry_metrics_metric_id_seq
+=== RELTUPLES ESTIMATES ===
+=== PG_STAT_USER_TABLES ===
+public.agent_workspaces|seq_scan=35|idx_scan=0|n_tup_ins=2|n_tup_upd=0|n_tup_del=0
+public.ai_workspace_results|seq_scan=5|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.canonical_events|seq_scan=163336|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.capability_requests|seq_scan=7|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.commits|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.customers|seq_scan=8|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.deployment_registry|seq_scan=8|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.event_outbox|seq_scan=10|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.event_processing|seq_scan=7|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.execution_graphs|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.exterior_agent_credentials|seq_scan=214|idx_scan=23|n_tup_ins=2|n_tup_upd=111|n_tup_del=0
+public.google_reviews|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.graph_node_states|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.hpp_project_artifacts|seq_scan=5|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.hpp_projects|seq_scan=8|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.knowledge_edges|seq_scan=9|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.knowledge_nodes|seq_scan=23|idx_scan=309|n_tup_ins=202|n_tup_upd=13|n_tup_del=0
+public.mission_events|seq_scan=9|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.mission_executions|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.ping_bridge_cursors|seq_scan=4|idx_scan=62|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.ping_events|seq_scan=184|idx_scan=3553|n_tup_ins=2511|n_tup_upd=1|n_tup_del=1
+public.ping_missions|seq_scan=122|idx_scan=651318|n_tup_ins=491|n_tup_upd=1523|n_tup_del=8
+public.repository_dead_letters|seq_scan=9|idx_scan=10|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.repository_events|seq_scan=77536|idx_scan=7|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.repository_objects|seq_scan=7|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.repository_snapshots|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.repository_store_migrations|seq_scan=4|idx_scan=42|n_tup_ins=11|n_tup_upd=0|n_tup_del=0
+public.review_flags|seq_scan=6|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.runtime_registry|seq_scan=9|idx_scan=1|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.telemetry_metrics|seq_scan=7|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0
+public.tenant_registry|seq_scan=4|idx_scan=0|n_tup_ins=0|n_tup_upd=0|n_tup_del=0

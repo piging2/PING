@@ -1,0 +1,39 @@
+commit 86bfbc4825b9186c2e7176baa08ba920de78723b
+Author: Pigi <pigi@local>
+Date:   Sun Sep 27 01:51:40 2026 +0000
+
+    audit lane repair: close falsifier defects (secret scanner, ERASED gate, sweep TZ)
+    
+    Fixes the three defects found by the independent falsifier on 17b1362:
+    
+    1. Secret-shape scanner denylist gaps: add provider-prefix families
+       (aws_access_key_id AKIA/ABIA/ACCA/ASIA, stripe_secret_key
+       sk_live_/sk_test_, github_fine_grained_pat). The falsifier's three
+       smuggled synthetic shapes are now rejected by audit_metadata() and
+       build_audit_event() before reaching immutable metadata or the journal.
+       Disposition rule honored: no secrets enter immutable history.
+    
+    2. Direct transition to ERASED bypasses the erasure flow: transition()
+       now raises IllegalTransitionError on to_state=ERASED unless called
+       with _via_erasure_flow=True (only request_erasure passes it). The
+       docstring promise ('ERASED ... only through the erasure flow') is now
+       true: no manifest/ERASED lie with payload content left on disk and no
+       orphan that request_erasure() would never clean up.
+    
+    3. sweep dwell math is timezone-dependent: calendar.timegm replaces
+       time.mktime so UTC 'Z' timestamps parse as UTC regardless of TZ.
+    
+    Regression tests (section 12 of test_payload_lifecycle.py, 17 checks):
+    - the three smuggled shapes rejected by audit_metadata() and blocked at
+      the envelope, guard error still withholds the matched value
+    - direct transition to ERASED refused (state stays ACTIVE, content and
+      file intact); request_erasure still reaches ERASED via the flow
+    - sweep transitions a 3600s-aged payload under TZ=America/Denver, UTC,
+      Pacific/Kiritimati
+    
+    Proof from clean worktree: 60/60 lane checks green; spine regression
+    46/46 spine checks + 63/63 pass-policy-engine checks green.
+
+ mission-control/payload_lifecycle.py            | 25 ++++++--
+ mission-control/tests/test_payload_lifecycle.py | 79 +++++++++++++++++++++++++
+ 2 files changed, 98 insertions(+), 6 deletions(-)

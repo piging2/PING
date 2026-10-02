@@ -1,0 +1,16 @@
+#!/bin/bash
+# SSH to the Pig (100.79.154.43) via the tailnet HTTP CONNECT proxy (port 3130).
+# Proxy credential is read from $HTTPS_PROXY at runtime, never stored here.
+set -u
+P="${HTTPS_PROXY:-}"
+P="${P#http://}"; P="${P#https://}"
+AUTH="${P%%@*}"; REST="${P#*@}"
+PHOST="${REST%%:*}"
+cat > /tmp/pig-proxy-cmd.sh << CMD
+#!/bin/bash
+exec socat STDIO "PROXY:${PHOST}:\$1:\$2,proxyport=3130,proxyauth=${AUTH}"
+CMD
+chmod 700 /tmp/pig-proxy-cmd.sh
+exec ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=20 \
+   -o "ProxyCommand=/tmp/pig-proxy-cmd.sh %h %p" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/pig_known_hosts \
+  muse-ssh@100.79.154.43 "$@"

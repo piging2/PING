@@ -1,0 +1,10 @@
+#!/bin/bash
+# pig: run a command on Nolan's Windows machine via Tailscale SSH through the egress proxy.
+# Host key pinned to /home/hatch/workspace/pig/known_hosts (persistent); fails closed on change.
+set -u
+KEY=/home/hatch/.ssh/id_ed25519
+KH=/home/hatch/workspace/pig/known_hosts
+exec ssh -i "$KEY" -o BatchMode=yes -o ConnectTimeout=20 \
+  -o UserKnownHostsFile="$KH" \
+  -o ProxyCommand='nc -X connect -x hatch-egress-proxy:3130 %h %p' \
+  muse-ssh@100.79.154.43 "$@"

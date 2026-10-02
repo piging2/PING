@@ -1,0 +1,25 @@
+{
+  "condition": 8,
+  "name": "result after potential external effect",
+  "pass": false,
+  "verdict": "PARTIAL: transport-not-authority PROVEN; EFFECT_UNKNOWN/HOLD for verified-completed envelopes NOT implemented -> DEFECT-2",
+  "evidence": {
+    "8a_authority_leg": {
+      "location": "orca-adapter/adapter.js dispatchExecution steps 1-3, BEFORE step 4 (dispatch)",
+      "step1": "identity fence: identity_5..10 explicitly DENIED (Nolan 2026-09-25)",
+      "step2": "vendor.authorizeWorkOrder (external_agent_adapter.js:171) fail-closed: known profile, not blockedExternal/PENDING_AUTH, capability in allowlist, namespace valid, constraints tighten profile max, HARD-requires no_canonical_events=true + no_mission_state_writes=true",
+      "step3": "issueWorkOrder re-authorizes (line 213); deterministic work_order_id",
+      "bridge": "prompt-hermes.sh / hermes-run.sh / hermes-launch.py contain zero authority checks: pure transport. Bridge is TRANSPORT, never authority: PROVEN."
+    },
+    "8b_effect_state_gap_DEFECT_2": {
+      "vocabulary": "outcomes.js: {completed, failed, unknown, denied, escalated} -- no external-effect dimension",
+      "consequence": "a verified 'completed' envelope from an effectful capability -> terminalOutcome(COMPLETED) -> WORKER_COMPLETED when a runtime is injected. Nothing distinguishes 'completed, no possible effect' from 'completed after unknown effects'. Exit-1 != no-effect is honored for failures/unknowns, but NOT for verified completions.",
+      "self_report": "envelope evidence.capabilityPerformed is worker self-report; O5: worker output is a claim until independently proven",
+      "constraints": "hermes profile allows only read-only capabilities (fixture.read/text.transform/text.summarize) with maxConstraints {read_only,no_writes,no_network} -- but constraints are authorization-time gates only: buildWorkerPrompt never renders them into the prompt, and nothing technically enforces them on the worker process",
+      "safe_mode_discrepancy": "vendored profile documents 'hermes.exe -z PROMPT --safe-mode -t <toolsets>'; actual hermes-launch.py runs [VENV_PY, MAIN_PY, -z, prompt] with no --safe-mode / toolset flags, and main.py contains no 'safe-mode' string (Pig-side grep, RC=1). The read-only posture rests on capability-name allowlisting + prompt instructions, not an enforced sandbox flag in the invocation path.",
+      "hold_ownership": "transport half of Q10/HOLD holds: adapter propagates UNKNOWN and never retries (proven cond4/cond7). The caller (WorkerRuntime/Mission Control) owns reconcile-vs-retry. But NOTHING in the spine can emit EFFECT_UNKNOWN/HOLD for a verified-completed envelope.",
+      "no_live_fire": "firing this live requires an effectful prompt: forbidden. Harmless prompts in this lane cannot cross the boundary, so EFFECT_UNKNOWN could not honestly arise here either."
+    },
+    "candidate_implication": "Hermes may be a CANDIDATE executor for read-only capabilities only AFTER DEFECT-1 (bridge down) is repaired. For any effectful capability, DEFECT-2 (no effect-state in outcome/event vocabulary, no independent effect verification, safe-mode invocation not matching the launcher) must be closed first; until then a verified 'completed' would be recorded clean."
+  }
+}

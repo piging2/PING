@@ -1,0 +1,9 @@
+#!/bin/bash
+# Run a bash command/script inside Pig WSL as nolan. Usage: pigwsl-exec '<bash code>'
+# Uses the established pig-config route (nolan@100.79.154.43 via egress proxy :3130).
+set -u
+TMPF=$(mktemp /tmp/pigwsl-XXXXXX.sh)
+printf '%s\n' "$1" > "$TMPF"
+B64=$(base64 -w0 < "$TMPF")
+rm -f "$TMPF"
+exec ssh -F /home/hatch/.ssh/pig-config -o BatchMode=yes -o ConnectTimeout=60 pigwsl "wsl -- bash -c \"echo $B64 | base64 -d | bash\"" < /dev/null

@@ -1,0 +1,25 @@
+commit fd8edef85af3adf0d080ea7104588dabc434f763
+Author: Pigi <pigi@ping.social>
+Date:   Sun Sep 27 01:54:43 2026 +0000
+
+    audit scanner follow-up: close re-falsifier gaps G1/G2 (86bfbc4)
+    
+    G1: OpenAI project keys sk-proj-<tail> slipped past the openai_key
+    pattern (the proj- infix broke the 16+ alnum run after sk-). Add an
+    openai_project_key pattern family beside openai_key.
+    
+    G2: the label aws_secret_access_key never matched secret_assignment
+    because underscores defeat the \b boundary around 'secret'. Add the
+    full AWS label to the label alternation.
+    
+    Regression tests (section 13): both shapes are rejected by
+    audit_metadata() and blocked at build_audit_event(), with the matched
+    value withheld from errors. Synthetic fixtures only.
+    
+    66/66 lane checks (60 original + 6 new), 46/46 spine, 63/63
+    pass-policy-engine, all green from this worktree; the new shapes are
+    confirmed to smuggle past the 86bfbc4 scanner (negative control).
+
+ mission-control/payload_lifecycle.py            |  4 ++-
+ mission-control/tests/test_payload_lifecycle.py | 33 +++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 1 deletion(-)

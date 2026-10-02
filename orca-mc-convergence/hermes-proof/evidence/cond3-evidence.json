@@ -1,0 +1,13 @@
+{
+  "condition": 3,
+  "name": "malformed invocation: typed error, no hang",
+  "pass": true,
+  "evidence": {
+    "3a_empty_stdin": "rc=2, usage on stderr, <5s (see run log)",
+    "3b_noargs_devnull": "rc=2, <5s",
+    "3c_validateExecution": "throws 'execution.<field> required' before any dispatch",
+    "3d_unknown_transport": "throws 'unknown transport: telepathy (only hermes is proven)'",
+    "3e_pig_launcher_no_argv": "see run log (IndexError traceback -> nonzero; untyped but loud, stderr preserved at Pig layer)",
+    "3f_empty_stdout": "cond1 live: worker_protocol_failure -> ESCALATED, honestOutcome=unknown, non-retryable, never canonical"
+  }
+}

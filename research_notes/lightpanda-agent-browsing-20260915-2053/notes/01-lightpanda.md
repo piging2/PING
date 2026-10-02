@@ -1,0 +1,15 @@
+# Notes — Lightpanda funding & official status
+- URL: https://lightpanda.io/blog/posts/lightpanda-raises-preseed (read via index, crawled ~89 days before 2026-09-15)
+- Pre-seed announced 2026-06-10 (post dated "Tuesday, June 10, 2025"), led by ISAI; angels include founders of Mistral, Hugging Face, Dust.
+- Claims: open-source browser built from first principles for machines; no graphical composition; launches in milliseconds; CDP-compatible (Playwright/Puppeteer).
+- Telemetry: README states telemetry ON by default; disable with LIGHTPANDA_DISABLE_TELEMETRY=true. Privacy policy: https://lightpanda.io/privacy-policy. (https://github.com/lightpanda-io/browser, index, crawled ~10h before 2026-09-15)
+- Status per README: "in Beta and currently a work in progress. Stability and coverage are improving and many websites now work. You may still encounter errors or crashes."
+- Implemented (per README): CORS (experimental flag), HTTP loader (libcurl), HTML parser (html5ever), DOM tree, JS via V8, DOM APIs, XHR/Fetch, DOM+Markdown dump, CDP/websockets server, Click, Input form, Cookies, Custom HTTP headers, Proxy support, Network interception, --obey-robots, CDP + Webdriver Bidi, Adblocker.
+- Not implemented (gap items from README + YouTube video description https://www.youtube.com/watch?v=yFWYK3wN88w): SPA rendering, service workers, IndexedDB (video claim — weaker source). README: "There are hundreds of Web APIs... Coverage will increase over time."
+- License: AGPL-3.0 (README + linuxiac https://linuxiac.com/lightpanda-promises-a-faster-lightweight-alternative-to-headless-chrome/). Linuxiac notes partial site compatibility ("compatibility with all websites is not yet complete").
+- Founders: Francis and Pierre, building 2+ years in Zig (HN https://news.ycombinator.com/item?id=42817439); prior company scraped millions of pages/day with headless Chrome.
+- Performance claims (vendor, README benchmark table on 100 pages): Lightpanda 123MB peak vs 2GB Chrome ("~16x less"), 5s vs 46s ("~9x faster"). Older sources said 11x faster/9x less; Docker Hub says 9x faster/16x less. Numbers shifted across versions — all vendor benchmarks, unverified independently.
+- Deployment: binary download (Linux x86_64/aarch64, macOS; glibc-linked, breaks on musl/Alpine), Homebrew + AUR packages, Docker image lightpanda/browser:nightly (amd64+arm64), CDP serve on :9222, CLI `lightpanda fetch --dump html|markdown|png|pdf`, `--wait-until/--wait-ms/--wait-selector/--wait-script`, MCP server + agent-skill repo (lightpanda-io/agent-skill) for LLM-agent workflows.
+- Lightpanda Cloud: managed CDP browser service exists (api-evangelist mirror page; details/pricing not researched).
+- Community: ~26,505 stars on GH (security-scanned-skills metadata, ~139 days ago), ~32k stars (Medium Jul 2026).
+- Note: one skill mirror (terminalskills) references an unrelated nichochar/lightpanda Docker image and release links — treat as community noise, not official.

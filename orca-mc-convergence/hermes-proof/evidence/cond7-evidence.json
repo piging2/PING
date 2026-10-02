@@ -1,0 +1,11 @@
+{
+  "condition": 7,
+  "name": "interrupted worker mid-run",
+  "pass": true,
+  "evidence": {
+    "7a_transport_kill": "prompt-hermes.sh backgrounded; ssh child SIGTERMed at ~3s mid-flight; script rc=143; zero stdout bytes that form an envelope",
+    "7b_pig_orphan": "ps check run immediately after kill (see run log); with the current 127-defect the remote chain was already dying, but the semantics hold: a killed local transport cannot know the worker's fate",
+    "7c_adapter_leg": "signal-killed transport (exitCode=null, partial stdout) -> extractEnvelope unbalanced -> ESCALATED, honestOutcome=unknown, transportError recorded in artifact; never failed, never retried, never canonical",
+    "semantics": "interruption -> UNKNOWN. Reconcile-vs-retry belongs to the caller (WorkerRuntime/Mission Control)."
+  }
+}

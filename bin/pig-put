@@ -1,0 +1,21 @@
+#!/bin/bash
+# pig-put: transfer a local file to Pig WSL via pigwsl-exec (base64 chunks).
+# Usage: pig-put <local-file> <remote-path>
+set -u
+LOCAL="$1"
+REMOTE="$2"
+EXPECTED_SHA=$(sha256sum "$LOCAL" | cut -d' ' -f1)
+~/workspace/bin/pigwsl-exec 'rm -f /tmp/pigput.b64' >/dev/null
+i=0
+base64 -w0 "$LOCAL" | fold -w 3000 | while IFS= read -r chunk || [ -n "$chunk" ]; do
+  i=$((i+1))
+  out=$(~/workspace/bin/pigwsl-exec "printf '%s' '$chunk' >> /tmp/pigput.b64 && printf 'c%d-ok' '$i'" 2>&1 | grep -o "c${i}-ok" | head -1)
+  if [ "$out" != "c${i}-ok" ]; then echo "CHUNK $i FAILED"; exit 1; fi
+done || exit 1
+GOT_SHA=$(~/workspace/bin/pigwsl-exec "base64 -d /tmp/pigput.b64 > '$REMOTE' && sha256sum '$REMOTE'" 2>&1 | grep -o '[0-9a-f]\{64\}' | tail -1)
+if [ "$GOT_SHA" = "$EXPECTED_SHA" ]; then
+  echo "OK $REMOTE (sha256 $GOT_SHA)"
+else
+  echo "MISMATCH $REMOTE: expected $EXPECTED_SHA got $GOT_SHA"
+  exit 1
+fi

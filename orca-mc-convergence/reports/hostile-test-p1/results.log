@@ -1,0 +1,51 @@
+== MissionIntent front-door hostile tests ==
+worktree: /tmp/mc-hostile-test @ 537d264 (detached, read-only)
+adapter:  vendored orca-adapter via local node (real verdicts)
+
+[PASS] H1: denial honest: IntentAuthorizationError("denied by existing authority: Capability 'email.send' not allowed for agent 'hermes'"); MC_GATE_RESULT authorize verdict=fail; MC_LANE_FAILED event_status=denied denied_by=existing-authority; executor.calls=0; no MC_LANE_STARTED
+[FAIL] H2a: AMBIGUOUS: executor returned status='failed' (budget exhausted) but the lane terminal event is MC_LANE_COMPLETED with record executor_status='failed'; no MC_LANE_FAILED. The failure class is visible only inside the packed record, not in the event type. find_intent_record() treats this as a completed terminal.
+[PASS] H2b: no budget gate in front door: 30/30 submits dispatched, executor.calls=30; quota gating lives outside this code (vendored adapter notes: dispatcher checks quota before issuing; front door has zero budget/saturation counters)
+[PASS] H3: no saturation model: 40 rapid submits all dispatched (MC_LANE_STARTED x40); no queue-full/backpressure signal exists in the front door
+[PASS] H4a: unreachable authority fail-closed: IntentAuthorizationError('existing authority unreachable: vendored adapter not found at /tmp/does-not-exis'); journal=['MC_GATE_RESULT'] (validate-pass only, no terminal, no MC_LANE_STARTED); second attempt re-tried authorization (types now ['MC_GATE_RESULT', 'MC_GATE_RESULT'])
+[PASS] H4b: shim transport failure fail-closed: IntentAuthorizationError("existing authority unreachable: [Errno 2] No such file or directory: 'node-binar"); journal types=['MC_GATE_RESULT']; executor.calls=0
+[PASS] H4c: issuance denial signal: IntentAuthorizationError("work order denied by existing authority: Constraint 'no_writes' must be true for agent 'hermes'"); the adapter re-runs authorizeWorkOrder inside issueWorkOrder and throws code=WORK_ORDER_DENIED
+[PASS] H5a: spawn failure honest: IntentDispatchError("executor 'spawn-fail-executor' failed: spawn failed: worker process could not st"); MC_LANE_STARTED then MC_LANE_FAILED event_status=dispatch-failed; executor.calls=1
+[FAIL] H5b: MISREPORT: external effect DID happen (marker file exists) but the mission is recorded MC_LANE_FAILED status=dispatch-failed, IntentDispatchError("executor 'effect-then-crash-executor' failed: worker crashed AFTER per"). The code cannot distinguish 'crashed before effect' from 'crashed after effect'; both collapse to FAILED, never UNKNOWN.
+[PASS] H5c: _check_executor_result gate: IntentDispatchError("executor status must be 'completed' or 'failed', got 'weird'")
+[PASS] H6a: executor timeout -> IntentDispatchError("executor 'spine-dry-run-observer' failed: observer subprocess failed to run: Com"); MC_LANE_FAILED; no distinct TIMEOUT class exists (timeout is reported as dispatch-failed)
+[PASS] H6b: no watchdog: 2.5s executor still running at t=1s (True); submit blocked 3.0s total, then MC_LANE_COMPLETED; the work-order deadline (+600s, recorded on the order) is never enforced by the front door
+[FAIL] H7: GAP: no revocation/cancellation concept anywhere in the front door (grep revok|cancel in ['mission_intent.py', 'frontdoor_adapters.py', '_adapter_shim.js']: no hits; no MC_*CANCEL*/*REVOK* event type). A mid-execution revocation cannot be expressed, so it cannot block dispatch: the 2.0s mission ran to MC_LANE_COMPLETED despite the 'revocation'. Revocation does NOT block new dispatch because revocation does not exist.
+[PASS] H8a: duplicate suppressed: outcome=dispatched/duplicate-suppressed executor.calls=1; MC_CHECKPOINT status=duplicate-suppressed; original work_order_id returned; no second dispatch
+[PASS] H8b: failed dispatch is terminal under the same key: second submit returned duplicate-suppressed with original.terminal='MC_LANE_FAILED'; executor.calls stayed 1 (no silent retry); a retry needs a new idempotency key
+[PASS] H8c: E2 fail-closed: IntentDispatchError('idempotency key reuse with different canonical intent bytes (capabilit'); executor.calls=1; collision detected BEFORE authorize (raise is DispatchError, not the authority's denial)
+[PASS] H9a: UNKNOWN preserved: IntentDispatchError('previous intent with this idempotency key is in-flight (no terminal ev'); MC_HOLD_RAISED status=in-flight-duplicate-hold; executor.calls=0; no terminal event for the key; find_intent_record terminal=None
+[PASS] H9b: hold is sticky: 3/3 duplicates held (MC_HOLD_RAISED x3), executor.calls=0, no terminal ever written
+[PASS] H9c: journal corruption fail-closed: bad line skipped by _journal_events, mission reads as in-flight, duplicate held ('previous intent with this idempotency key is in-flight (no t'); executor.calls=0
+[PASS] H9d: recovery terminal resolves the hold: duplicate-suppressed to wo-recovered; executor.calls=0
+[PASS] V1: no retry machinery in front door: retry-loop hits=[]; 'retryable' references in front door=[] (vendored adapter hard-codes retryable:false on every result verification)
+[PASS] V2: terminal recognition=True (only MC_LANE_COMPLETED/FAILED); front door never emits MC_HOLD_CLEARED=False (hold clears only via a real terminal event)
+
+== summary ==
+PASS H1
+FAIL H2a
+PASS H2b
+PASS H3
+PASS H4a
+PASS H4b
+PASS H4c
+PASS H5a
+FAIL H5b
+PASS H5c
+PASS H6a
+PASS H6b
+FAIL H7
+PASS H8a
+PASS H8b
+PASS H8c
+PASS H9a
+PASS H9b
+PASS H9c
+PASS H9d
+PASS V1
+PASS V2
+PASS=19 FAIL=3
