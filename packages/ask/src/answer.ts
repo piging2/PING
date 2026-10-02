@@ -1,0 +1,215 @@
+/**
+ * HARVEST BANNER (piging2)
+ * SOURCE: /home/nolan/projects/ping-fyd-converged @ 32f83474
+ *         src/fyd/ask/visitor-answer.ts (answerAskFyd: the refusal shape,
+ *         "A refusal is an answer with no cited evidence: the pipeline
+ *         had nothing to stand on, so it says so instead of guessing"),
+ *         src/fyd/ask/answer.ts (refusalAnswer)
+ * TARGET OWNER: packages/ask (piging2 Ask FYD)
+ * MODE: ADAPT. The source routes through a general composer with an LLM
+ * in the loop for later proofs; proof 3 keeps only the deterministic
+ * core: intent detection, evidence lookup, classification, citation, and
+ * the refusal contract. The proof-3 answerer handles exactly one intent
+ * (the services question). Any other question is refused with its topic
+ * recorded in unknowns. No LLM in the answer path: classification and
+ * evidence binding are mechanical.
+ * DEPENDENCIES: ./types, ./viewer, ./cite
+ * PROOFS: [3]
+ *
+ * HONESTY CONTRACT (enforced in code):
+ * - A service is named only when a service object with an active
+ *   "offers" relationship from the target exists in the projected graph.
+ * - A claim is made only with evidenceRefIds that resolve to served
+ *   evidence refs.
+ * - The derived count claim is computed, labeled DERIVED, never stated
+ *   as a recorded fact.
+ * - When the graph cannot support the answer: refusal, answerState
+ *   UNKNOWN, claims [], unknowns non-empty. The answer text says
+ *   "FYD does not have evidence", never a guess, never filler.
+ */
+
+import type {
+  AskAnswer,
+  AskClaimClassification,
+  AskEvidenceRef,
+  AskInput,
+  AskViewerIdentity,
+  ObjectGraph,
+} from "./types";
+import { projectGraphForViewer } from "./viewer";
+import { citeFact } from "./cite";
+
+const SERVICE_SCHEMA = "ping.social.service@1";
+const OFFERS_PREDICATE = "offers";
+const MAX_QUESTION_CHARS = 2000;
+
+/** The one intent this slice answers: questions about offered services. */
+function isServicesQuestion(question: string): boolean {
+  return /\bservices?\b/i.test(question);
+}
+
+function refusalAnswer(answer: string, unknowns: string[]): AskAnswer {
+  return {
+    ok: true,
+    answer,
+    refusal: true,
+    answerState: "UNKNOWN",
+    claims: [],
+    evidenceRefs: [],
+    unknowns,
+  };
+}
+
+function viewerOf(input: AskInput): AskViewerIdentity {
+  return {
+    id: input.viewerContext.viewerId,
+    displayName: null,
+    verified: input.viewerContext.viewerClass === "owner",
+  };
+}
+
+function sortById<T extends { id: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/**
+ * Answer one question mechanically from evidence. Pure, deterministic,
+ * no I/O, no model. The input graph is projected for the viewer before
+ * anything reads it: the answerer cannot see non-public data.
+ */
+export function askFyd(input: AskInput): AskAnswer {
+  const question = input.question.trim();
+  if (question === "") {
+    return refusalAnswer("Ask a question first.", ["question"]);
+  }
+  if (question.length > MAX_QUESTION_CHARS) {
+    return refusalAnswer(
+      "That question is too long. Please keep it under 2000 characters.",
+      ["question"],
+    );
+  }
+
+  const viewer = viewerOf(input);
+  const { graph } = projectGraphForViewer(input.graph, viewer);
+
+  // Object-scoped ask: the target must survive the viewer projection.
+  // An unknown id or a non-public object fails closed to refusal.
+  const target =
+    graph.objects.find((o) => o.id === input.targetObjectId) ?? null;
+  if (!target) {
+    return refusalAnswer(
+      "FYD does not have evidence to answer that question: the requested object is not visible in the public record.",
+      [`object ${input.targetObjectId}`],
+    );
+  }
+
+  if (!isServicesQuestion(question)) {
+    return refusalAnswer(
+      "FYD does not have evidence to answer that question. " +
+        "Try asking about the business, its services, contact details, or location.",
+      [question.slice(0, 120)],
+    );
+  }
+
+  // Services branch: service-bearing objects are service-schema objects
+  // joined to the target by an active "offers" relationship. Sorted by id
+  // so the answer is deterministic.
+  const services = sortById(
+    graph.objects.filter(
+      (o) =>
+        o.schema === SERVICE_SCHEMA &&
+        graph.relationships.some(
+          (r) =>
+            r.status === "active" &&
+            r.subject === target.id &&
+            r.predicate === OFFERS_PREDICATE &&
+            r.object === o.id,
+        ),
+    ),
+  );
+
+  if (services.length === 0) {
+    return refusalAnswer(
+      "FYD does not have evidence for that: the site record names no services for this business.",
+      ["services offered"],
+    );
+  }
+
+  const evidenceRefs: AskEvidenceRef[] = [];
+  const claims: AskClaimClassification[] = [];
+  const listed: string[] = [];
+
+  services.forEach((svc, i) => {
+    const rel = graph.relationships.find(
+      (r) =>
+        r.status === "active" &&
+        r.subject === target.id &&
+        r.predicate === OFFERS_PREDICATE &&
+        r.object === svc.id,
+    );
+    // The relationship is guaranteed by the filter above; the guard is
+    // belt-and-braces so a claim can never cite a missing rel.
+    const relId = rel ? rel.id : `missing-rel:${svc.id}`;
+    const citation = citeFact({ objectId: svc.id, field: "name" }, graph, viewer);
+    evidenceRefs.push({
+      kind: "object",
+      id: svc.id,
+      label: `Service: ${svc.title}`,
+      detail: citation ? citation.detail : "Site record",
+    });
+    evidenceRefs.push({
+      kind: "relationship",
+      id: relId,
+      label: `${target.title} offers ${svc.title}`,
+      detail: citation ? citation.detail : "Site record",
+    });
+    claims.push({
+      claim: `${target.title} offers ${svc.title}.`,
+      classification: "DIRECT",
+      evidenceRefIds: [svc.id, relId],
+    });
+    listed.push(`${svc.title} [${i + 1}]`);
+  });
+
+  // Derived claim: the count is computed from evidence, labeled DERIVED.
+  claims.push({
+    claim: `${target.title} offers ${services.length} services in total.`,
+    classification: "DERIVED",
+    evidenceRefIds: services.map((s) => s.id),
+  });
+
+  // "How FYD knows": name the source from the first service's citation.
+  const firstCitation = citeFact(
+    { objectId: services[0].id, field: "name" },
+    graph,
+    viewer,
+  );
+  const sourceLine = firstCitation
+    ? `observed from the business website (${firstCitation.source})` +
+      (firstCitation.lastChecked ? `, captured ${firstCitation.lastChecked}` : "") +
+      `. ${firstCitation.basis}.`
+    : "recorded in the site evidence.";
+
+  const answer =
+    `${target.title} offers ${services.length} services: ${listed.join(", ")}.\n\n` +
+    `How FYD knows: each marker above points to a service record ${sourceLine} ` +
+    `These are the website's own statements; FYD has not independently verified them.`;
+
+  return {
+    ok: true,
+    answer,
+    refusal: false,
+    answerState: "KNOWN",
+    claims,
+    evidenceRefs,
+    unknowns: [],
+  };
+}
+
+/** Re-exported for tests: the projected graph the answerer reasons over. */
+export function projectedGraphFor(
+  graph: ObjectGraph,
+  input: AskInput,
+): ObjectGraph {
+  return projectGraphForViewer(graph, viewerOf(input)).graph;
+}
