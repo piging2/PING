@@ -1,10 +1,10 @@
 {
   "account": "INSTAGRAM:Nolan Geske",
   "baseline_following": 3706,
-  "current_following_estimate": 2492,
+  "current_following_estimate": 2340,
   "last_batch": {
-    "date": "2026-09-30",
-    "note": "23:30 MDT batch completed clean overnight (100/100, zero warnings). Backfilled at the 05:30 MDT run."
+    "date": "2026-10-02",
+    "note": "11:30 MDT batch completed clean: 17/17 unfollowed (ok:true, zero warnings, stopped:null, canary_verified:true; canary_required flag auto-cleared after verified canary). CLI following_count 2357 -> 2340 (-17 exactly). All 17 appended to unfollow-log.jsonl (date 2026-10-02, 0 dupes). Day total now 150/150 of halved daily cap. clean_streak_days 4; no ramp (needs 7)."
   },
   "harvest_2026-09-29_1130": "05:19 MDT run's result file (job-igunfollow-20260929-111902.json.result.json) landed 06:52 MDT: 80 unfollowed, ok:true, zero warnings, canary_verified:true. Worker exited; no node ig-unfollow process on Pig. Appended all 80 to unfollow-log.jsonl (date 2026-09-29). CLI following_count 3070 at 11:30 MDT matches estimate drift (3132 - 62 unlogged = 3070).",
   "batch_2026-09-29_1130": {
@@ -19,9 +19,10 @@
   "status": "running",
   "target_per_day": 80,
   "username": "nolanpigi",
-  "target_per_batch": 100,
-  "daily_cap": 300,
-  "clean_streak_days": 3,
+  "target_per_batch": 50,
+  "daily_cap": 150,
+  "halve_2026-10-02_0530_persisted": "05:30 MDT run documented target_per_batch 100->50, daily_cap 300->150 per body step 4 (CDP unavailable) but did not persist the fields; corrected here at the 11:30 MDT run. Minimums 20/60.",
+  "clean_streak_days": 4,
   "last_ramp_date": null,
   "cadence": "every 6h back-to-back (Nolan 2026-09-29 ~05:30 MDT: ramp up, no reminders needed)",
   "backfill_2026-09-29": "09-26 and 09-27 batches (80+80) appended to unfollow-log.jsonl from Pig result files.",
@@ -113,5 +114,30 @@
     "today_count_before": 0,
     "status": "failed-infra-never-dispatched",
     "note": "run_ig_unfollow.sh exited 2 ok:false infra=browser_locked: run_ig_pass.sh pid=4684 (started 2026-10-01T23:19:26Z, an IG engagement pass) holds the ig-profile Chrome; the unfollow worker correctly declined to start to avoid cross-worker interference. Zero external effects, zero unfollows attempted. Rate NOT halved (infra failure, not account warning); clean_streak_days stays 3. Next 6h run retries naturally."
+  },
+  "batch_2026-10-02_0530": {
+    "launched": "2026-10-02T05:30MDT",
+    "max": 100,
+    "today_count_before": 133,
+    "status": "failed-cdp-unavailable-zero-unfollows",
+    "unfollowed": 0,
+    "warnings": 0,
+    "note": "run_ig_unfollow.sh returned ok:false infra=cdp_unavailable (connectOverCDP 30s timeout on :9226). Verified from Pig WSL: curl to 127.0.0.1:9226 -> connection refused; ig-profile Chrome not listening (closed/crashed). Capability gate was AVAILABLE (script got past it); browser itself is down, not a wedge with a live session. Zero external effects, zero unfollow-log appends. Per body step 4: target_per_batch 100->50, daily_cap 300->150; clean_streak_days stays 3 (infra, not an account warning). Recovery is Nolan's manual close/reopen of the ig-profile Chrome + IG login if needed; ig-recovery-test.sh is the verifier that flips capability back to AVAILABLE. Never attempted a restart/login myself (2026-09-16 force-kill lesson).",
+    "completed": "2026-10-02T05:32MDT"
+  },
+  "batch_2026-10-02_1130": {
+    "launched": "2026-10-02T11:30MDT",
+    "max": 17,
+    "today_count_before": 133,
+    "status": "completed-clean",
+    "note": "Dispatched max=17 (N=min(50,150-133)) against halved rate; capability AVAILABLE post-05:55 recovery. Worker ok:true 17/17, zero warnings, stopped:null, canary verified then flag auto-cleared. CLI following_count 2357->2340 (-17 exactly matches). Day total 150/150 of daily cap. clean_streak_days now 4; no ramp (needs 7).",
+    "unfollowed": 17,
+    "attempted": 17,
+    "enumerated": 201,
+    "stopped": null,
+    "warnings": 0,
+    "canary_required": true,
+    "canary_verified": true,
+    "completed": "2026-10-02T11:51MDT"
   }
 }
