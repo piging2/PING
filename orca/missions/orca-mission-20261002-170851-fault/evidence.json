@@ -1,0 +1,45 @@
+{
+  "mission_id": "orca-mission-20261002-170851-fault",
+  "task": "implement orca/dispatch.py::build_dispatch_envelope",
+  "injected_fault_plan": "attempt 1: rename required key \"fallback_order\" at admission; worker claim stays SUCCESS",
+  "attempts": [
+    {
+      "n": 1,
+      "worker": "poolside/laguna-s-2.1:free",
+      "worker_claim": "SELF-REPORT: implementation complete, all checks pass.",
+      "injected_fault": "renamed required key \"fallback_order\" -> \"fallbackorder\"",
+      "verifier_passed": false,
+      "failed_checks": [
+        "call_succeeds"
+      ],
+      "artifact_path": "/home/hatch/workspace/orca/missions/orca-mission-20261002-170851-fault/dispatch_attempt1.py"
+    },
+    {
+      "n": 2,
+      "worker": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "worker_claim": "SELF-REPORT: implementation complete, all checks pass.",
+      "injected_fault": null,
+      "verifier_passed": false,
+      "failed_checks": [
+        "imports_cleanly"
+      ],
+      "artifact_path": "/home/hatch/workspace/orca/missions/orca-mission-20261002-170851-fault/dispatch_attempt2.py"
+    }
+  ],
+  "started_at": "2026-10-02T17:08:51.083555+00:00",
+  "analysis": {
+    "worker": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "router_reason": "task_type=architecture_planning data_class=PUBLIC -> role=ORCHESTRATOR / HARD REASONING (nvidia/nemotron-3-ultra-550b-a55b:free); 0 fallback(s) on 429/unavailable/timeout",
+    "attempts_used": 1,
+    "analysis_chars": 2111,
+    "analysis_path": "/home/hatch/workspace/orca/missions/orca-mission-20261002-170851-fault/analysis.md"
+  },
+  "epistemic_gate": {
+    "worker_claim": "SUCCESS",
+    "verifier_result": "FAIL",
+    "mission_becomes_verified_success": false,
+    "statement": "WORKER SAYS SUCCESS + VERIFIER SAYS FAIL -> MISSION DOES NOT BECOME VERIFIED SUCCESS"
+  },
+  "mission_status": "NOT_VERIFIED_AFTER_ATTEMPT_2",
+  "completed_at": "2026-10-02T17:09:39.855603+00:00"
+}
