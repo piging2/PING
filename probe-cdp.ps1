@@ -1,0 +1,1 @@
+try { ((Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 http://127.0.0.1:9223/json/version).Content | Select-String '"Browser"\s*:\s*"([^"]*)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }) } catch { 'CDP_DOWN' }

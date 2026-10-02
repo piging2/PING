@@ -1,0 +1,17 @@
+# FL-20260920-009: tree-sitter-javascript@0.21.0 ships no linux/arm64 prebuild,
+# so node-gyp-build falls back to source compile. The compile toolchain lives
+# in the builder stage only; the runtime stage keeps the previous slim surface.
+FROM node:20-alpine AS builder
+RUN apk add --no-cache python3 make g++
+WORKDIR /app
+COPY gateway/package*.json ./
+RUN npm ci --only=production
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY gateway/ ./
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+USER nodejs
+EXPOSE 8080
+CMD node server.js
