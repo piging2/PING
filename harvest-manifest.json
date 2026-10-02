@@ -1,7 +1,7 @@
 {
-  "manifest_version": "1",
-  "generated_at": "2026-10-02T11:45:00-06:00",
-  "generated_by": "piging2 harvest coordinator (subagent)",
+  "manifest_version": "2.0.0",
+  "generated_at": "2026-10-02T11:58:30.834795-06:00",
+  "generated_by": "MANIFEST V2 worker (brutal CEO harvest directive 2026-10-02)",
   "sources": {
     "ping": {
       "path": "/home/nolan/projects/ping",
@@ -42,7 +42,18 @@
       ],
       "TARGET_PATH": "packages/trust/digest.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Single proven canonical-bytes primitive; pinned test vectors vs node:crypto."
+      "RATIONALE": "Single proven canonical-bytes primitive; pinned test vectors vs node:crypto.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 167,
+      "harvested_loc": 167,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~167 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -64,7 +75,20 @@
       ],
       "TARGET_PATH": "packages/trust/uuid.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Proven deterministic IDs; UUIDv7 explicitly rejected for re-projection dedup."
+      "RATIONALE": "Proven deterministic IDs; UUIDv7 explicitly rejected for re-projection dedup.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 52,
+      "harvested_loc": 52,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -86,7 +110,20 @@
       ],
       "TARGET_PATH": "packages/trust/envelope.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Proven verifyEnvelope; Signer interface never touches private keys."
+      "RATIONALE": "Proven verifyEnvelope; Signer interface never touches private keys.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 100,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -110,7 +147,20 @@
       ],
       "TARGET_PATH": "packages/trust/safe-fetch.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Adversarially tested SSRF gate; honest TOCTOU caveat documented."
+      "RATIONALE": "Adversarially tested SSRF gate; honest TOCTOU caveat documented.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 356,
+      "harvested_loc": 356,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:dns/promises",
+        "node:net"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -132,7 +182,18 @@
       ],
       "TARGET_PATH": "packages/trust/field-visibility.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Pure, browser-safe, adversarially tested privacy primitive."
+      "RATIONALE": "Pure, browser-safe, adversarially tested privacy primitive.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 279,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/types"
+      ],
+      "bundle_runtime_cost": "internal-only, ~279 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -157,7 +218,22 @@
       ],
       "TARGET_PATH": "packages/trust/public-projection.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Most valuable kernel file after digest.ts; ADAPT to drop FYD-specific viewer kinds."
+      "RATIONALE": "Most valuable kernel file after digest.ts; ADAPT to drop FYD-specific viewer kinds.",
+      "proof_ids": [
+        4,
+        5
+      ],
+      "source_loc": 322,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/digest",
+        "ask-composer",
+        "owner-store",
+        "field-visibility"
+      ],
+      "bundle_runtime_cost": "internal-only, ~322 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -177,7 +253,18 @@
       ],
       "TARGET_PATH": "packages/trust/tenant-context.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Fail-closed tenant boundary; cross-tenant errors name the boundary, not data."
+      "RATIONALE": "Fail-closed tenant boundary; cross-tenant errors name the boundary, not data.",
+      "proof_ids": [
+        7,
+        8,
+        14
+      ],
+      "source_loc": 178,
+      "harvested_loc": 178,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~178 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -196,8 +283,21 @@
         "src/fyd/tenant/__tests__/g-route-isolation.test.ts"
       ],
       "TARGET_PATH": "packages/trust/scoped-stores.ts",
-      "ACTION": "COPY",
-      "RATIONALE": "Companion to tenant-context; the consumption-side enforcement."
+      "ACTION": "ADAPT",
+      "RATIONALE": "CORRECTED v2 (2026-10-02 CEO directive): COPY->ADAPT. Heavy FYD coupling verified in source imports (@/fyd/ask/visitor-answer, @/fyd/data/ping-object-source, @/fyd/object/owner-store, @/fyd/customize/*); it is a consumption-side enforcement pattern, not a standalone primitive; do NOT drag FYD coupling into the harvested kernel. ADAPT = extract tenant-assertion wrapper only, minimum interfaces from CALLERS+TESTS. Prior rationale: Companion to tenant-context; the consumption-side enforcement.",
+      "proof_ids": [
+        7,
+        8,
+        14
+      ],
+      "source_loc": 155,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./tenant-context"
+      ],
+      "bundle_runtime_cost": "internal-only, ~155 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -217,7 +317,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/trust/sha256.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Keep the shim pattern; single hash owner."
+      "RATIONALE": "Keep the shim pattern; single hash owner.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 9,
+      "harvested_loc": 9,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/digest"
+      ],
+      "bundle_runtime_cost": "internal-only, ~9 LOC (harvested with import-path rewrite only: ../../lib/ping/digest -> ./digest)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -232,8 +345,15 @@
       "CALLERS": [],
       "TESTS": [],
       "TARGET_PATH": "packages/trust/redact.ts",
-      "ACTION": "COPY",
-      "RATIONALE": "Extract redactEmail as the seed of structured redaction (see REWRITE-SMALL redactSecrets)."
+      "ACTION": "OPTIONAL",
+      "RATIONALE": "CORRECTED v2: COPY->OPTIONAL. redactEmail + audit helpers are not required by any of the 14 proofs; defer until PII/privacy work reopens (currently on hold). Collides on target packages/trust/redact.ts with entry 14. Prior rationale: Extract redactEmail as the seed of structured redaction (see REWRITE-SMALL redactSecrets).",
+      "proof_ids": [],
+      "source_loc": 90,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "deferred (optional)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -253,7 +373,16 @@
       ],
       "TARGET_PATH": "packages/trust/safe-link.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Drop-in, zero deps, proven."
+      "RATIONALE": "Drop-in, zero deps, proven.",
+      "proof_ids": [
+        5
+      ],
+      "source_loc": 118,
+      "harvested_loc": 118,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~118 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -273,7 +402,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/trust/key-custody.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Custody pattern proven via practice-BFF usage; ADAPT to injectable key-dir, drop BFF coupling. No dedicated test file \u2014 add one."
+      "RATIONALE": "Custody pattern proven via practice-BFF usage; ADAPT to injectable key-dir, drop BFF coupling. No dedicated test file \u2014 add one.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 141,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -291,7 +433,17 @@
       ],
       "TARGET_PATH": "packages/trust/validate.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Genericize findings shape; keep domain schema defs out of kernel."
+      "RATIONALE": "Genericize findings shape; keep domain schema defs out of kernel.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 401,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~401 LOC"
     },
     {
       "SOURCE_REPO": null,
@@ -309,7 +461,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/trust/jwk.ts",
       "ACTION": "REWRITE-SMALL",
-      "RATIONALE": "Gap: no JWK handling exists; node 24 supports OKP JWK natively."
+      "RATIONALE": "Gap: no JWK handling exists; node 24 supports OKP JWK natively.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": null,
@@ -324,8 +489,15 @@
       "CALLERS": [],
       "TESTS": [],
       "TARGET_PATH": "packages/trust/redact.ts",
-      "ACTION": "REWRITE-SMALL",
-      "RATIONALE": "Gap: only redactEmail + broker invariant exist."
+      "ACTION": "OPTIONAL",
+      "RATIONALE": "CORRECTED v2: REWRITE-SMALL->OPTIONAL. redactSecrets structured-log redactor not required by any of the 14 proofs; defer (PII work on hold). Target collides with entry 9; resolve single home on harvest. Prior rationale: Gap: only redactEmail + broker invariant exist.",
+      "proof_ids": [],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "deferred (optional)"
     },
     {
       "SOURCE_REPO": null,
@@ -341,7 +513,16 @@
       "TESTS": [],
       "TARGET_PATH": "packages/trust/neutralize-url.ts",
       "ACTION": "REWRITE-SMALL",
-      "RATIONALE": "Gap: safe-link covers resolution, not render contexts."
+      "RATIONALE": "Gap: safe-link covers resolution, not render contexts.",
+      "proof_ids": [
+        5
+      ],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~0 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -357,7 +538,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Divergent duplicate serializer (drops undefined); dev-labeled stand-in."
+      "RATIONALE": "Divergent duplicate serializer (drops undefined); dev-labeled stand-in.",
+      "proof_ids": [],
+      "source_loc": 141,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -373,7 +561,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Line-for-line custody duplicate under different env var; fold into key-custody."
+      "RATIONALE": "Line-for-line custody duplicate under different env var; fold into key-custody.",
+      "proof_ids": [],
+      "source_loc": 75,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -389,7 +584,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Action-ID minting belongs on digest.ts + uuid.ts, not a separate primitive."
+      "RATIONALE": "Action-ID minting belongs on digest.ts + uuid.ts, not a separate primitive.",
+      "proof_ids": [],
+      "source_loc": 43,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -405,7 +607,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Unpinned third serializer; converge to digest.canonicalize."
+      "RATIONALE": "Unpinned third serializer; converge to digest.canonicalize.",
+      "proof_ids": [],
+      "source_loc": 237,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -424,7 +633,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/types.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Canonical substrate vocabulary everything keys off; take converged version."
+      "RATIONALE": "Canonical substrate vocabulary everything keys off; take converged version.",
+      "proof_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source_loc": 442,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~442 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -443,7 +664,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/sitespec-types.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Deterministic SiteSpec + graph types for the product lane."
+      "RATIONALE": "Deterministic SiteSpec + graph types for the product lane.",
+      "proof_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source_loc": 471,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~471 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -463,7 +696,19 @@
       ],
       "TARGET_PATH": "packages/objects/schemas.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Schema registry with evolution law; drives validator \u2192 relationships \u2192 renderer."
+      "RATIONALE": "Schema registry with evolution law; drives validator \u2192 relationships \u2192 renderer.",
+      "proof_ids": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source_loc": 401,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~401 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -483,7 +728,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/graph.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Binding companion to the verifier."
+      "RATIONALE": "Binding companion to the verifier.",
+      "proof_ids": [
+        3,
+        4,
+        5
+      ],
+      "source_loc": 166,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/types"
+      ],
+      "bundle_runtime_cost": "internal-only, ~166 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -508,7 +766,22 @@
       ],
       "TARGET_PATH": "packages/objects/binding-verifier.ts",
       "ACTION": "COPY",
-      "RATIONALE": "The proven evidence-to-render fact gate; verifier/authority separation."
+      "RATIONALE": "The proven evidence-to-render fact gate; verifier/authority separation.",
+      "proof_ids": [
+        3,
+        4,
+        5
+      ],
+      "source_loc": 848,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/types",
+        "@/lib/ping/digest",
+        "./graph"
+      ],
+      "bundle_runtime_cost": "internal-only, ~848 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -526,7 +799,17 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/binding-manifest.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Bidirectional binding lineage; dependency index for semantic diff."
+      "RATIONALE": "Bidirectional binding lineage; dependency index for semantic diff.",
+      "proof_ids": [
+        4,
+        8
+      ],
+      "source_loc": 91,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~91 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -542,7 +825,16 @@
       "TESTS": [],
       "TARGET_PATH": "packages/trust/field-visibility.ts",
       "ACTION": "REFERENCE",
-      "RATIONALE": "Single copy lives in trust; object layer references it."
+      "RATIONALE": "Single copy lives in trust; object layer references it.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 279,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~279 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -562,7 +854,18 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/owner-overlay.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Owner-wins read seam with provenance preserved; take converged version."
+      "RATIONALE": "Owner-wins read seam with provenance preserved; take converged version.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 462,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/types"
+      ],
+      "bundle_runtime_cost": "internal-only, ~462 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -581,7 +884,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/owner-events.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Cleanest event-sourcing pattern in tree; swap dev-signer canonicalizer for digest.ts."
+      "RATIONALE": "Cleanest event-sourcing pattern in tree; swap dev-signer canonicalizer for digest.ts.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 693,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto",
+        "dev-signer canonicalizeJson"
+      ],
+      "bundle_runtime_cost": "node builtins only, ~693 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -598,8 +914,15 @@
         "src/fyd/boundary/__tests__/projection-seam-attack.test.ts"
       ],
       "TARGET_PATH": "packages/objects/data-boundary.ts",
-      "ACTION": "COPY",
-      "RATIONALE": "Machine-readable customer-data ownership boundary."
+      "ACTION": "OPTIONAL",
+      "RATIONALE": "CORRECTED v2: COPY->OPTIONAL. CUSTOMER_OWNED vs FYD_OWNED boundary + export/import is ownership machinery not required by proofs 1-14; defer until portability becomes a proof. Prior rationale: Machine-readable customer-data ownership boundary.",
+      "proof_ids": [],
+      "source_loc": 151,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "deferred (optional)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -617,7 +940,18 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/observation-types.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Claim/observation contract for the ingest path."
+      "RATIONALE": "Claim/observation contract for the ingest path.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 106,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~106 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -635,7 +969,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/website-observe.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Observation adapter; network stays outside."
+      "RATIONALE": "Observation adapter; network stays outside.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 149,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./types"
+      ],
+      "bundle_runtime_cost": "internal-only, ~149 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -653,7 +999,18 @@
       ],
       "TARGET_PATH": "packages/objects/object-builder.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Attested object-graph construction; the graph integrity gate."
+      "RATIONALE": "Attested object-graph construction; the graph integrity gate.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 354,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~354 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -671,7 +1028,18 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/semantic-diff.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Real semantic-collision machinery at the graph layer."
+      "RATIONALE": "Real semantic-collision machinery at the graph layer.",
+      "proof_ids": [
+        8
+      ],
+      "source_loc": 703,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./manifest"
+      ],
+      "bundle_runtime_cost": "internal-only, ~703 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -691,7 +1059,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/canonical.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Keep volatile-stripping semantic rule; re-anchor on digest.ts canonicalize."
+      "RATIONALE": "Keep volatile-stripping semantic rule; re-anchor on digest.ts canonicalize.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 50,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -712,7 +1092,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/object-projection.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Generic projection; seam off UI-specific EvidenceState/why-this imports."
+      "RATIONALE": "Generic projection; seam off UI-specific EvidenceState/why-this imports.",
+      "proof_ids": [
+        4,
+        5
+      ],
+      "source_loc": 565,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "sitespec/*",
+        "ui/*"
+      ],
+      "bundle_runtime_cost": "internal-only, ~565 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -733,7 +1126,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/objects/object-source.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Tamper-detecting read seam onto projection files."
+      "RATIONALE": "Tamper-detecting read seam onto projection files.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 353,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node:crypto",
+        "ask-composer"
+      ],
+      "bundle_runtime_cost": "node builtins only, ~353 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -751,7 +1156,18 @@
       ],
       "TARGET_PATH": null,
       "ACTION": "REFERENCE",
-      "RATIONALE": "Verification harness pattern; not runtime kernel."
+      "RATIONALE": "Verification harness pattern; not runtime kernel.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 1110,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~1110 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -773,7 +1189,20 @@
       ],
       "TARGET_PATH": "packages/events/journal-gateway.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Proven write contract; re-platform from demo mjs to piging2 event runtime."
+      "RATIONALE": "Proven write contract; re-platform from demo mjs to piging2 event runtime.",
+      "proof_ids": [
+        7,
+        8,
+        14
+      ],
+      "source_loc": 358,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "node builtins"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -791,7 +1220,18 @@
       "TESTS": [],
       "TARGET_PATH": "packages/events/envelope.ts",
       "ACTION": "COPY",
-      "RATIONALE": "De-facto canonical envelope; tenant-scoped journal query contract."
+      "RATIONALE": "De-facto canonical envelope; tenant-scoped journal query contract.",
+      "proof_ids": [
+        7,
+        8,
+        14
+      ],
+      "source_loc": 358,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~358 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -811,7 +1251,18 @@
       ],
       "TARGET_PATH": "packages/events/projection-rebuild.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Port to TS; keep algebra, op validation, atomic tmp+rename, graphDigest. (Postgres shadow retired: duplicate event_ids double-apply.)"
+      "RATIONALE": "Port to TS; keep algebra, op validation, atomic tmp+rename, graphDigest. (Postgres shadow retired: duplicate event_ids double-apply.)",
+      "proof_ids": [
+        14
+      ],
+      "source_loc": 618,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "python3"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": null,
@@ -829,8 +1280,15 @@
       "CALLERS": [],
       "TESTS": [],
       "TARGET_PATH": "packages/events/runtime.ts",
-      "ACTION": "REWRITE-SMALL",
-      "RATIONALE": "Gap: the name exists only in comments; the contract is proven, the body is not."
+      "ACTION": "REJECT",
+      "RATIONALE": "CORRECTED v2 (2026-10-02 CEO directive): REWRITE-SMALL->REJECT. Name without body; journal contract is the spine. The journal already owns APPEND/READ/ORDER/DEDUPE/VERIFY/REPLAY via entries 38 (journal-gateway ADAPT), 39 (envelope COPY), 40 (projection-rebuild ADAPT) and the trust envelope (entry 2). Do NOT build a class called UnifiedEventRuntime to preserve the story. Prior rationale: Gap: the name exists only in comments; the contract is proven, the body is not.",
+      "proof_ids": [],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": null,
@@ -845,8 +1303,15 @@
       "CALLERS": [],
       "TESTS": [],
       "TARGET_PATH": "packages/events/envelope.ts",
-      "ACTION": "REWRITE-SMALL",
-      "RATIONALE": "Gap: only correlationId=missionId assignment exists; define properly, claim no heritage."
+      "ACTION": "REJECT",
+      "RATIONALE": "CORRECTED v2: REWRITE-SMALL->REJECT. Merged into entry 39: single canonical envelope at packages/events/envelope.ts; causation/correlation fields are defined in the journal envelope harvest, not as a separate rewrite. Prior rationale: Gap: only correlationId=missionId assignment exists; define properly, claim no heritage.",
+      "proof_ids": [],
+      "source_loc": 0,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -862,7 +1327,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "FYD page-editor LOCAL undo/redo bus; 'durable' aspirational; editor-scoped."
+      "RATIONALE": "FYD page-editor LOCAL undo/redo bus; 'durable' aspirational; editor-scoped.",
+      "proof_ids": [],
+      "source_loc": 208,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -878,7 +1350,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "HPP marketing analytics logger; in-memory MVP, explicitly not durable."
+      "RATIONALE": "HPP marketing analytics logger; in-memory MVP, explicitly not durable.",
+      "proof_ids": [],
+      "source_loc": 284,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping",
@@ -894,7 +1373,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Superseded by digest.ts (see trust)."
+      "RATIONALE": "Superseded by digest.ts (see trust).",
+      "proof_ids": [],
+      "source_loc": 141,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -918,7 +1404,23 @@
       ],
       "TARGET_PATH": "packages/missions/mission-runtime.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "'Replaces 12 dead mission implementations'; ADAPT to piging2 event runtime + pg seam."
+      "RATIONALE": "'Replaces 12 dead mission implementations'; ADAPT to piging2 event runtime + pg seam.",
+      "proof_ids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_loc": 547,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "pg.Pool",
+        "eventRuntime"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -939,7 +1441,23 @@
       ],
       "TARGET_PATH": "packages/missions/mission-scheduler.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Epistemic gate lives here (_dispatch ~L336-388); port with pg seam abstracted."
+      "RATIONALE": "Epistemic gate lives here (_dispatch ~L336-388); port with pg seam abstracted.",
+      "proof_ids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_loc": 615,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./mission_runtime",
+        "./worker_runtime"
+      ],
+      "bundle_runtime_cost": "internal-only, ~615 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -957,7 +1475,20 @@
       "TESTS": [],
       "TARGET_PATH": "packages/missions/worker-runtime.ts",
       "ACTION": "COPY",
-      "RATIONALE": "The proven execution seam; COPY verbatim (JS\u2192TS types only)."
+      "RATIONALE": "The proven execution seam; COPY verbatim (JS\u2192TS types only).",
+      "proof_ids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_loc": 245,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~245 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -973,7 +1504,19 @@
       "TESTS": [],
       "TARGET_PATH": "packages/missions/workers.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Take BaseWorker + ReplayWorker; other 5 canonical workers are domain-specific, leave them."
+      "RATIONALE": "Take BaseWorker + ReplayWorker; other 5 canonical workers are domain-specific, leave them.",
+      "proof_ids": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "source_loc": 928,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~928 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -988,8 +1531,15 @@
       "CALLERS": [],
       "TESTS": [],
       "TARGET_PATH": "packages/missions/event-bridge.ts",
-      "ACTION": "COPY",
-      "RATIONALE": "Tiny pure wiring."
+      "ACTION": "OPTIONAL",
+      "RATIONALE": "CORRECTED v2: COPY->OPTIONAL. event->mission autonomous ingress; no proof requires it (proof 9 creates missions explicitly); defer until a proof needs autonomous triggering. Prior rationale: Tiny pure wiring.",
+      "proof_ids": [],
+      "source_loc": 158,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "deferred (optional)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1009,7 +1559,17 @@
       ],
       "TARGET_PATH": "packages/missions/failure-record.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Epistemic record; UNKNOWN \u2192 unknown_hold / HOLD_RECONCILE / UNKNOWN_EXECUTION."
+      "RATIONALE": "Epistemic record; UNKNOWN \u2192 unknown_hold / HOLD_RECONCILE / UNKNOWN_EXECUTION.",
+      "proof_ids": [
+        11,
+        13
+      ],
+      "source_loc": 259,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~259 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1025,7 +1585,17 @@
       "TESTS": [],
       "TARGET_PATH": "packages/capabilities/registry.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Keep registry + validation; drop surrounding engine."
+      "RATIONALE": "Keep registry + validation; drop surrounding engine.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 312,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~312 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1041,7 +1611,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Dormant old Orca engine; one of the '12 dead implementations'."
+      "RATIONALE": "Dormant old Orca engine; one of the '12 dead implementations'.",
+      "proof_ids": [],
+      "source_loc": 716,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1057,7 +1634,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Pre-convergence mission authority, replaced by MissionRuntime."
+      "RATIONALE": "Pre-convergence mission authority, replaced by MissionRuntime.",
+      "proof_ids": [],
+      "source_loc": "missing",
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1073,7 +1657,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Old process(job) contract; superseded by handle(event)."
+      "RATIONALE": "Old process(job) contract; superseded by handle(event).",
+      "proof_ids": [],
+      "source_loc": 88,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1089,7 +1680,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Human-approval gate referenced only by own tests \u2014 unwired; re-derive when needed."
+      "RATIONALE": "Human-approval gate referenced only by own tests \u2014 unwired; re-derive when needed.",
+      "proof_ids": [],
+      "source_loc": 139,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/wr-integrate/ping-runtime",
@@ -1105,7 +1703,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Duplicate Python worker plane; superseded by JS canonical workers."
+      "RATIONALE": "Duplicate Python worker plane; superseded by JS canonical workers.",
+      "proof_ids": [],
+      "source_loc": "missing",
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1132,7 +1737,23 @@
       ],
       "TARGET_PATH": "packages/fyd/proceduralize/proceduralizer.ts",
       "ACTION": "COPY",
-      "RATIONALE": "The ingest heart of the first slice; pure, deterministic, self-contained."
+      "RATIONALE": "The ingest heart of the first slice; pure, deterministic, self-contained.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 1630,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/types",
+        "jsonld",
+        "./structured-data",
+        "./microdata",
+        "./feed-parser"
+      ],
+      "bundle_runtime_cost": "zero-dep, new code (not yet written)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1154,7 +1775,19 @@
       ],
       "TARGET_PATH": "packages/fyd/proceduralize/structured-data.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Proven against real sites; security posture is load-bearing."
+      "RATIONALE": "Proven against real sites; security posture is load-bearing.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 894,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "jsonld"
+      ],
+      "bundle_runtime_cost": "pulls jsonld, ~894 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1172,7 +1805,17 @@
       ],
       "TARGET_PATH": "packages/fyd/media/discover.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Small, pure."
+      "RATIONALE": "Small, pure.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 229,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~229 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1190,7 +1833,17 @@
       ],
       "TARGET_PATH": "packages/fyd/onboarding/extractor.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Tiny."
+      "RATIONALE": "Tiny.",
+      "proof_ids": [
+        1,
+        2
+      ],
+      "source_loc": 225,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~225 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1210,7 +1863,20 @@
       ],
       "TARGET_PATH": "packages/fyd/claim/resource-id.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Deterministic URL identity."
+      "RATIONALE": "Deterministic URL identity.",
+      "proof_ids": [
+        1,
+        2,
+        3
+      ],
+      "source_loc": 26,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/digest"
+      ],
+      "bundle_runtime_cost": "internal-only, ~26 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1233,7 +1899,18 @@
       ],
       "TARGET_PATH": "packages/fyd/proceduralize/generator.ts",
       "ACTION": "COPY",
-      "RATIONALE": "SiteSpec generator; keep version pin."
+      "RATIONALE": "SiteSpec generator; keep version pin.",
+      "proof_ids": [
+        4
+      ],
+      "source_loc": 348,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "../sitespec/*"
+      ],
+      "bundle_runtime_cost": "internal-only, ~348 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1254,7 +1931,20 @@
       ],
       "TARGET_PATH": "packages/fyd/sitespec/validator.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Renderability gate."
+      "RATIONALE": "Renderability gate.",
+      "proof_ids": [
+        4,
+        5
+      ],
+      "source_loc": 127,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./types",
+        "./schemas"
+      ],
+      "bundle_runtime_cost": "internal-only, ~127 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1272,7 +1962,16 @@
       ],
       "TARGET_PATH": "packages/fyd/sitespec/render-model.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Pure semantic model; canonicalizeModel re-anchors to digest.ts (drop local sortKeys)."
+      "RATIONALE": "Pure semantic model; canonicalizeModel re-anchors to digest.ts (drop local sortKeys).",
+      "proof_ids": [
+        5
+      ],
+      "source_loc": 237,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~237 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1290,7 +1989,17 @@
       ],
       "TARGET_PATH": "packages/fyd/sitepatch/pipeline.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Primitives pure; rewire approval to piging2 authority."
+      "RATIONALE": "Primitives pure; rewire approval to piging2 authority.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 663,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~663 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1308,7 +2017,17 @@
       ],
       "TARGET_PATH": "packages/fyd/proceduralize/patch.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Patch primitives."
+      "RATIONALE": "Patch primitives.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 298,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~298 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1326,7 +2045,17 @@
       ],
       "TARGET_PATH": "packages/fyd/owner-mode/attestation-gate.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Missing evidence \u21d2 ATTESTATION_REJECTED, never fabricated."
+      "RATIONALE": "Missing evidence \u21d2 ATTESTATION_REJECTED, never fabricated.",
+      "proof_ids": [
+        7,
+        8
+      ],
+      "source_loc": 85,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~85 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1350,7 +2079,20 @@
       ],
       "TARGET_PATH": "packages/fyd/ask/ask-pipeline.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Evidence-bounded ask core; rewire Next route + tenant-context + reader to piging2 seams."
+      "RATIONALE": "Evidence-bounded ask core; rewire Next route + tenant-context + reader to piging2 seams.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 471,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/fyd/media/site-bundle",
+        "@lib/ping/ask-composer",
+        "public-projection"
+      ],
+      "bundle_runtime_cost": "internal + npm deps (@/fyd/media/site-bundle, @lib/ping/ask-composer, public-projection), ~471 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1368,7 +2110,16 @@
       ],
       "TARGET_PATH": "packages/fyd/ask/context-compiler.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Claim grading enforcement."
+      "RATIONALE": "Claim grading enforcement.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 879,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~879 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1388,7 +2139,18 @@
       ],
       "TARGET_PATH": "packages/fyd/ask/visitor-answer.ts",
       "ACTION": "ADAPT",
-      "RATIONALE": "Keep composer; rewire tenant/graph seams."
+      "RATIONALE": "Keep composer; rewire tenant/graph seams.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 840,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "@/lib/ping/ask-composer"
+      ],
+      "bundle_runtime_cost": "internal-only, ~840 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1406,7 +2168,16 @@
       ],
       "TARGET_PATH": "packages/fyd/owner-mode/corrections.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Owner assertion layer; three-layer separation preserved."
+      "RATIONALE": "Owner assertion layer; three-layer separation preserved.",
+      "proof_ids": [
+        7
+      ],
+      "source_loc": 317,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~317 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1422,7 +2193,16 @@
       "TESTS": [],
       "TARGET_PATH": "packages/fyd/seed/happy-place-graph.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Seed data for proof 1; no Postgres, rebuilt per read."
+      "RATIONALE": "Seed data for proof 1; no Postgres, rebuilt per read.",
+      "proof_ids": [
+        1
+      ],
+      "source_loc": 233,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~233 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1438,7 +2218,16 @@
       "TESTS": [],
       "TARGET_PATH": "packages/fyd/seed/coppersmith-graph.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Seed data for proof 2."
+      "RATIONALE": "Seed data for proof 2.",
+      "proof_ids": [
+        2
+      ],
+      "source_loc": 263,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~263 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1458,7 +2247,18 @@
       "TESTS": [],
       "TARGET_PATH": "packages/fyd/ask/ask-composer.ts",
       "ACTION": "COPY",
-      "RATIONALE": "Substrate; wrap or re-implement contract in piging2."
+      "RATIONALE": "Substrate; wrap or re-implement contract in piging2.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 1769,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [
+        "./digest"
+      ],
+      "bundle_runtime_cost": "internal-only, ~1769 LOC"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1474,7 +2274,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Google OAuth enterprise auth; unused by pipeline."
+      "RATIONALE": "Google OAuth enterprise auth; unused by pipeline.",
+      "proof_ids": [],
+      "source_loc": 303,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1490,7 +2297,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Autonomous acquisition loop; enterprise extra."
+      "RATIONALE": "Autonomous acquisition loop; enterprise extra.",
+      "proof_ids": [],
+      "source_loc": 695,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1506,7 +2320,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Provider-specific social architecture."
+      "RATIONALE": "Provider-specific social architecture.",
+      "proof_ids": [],
+      "source_loc": 718,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1522,7 +2343,14 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Fixed-FAQ demo layer, not evidence-bounded \u2192 REFERENCE only."
+      "RATIONALE": "Fixed-FAQ demo layer, not evidence-bounded \u2192 REFERENCE only.",
+      "proof_ids": [],
+      "source_loc": 980,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     },
     {
       "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
@@ -1538,7 +2366,23 @@
       "TESTS": [],
       "TARGET_PATH": null,
       "ACTION": "REJECT",
-      "RATIONALE": "Demo QA chrome."
+      "RATIONALE": "Demo QA chrome.",
+      "proof_ids": [],
+      "source_loc": 687,
+      "harvested_loc": 0,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "n/a (rejected)"
     }
+  ],
+  "v2_changes": [
+    "manifest_version 1 -> 2.0.0; proof_ids[] and cost fields (source_loc/harvested_loc/adapter_loc/new_fyd_loc/dependencies_added/bundle_runtime_cost) added to all 81 entries.",
+    "scoped-stores.ts (entry 7): COPY -> ADAPT. Heavy FYD coupling verified in source imports (@/fyd/ask/visitor-answer, @/fyd/data/ping-object-source, @/fyd/object/owner-store, @/fyd/customize/*); consumption-side enforcement pattern, not a standalone primitive; ADAPT = extract tenant-assertion wrapper only, minimum interfaces from CALLERS+TESTS.",
+    "UnifiedEventRuntime (entry 41): REWRITE-SMALL -> REJECT. Rationale: name without body; journal contract is the spine. APPEND/READ/ORDER/DEDUPE/VERIFY/REPLAY already owned by entries 38 (journal-gateway ADAPT), 39 (envelope COPY), 40 (projection-rebuild ADAPT) + trust envelope (entry 2). No class named UnifiedEventRuntime will be built to preserve the story.",
+    "Envelope causation/correlation (entry 42): REWRITE-SMALL -> REJECT. Merged into entry 39: single canonical envelope target packages/events/envelope.ts.",
+    "OPTIONAL introduced for items not on the 14-proof path: 9 (redactEmail), 14 (redactSecrets), 29 (data-boundary), 50 (event->mission ingress).",
+    "SHA spot-check (trust kernel): entries 0,1,3,6,10 harvested byte-identical to source; entry 8 differs only by import-path rewrite (../../lib/ping/digest -> ./digest), semantically identical.",
+    "Source-file gaps at archaeology: entries 54 (gateway/mission_authority.js) and 57 (*.py glob) source missing in wr-integrate; both REJECT, recorded as missing."
   ]
 }
