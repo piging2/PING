@@ -406,5 +406,54 @@ class GateTest(unittest.TestCase):
             self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
 
+# ---- held-state negation fixtures (2026-10-01 19:14 MDT x incident) ----
+# Semantic classification of the hold-state claim family, driven by fixture
+# files so new prose variants are added as data, not code:
+#   held-negated-must-allow.txt    -> gate exit 0 (explicit negation)
+#   held-affirmative-must-deny.txt -> gate exit 2 (affirmative claim)
+#   held-ambiguous-must-deny.txt   -> gate exit 2 (fail closed on ambiguity)
+# The pointer-bump workaround was rejected; the parser is fixed instead.
+
+FIXTURE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "authority-check-fixtures")
+
+
+def load_fixture_lines(name):
+    path = os.path.join(FIXTURE_DIR, name)
+    with open(path, encoding="utf-8") as f:
+        return [ln.strip() for ln in f
+                if ln.strip() and not ln.strip().startswith("#")]
+
+
+class HeldNegationFixtureTest(GateTest):
+    def test_negated_hold_claims_allow(self):
+        lines = load_fixture_lines("held-negated-must-allow.txt")
+        self.assertTrue(lines, "negation fixture file is empty")
+        for line in lines:
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 0,
+                             f"negated claim denied: {line}: {r.stdout}")
+            self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_affirmative_hold_claims_deny(self):
+        lines = load_fixture_lines("held-affirmative-must-deny.txt")
+        self.assertTrue(lines, "affirmative fixture file is empty")
+        for line in lines:
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2,
+                             f"affirmative claim allowed: {line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_ambiguous_hold_claims_fail_closed(self):
+        lines = load_fixture_lines("held-ambiguous-must-deny.txt")
+        self.assertTrue(lines, "ambiguous fixture file is empty")
+        for line in lines:
+            r = self.gate_verdict_for_log_line("x", line)
+            self.assertEqual(r.returncode, 2,
+                             f"ambiguous claim allowed: {line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

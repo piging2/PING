@@ -114,6 +114,36 @@ META_PROSE_RE = re.compile(
 # clauses are stripped.
 HELD_RE = re.compile(r"\bheld\b", re.IGNORECASE)
 LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
+# Explicit prose negation of a hold-state claim ('x not held', 'X is not
+# on hold', "x isn't held") is a claim of NOT held, never a hold. This is a
+# NEW defect class from the 2026-10-01 19:14 MDT x incident: the gate fired
+# on the bare \bheld\b inside 'holds.json x not held' (an explicit NOT-held
+# claim), false-DENY-CONFLICTing every X pass. The pointer-bump workaround
+# was rejected; the parser is fixed instead.
+#
+# Semantics follow send-eligibility.py's "directly negated marker" precedent
+# ('not sent' is the absence of a send, never a touch): the negator must
+# DIRECTLY govern the hold token. Allowed forms:
+#   not held / never held / n't held (isn't, wasn't, hasn't been)
+#   is|are|was|were|be not|never held
+#   not on hold / never on hold / is not on hold
+# Neutralized, never dropped: the negated span is substituted out but the
+# rest of the clause is still scanned, so a real restriction asserted
+# alongside it ('x not held, checkpoint received') still fires.
+#
+# Anything that is NOT an explicit direct negation stays ambiguous and
+# keeps firing: fail closed on ambiguity ('whether x is held', 'is x held?',
+# 'reportedly held', 'not currently held' with an adverb gap). Deliberately
+# tight: an adverb gap ('not released, still held') must never neutralize a
+# real affirmative claim.
+HELD_NEGATED_RE = re.compile(
+    r"\b(?:is|are|was|were|be|been|being)\s+(?:not|never)\s+held\b"
+    r"|\b(?:not|never)\s+held\b"
+    r"|\b(?:not|never)-held\b"
+    r"|\b\w+n't\s+(?:been\s+)?held\b"
+    r"|\b(?:is|are|was|were)\s+not\s+on[ -]?hold\b"
+    r"|\b(?:not|never)\s+on[ -]?hold\b",
+    re.IGNORECASE)
 # Explicit held=false assignment: machine-readable NOT-held state
 # (x passes 2026-10-01 11:14/13:14 MDT: pass logs document
 # 'holds.json: x held=false' when recording the gate result; the bare
@@ -123,12 +153,27 @@ LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
 # scanned, so a real hold asserted alongside it still fires. 'held=true',
 # 'account held', 'placed on hold', 'owner hold' are untouched by this.
 HELD_FALSE_RE = re.compile(r"\bheld\b[\"']?\s*[:=]\s*false\b", re.IGNORECASE)
-# Meta-prose about the gate's own classification of the 'held' token
-# ('the tail scanner fired on the bare token "held"'). Describes the gate,
-# not a restriction; handled by _scanner_token_meta_only below.
-SCANNER_META_RE = re.compile(
-    r"\btail scanner\b|\bfalse positive\b|negated-clause strip|"
-    r"\bbare token\b",
+# Meta-prose about the gate's own prior verdicts/classifications
+# ('authority-check.py x exited 2 (AUTHORITY-DENY-CONFLICT)', 'the tail
+# scanner fired on the bare token "held"', 'the single log-tail marker is
+# the word "held"', 'false-positive review'). This is the gate talking about
+# itself, not the world asserting a hold. Without this, a false-positive
+# denial self-reinforces: the denial is logged, the log line re-triggers the
+# denial on the quoted/discussed token, forever (2026-10-01 x passes: line
+# 1236 documents the false positive on 'x not held' and re-fires on it).
+# Strip only when the clause asserts no OTHER affirmative marker after the
+# gate vocabulary, the discussed token, and negated hold claims are removed:
+# a real restriction documented alongside gate meta-prose still fires.
+# A bare pasted gate verdict over a REAL hold ('AUTHORITY-DENY-CONFLICT: x
+# held') keeps firing on the hold words after the verdict token is removed.
+GATE_META_RE = re.compile(
+    r"authority-check\.py"
+    r"|AUTHORITY-(?:ALLOW|DENY(?:-CONFLICT)?|FAIL-CLOSED)"
+    r"|\btail scanner\b"
+    r"|\bfalse[- ]positives?\b"
+    r"|\bbare token\b"
+    r"|\blog-tail markers?\b"
+    r"|\bthe word [\"']held[\"']",
     re.IGNORECASE)
 _QUOTED_HELD_RE = re.compile(r"[\"']held[\"']", re.IGNORECASE)
 # Surface-name tokens for cross-surface attribution (fb pass 165,
@@ -214,21 +259,25 @@ def on_hold_deliberated(clause):
     return bool(ON_HOLD_PLACEMENT_VERB_RE.match(m.group(0)))
 
 
-def _scanner_token_meta_only(clause):
-    """True when the clause only discusses the gate's own 'held'
-    classification and asserts no other restriction.
+def _gate_meta_only(clause):
+    """True when the clause only discusses the gate's own prior verdicts or
+    classifications and asserts no other restriction.
 
-    The discussed token is quoted ('the bare token "held"'); a genuine hold
-    claim ('account held', 'held=true', 'placed on hold', 'owner hold') is
-    never phrased as scanner meta-prose. After removing the discussed token,
-    any remaining affirmative marker keeps the clause, so a real restriction
-    documented alongside the meta-prose still fires.
+    The discussed token is quoted or named as gate vocabulary ('the bare
+    token "held"', 'authority-check.py x exited 2 (AUTHORITY-DENY-CONFLICT)',
+    'the single log-tail marker is the word "held"'); a genuine hold claim
+    ('account held', 'held=true', 'placed on hold', 'owner hold') is never
+    phrased as gate meta-prose. After removing the gate vocabulary, the
+    discussed token, and negated hold claims, any remaining affirmative
+    marker keeps the clause, so a real restriction documented alongside the
+    meta-prose still fires.
     """
-    if not SCANNER_META_RE.search(clause):
+    if not GATE_META_RE.search(clause):
         return False
-    if not _QUOTED_HELD_RE.search(clause):
-        return False
-    rest = _QUOTED_HELD_RE.sub(" ", clause)
+    rest = GATE_META_RE.sub(" ", clause)
+    rest = _QUOTED_HELD_RE.sub(" ", rest)
+    rest = HELD_NEGATED_RE.sub(" ", rest)
+    rest = HELD_FALSE_RE.sub(" ", rest)
     return not any(rx.search(rest) for rx in AFFIRMATIVE_RES)
 
 
@@ -254,12 +303,20 @@ def strip_negated_clauses(line, surface=None):
         # the assignment out but keep scanning the rest of the clause: a
         # real hold asserted alongside it must still fire.
         clause = HELD_FALSE_RE.sub(" ", clause)
-        # Meta-prose ABOUT the scanner's own 'held' classification ('the tail
-        # scanner fired on the bare token "held"') describes the gate, not a
-        # restriction. Drop the clause only when it discusses the scanner /
-        # false positive and asserts nothing else; anything still
-        # affirmative after removing the discussed token keeps the clause.
-        if _scanner_token_meta_only(clause):
+        # Explicit prose negation of a hold-state claim ('x not held',
+        # 'X is not on hold', "x isn't held") is a claim of NOT held, never
+        # a hold. Same neutralization discipline as the machine assignment
+        # above: substitute the negated span out, keep scanning the rest of
+        # the clause. Anything not an explicit direct negation stays
+        # ambiguous and keeps firing (fail closed).
+        clause = HELD_NEGATED_RE.sub(" ", clause)
+        # Meta-prose ABOUT the gate's own prior verdicts/classifications
+        # ('authority-check.py x exited 2 (AUTHORITY-DENY-CONFLICT)', 'the
+        # tail scanner fired on the bare token "held"') describes the gate,
+        # not a restriction. Drop the clause only when it discusses the gate
+        # and asserts nothing else; anything still affirmative after removing
+        # the gate vocabulary and discussed token keeps the clause.
+        if _gate_meta_only(clause):
             continue
         # Lock-mechanics 'held' ('the driver held the X Chrome lock', 'gate
         # held clean') is not an account hold. This branch does not require a

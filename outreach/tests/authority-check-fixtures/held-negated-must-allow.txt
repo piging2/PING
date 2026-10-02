@@ -1,0 +1,22 @@
+# Negated hold-state claims: MUST NOT deny (gate exit 0, AUTHORITY-ALLOW).
+# Each non-comment, non-blank line is one log line fed to the gate.
+# Defect class fixed 2026-10-01: explicit prose negation ('x not held') is a
+# claim of NOT held, never a hold. The negator must directly govern the hold
+# token; see HELD_NEGATED_RE in authority-check.py.
+holds.json x not held
+Gate: authority-check.py x exited 0 (AUTHORITY-ALLOW) at run start (holds.json x not held, owner unfrozen 2026-10-01 ~05:21 MDT)
+x is not held
+X is not on hold
+x isn't held
+x wasn't held
+x hasn't been held
+x was never held
+never on hold per owner order
+x not held; no restriction signal
+x not held, no checkpoint found
+holds.json: x held=false
+state: "held": false per holds.json
+authority-check.py x exited 2 (AUTHORITY-DENY-CONFLICT) at 01:14:55Z, reconciliation report filed
+the tail scanner fired on the bare token "held" inside prior passes' own gate lines
+false-positive review: the word "held" in prior log lines was a negated claim
+the single log-tail marker is the word "held" inside "holds.json x not held", an explicit NOT-held claim
