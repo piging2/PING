@@ -37,7 +37,11 @@ describe("proof 4: whyThis on a Happy Place fact", () => {
     const w = whyThis({ objectId: HP_BUSINESS, field: "title" }, HAPPY_PLACE_GRAPH);
     expect(w).not.toBeNull();
     expect(w!.evidenceType).toBe("object");
-    expect(w!.classification).toBe("DIRECT");
+    // The business object carries no claimKind: fail-closed (2026-10-02)
+    // maps a missing classification to INFERRED, never DIRECT. A
+    // classification that was never recorded cannot be presented as a
+    // recorded fact.
+    expect(w!.classification).toBe("INFERRED");
     expect(w!.observation.value).toBe("Happy Place Carpentry LLC");
     expect(w!.source).toBe("https://happy-place-platform.vercel.app/");
   });

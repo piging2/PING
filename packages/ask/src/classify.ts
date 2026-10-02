@@ -14,6 +14,21 @@
  * honest "labeled, not verified" class in this vocabulary.
  * DEPENDENCIES: none
  * PROOFS: [3, 4]
+ *
+ * FAIL-CLOSED AMENDMENT (2026-10-02, Nolan binding, "UNKNOWN CLAIM
+ * KINDS"): the old default mapped ANY unrecognized / missing /
+ * malformed classification to DIRECT. That is epistemic fraud by
+ * default: a parsing typo, version skew, or a future schema value could
+ * silently upgrade uncertainty into a recorded fact. Now the mapping is
+ * explicit-only: unrecognized, empty, missing, or malformed
+ * classifications land on INFERRED (the "labeled, not verified" class),
+ * never DIRECT, and the raw source value is preserved in the basis text
+ * so the uncertainty stays visible instead of silently coercing upward.
+ * INFERRED claims already drive the answerer's "not independently
+ * verified" disclaimer, so an unknown kind can never be presented as a
+ * VERIFIED / DIRECT fact. The boundary is this file: cite.ts and
+ * answer.ts need no changes, and the ClaimClass type is unchanged, so
+ * the claims[] contract (UNKNOWN never on a claim) still holds.
  */
 
 /** Claim classes the ask answerer can assign to a real claim. */
@@ -21,11 +36,16 @@ export type ClaimClass = "DIRECT" | "DERIVED" | "INFERRED";
 
 /**
  * Map an extraction-pipeline classification string onto the ask
- * vocabulary. Unrecognized or missing classifications land on DIRECT
- * because the citation still names real evidence (the basis text stays
- * neutral, "Site record"); only derivation, inference, and generation
- * land on DERIVED / INFERRED. GENERATED_COPY is DERIVED: generated
- * presentation must be labeled as derived, never as a verified fact.
+ * vocabulary. ONLY the explicit known mappings below may return
+ * DIRECT / DERIVED / INFERRED. Matching is exact and case-sensitive:
+ * "direct ", "Direct", "inference" are NOT known values.
+ *
+ * Unrecognized, empty, missing, or malformed classifications fail
+ * closed to INFERRED: the claim is labeled, not verified, and the
+ * answerer's existing anyInferred disclaimer ("FYD has not
+ * independently verified them") fires. They MUST NEVER become DIRECT:
+ * an unknown kind is epistemic uncertainty, and uncertainty never
+ * upgrades itself into a recorded fact.
  */
 export function claimClassFor(classification: string | undefined): ClaimClass {
   switch (classification) {
@@ -44,7 +64,10 @@ export function claimClassFor(classification: string | undefined): ClaimClass {
     case "conflict":
       return "INFERRED";
     default:
-      return "DIRECT";
+      // Fail closed. Includes undefined (missing), "" (empty), and any
+      // non-string garbage a malformed record smuggles in: the switch
+      // matches nothing, so it lands here.
+      return "INFERRED";
   }
 }
 
@@ -52,8 +75,17 @@ export function claimClassFor(classification: string | undefined): ClaimClass {
  * Human basis sentence for a classification. Shown in WHY THIS and in
  * evidence-ref detail. Harvested from the source basisForClassification,
  * reworded only where the vocabulary changed.
+ *
+ * Fail-closed addition: the default branch PRESERVES the original
+ * source value instead of discarding it behind a neutral "Site record".
+ * The raw value is shown verbatim (JSON-quoted so whitespace-only and
+ * empty values stay visible) with an explicit "not presented as a
+ * verified fact" disclaimer, so debugging and evidence review can see
+ * exactly what the pipeline produced.
  */
-export function basisForClassification(classification: string | undefined): string {
+export function basisForClassification(
+  classification: string | undefined,
+): string {
   switch (classification) {
     case "DIRECT_FACT":
       return "Recorded fact from the site data";
@@ -74,7 +106,15 @@ export function basisForClassification(classification: string | undefined): stri
     case "CONFLICT":
     case "conflict":
       return "Conflicting source observations (unresolved)";
+    case undefined:
+      return "No classification recorded (not presented as a verified fact)";
+    case "":
+      return "Empty classification (not presented as a verified fact)";
     default:
-      return "Site record";
+      return (
+        "Unrecognized classification " +
+        JSON.stringify(classification) +
+        " (not presented as a verified fact)"
+      );
   }
 }
