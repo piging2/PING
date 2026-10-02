@@ -223,29 +223,38 @@ async function doUnfollowOnPage(page) {
   // 2. Clicking "Unfollow" opens a "Follow settings" dialog (aria-label).
   // 3. Inside: radio options Default / Favorites / Unfollow; select Unfollow.
   // 4. Click "Update". No separate confirm dialog.
+  // 2026-10-02 (live CDP probe on a failing destination): the real Playwright
+  // click on the Following button can time out on actionability (button found,
+  // exactly one, visible) so the menu never opens. visClick reports a click
+  // failure honestly; it never claims the menu opened when the click missed.
   const visClick = async (locator, timeoutMs) => {
     const cnt = await locator.count().catch(() => 0);
     for (let i = 0; i < cnt; i++) {
       const l = locator.nth(i);
       if (await l.isVisible().catch(() => false)) {
         await l.scrollIntoViewIfNeeded().catch(() => {});
-        await l.click({ timeout: timeoutMs || 15000 }).catch(() => {});
-        return true;
+        try {
+          await l.click({ timeout: timeoutMs || 15000 });
+        } catch (e) {
+          const firstLine = String(e.message || e).split('\n')[0];
+          return { clicked: false, clickError: firstLine.slice(0, 220) };
+        }
+        return { clicked: true, clickError: null };
       }
     }
-    return false;
+    return { clicked: false, clickError: 'no visible match' };
   };
 
   // 1. Open the Following menu with a real click.
   const opened = await visClick(page.getByLabel('Following', { exact: true }).first(), 15000);
-  if (!opened) return { ok: false, note: 'following button not found/clickable on page' };
+  if (!opened.clicked) return { ok: false, note: 'following menu did not open: ' + (opened.clickError || 'button not found') };
   await sleep(rand(2500, 4000));
   let warn = await checkWarnings(page);
   if (warn) return { ok: false, note: 'warning after opening menu', warning: warn };
 
   // 2. Click "Unfollow" in the menu.
   const menuClicked = await visClick(page.getByText('Unfollow', { exact: true }), 15000);
-  if (!menuClicked) return { ok: false, note: 'no Unfollow option appeared after opening menu' };
+  if (!menuClicked.clicked) return { ok: false, note: 'unfollow option not activated: ' + (menuClicked.clickError || 'not found') };
   await sleep(rand(2500, 4000));
   warn = await checkWarnings(page);
   if (warn) return { ok: false, note: 'warning after clicking unfollow', warning: warn };
@@ -255,10 +264,10 @@ async function doUnfollowOnPage(page) {
   const dlgVisible = await dlg.isVisible().catch(() => false);
   if (dlgVisible) {
     const picked = await visClick(dlg.getByText('Unfollow', { exact: true }), 15000);
-    if (!picked) return { ok: false, note: 'follow-settings dialog: unfollow option not clickable' };
+    if (!picked.clicked) return { ok: false, note: 'follow-settings dialog: unfollow option not clickable: ' + (picked.clickError || 'not found') };
     await sleep(rand(1500, 2500));
     const updated = await visClick(dlg.getByText('Update', { exact: true }), 15000);
-    if (!updated) return { ok: false, note: 'follow-settings dialog: update button not clickable' };
+    if (!updated.clicked) return { ok: false, note: 'follow-settings dialog: update button not clickable: ' + (updated.clickError || 'not found') };
     await sleep(rand(2500, 4000));
   }
   warn = await checkWarnings(page);
