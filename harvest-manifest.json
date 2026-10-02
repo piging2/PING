@@ -20,7 +20,7 @@
       "note": "canonical ping-runtime lineage; read-only; pre-existing dirty build artifacts untouched"
     }
   },
-  "entry_count": 107,
+  "entry_count": 112,
   "sha_filled": 61,
   "entries": [
     {
@@ -3168,6 +3168,149 @@
       "new_fyd_loc": 55,
       "dependencies_added": [],
       "bundle_runtime_cost": "zero-dep, ~55 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/provenance.ts",
+      "SOURCE_SHA": "sha256:fa98b2fbf095fe441eafa726e5807a8f7464e4ce5d7f4da67ee8c54f02fee84b",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "OwnerProvenance shape, demo actor label, deterministic short ids",
+      "AUTHORITY_OWNER": "owner-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/owner/src/corrections.ts"
+      ],
+      "TESTS": [
+        "packages/owner/test/owner-corrections.test.ts"
+      ],
+      "TARGET_PATH": "packages/owner/src/provenance.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "sha256/canonicalization reuse the trust kernel (hash + canonicalization authority); the source's local canonicalJson is byte-equivalent to sha256-canonical-json-v1.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 78,
+      "harvested_loc": 72,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~72 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/facts.ts",
+      "SOURCE_SHA": "sha256:a76836756c04f8639084d5a0cdf3c2dab1a9784eee135c81998da3e7f1ee2d51",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Deterministic factIdFor (fact- + sha256(objectId|field|index)); only factIdFor harvested, the SiteFact extractor stays behind (graph facts derive inline)",
+      "AUTHORITY_OWNER": "owner-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/owner/src/corrections.ts"
+      ],
+      "TESTS": [
+        "packages/owner/test/owner-corrections.test.ts"
+      ],
+      "TARGET_PATH": "packages/owner/src/provenance.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "factIdFor is the addressing primitive the assertion algebra needs; the rest of facts.ts (fact kinds, extraction) is superseded by extractGraphFacts in the target.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 159,
+      "harvested_loc": 72,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~72 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/corrections.ts",
+      "SOURCE_SHA": "sha256:67d427b011782af02cd1e361769ec0ed248346f59bd14cef943bd39dffd05c47",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "CONFIRM/CORRECT/HIDE as append-only OwnerAssertions: assertCorrection, chainHeads, conflict algebra, applyCorrections",
+      "AUTHORITY_OWNER": "owner-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/owner/src/visibility.ts"
+      ],
+      "TESTS": [
+        "packages/owner/test/owner-corrections.test.ts",
+        "packages/owner/test/owner-visibility.test.ts"
+      ],
+      "TARGET_PATH": "packages/owner/src/corrections.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Algebra preserved exactly (append-only + supersedes + conflict + orphaned + hiddenFactIds); projection target adapted from SiteFact[] to the piging2 ObjectGraph, CORRECT attaches the verifier's read-seam record so the corrected graph passes the binding verifier's owner-assertion lane.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 317,
+      "harvested_loc": 496,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~496 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/owner-identity.ts",
+      "SOURCE_SHA": "sha256:18d837fa6aab45edbcd324075b8ff5e20678eb7f2e079bee942153e48836dc74",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "OwnerIdentityProvider seam + DemoIdentityProvider (explicitly unverified)",
+      "AUTHORITY_OWNER": "owner-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/owner/test/owner-identity.test.ts"
+      ],
+      "TARGET_PATH": "packages/owner/src/identity.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Seam preserved; demo context typed DEMO_OWNER_CONTEXT with verified as the literal false (structural, not a comment) + fail-closed requireVerifiedOwner guard added for the proof.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 116,
+      "harvested_loc": 184,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~184 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/owner-mode/visibility-policy.ts",
+      "SOURCE_SHA": "sha256:56949e8bfc6a65e0c65dd18f1356d69d02f8a3e066f816648497cee5d6a89606",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Per-fact visibility precedence (owner decision > HIDE assertion > conservative default) + hide re-resolution",
+      "AUTHORITY_OWNER": "owner-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/owner/test/owner-visibility.test.ts",
+        "packages/owner/test/owner-corrections.test.ts"
+      ],
+      "TARGET_PATH": "packages/owner/src/visibility.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Adapted to the four-input rule the proof requires: source visibility / system default / owner override / effective visibility; per-fact SiteFact machinery replaced by field-level resolution over the object graph.",
+      "proof_ids": [
+        6
+      ],
+      "source_loc": 271,
+      "harvested_loc": 141,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~141 LOC"
     }
   ],
   "v2_changes": [
