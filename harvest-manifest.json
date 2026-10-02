@@ -20,7 +20,7 @@
       "note": "canonical ping-runtime lineage; read-only; pre-existing dirty build artifacts untouched"
     }
   },
-  "entry_count": 90,
+  "entry_count": 107,
   "sha_filled": 61,
   "entries": [
     {
@@ -2791,6 +2791,383 @@
       "new_fyd_loc": 1,
       "dependencies_added": 0,
       "bundle_runtime_cost": "none"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/lib/ping/types.ts",
+      "SOURCE_SHA": "sha256:1ecb1e689c1bc5721f854833fdf623aef836d92de55cddb3875972137a2f9307",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "AskClaimClassification + AskEvidenceRef shapes for the ask contract",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/answer.ts",
+        "packages/ask/src/cite.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts",
+        "packages/ask/test/whythis-proof4.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/types.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Re-expressed for the piging2 object shape with the DIRECT/DERIVED/INFERRED/UNKNOWN vocabulary decision documented.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 442,
+      "harvested_loc": 189,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~189 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/types.ts",
+      "SOURCE_SHA": "sha256:120b9a3f32dcafcbb504a46a50accf5df3aafd0556d64523c1dc1626493fbfb7",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "AskViewerIdentity + AskViewerClass + the input-side ask context shape",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/viewer.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/types.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Fail-closed viewer classification kept; the owner class is a verified hook that grants nothing in this slice.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 117,
+      "harvested_loc": 189,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~189 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/contract.ts",
+      "SOURCE_SHA": "sha256:7109ded4281bf4e6ba166736c643f58881798940a3cd5f26bade0f8cf8ca6714",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "AskFydClaim + answer contract: claims carry classes, every claim id resolves to served evidence refs",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/answer.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/types.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "5-class citation vocabulary re-expressed as DIRECT/DERIVED/INFERRED; refusal carries no claims and non-empty unknowns.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 215,
+      "harvested_loc": 189,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~189 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/context-projection.ts",
+      "SOURCE_SHA": "sha256:df2053aec29ec1593bce7ee88534e899d548ed804247bc3b24c246b7fd3b442f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "classifyAskViewer + the public-projection choke point (visitor/public boundary)",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/answer.ts",
+        "packages/ask/src/cite.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts",
+        "packages/ask/test/whythis-proof4.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/viewer.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Owner visibility-decision and field-conflict layers deferred to proofs 6+; public-only projection + zero-canary rule preserved.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 119,
+      "harvested_loc": 154,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~154 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/visitor-safe-fields.ts",
+      "SOURCE_SHA": "sha256:cb92e35cebcdea83a88750a02594b4247593d6a19990b720464857923d6b9c6f",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Fail-closed field allowlist for the viewer-projected graph",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/viewer.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/viewer.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Allowlist re-derived from the exact field names the proof-3/4 answerer reads; unknown fields dropped for every viewer class.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 130,
+      "harvested_loc": 154,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~154 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/visitor-answer.ts",
+      "SOURCE_SHA": "sha256:0ef5abea3b5881c4371ae1eb9e077cf38bcbbbe23d79e2134cc6d4d308c74d78",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "claimClassFor + basisForClassification: mechanical classification mapping",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/cite.ts",
+        "packages/ask/src/answer.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts",
+        "packages/ask/test/whythis-proof4.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/classify.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "DIRECT_FACT/website_statement/USER_OVERRIDE->DIRECT, DERIVED_FACT/GENERATED_COPY->DERIVED, INFERENCE->INFERRED; conflicts land on INFERRED, never presented as fact.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 840,
+      "harvested_loc": 80,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~80 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/visitor-answer.ts",
+      "SOURCE_SHA": "sha256:0ef5abea3b5881c4371ae1eb9e077cf38bcbbbe23d79e2134cc6d4d308c74d78",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "citationFor: one evidence ref -> source, basis, lastChecked, claim class",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [
+        "packages/ask/src/answer.ts"
+      ],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts",
+        "packages/ask/test/whythis-proof4.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/cite.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Becomes citeFact, the single primitive shared by Ask FYD citations and whyThis (implement once, use in both).",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 840,
+      "harvested_loc": 182,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~182 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/visitor-answer.ts",
+      "SOURCE_SHA": "sha256:0ef5abea3b5881c4371ae1eb9e077cf38bcbbbe23d79e2134cc6d4d308c74d78",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "answerAskFyd refusal shape: no cited evidence means honest unknown, never a guess",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/answer.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Refusal carries answerState UNKNOWN, empty claims/evidenceRefs, and the unsupported topic in unknowns.",
+      "proof_ids": [
+        3
+      ],
+      "source_loc": 840,
+      "harvested_loc": 215,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~215 LOC"
+    },
+    {
+      "SOURCE_REPO": "/home/nolan/projects/ping-fyd-converged",
+      "SOURCE_HEAD": "32f83474888fab87bd57a610cfba1d4f28b0c4fb",
+      "SOURCE_PATH": "src/fyd/ask/answer.ts",
+      "SOURCE_SHA": "sha256:25b034a5f5e21a07262d0e2a6c38bc73c348b266157c0f6e041990f77c7ae281",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "refusalAnswer: the structured refusal constructor",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/src/answer.ts",
+      "ACTION": "ADAPT",
+      "RATIONALE": "Same shape, mechanical content; no composer or LLM layers in this slice.",
+      "proof_ids": [
+        3
+      ],
+      "source_loc": 110,
+      "harvested_loc": 215,
+      "adapter_loc": 0,
+      "new_fyd_loc": 0,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~215 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Package exports for @piging2/ask",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/ask/src/index.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Thin barrel; no new behavior.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 0,
+      "harvested_loc": 14,
+      "adapter_loc": 0,
+      "new_fyd_loc": 14,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~14 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proof 3 tests: Happy Place + Coppersmith services, refusal, visitor boundary",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/ask/test/ask-proof3.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/test/ask-proof3.test.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "15 assertions across 10 tests; no LLM in the answer path.",
+      "proof_ids": [
+        3
+      ],
+      "source_loc": 0,
+      "harvested_loc": 234,
+      "adapter_loc": 0,
+      "new_fyd_loc": 234,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~234 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Proof 4 tests: whyThis source/observation/type/classification + shared-machinery proof",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [
+        "packages/ask/test/whythis-proof4.test.ts"
+      ],
+      "TARGET_PATH": "packages/ask/test/whythis-proof4.test.ts",
+      "ACTION": "NEW",
+      "RATIONALE": "Asserts the answerer's citations equal citeFact output (one implementation, two surfaces).",
+      "proof_ids": [
+        4
+      ],
+      "source_loc": 0,
+      "harvested_loc": 85,
+      "adapter_loc": 0,
+      "new_fyd_loc": 85,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~85 LOC"
+    },
+    {
+      "SOURCE_REPO": "none",
+      "SOURCE_HEAD": "none",
+      "SOURCE_PATH": "none",
+      "SOURCE_SHA": "none",
+      "LICENSE": "none-found-in-repo",
+      "PURPOSE": "Package notes: layout, harvest verdicts, decisions",
+      "AUTHORITY_OWNER": "ask-kernel",
+      "DEPENDENCIES": [],
+      "DEPENDENCY_COST": "zero",
+      "CALLERS": [],
+      "TESTS": [],
+      "TARGET_PATH": "packages/ask/README.md",
+      "ACTION": "NEW",
+      "RATIONALE": "Documents the vocabulary decision, boundary decision, and refusal contract.",
+      "proof_ids": [
+        3,
+        4
+      ],
+      "source_loc": 0,
+      "harvested_loc": 55,
+      "adapter_loc": 0,
+      "new_fyd_loc": 55,
+      "dependencies_added": [],
+      "bundle_runtime_cost": "zero-dep, ~55 LOC"
     }
   ],
   "v2_changes": [
