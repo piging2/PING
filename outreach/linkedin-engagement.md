@@ -41,3 +41,29 @@ Week-1 warmup rules (strict, per 2026-09-13 automation plan + 2026-09-14 task):
 
 ### Anomalies
 - None on the account. Worker bugs only (login false-negative, like-button label), both fixed and deployed.
+
+---
+
+## 2026-10-02 — Channel reactivated (standing params, Nolan binding)
+
+Supersedes the Sept 13 warmup scope above (warmup waived; likes-only scope overridden):
+
+- 100 connection invites per WEEK, distributed across 2h passes (~14/day pace).
+  Weekly counter enforced by `linkedin-weekly-cap.py`; stops sending invites at cap.
+- 15 likes per pass every 2 hours.
+- No DMs, no messages. Connections target relevant local business people only;
+  likes are thoughtful engagement on relevant posts.
+- Fail-closed on any checkpoint/CAPTCHA/restriction/verification wall.
+- Nolan's stance: they are not going to flag us; scale back only on an actual
+  restriction/flag.
+
+Hard login gate: Nolan must log into LinkedIn himself in the Pig's li-profile
+Chrome window (CDP :9224, isolated from the FB :9223 browser). `check_login.js`
+gates every pass; if not logged in, the pass ends immediately with zero actions
+and logs "waiting on Nolan login". Never enter credentials, never wait on 2FA.
+
+Two restriction signals in 7 days pauses the channel (per the Sept 13 plan).
+HOLD markers: `[HOLD:restriction]`, `[HOLD:checkpoint]`, `[HOLD:logged-out]`.
+
+## Never re-engage (connected profiles, off-limits forever)
+- (none yet)

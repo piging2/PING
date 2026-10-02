@@ -135,6 +135,7 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import sys
 import uuid
 from collections import Counter
@@ -167,7 +168,8 @@ RECONCILIATION_REQUIRED = "RECONCILIATION_REQUIRED"
 
 # External commitments this ledger covers. Never silently retried while
 # UNKNOWN_EXECUTION.
-ACTIONS = ("like", "comment", "follow", "post", "dm", "email", "form_submit")
+ACTIONS = ("like", "comment", "follow", "post", "dm", "email", "form_submit",
+           "connect")
 
 # ---------------------------------------------------------------------------
 # P0 OUTCOME LOOP (Interval 08, 2026-09-29). Extends the reached
@@ -464,6 +466,13 @@ def _post_ids(g, platform, url):
     elif platform == "tiktok":
         for m in g.TT_URL_RE.finditer(url):
             ids.add("tiktok:%s" % m.group(2))
+    elif platform == "linkedin":
+        # Profile (/in/<slug>), company (/company/<slug>), post URLs.
+        # The slug path is the stable dedupe key for never-reengage.
+        m = re.search(r"linkedin\.com/(in|company|posts|feed/update)/([^/?#]+)",
+                      url or "")
+        if m:
+            ids.add("linkedin:%s/%s" % (m.group(1), m.group(2).lower()))
     else:
         m = g.IG_URL_RE.search(url)
         if m:
@@ -1221,7 +1230,7 @@ def main():
 
     w = sub.add_parser("write-intents")
     w.add_argument("--platform", required=True,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"])
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"])
     w.add_argument("--in", dest="in_path", required=True)
     w.add_argument("--pass-id", required=True)
     w.add_argument("--fb-job", action="store_true")
@@ -1229,13 +1238,13 @@ def main():
 
     m = sub.add_parser("mark-execution")
     m.add_argument("--platform", required=True,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"])
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"])
     m.add_argument("--pass-id", required=True)
     m.set_defaults(fn=cmd_mark_execution)
 
     r = sub.add_parser("refuse")
     r.add_argument("--platform", required=True,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"])
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"])
     r.add_argument("--in", dest="in_path", required=True)
     r.add_argument("--out", dest="out_path", required=True)
     r.add_argument("--pass-id", required=True)
@@ -1244,7 +1253,7 @@ def main():
 
     o = sub.add_parser("record-outcomes")
     o.add_argument("--platform", required=False,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"], default=None)
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"], default=None)
     o.add_argument("--pass-id", required=True)
     o.add_argument("--result-json", default=None)
     o.add_argument("--outcomes-json", default=None)
@@ -1260,7 +1269,7 @@ def main():
 
     l = sub.add_parser("list-unknown")
     l.add_argument("--platform", required=False,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"], default=None)
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"], default=None)
     l.add_argument("--exclude-pass-id", default=None)
     l.set_defaults(fn=cmd_list_unknown)
 
@@ -1276,7 +1285,7 @@ def main():
 
     k = sub.add_parser("check")
     k.add_argument("--platform", required=True,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"])
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"])
     k.add_argument("--account", required=True)
     k.add_argument("--action", default=None, choices=ACTIONS)
     k.add_argument("--url", default=None)
@@ -1284,7 +1293,7 @@ def main():
 
     s = sub.add_parser("sweep-stale-dispatches")
     s.add_argument("--platform", required=False, default=None,
-                   choices=["instagram", "facebook", "threads", "x", "tiktok"])
+                   choices=["instagram", "facebook", "threads", "x", "tiktok", "linkedin"])
     s.add_argument("--max-age-hours", type=float, default=8.0)
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--jobs-dir", default=None)

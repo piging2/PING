@@ -48,7 +48,7 @@ import sys
 from datetime import datetime, timezone
 
 SURFACES = ("tiktok", "instagram", "facebook", "threads", "x",
-            "outreach-engine")
+            "linkedin", "outreach-engine")
 
 # platform log files scanned for affirmative hold/restriction markers
 LOG_FILE = {
@@ -57,6 +57,7 @@ LOG_FILE = {
     "facebook": "facebook-engagement.md",
     "threads": "threads-engagement.md",
     "x": "x-engagement.md",
+    "linkedin": "linkedin-engagement.md",
     # outreach-engine has no engagement log; its structured state is the cron
     # schedule (currently enabled:false) plus AUTHORITY.json.
     "outreach-engine": None,
