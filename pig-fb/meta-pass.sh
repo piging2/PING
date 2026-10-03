@@ -426,6 +426,7 @@ VRC=$?
 echo "$VOUT"
 VALIDATOR_CHARS=$(printf '%s' "$VOUT" | grep -o 'answer chars: [0-9]*' | grep -o '[0-9]*' | head -1)
 VALIDATOR_ITEMS=$(printf '%s' "$VOUT" | grep -o 'numbered items: [0-9]*' | grep -o '[0-9]*' | head -1)
+FREEFORM_N=$(printf '%s' "$VOUT" | grep -o 'FREEFORM_EXTRACTED n=[0-9]*' | grep -o '[0-9]*' | head -1)
 [ $VRC -eq 3 ] && stamp_failed "answer presence validation failed: prompt-only/empty/malformed capture (no numbered business list)" validation_rejected
 [ $VRC -ne 0 ] && { RUN_OUTCOME=infra; RUN_CLASS="validation_error rc=$VRC"; echo "INFRA validation_error rc=$VRC"; exit 2; }
 VALIDATOR_PASSED=yes  # validator exit-0 path; finalize() records the validated transition
@@ -453,7 +454,11 @@ if [ -f ~/workspace/tandem/contracts/"$SLUG".json ]; then
 fi
 
 # 5. Provenance sidecar: UNVERIFIED external research, answer presence validated.
-write_sidecar answer_captured "raw answer captured and presence-validated; awaiting outreach-engine verification"
+if [ -n "$FREEFORM_N" ]; then
+  write_sidecar answer_captured "freeform extraction rescued $FREEFORM_N UNVERIFIED entries from unparseable prose (2026-10-03 fallback); awaiting outreach-engine independent web-search verification"
+else
+  write_sidecar answer_captured "raw answer captured and presence-validated; awaiting outreach-engine verification"
+fi
 echo "SAVED $LOCAL pack=$PACKVER"
 RUN_OUTCOME=ok
 RUN_CLASS=answer_captured
