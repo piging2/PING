@@ -20,7 +20,11 @@ This gate consumes, in order:
          recent review decision is "hold").
        - other surfaces: affirmative restriction/hold markers in the recent
          pass-log tail (negation clauses like "no blocks, checkpoints, or
-         warnings" are excluded first).
+         warnings" are excluded first). Worker-observed challenge/rate-limit
+         text WITHOUT platform enforcement is excluded too (Nolan 2026-10-03:
+         that class goes to the recovery-budgets backoff ladder only); only
+         genuine enforcement (restriction banner, checkpoint, action block,
+         tripwire hold) marks.
   4. Capability/authorization window in AUTHORITY.json (checked before the
      unstructured log tail: a hard capability flag is more current than
      prose, e.g. instagram ACTIVE after the hold lift but the session still
@@ -147,6 +151,42 @@ STAGGER_HELD_RE = re.compile(r"\bstagger held\b", re.IGNORECASE)
 # covered and keeps firing.
 HELD_MINUTES_LAUNCH_RE = re.compile(
     r"\bheld\b\s+\d+\s*min\b[^.;]{0,80}?\b(?:stagger|launch(?:ed|ing)?)\b",
+    re.IGNORECASE)
+# Worker-observed challenge/rate-limit text (2026-10-03, Nolan binding):
+# worker-observed challenge/rate-limit text WITHOUT platform enforcement
+# never creates an authority-gate marker. That class goes to the
+# recovery-budgets backoff ladder only. Precedent: threads passes 183/186,
+# where the worker saw challenge text on the identical @pompglobal post
+# twice (~4h apart), 0 actions landed either time, no restriction banner,
+# no checkpoint, no action block, tripwire judged transient; the gate's
+# DENY-CONFLICT on those log lines parked the surface for 9 consecutive
+# 0-action passes on zero genuine enforcement.
+#
+# Kept narrow on purpose. A clause is stripped ONLY when (a) it carries
+# observation framing (the worker SAW the text), (b) its restriction
+# vocabulary is limited to the challenge/rate-limit TEXT family, and
+# (c) it asserts no platform enforcement. A bare "verification challenge"
+# (presented to the worker, no text framing, no observation framing)
+# keeps firing fail-safe: that is a presented challenge, not the
+# observed-text class. Genuine enforcement vocabulary (banner, checkpoint,
+# action-block, blocked, warning, restriction signal, stand-down, hold,
+# flagged, hit, received, presented, invalidated, on-the-account) always
+# blocks the strip, so "rate-limit warning received", "rate limit hit",
+# "temporarily blocked", "restriction banner shown", and "checkpoint on
+# the account" keep their affirmative markers.
+OBSERVED_TEXT_RE = re.compile(
+    r"\b(?:challenge|verification[- ]challenge|rate[- ]limits?)"
+    r"(?:/[- \w]+)?\s+text\b"
+    r"|\btext\b[^.;]{0,40}?\b(?:challenge|rate[- ]limit)\b",
+    re.IGNORECASE)
+OBSERVATION_FRAMING_RE = re.compile(
+    r"\b(saw|seen|observed?|observing|spotted|appeared|showing)\b",
+    re.IGNORECASE)
+ENFORCEMENT_ASSERTION_RE = re.compile(
+    r"\b(banner|checkpoint|action[- ]blocks?|blocked|warning|"
+    r"restriction[- ]signals?|stand-?down|owner[- ]hold|held|"
+    r"flagged|hit|received|presented|invalidat\w+|"
+    r"on[- ]the[- ]account)\b",
     re.IGNORECASE)
 # Explicit prose negation of a hold-state claim ('x not held', 'X is not
 # on hold', "x isn't held") is a claim of NOT held, never a hold. This is a
@@ -322,6 +362,8 @@ def strip_negated_clauses(line, surface=None):
     "No action block, checkpoint, or rate warning." -> the whole clause goes.
     "owner HOLD lifted mid-morning" -> the hold was lifted, not imposed.
     "risking rate-limit flags, so we skipped" -> precautionary, not an event.
+    "worker saw challenge/rate-limit text on @post" -> observed text without
+    enforcement, backoff-ladder class (Nolan 2026-10-03), not a marker.
     A clause without a negation/lift/precaution word is kept verbatim for the
     affirmative scan that follows.
 
@@ -388,6 +430,15 @@ def strip_negated_clauses(line, surface=None):
                 or (RATE_LIMIT_RE.search(clause)
                     and META_PROSE_RE.search(clause))):
             continue
+        # Worker-observed challenge/rate-limit text without platform
+        # enforcement (2026-10-03, Nolan binding): stripped, backoff ladder
+        # only. The strip requires observation framing AND the observed-text
+        # vocabulary AND no enforcement assertion; any one missing keeps the
+        # clause in the affirmative scan (fail closed on ambiguity).
+        if (OBSERVATION_FRAMING_RE.search(clause)
+                and OBSERVED_TEXT_RE.search(clause)
+                and not ENFORCEMENT_ASSERTION_RE.search(clause)):
+            continue
         # Cross-surface attribution: a hold/restriction marker explicitly
         # scoped to a different surface is not a hold on the checked
         # surface. Strip only when the clause names another surface and does
@@ -404,7 +455,10 @@ def strip_negated_clauses(line, surface=None):
         kept.append(clause)
     return " ".join(kept)
 
-# Affirmative markers of a real hold or restriction.
+# Affirmative markers of a real hold or restriction. A restriction banner
+# is platform enforcement (Nolan 2026-10-03 standing rule: the enforcement
+# class is restriction banner, checkpoint, action block, tripwire hold);
+# bare "banner" alone (SSH banner, comment-banner prose) never matches.
 AFFIRMATIVE_RES = [
     re.compile(r"temporarily blocked", re.I),
     re.compile(r"\bstand-?down\b", re.I),
@@ -412,6 +466,7 @@ AFFIRMATIVE_RES = [
     re.compile(r"\bheld\b", re.I),
     ON_HOLD_STATE_RE,
     re.compile(r"restriction signal", re.I),
+    re.compile(r"\brestriction[- ]banner\b", re.I),
     re.compile(r"\baction[- ]block\b", re.I),
     re.compile(r"\bcheckpoint\b", re.I),
     re.compile(r"verification (challenge|nudge)", re.I),
