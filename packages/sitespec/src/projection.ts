@@ -17,6 +17,10 @@
  *   consumer binds a value: a decision hides its field unless its policy
  *   is exactly "public" (fail closed on unknown policies). The projection
  *   works on object copies: the caller's graph is never mutated.
+ * - Secret hygiene: fields whose names look like credentials are dropped
+ *   and secret-shaped values in text are redacted to "[redacted]".
+ *   Secrets win over explicit-public decisions: nothing secret-shaped
+ *   reaches the public surface under any policy.
  * - graphDigest = digestCanonical over the canonical public-graph form
  *   (objects and relationships sorted by id; input order irrelevant).
  * - decisionsDigest = digestCanonical(decisions), sorted by
@@ -37,7 +41,7 @@ import type { PingObject } from "./ping-types";
 import type { ObjectGraph } from "./types";
 
 /** Boundary version. Bump when the projection rules above change. */
-export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@2";
+export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@3";
 
 export type PublicViewerKind = "anonymous" | "owner";
 
@@ -173,6 +177,86 @@ export interface BuildProjectionOptions {
 }
 
 /**
+ * Secret hygiene at the public boundary. Fail-closed: values that look
+ * like provider credentials never reach a public render, even when the
+ * source data carries them. This is a conservative syntactic rule, not a
+ * new visibility semantic: it drops/redacts, never reclassifies.
+ *
+ * Two rules:
+ * - FIELD NAME rule: a field whose (lowercased) name contains one of
+ *   SECRET_FIELD_NAME_PARTS is dropped entirely, whatever its value.
+ * - VALUE rule: a string value (title, description, any surviving field,
+ *   or the provenance ref) with a substring matching one of
+ *   SECRET_VALUE_PATTERNS has the matching portion replaced with
+ *   "[redacted]".
+ */
+const SECRET_FIELD_NAME_PARTS: readonly string[] = [
+  "secret",
+  "password",
+  "passwd",
+  "private_key",
+  "privatekey",
+  "api_key",
+  "apikey",
+  "auth_token",
+  "authtoken",
+  "access_token",
+  "accesstoken",
+  "client_secret",
+  "clientsecret",
+  "session_token",
+  "sessiontoken",
+  // Bare "token": api_token and friends must not survive even when the
+  // compound forms above miss them. No legitimate FYD field name contains
+  // this substring; fail closed.
+  "token",
+];
+
+/** High-confidence credential shapes (substring match, case-sensitive). */
+const SECRET_VALUE_PATTERNS: readonly RegExp[] = [
+  /sk_(live|test)_[A-Za-z0-9]+/,
+  /AKIA[0-9A-Z]{16}/,
+  /ghp_[A-Za-z0-9]{36,}/,
+  /xox[bap]-/,
+  /-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/,
+];
+
+/** Replacement for redacted secret material. Stable for digests. */
+export const REDACTED = "[redacted]";
+
+function redactSecretsInText(value: string): string {
+  let out = value;
+  for (const pattern of SECRET_VALUE_PATTERNS) {
+    out = out.replace(new RegExp(pattern.source, "g"), REDACTED);
+  }
+  return out;
+}
+
+/**
+ * Drop secret-named fields and redact secret-shaped values. Pure: the
+ * input object is copied, never mutated.
+ */
+export function sanitizeSecrets(o: PingObject): PingObject {
+  const fields: Record<string, string | string[]> = {};
+  for (const [key, value] of Object.entries(o.fields)) {
+    const lower = key.toLowerCase();
+    if (SECRET_FIELD_NAME_PARTS.some((part) => lower.includes(part))) {
+      continue;
+    }
+    fields[key] = Array.isArray(value)
+      ? value.map(redactSecretsInText)
+      : redactSecretsInText(value);
+  }
+  return {
+    ...o,
+    title: redactSecretsInText(o.title),
+    description: redactSecretsInText(o.description),
+    fields,
+    provenance: { ...o.provenance, ref: redactSecretsInText(o.provenance.ref) },
+  };
+}
+
+/**
  * Build the verified public projection. Pure and deterministic: the same
  * input graph always yields the same projection (same digests, same
  * checkpoint), regardless of object/relationship input order. The input
@@ -189,10 +273,11 @@ export function buildVerifiedPublicProjection(
   );
   // Field hiding runs on copies: every owner HIDE is enforced before any
   // consumer binds a value, and the caller's graph is never mutated.
-  const publicObjects = applyFieldVisibilityDecisions(
-    visibleObjects,
-    decisions,
-  ).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // Secret hygiene runs after hiding: secrets win over explicit-public
+  // decisions (fail closed), and hidden fields are already gone.
+  const publicObjects = applyFieldVisibilityDecisions(visibleObjects, decisions)
+    .map(sanitizeSecrets)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const publicIds = new Set(publicObjects.map((o) => o.id));
   const publicRelationships = graph.relationships
     .filter(
