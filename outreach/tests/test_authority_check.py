@@ -463,6 +463,51 @@ class GateTest(unittest.TestCase):
         self.assertEqual(r.returncode, 2, r.stdout)
         self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
+    def test_restriction_window_status_prose_allows(self):
+        # 2026-10-03 linkedin incident: a pass section documenting the
+        # 7-day restriction-window count and asserting no new event
+        # ("still exactly 1 restriction signal", "threshold is NOT
+        # reached") is bookkeeping, not a new platform event. Without the
+        # carve-out the gate matches "restriction signal" in that prose and
+        # self-reinforces every pass.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-03 - Pass li-1\n"
+                        "- 7-day restriction window: still exactly 1 "
+                        "restriction signal (the ~03:00 MDT one from the "
+                        "0226 pass). The 2-in-7 channel-pause threshold is "
+                        "NOT reached; no second signal.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_genuine_second_restriction_signal_still_denies(self):
+        # Narrowing guard: the window-status carve-out requires an explicit
+        # no-new-event assertion; a genuine second signal in the window
+        # keeps firing fail-closed.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-03 - Pass li-2\n"
+                        "- RESTRICTION SIGNAL: second restriction signal "
+                        "in 7 days; channel paused per the two-signal "
+                        "rule.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_genuine_block_event_still_denies(self):
+        # Narrowing guard: a real platform enforcement event with no
+        # window-status framing keeps firing.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-03 - Pass li-3\n"
+                        "- RESTRICTION SIGNAL: li-expand5 hit BLOCKED: "
+                        "unusual activity mid-targeted-round.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
 
 # ---- held-state negation fixtures (2026-10-01 19:14 MDT x incident) ----
 # Semantic classification of the hold-state claim family, driven by fixture
