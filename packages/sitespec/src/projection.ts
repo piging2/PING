@@ -13,6 +13,12 @@
  * Rules:
  * - Only visibility === "public" objects survive. Relationships survive
  *   only when active AND both endpoints survive.
+ * - Opt-in tenant scoping: when `tenantId` is provided, only objects
+ *   whose controllerId equals it survive (fail closed: a missing or
+ *   empty controllerId never matches a scope). Relationships survive
+ *   only when both endpoints survive, so cross-tenant edges are refused
+ *   with their foreign endpoint. Without a scope the boundary keeps its
+ *   legacy contract (visibility only): it never invents a tenant.
  * - Owner field-visibility decisions are ENFORCED per field before any
  *   consumer binds a value: a decision hides its field unless its policy
  *   is exactly "public" (fail closed on unknown policies). The projection
@@ -26,7 +32,9 @@
  * - decisionsDigest = digestCanonical(decisions), sorted by
  *   (objectId, field, policy, index). The empty set digests
  *   deterministically.
- * - viewerPolicyDigest = digestCanonical({viewerKind, boundaryVersion}).
+ * - viewerPolicyDigest = digestCanonical({viewerKind, boundaryVersion,
+ *   tenantId}): the scope is part of the policy, so a scoped projection
+ *   is never interchangeable with an unscoped one.
  * - checkpoint = `${graphDigest}:${decisionsDigest}`: semantic identity,
  *   never a wall-clock asOf.
  *
@@ -41,7 +49,7 @@ import type { PingObject } from "./ping-types";
 import type { ObjectGraph } from "./types";
 
 /** Boundary version. Bump when the projection rules above change. */
-export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@3";
+export const PUBLIC_PROJECTION_VERSION = "piging2-public-projection@4";
 
 export type PublicViewerKind = "anonymous" | "owner";
 
@@ -72,6 +80,12 @@ export interface PublicProjectionProvenance {
   /** `${graphDigest}:${decisionsDigest}`: the semantic snapshot id. */
   checkpoint: string;
   viewerKind: PublicViewerKind;
+  /**
+   * The tenant scope the projection was built under, or null when the
+   * boundary ran unscoped. Pinned so a scoped projection is never
+   * mistaken for an unscoped one (and vice versa).
+   */
+  tenantId: string | null;
 }
 
 /**
@@ -174,6 +188,13 @@ export function applyFieldVisibilityDecisions(
 export interface BuildProjectionOptions {
   viewerKind?: PublicViewerKind;
   decisions?: FieldVisibilityDecision[];
+  /**
+   * Opt-in tenant scope. When provided, only objects whose controllerId
+   * equals tenantId survive; a missing or empty controllerId never
+   * matches. Cross-tenant relationships are refused with their foreign
+   * endpoint (relationships still require both endpoints to survive).
+   */
+  tenantId?: string;
 }
 
 /**
@@ -267,8 +288,16 @@ export function buildVerifiedPublicProjection(
   opts: BuildProjectionOptions = {},
 ): VerifiedPublicProjection {
   const viewerKind = opts.viewerKind ?? "anonymous";
+  const tenantId = opts.tenantId ?? null;
   const decisions = (opts.decisions ?? []).slice().sort(compareDecisions);
-  const visibleObjects = graph.objects.filter(
+  // Opt-in tenant scoping, fail closed: without a controllerId that
+  // equals the scope, the object does not survive. The scope is pinned
+  // in the provenance so scoped and unscoped projections never collide.
+  const scopedObjects =
+    tenantId === null
+      ? graph.objects
+      : graph.objects.filter((o) => o.controllerId === tenantId);
+  const visibleObjects = scopedObjects.filter(
     (o) => o.visibility === "public",
   );
   // Field hiding runs on copies: every owner HIDE is enforced before any
@@ -297,6 +326,7 @@ export function buildVerifiedPublicProjection(
   const viewerPolicyDigest = digestCanonical({
     viewerKind,
     boundaryVersion: PUBLIC_PROJECTION_VERSION,
+    tenantId,
   });
 
   return {
@@ -309,6 +339,7 @@ export function buildVerifiedPublicProjection(
       viewerPolicyDigest,
       checkpoint: graphDigest + ":" + decisionsDigest,
       viewerKind,
+      tenantId,
     },
   };
 }
