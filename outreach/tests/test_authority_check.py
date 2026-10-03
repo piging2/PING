@@ -558,5 +558,83 @@ class HeldNegationFixtureTest(GateTest):
             self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
 
+# ---- threads newest-first tail-scan regression (2026-10-03) ----
+# The gate self-reinforced on stale prose: tail_affirmative_markers applied
+# tail_scan_from_line BEFORE the newest-first reversal, which for a
+# prepended newest-first log kept the PRE-reconciliation tail -- the exact
+# inverse of the documented intent. As new sections were prepended,
+# reconciled prose re-entered the scan and the gate parked threads for
+# consecutive 0-action passes. Two self-documentation carve-outs came from
+# the same incident ('owner-hold re-check', 'rate-limit backoff' mechanism).
+
+class ThreadsNewestFirstRegressionTest(GateTest):
+    def write_authority_with_scan(self, surfaces, scan_lines):
+        self.write_authority(surfaces)
+        with open(self.auth_path, encoding="utf-8") as f:
+            doc = json.load(f)
+        for name, line in scan_lines.items():
+            doc["surfaces"][name]["tail_scan_from_line"] = line
+        with open(self.auth_path, "w", encoding="utf-8") as f:
+            json.dump(doc, f)
+
+    def test_prepend_keeps_reconciliation_stable(self):
+        # The stale marker MUST be a line that fires when scanned, so the
+        # test proves the skip works rather than proving the line is quiet.
+        stale = ("## Pass 190\n"
+                 "- authority gate denied this pass on the unresolved "
+                 "pass-186 rate-limit marker\n")
+        log = "## Header rules\n" + stale
+        self.write_file("threads-engagement.md", log)
+        # Owner reconciliation recorded here: skip everything written so far.
+        self.write_authority_with_scan(
+            {"threads": "ACTIVE"}, {"threads": len(log.splitlines())})
+        r = self.run_gate("threads")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        # The worker prepends new sections after the header. The reconciled
+        # prose must not re-enter the scan no matter how many sections land
+        # on top of it.
+        log = ("## Header rules\n"
+               "## Pass 192\n- clean pass, 9 likes\n"
+               "## Pass 191\n- clean pass, 9 likes\n" + stale)
+        self.write_file("threads-engagement.md", log)
+        r = self.run_gate("threads")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_owner_hold_recheck_prose_allows(self):
+        r = self.gate_verdict_for_log_line(
+            "threads",
+            "Authority gate: authority-check.py threads returned "
+            "AUTHORITY-ALLOW at pass start (preflight + pre-launch "
+            "owner-hold re-check)")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+
+    def test_rate_limit_backoff_mechanism_allows(self):
+        r = self.gate_verdict_for_log_line(
+            "threads",
+            "handled via the recovery-budgets rate-limit backoff, long "
+            "satisfied by the 2h cadence")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+
+    def test_genuine_hold_still_denies(self):
+        # Narrowing guard: the re-check carve-out requires the compound; a
+        # real hold assertion with no re-check keeps firing fail-closed.
+        r = self.gate_verdict_for_log_line(
+            "threads", "owner hold placed on threads by Nolan")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+    def test_genuine_rate_limit_event_still_denies(self):
+        # Narrowing guard: the backoff carve-out requires the adjacent
+        # compound noun; an event phrased as an event keeps firing.
+        r = self.gate_verdict_for_log_line(
+            "threads", "rate limit hit; backoff initiated")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
