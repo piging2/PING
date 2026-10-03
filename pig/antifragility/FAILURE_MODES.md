@@ -55,6 +55,18 @@ Not observed. UNKNOWN. Recovery would require Nolan re-login. Unmitigated; low f
 ## F17 — Egress proxy SPOF
 All Pig SSH from here goes through hatch-egress-proxy:3130 (ProxyCommand). Blast radius: total loss of Pig access from the cloud side. Detection: SSH timeout. Recovery: none available from here (hatch infra). SPOF: yes. Tested: NO.
 
+## F18 — Docker Desktop bind-mount staging loss after Windows reboot
+PROVEN 2026-10-03: after the 13:56 MDT Windows reboot (battery outage), every WSL container restarted except `ping-gateway`, which exited 127. The inspect error was NOT a missing command: `OCI runtime create failed ... failed to fulfil mount request: open /run/desktop/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/<hash>: no such file or directory`. The container's actual mount source (`bind /var/lib/docker/volumes/muse-workspace/_data -> /app/workspace/muse`) EXISTS on the WSL side (volume `muse-workspace` present, `_data` intact, dated Sep 29). The failure is Docker Desktop's internal bind-mount staging path not being recreated on boot; it is a boot-time race, not data loss. Exit 127 here means "container never started", not "command not found" — do not chase the image entrypoint on this signature. Sibling containers (ping-postgres, ping-qdrant, ping-redis, ollama) restarted fine because their volume mounts go through Docker Desktop's volume driver, not the bind-mount staging path; a `bind` of a `/var/lib/docker/volumes/...` path is the fragile pattern. Detection: heartbeat `gateway=bad GW=exited` (F14-style). Recovery: `docker restart ping-gateway` on the Pig (staging path is recreated on restart). Watchdog probes showed "ambiguous" during the down window and took no action — a watchdog that cannot classify a stopped container is a detection gap (see Contradictions C6 if formalized). Tested: NO (restart not yet run; Nolan at the Pig).
+
+### Container-health triage recipe (cloud side, read-only, proven 2026-10-03)
+All via `echo '<cmd>' | timeout 60 ~/workspace/pig-fb/pigwsl-exec.sh` (stdin-fed, never the `-s` arg form):
+1. `docker ps -a --format "{{.Names}} {{.State}} {{.Status}}"` — locate the container, read State + ExitCode + "Up Xm".
+2. `docker logs <name> --tail 15` — distinguish app crash (stack trace at tail) from runtime failure (old logs, nothing new).
+3. `docker inspect <name> --format "{{json .State}}"` — the `Error` field is the runtime verdict (mount, OOM, entrypoint).
+4. `docker inspect <name> --format "{{range .Mounts}}{{.Type}} {{.Source}} -> {{.Destination}} {{end}}"` — bind mounts of Docker-internal paths are the suspect class.
+5. Verify each Source exists on WSL (`ls -la <source>`). Source present + staging-path error = Docker Desktop bind-mount staging loss (F18). Source absent = real data/volume loss.
+6. Never restart from the cloud side under the read-only heartbeat rule; hand the verdict + recovery command to Nolan.
+
 ## Contradictions (docs/scripts vs actual machine state)
 - C1: Runbook presents CDP :9223 as the Pig's always-on Chrome endpoint; from Pig WSL, `localhost:9223` is UNREACHABLE (Chrome binds 127.0.0.1 on Windows only; WSL has no route — PROVEN: instant refused on localhost, timeout on gateway IP). Sanctioned path is PowerShell-from-WSL (`cdp-health.sh` pattern). Any new WSL-side tooling assuming localhost:9223 will fail. Trap, not bug.
 - C2: Postgres treated as canonical durable store, but its container restart policy is `no` while all siblings are `unless-stopped`. Cause: imperative `docker run`, not compose. → fixed Phase 3.
