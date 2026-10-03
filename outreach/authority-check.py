@@ -134,6 +134,20 @@ LOCK_MECHANICS_RE = re.compile(r"\bheld clean\b|lock|driver", re.IGNORECASE)
 # phrase in order. A real hold phrased near stagger talk ('account held;
 # stagger the next pass') keeps firing because the phrase order won't match.
 STAGGER_HELD_RE = re.compile(r"\bstagger held\b", re.IGNORECASE)
+# Timing-coordination prose, second word order (2026-10-03 facebook
+# incident: 'FB dispatch held 26 min and launched ~23:54 MDT (34 min
+# stagger, exceeds the 30-min rule)' false-conflicted surface=facebook --
+# the 'held' is a measured delay followed by a launch, i.e. pacing, not a
+# hold; the existing 'stagger held' carve-out misses the reversed order and
+# the cross-surface carve-out can't fire because the clause names FB).
+# Kept narrow: 'held' must be immediately followed by a minute-duration AND
+# the same clause must name a launch or stagger. A real hold phrased near
+# stagger talk ('account held; stagger the next pass') has no duration and
+# keeps firing; a hold measured in minutes without a launch/stagger is not
+# covered and keeps firing.
+HELD_MINUTES_LAUNCH_RE = re.compile(
+    r"\bheld\b\s+\d+\s*min\b[^.;]{0,80}?\b(?:stagger|launch(?:ed|ing)?)\b",
+    re.IGNORECASE)
 # Explicit prose negation of a hold-state claim ('x not held', 'X is not
 # on hold', "x isn't held") is a claim of NOT held, never a hold. This is a
 # NEW defect class from the 2026-10-01 19:14 MDT x incident: the gate fired
@@ -349,8 +363,10 @@ def strip_negated_clauses(line, surface=None):
         # RESTRICTION_TERM_RE hit because 'held' lives only in AFFIRMATIVE_RES.
         if HELD_RE.search(clause) and LOCK_MECHANICS_RE.search(clause):
             continue
-        # Timing 'stagger held' is coordination prose, not a hold.
-        if STAGGER_HELD_RE.search(clause):
+        # Timing 'stagger held' / 'held N min ... launch/stagger' is
+        # coordination prose, not a hold.
+        if (STAGGER_HELD_RE.search(clause)
+                or HELD_MINUTES_LAUNCH_RE.search(clause)):
             continue
         # Bare "on hold" restriction state ("deployment is on hold"). Strip
         # only meta-prose about holds (reporting/documenting/testing),
