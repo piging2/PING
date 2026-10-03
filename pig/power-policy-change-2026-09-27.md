@@ -98,3 +98,45 @@ checkpoints/idempotency. No reboot (not required by this change).
 Rollback to AC-only: powercfg /change standby-timeout-dc 20 (minutes);
 powercfg /change monitor-timeout-ac 0. Rollback to pre-2026-09-27: also
 powercfg /change standby-timeout-ac 30.
+
+---
+
+## 2026-10-03 ~06:55 MDT: REVERT AC TO RECORDED BEFORE-VALUES (CEO directive)
+
+Authority: 2026-10-03 FYD morning CEO directive
+(~/workspace/directives/2026-10-03-fyd-morning-ceo-directive.md),
+automation-reliability paragraph: scoped wake inhibition per authorized
+automation pass (acquire -> execute -> release), NOT global sleep disable.
+Task: revert the global AC Never setting to the recorded before-values.
+
+BEFORE (live, read back via powercfg /query immediately before the change):
+- Sleep after (STANDBYIDLE): AC 0x00000000 (Never), DC 0x00000000 (Never)
+- Turn off display (VIDEOIDLE): AC 0x00000000 (Never), DC 0x00000078 (2 min)
+- Hibernate after (HIBERNATEIDLE): AC 0x00000000 (Never), DC 0x7fffffff
+
+APPLIED (AC indexes only, via pigwsl-exec + powershell):
+powercfg /setacvalueindex SCHEME_CURRENT SUB_SLEEP STANDBYIDLE 1800
+powercfg /setacvalueindex SCHEME_CURRENT SUB_VIDEO VIDEOIDLE 120
+
+AC HIBERNATEIDLE was already 0x00000000 (Never), matching the recorded
+before-value; no change applied. DC (battery) indexes NOT touched. Screen
+lock NOT touched. No Oracle changes.
+
+AFTER (verified live via powercfg /query):
+- Sleep after: AC 0x00000708 (1800s = 30 min), DC 0x00000000 (Never, unchanged)
+- Turn off display: AC 0x00000078 (120s = 2 min), DC 0x00000078 (2 min, unchanged)
+- Hibernate after: AC 0x00000000 (Never), DC 0x7fffffff (unchanged)
+Matches the recorded 2026-09-27 ~16:10 before-values exactly.
+
+Scoped wake mechanism (unchanged, re-proven): the 2026-09-27 job-scoped
+wake lease (wake-wrap.ps1 + wake-bracket.sh, wired into run_pass.sh (FB),
+run_ig_pass.sh, run_th_pass.sh, run_tk_pass.sh, x-engage.sh) is the
+scoped inhibition mechanism; no new files were built for this task.
+Live re-proof 2026-10-03 ~06:51 MDT: wake-proof.sh 30 -> PASS
+(SYSTEM [PROCESS] powershell.exe visible during hold, cleared after;
+per-lease state file acquired=true, released=true, run_id proof-20261003-125027).
+
+Standing-holder check: powercfg /requests shows NO standing SYSTEM
+request at this time (the /home/nolan/keep-awake-start.sh standing
+holder is not currently holding anything). Left untouched per Nolan's
+call (retiring it is his decision, not automation's).
