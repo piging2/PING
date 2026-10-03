@@ -152,24 +152,21 @@ STAGGER_HELD_RE = re.compile(r"\bstagger held\b", re.IGNORECASE)
 HELD_MINUTES_LAUNCH_RE = re.compile(
     r"\bheld\b\s+\d+\s*min\b[^.;]{0,80}?\b(?:stagger|launch(?:ed|ing)?)\b",
     re.IGNORECASE)
-# Restriction-window status prose (2026-10-03 linkedin incident): a clause
-# documenting the COUNT of restriction signals inside the 7-day window and
-# asserting no new event ("still exactly 1 restriction signal", "threshold
-# is NOT reached", "no new signals") is bookkeeping, not a new platform
-# event. Without this carve-out the gate self-reinforces: every pass
-# documents the window state per the task body, the scanner matches
-# "restriction signal" in that prose, DENY-CONFLICTs, and the next pass
-# documents the firing -- the same loop class as the 2026-10-02 linkedin
-# prose incident. Kept narrow: requires BOTH window vocabulary (7-day /
-# 2-in-7 / window) AND an explicit no-new-event assertion (still exactly
-# 0/1, no new, not reached, unchanged). A genuine second signal ("second
-# restriction signal in 7 days; channel paused", "threshold reached") has
-# window vocabulary but no no-new-event assertion and keeps firing.
-WINDOW_STATUS_RE = re.compile(
-    r"\b7[ -]day\b[^.;]{0,80}?\brestriction\b"
-    r"|\brestriction\b[^.;]{0,80}?\bwindow\b"
-    r"|\b2-in-7\b",
-    re.IGNORECASE)
+# Restriction count-status prose (2026-10-03 linkedin incident): a clause
+# asserting the restriction-signal count is still 0/1, or otherwise
+# explicitly asserting no new event ("no new signals", "threshold NOT
+# reached", "state unchanged"), is bookkeeping, not a new platform event.
+# Without this carve-out the gate self-reinforces: every pass documents
+# the window state per the task body, the scanner matches "restriction
+# signal" in that prose, DENY-CONFLICTs, and the next pass documents the
+# firing -- the same loop class as the 2026-10-02 linkedin prose incident.
+# (An earlier revision also required window vocabulary like "7-day" or
+# "window"; workers rephrase that freely -- "Restriction state:" vs
+# "restriction window:" -- so the requirement was dropped as brittle.)
+# Kept narrow: only explicit no-new-event assertions are stripped. A
+# genuine second signal ("second restriction signal in 7 days; channel
+# paused", "threshold reached") carries no such assertion and keeps
+# firing fail-closed.
 NO_NEW_EVENT_RE = re.compile(
     r"\bstill exactly [01]\b|\bno new\b|\bnot reached\b|\bunchanged\b",
     re.IGNORECASE)
@@ -474,8 +471,7 @@ def strip_negated_clauses(line, surface=None):
                     and META_PROSE_RE.search(clause))
                 or (RATE_LIMIT_RE.search(clause)
                     and RATE_LIMIT_BACKOFF_MECHANISM_RE.search(clause))
-                or (WINDOW_STATUS_RE.search(clause)
-                    and NO_NEW_EVENT_RE.search(clause))):
+                or NO_NEW_EVENT_RE.search(clause)):
             continue
         # Worker-observed challenge/rate-limit text without platform
         # enforcement (2026-10-03, Nolan binding): stripped, backoff ladder

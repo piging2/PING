@@ -482,6 +482,24 @@ class GateTest(unittest.TestCase):
         self.assertIn("AUTHORITY-ALLOW", r.stdout)
         self.assertEqual(self.conflict_reports(), [])
 
+    def test_restriction_count_state_rephrase_allows(self):
+        # 2026-10-03 linkedin incident, second occurrence: workers rephrase
+        # the window bookkeeping freely ("Restriction state: still exactly
+        # 1 restriction signal in the last 7 days" vs "7-day restriction
+        # window: ..."). The carve-out keys on the explicit no-new-event
+        # assertion alone, not on window vocabulary.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-03 - Pass li-4\n"
+                        "- Login state: UNKNOWN (unverifiable while "
+                        "transport is down); no login-state change "
+                        "claimed. Restriction state: still exactly 1 "
+                        "restriction signal in the last 7 days.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
     def test_genuine_second_restriction_signal_still_denies(self):
         # Narrowing guard: the window-status carve-out requires an explicit
         # no-new-event assertion; a genuine second signal in the window
