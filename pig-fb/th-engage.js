@@ -78,8 +78,18 @@ async function threadsLoggedIn(page) {
       .filter(e => /log in/i.test((e.innerText || '').trim()) && (e.innerText || '').trim().length < 45).length,
     profileLinks: Array.from(document.querySelectorAll('a[href]'))
       .filter(a => /^\/@[a-z0-9._]+\/?$/i.test(a.getAttribute('href') || '')).length,
+    createBtn: Array.from(document.querySelectorAll('button, a'))
+      .some(e => /^create$/i.test((e.innerText || '').trim()) || /create/i.test(e.getAttribute('aria-label') || '')),
+    // 2026-10-03: feed chrome is a positive logged-in signal (ported from the
+    // 2026-09-27 th-restore.js fix). The old gate (profileLinks only)
+    // misclassified a logged-in home feed as logged out because the current
+    // threads.com DOM does not reliably expose profile links on the home
+    // feed -- the exact false-negative Nolan reported ("it literally always
+    // opens logged in and you don't see it").
+    feedChrome: /what.s new\?/i.test(document.body.innerText || '') ||
+      Array.from(document.querySelectorAll('a[href]')).some(a => /^\/$/.test(a.getAttribute('href') || '') && /for you/i.test((a.innerText || ''))),
   }));
-  return st.loginPrompt === 0 && st.profileLinks > 0;
+  return st.loginPrompt === 0 && (st.profileLinks > 0 || st.createBtn || st.feedChrome);
 }
 
 function pageHasBad(page) {
