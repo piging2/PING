@@ -14,13 +14,19 @@
  * DEPENDENCIES: ./types
  * PROOFS: [3, 4]
  *
- * BOUNDARY DECISION: the projection does NOT widen for owners. "owner"
- * requires a verified identity, but a verified owner receives the same
- * public projection as a visitor today: the owner lane is a verified
- * hook for a future authenticated surface, and it grants nothing here.
- * This is the source's zero-canary rule: private values never enter the
- * answer path for ANY viewer class. Visitor/public boundary enforced in
- * this code, not in comments.
+ * BOUNDARY DECISION: owner field-visibility decisions
+ * (FieldVisibilityDecision[]) are ENFORCED for visitor-class viewers:
+ * a HIDE'd field never reaches the projected graph an anonymous answer
+ * reasons over. Verified owners are EXEMPT: they keep seeing their own
+ * hidden fields (owner-lane semantics: applyCorrections leaves HIDE'd
+ * values in place for the owner; enforcement lives where decisions are
+ * consumed, and the ask boundary does not consume them against a
+ * verified owner). "owner" still requires a verified identity; an owner
+ * claim without verification lands on "visitor". With no decisions the
+ * projection is identical for both classes (fail-closed default), which
+ * is the source's zero-canary rule: no private value enters the answer
+ * path on the basis of an unverified claim. Visitor/public boundary
+ * enforced in this code, not in comments.
  */
 
 import type {
@@ -29,6 +35,17 @@ import type {
   ObjectGraph,
   ViewerClass,
 } from "./types";
+import {
+  applyFieldVisibilityDecisions,
+  type FieldVisibilityDecision,
+} from "../../sitespec/src/projection";
+import type {
+  ObjectProvenance,
+  PingObject,
+} from "../../sitespec/src/ping-types";
+
+/** Re-exported so ask consumers can name the decision type. */
+export type { FieldVisibilityDecision };
 
 /**
  * Classify an Ask FYD viewer. "owner" if and only if the viewer carries a
@@ -132,23 +149,74 @@ export function visitorSafeObject(obj: AskPingObject): AskPingObject {
  * reason over for this viewer:
  *   1. keep public objects only,
  *   2. visitorSafeObject on every surviving object (fail-closed allowlist),
- *   3. keep active relationships whose subject and object both survived.
+ *   3. for visitor-class viewers only: enforce the supplied owner
+ *      field-visibility decisions through the shared sitespec boundary
+ *      (a verified owner keeps seeing their own hidden fields),
+ *   4. keep active relationships whose subject and object both survived.
  *
  * The input graph is never mutated. The viewer classifies fail-closed
- * first; an owner claim without verification lands on "visitor" and the
- * projection is identical for both classes (zero-canary rule).
+ * first; an owner claim without verification lands on "visitor". With
+ * no decisions the projection is identical for both classes.
  */
 export function projectGraphForViewer(
   graph: ObjectGraph,
   viewer: AskViewerIdentity | null | undefined,
+  visibilityDecisions: readonly FieldVisibilityDecision[] = [],
 ): { viewerClass: ViewerClass; graph: ObjectGraph } {
   const viewerClass = classifyAskViewer(viewer);
   const safeObjects = graph.objects
     .filter((o) => o.visibility === "public")
     .map(visitorSafeObject);
-  const safeIds = new Set(safeObjects.map((o) => o.id));
+  const decidedObjects =
+    viewerClass === "visitor"
+      ? applyVisibilityDecisions(safeObjects, visibilityDecisions)
+      : safeObjects;
+  const safeIds = new Set(decidedObjects.map((o) => o.id));
   const safeRelationships = graph.relationships.filter(
     (r) => r.status === "active" && safeIds.has(r.subject) && safeIds.has(r.object),
   );
-  return { viewerClass, graph: { objects: safeObjects, relationships: safeRelationships } };
+  return { viewerClass, graph: { objects: decidedObjects, relationships: safeRelationships } };
+}
+
+/**
+ * Apply owner field-visibility decisions to ask-shaped objects through
+ * the ONE shared boundary implementation (packages/sitespec
+ * applyFieldVisibilityDecisions). No hiding logic lives here.
+ *
+ * AskPingObject is a structural mirror of PingObject, not the same type
+ * (its provenance.kind and ownerFieldCorrections are wider), so the
+ * bridge maps the fields the boundary reads and mutates
+ * (id, title, description, fields) through it and restores the ask shape
+ * from the original objects afterwards. The boundary never reads
+ * provenance or corrections; both are restored verbatim from the input.
+ * Neither the input array nor its objects are ever mutated.
+ */
+function applyVisibilityDecisions(
+  objects: AskPingObject[],
+  decisions: readonly FieldVisibilityDecision[],
+): AskPingObject[] {
+  if (decisions.length === 0) return objects;
+  const boundaryInput: PingObject[] = objects.map((o) => ({
+    id: o.id,
+    schema: o.schema,
+    controllerId: o.controllerId,
+    visibility: o.visibility,
+    title: o.title,
+    description: o.description,
+    fields: o.fields,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+    // The boundary never reads provenance; the ask-side provenance is
+    // restored verbatim from the original object below.
+    provenance: o.provenance as ObjectProvenance,
+  }));
+  // applyFieldVisibilityDecisions maps in order and never reorders, so
+  // the index zip below is exact.
+  const decided = applyFieldVisibilityDecisions(boundaryInput, decisions);
+  return objects.map((original, i) => ({
+    ...original,
+    title: decided[i].title,
+    description: decided[i].description,
+    fields: decided[i].fields,
+  }));
 }
