@@ -25,9 +25,10 @@
  *   DIRECT_FACT, website_statement, USER_OVERRIDE, owner-authored -> DIRECT
  *   DERIVED_FACT, GENERATED_COPY                                   -> DERIVED
  *   INFERENCE                                                      -> INFERRED
- *   unrecognized classification on a real evidence citation         -> DIRECT
- *       (basis stays neutral, "Site record"; mirrors the source
- *       claimClassFor default)
+ *   unrecognized / empty / malformed classification          -> INFERRED
+ *       (fail-closed: the raw value is preserved verbatim in the basis
+ *       text and the claim is never eligible for DIRECT/VERIFIED
+ *       presentation; see src/classify.ts)
  *
  * UNKNOWN is never assigned to a claim. It is the ANSWER state when the
  * graph cannot support an answer (refusal), and claims the answerer
