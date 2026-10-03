@@ -62,6 +62,7 @@ import type {
   PublicViewerKind,
   VerifiedPublicProjection,
 } from "./projection";
+import { assertProjectionIntegrity } from "./projection";
 import type { FYDSiteSpec } from "./types";
 
 /** Semantic render-model version. Bump when the query seam's render semantics change. */
@@ -152,6 +153,10 @@ export function buildSemanticRenderModel(
   projection: VerifiedPublicProjection,
   opts: BuildRenderModelOptions = {},
 ): SemanticRenderModel {
+  // Consumption boundary (P0 #5): never build from a projection whose
+  // content does not match its provenance. Tampering fails TYPED here,
+  // before any model (or HTML) is produced.
+  assertProjectionIntegrity(projection);
   const graph = projection.graph;
   // The real render seam (renderSection in components/renderer.tsx): an
   // owner-hidden object is excluded from every surface site-wide. The

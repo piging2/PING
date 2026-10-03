@@ -129,6 +129,95 @@ export function compareDecisions(
   return ai < bi ? -1 : ai > bi ? 1 : 0;
 }
 
+const byId = (a: { id: string }, b: { id: string }): number =>
+  a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+
+/**
+ * The canonical public-graph form digest. Shared by the builder and the
+ * integrity check: ONE canonicalization, never two competing ones.
+ */
+export function digestPublicGraphForm(graph: ObjectGraph): string {
+  return digestCanonical({
+    objects: graph.objects.slice().sort(byId),
+    relationships: graph.relationships.slice().sort(byId),
+  });
+}
+
+/** The canonical decisions digest. Shared by the builder and the check. */
+export function digestDecisionsForm(
+  decisions: readonly FieldVisibilityDecision[],
+): string {
+  return digestCanonical(decisions.slice().sort(compareDecisions));
+}
+
+/** The viewer-policy digest. Shared by the builder and the check. */
+export function viewerPolicyDigestFor(
+  viewerKind: PublicViewerKind,
+  tenantId: string | null,
+): string {
+  return digestCanonical({
+    viewerKind,
+    boundaryVersion: PUBLIC_PROJECTION_VERSION,
+    tenantId,
+  });
+}
+
+/**
+ * Typed failure for a projection whose content does not match its
+ * provenance. Thrown at consumption boundaries: corrupt projections are
+ * never silently served.
+ */
+export class ProjectionIntegrityError extends Error {
+  constructor(reason: string) {
+    super(`projection integrity failure: ${reason}`);
+    this.name = "ProjectionIntegrityError";
+  }
+}
+
+/**
+ * Recompute the provenance digests over the projection's ACTUAL content
+ * and fail TYPED on any mismatch. This wires the brand check
+ * (isVerifiedPublicProjection) into the consumption path: tampered
+ * content can no longer ride an honest checkpoint, and a forged brand
+ * no longer passes unexamined.
+ */
+export function assertProjectionIntegrity(
+  projection: VerifiedPublicProjection,
+): void {
+  if (!isVerifiedPublicProjection(projection)) {
+    throw new ProjectionIntegrityError(
+      "not a verified public projection (brand check failed)",
+    );
+  }
+  const p = projection.provenance;
+  const graphDigest = digestPublicGraphForm(projection.graph);
+  if (graphDigest !== p.graphDigest) {
+    throw new ProjectionIntegrityError(
+      "graphDigest mismatch: content does not match provenance",
+    );
+  }
+  const decisionsDigest = digestDecisionsForm(projection.decisions);
+  if (decisionsDigest !== p.decisionsDigest) {
+    throw new ProjectionIntegrityError(
+      "decisionsDigest mismatch: decisions do not match provenance",
+    );
+  }
+  const viewerPolicyDigest = viewerPolicyDigestFor(
+    p.viewerKind,
+    p.tenantId ?? null,
+  );
+  if (viewerPolicyDigest !== p.viewerPolicyDigest) {
+    throw new ProjectionIntegrityError(
+      "viewerPolicyDigest mismatch: viewer policy does not match provenance",
+    );
+  }
+  if (p.checkpoint !== graphDigest + ":" + decisionsDigest) {
+    throw new ProjectionIntegrityError(
+      "checkpoint mismatch: checkpoint does not match recomputed digests",
+    );
+  }
+}
+
 /**
  * Apply field-visibility decisions to object copies. ONE implementation
  * shared by the projection builder and the owner package's
@@ -318,16 +407,12 @@ export function buildVerifiedPublicProjection(
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  const graphDigest = digestCanonical({
+  const graphDigest = digestPublicGraphForm({
     objects: publicObjects,
     relationships: publicRelationships,
   });
-  const decisionsDigest = digestCanonical(decisions);
-  const viewerPolicyDigest = digestCanonical({
-    viewerKind,
-    boundaryVersion: PUBLIC_PROJECTION_VERSION,
-    tenantId,
-  });
+  const decisionsDigest = digestDecisionsForm(decisions);
+  const viewerPolicyDigest = viewerPolicyDigestFor(viewerKind, tenantId);
 
   return {
     kind: PUBLIC_PROJECTION_VERSION,
