@@ -74,11 +74,18 @@ def engine_ingested_prefixes(intel_dir=INTEL_DIR):
     ingested, derived from ingested.log.
 
     A line counts as an engine-ingest record only if it contains a
-    YYYYMMDD-HHMMSS run prefix AND, case-insensitive, either the word
-    'ingest' (legacy format: "ingested after independent verification
-    gate") or a completed-audit marker pair ('audited' AND 'verdicts';
-    round-124 format: "N businesses audited; verdicts: VERIFIED-NEW 2,
-    ..."). Lines that merely mention a run without either signal (e.g.
+    YYYYMMDD-HHMMSS run prefix AND, case-insensitive, any of:
+      - the word 'ingest' (legacy format: "ingested after independent
+        verification gate");
+      - a completed-audit marker pair ('audited' AND 'verdicts';
+        round-124 format: "N businesses audited; verdicts: VERIFIED-NEW 2,
+        ...");
+      - the distill-closed marker 'mark-distill-closed' (current writer
+        format: "mark-verified.sh then mark-distill-closed.sh run";
+        self-audit 2026-10-02: completed-distill records carry neither
+        legacy signal, so without this the sweep re-selects already
+        distilled files as dead letters).
+    Lines that merely mention a run without any of these (e.g.
     CAPTURE_FAILED records that say 'recorded, NOT extracted') do NOT
     count: the sweep must not close a dead letter that was never
     extracted. The 'verdicts'-without-'audited' combination alone does
@@ -93,8 +100,8 @@ def engine_ingested_prefixes(intel_dir=INTEL_DIR):
         with open(path, errors="replace") as f:
             for line in f:
                 low = line.lower()
-                if "ingest" not in low and not (
-                        "audited" in low and "verdicts" in low):
+                if "ingest" not in low and "mark-distill-closed" not in low \
+                        and not ("audited" in low and "verdicts" in low):
                     continue
                 for m in RUN_PREFIX_RE.finditer(line):
                     prefixes.add(m.group(0))
