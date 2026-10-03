@@ -39,7 +39,7 @@ import type {
   AskViewerIdentity,
   ObjectGraph,
 } from "./types";
-import { projectGraphForViewer } from "./viewer";
+import { projectGraphForViewer, decisionsFromHiddenFactIds } from "./viewer";
 import { citeFact } from "./cite";
 import { claimClassFor } from "./classify";
 
@@ -107,7 +107,12 @@ export function askFyd(input: AskInput): AskAnswer {
   }
 
   const viewer = viewerOf(input);
-  const { graph } = projectGraphForViewer(input.graph, viewer);
+  // Owner HIDE decisions travel on AskInput.hiddenFactIds and are
+  // converted through the existing owner converter, then enforced on the
+  // visitor-class projection below (verified owners are exempt inside
+  // projectGraphForViewer per the viewer.ts BOUNDARY DECISION).
+  const decisions = decisionsFromHiddenFactIds(input.graph, input.hiddenFactIds);
+  const { graph } = projectGraphForViewer(input.graph, viewer, decisions);
 
   // Object-scoped ask: the target must survive the viewer projection.
   // An unknown id or a non-public object fails closed to refusal.
@@ -251,10 +256,18 @@ export function askFyd(input: AskInput): AskAnswer {
   };
 }
 
-/** Re-exported for tests: the projected graph the answerer reasons over. */
+/**
+ * Re-exported for tests: the projected graph the answerer reasons over.
+ * The decisions channel comes from the input: owner HIDE assertions on
+ * AskInput.hiddenFactIds are enforced for visitor-class viewers.
+ */
 export function projectedGraphFor(
   graph: ObjectGraph,
   input: AskInput,
 ): ObjectGraph {
-  return projectGraphForViewer(graph, viewerOf(input)).graph;
+  return projectGraphForViewer(
+    graph,
+    viewerOf(input),
+    decisionsFromHiddenFactIds(graph, input.hiddenFactIds),
+  ).graph;
 }

@@ -30,7 +30,7 @@ import type {
   WhyThisResult,
 } from "./types";
 import { basisForClassification, claimClassFor, type ClaimClass } from "./classify";
-import { projectGraphForViewer } from "./viewer";
+import { projectGraphForViewer, decisionsFromHiddenFactIds } from "./viewer";
 
 /** One fact citation: what Ask FYD stands on, and what WHY THIS shows. */
 export interface FactCitation {
@@ -76,16 +76,19 @@ function asDatePrefix(iso: string | undefined): string | null {
 
 /**
  * Cite one fact. Returns null when the fact is not visible or not bound:
- * unknown object, non-public object for this viewer, unknown/empty field.
- * The input graph is projected for the viewer FIRST, so a citation can
- * never be built on data the viewer may not see.
+ * unknown object, non-public object for this viewer, unknown/empty field,
+ * or a field the owner HIDE'd (via hiddenFactIds) for a visitor-class
+ * viewer. The input graph is projected for the viewer FIRST, so a
+ * citation can never be built on data the viewer may not see.
  */
 export function citeFact(
   ref: FactRef,
   graph: ObjectGraph,
   viewer: AskViewerIdentity | null | undefined = null,
+  hiddenFactIds?: readonly string[],
 ): FactCitation | null {
-  const projected = projectGraphForViewer(graph, viewer).graph;
+  const decisions = decisionsFromHiddenFactIds(graph, hiddenFactIds);
+  const projected = projectGraphForViewer(graph, viewer, decisions).graph;
   const obj = projected.objects.find((o) => o.id === ref.objectId);
   if (!obj) return null;
   const value = fieldValue(obj, ref.field);
@@ -147,17 +150,24 @@ export function citeFact(
  * WHY THIS (proof 4): for one visible fact, return the source it came
  * from, the observation record, the evidence type, and its epistemic
  * classification. Returns null when the fact is not visible to this
- * viewer or not bound. This is the same citeFact machinery the Ask FYD
- * answerer builds its citations from: one implementation, two surfaces.
+ * viewer or not bound (including owner-HIDE'd for a visitor-class
+ * viewer via hiddenFactIds). This is the same citeFact machinery the
+ * Ask FYD answerer builds its citations from: one implementation, two
+ * surfaces.
  */
 export function whyThis(
   ref: FactRef,
   graph: ObjectGraph,
   viewer: AskViewerIdentity | null | undefined = null,
+  hiddenFactIds?: readonly string[],
 ): WhyThisResult | null {
-  const citation = citeFact(ref, graph, viewer);
+  const citation = citeFact(ref, graph, viewer, hiddenFactIds);
   if (!citation) return null;
-  const projected = projectGraphForViewer(graph, viewer).graph;
+  const projected = projectGraphForViewer(
+    graph,
+    viewer,
+    decisionsFromHiddenFactIds(graph, hiddenFactIds),
+  ).graph;
   const obj = projected.objects.find((o) => o.id === ref.objectId);
   if (!obj) return null;
   const value = fieldValue(obj, ref.field);

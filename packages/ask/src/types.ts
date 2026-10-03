@@ -137,6 +137,17 @@ export interface AskInput {
   graph: ObjectGraph;
   viewerContext: AskViewerContext;
   question: string;
+  /**
+   * Owner HIDE assertions in the existing owner vocabulary: hidden fact
+   * ids (the HIDE-assertion output of applyCorrections, packages/owner).
+   * Converted through the existing hiddenFactIdsToDecisions converter and
+   * enforced on the visitor-class projection before anything reads the
+   * graph: a HIDE'd fact never reaches the answer. Verified owners are
+   * exempt (they keep seeing their own hidden fields; see the viewer.ts
+   * BOUNDARY DECISION). Absent or empty: no decisions, projection
+   * unchanged (fail-closed default).
+   */
+  hiddenFactIds?: string[];
 }
 
 /** Coarse answer state. KNOWN = cited evidence; UNKNOWN = refusal. */

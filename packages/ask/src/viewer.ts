@@ -39,6 +39,7 @@ import {
   applyFieldVisibilityDecisions,
   type FieldVisibilityDecision,
 } from "../../sitespec/src/projection";
+import { hiddenFactIdsToDecisions } from "../../owner/src/visibility";
 import type {
   ObjectProvenance,
   PingObject,
@@ -179,6 +180,51 @@ export function projectGraphForViewer(
 }
 
 /**
+ * Bridge ask-shaped objects to the boundary's sitespec shape. The
+ * boundary only reads/mutates id, title, description, and fields; the
+ * ask-side provenance is never read by it and is restored verbatim from
+ * the original objects by the caller afterwards.
+ */
+function bridgeToBoundaryObjects(objects: AskPingObject[]): PingObject[] {
+  return objects.map((o) => ({
+    id: o.id,
+    schema: o.schema,
+    controllerId: o.controllerId,
+    visibility: o.visibility,
+    title: o.title,
+    description: o.description,
+    fields: o.fields,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+    // The boundary never reads provenance; the ask-side provenance is
+    // restored verbatim from the original object by the caller.
+    provenance: o.provenance as ObjectProvenance,
+  }));
+}
+
+/**
+ * Convert the AskInput hidden-fact vocabulary (owner hidden fact ids)
+ * into the enforceable FieldVisibilityDecisions projectGraphForViewer
+ * accepts, through the ONE existing owner converter
+ * (packages/owner hiddenFactIdsToDecisions). No new decisions type, no
+ * new hiding semantics: the ask mirror crosses the same bridge the
+ * boundary application uses. Pure, deterministic, no mutation. Empty or
+ * absent input yields no decisions (fail-closed default).
+ */
+export function decisionsFromHiddenFactIds(
+  graph: ObjectGraph,
+  hiddenFactIds: readonly string[] | undefined,
+): FieldVisibilityDecision[] {
+  if (!hiddenFactIds || hiddenFactIds.length === 0) return [];
+  // The converter extracts facts from the object list only; the ask
+  // graph's relationship list is irrelevant to the conversion.
+  return hiddenFactIdsToDecisions(
+    { objects: bridgeToBoundaryObjects(graph.objects), relationships: [] },
+    [...hiddenFactIds],
+  );
+}
+
+/**
  * Apply owner field-visibility decisions to ask-shaped objects through
  * the ONE shared boundary implementation (packages/sitespec
  * applyFieldVisibilityDecisions). No hiding logic lives here.
@@ -196,20 +242,7 @@ function applyVisibilityDecisions(
   decisions: readonly FieldVisibilityDecision[],
 ): AskPingObject[] {
   if (decisions.length === 0) return objects;
-  const boundaryInput: PingObject[] = objects.map((o) => ({
-    id: o.id,
-    schema: o.schema,
-    controllerId: o.controllerId,
-    visibility: o.visibility,
-    title: o.title,
-    description: o.description,
-    fields: o.fields,
-    createdAt: o.createdAt,
-    updatedAt: o.updatedAt,
-    // The boundary never reads provenance; the ask-side provenance is
-    // restored verbatim from the original object below.
-    provenance: o.provenance as ObjectProvenance,
-  }));
+  const boundaryInput: PingObject[] = bridgeToBoundaryObjects(objects);
   // applyFieldVisibilityDecisions maps in order and never reorders, so
   // the index zip below is exact.
   const decided = applyFieldVisibilityDecisions(boundaryInput, decisions);
