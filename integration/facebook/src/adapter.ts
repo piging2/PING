@@ -108,6 +108,24 @@ interface ParsedEdge<T> {
 
 const MAX_PAGES_PER_READ = 10;
 
+/**
+ * Declared read fields per edge (contract §1.4 data shape). The Graph API
+ * `fields=` parameter already limits the wire; this allow-list is the
+ * second gate at the ingestion boundary.
+ */
+function keepFieldsFor(edge: EdgeSpec): string[] {
+  switch (edge.name) {
+    case 'page':
+      return ['id', 'name', 'about', 'category_list', 'phone', 'website', 'single_line_address', 'location', 'hours', 'verification_status', 'link'];
+    case 'feed':
+      return ['id', 'message', 'story', 'created_time', 'updated_time', 'permalink_url', 'from', 'type', 'status_type', 'shares', 'comments', 'likes'];
+    case 'comments':
+      return ['id', 'message', 'created_time', 'updated_time', 'from', 'like_count', 'comment_count', 'parent', 'is_hidden', 'message_tags'];
+    default:
+      return ['id'];
+  }
+}
+
 export class FacebookConnector implements ConnectorAdapter {
   readonly manifest = facebookManifest();
   /** Client-side token bucket: calls used in the current window. */
@@ -289,8 +307,15 @@ export class FacebookConnector implements ConnectorAdapter {
     if (Buffer.byteLength(rawJson, 'utf8') > MAX_RECORD_BYTES) {
       return { emitted: false, skippedReason: 'oversized record' };
     }
-    // Sanitize at the ingestion boundary (contract §3): plain text out.
-    const sanitized: Record<string, unknown> = { ...record };
+    // Declared-field allow-list (contract §1.4): the connector reads only
+    // the fields its manifest/data-shape declares. Undeclared provider
+    // fields (debug blobs, embedded tokens, future additions) are NEVER
+    // copied into observations; they survive only inside the raw payload
+    // hash for replay. This is the secret-canary boundary (kit check E5).
+    const sanitized: Record<string, unknown> = {};
+    for (const f of keepFieldsFor(edge)) {
+      if (f in record) sanitized[f] = record[f];
+    }
     const truncatedFields: string[] = [];
     const flags: string[] = [];
     for (const field of ['message', 'about', 'name', 'story']) {
@@ -402,6 +427,39 @@ export class FacebookConnector implements ConnectorAdapter {
   }
 
   /* ---------------- read ---------------- */
+
+  /**
+   * Resolve the prior cursor for a stream: request.state (the governor's
+   * last checkpoint, namespaced per stream_id as a JSON string) wins;
+   * the durable cursor store is the fallback.
+   */
+  private resolvePrior(
+    request: ReadRequest,
+    ports: ConnectorPorts,
+    streamId: string,
+  ): CursorState | null {
+    const fromState = request.state[streamId];
+    if (typeof fromState === 'string' && fromState.length > 0) {
+      try {
+        return JSON.parse(fromState) as CursorState;
+      } catch {
+        // Corrupt state is fail-closed: fall through to the store, never guess.
+      }
+    }
+    return ports.cursorStore.load(request.tenantId, streamId);
+  }
+
+  /** Persist the per-stream cursor: JSON-namespaced in newCursor + durable store. */
+  private saveCursor(
+    ports: ConnectorPorts,
+    request: ReadRequest,
+    streamId: string,
+    newCursor: CursorState,
+    state: CursorState,
+  ): void {
+    ports.cursorStore.save(request.tenantId, streamId, state);
+    newCursor[streamId] = JSON.stringify(state);
+  }
 
   async read(request: ReadRequest, ports: ConnectorPorts): Promise<ReadOutcome> {
     const fetchAttemptId = `fb-${sha256Hex(request.idempotencyKey).slice(0, 16)}`;
@@ -518,7 +576,7 @@ export class FacebookConnector implements ConnectorAdapter {
     attemptsUsed: number;
   }> {
     const { streamId, base, config, request, connectionId, fetchAttemptId, newCursor } = opts;
-    const prior = ports.cursorStore.load(request.tenantId, streamId);
+    const prior = this.resolvePrior(request, ports, streamId);
     const observedAt = ports.nowIso();
 
     if (streamId === 'facebook.page') {
@@ -564,8 +622,7 @@ export class FacebookConnector implements ConnectorAdapter {
         cursor: null,
       });
       if (r.emitted) {
-        ports.cursorStore.save(request.tenantId, streamId, { full_refresh_at: observedAt });
-        newCursor['facebook.page'] = observedAt;
+        this.saveCursor(ports, request, streamId, newCursor, { full_refresh_at: observedAt });
         return {
           terminalState: FetchState.SUCCEEDED,
           recordsEmitted: 1,
@@ -719,8 +776,7 @@ export class FacebookConnector implements ConnectorAdapter {
         after = parsed.after;
         const state: CursorState = { after: parsed.after };
         if (since) state['since'] = since;
-        ports.cursorStore.save(request.tenantId, streamId, state);
-        newCursor[streamId] = parsed.after;
+        this.saveCursor(ports, request, streamId, newCursor, state);
       }
       if (!parsed.hasNext) break;
     }
@@ -761,7 +817,7 @@ export class FacebookConnector implements ConnectorAdapter {
   }> {
     const streamId = 'facebook.post-comments';
     const { base, config, request, connectionId, fetchAttemptId, newCursor, observedAt } = opts;
-    const prior = ports.cursorStore.load(request.tenantId, streamId);
+    const prior = this.resolvePrior(request, ports, streamId);
     const since = prior?.['since'];
     let commentAfterByPost: Record<string, string> = {};
     try {
@@ -820,11 +876,12 @@ export class FacebookConnector implements ConnectorAdapter {
         }
         if (parsed.after) {
           after = parsed.after;
-          prior && (newCursor[`${streamId}.posts_after`] = parsed.after);
           const st: CursorState = { posts_after: parsed.after };
           if (since) st['since'] = since;
-          if (prior?.['comments_after']) st['comments_after'] = prior['comments_after'];
-          ports.cursorStore.save(request.tenantId, streamId, st);
+          if (commentAfterByPost && Object.keys(commentAfterByPost).length > 0) {
+            st['comments_after'] = JSON.stringify(commentAfterByPost);
+          }
+          this.saveCursor(ports, request, streamId, newCursor, st);
         }
         if (!parsed.hasNext) break;
       }
@@ -909,11 +966,14 @@ export class FacebookConnector implements ConnectorAdapter {
       if (parsed.after) {
         commentAfterByPost[postId] = parsed.after;
         const st: CursorState = { comments_after: JSON.stringify(commentAfterByPost) };
-        const postsAfter = newCursor[`${streamId}.posts_after`];
-        if (postsAfter) st['posts_after'] = postsAfter;
+        try {
+          const cur = newCursor[streamId] ? (JSON.parse(newCursor[streamId]) as CursorState) : {};
+          if (cur['posts_after']) st['posts_after'] = cur['posts_after'];
+        } catch {
+          // keep comments_after only
+        }
         if (since) st['since'] = since;
-        ports.cursorStore.save(request.tenantId, streamId, st);
-        newCursor[streamId] = JSON.stringify(commentAfterByPost);
+        this.saveCursor(ports, request, streamId, newCursor, st);
       }
     }
     return {
