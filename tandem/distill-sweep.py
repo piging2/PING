@@ -186,6 +186,40 @@ def load_distill_ledger():
     return entries
 
 
+def sidecar_distill_closed(sidecar):
+    """True when the sidecar carries a distill-closure transition.
+
+    mark-distill-closed.sh (the discovery engine's distill writer) records
+    a 'distill_skipped' transition with by='mark-distill-closed.sh (...)';
+    a 'distilled' state is the sweep's own acceptance mark. Either is
+    machine-readable proof the file's dead letter is already closed, so
+    the sweep must never re-verify it.
+
+    Self-audit 2026-10-03: engine_ingested_prefixes() keys off
+    ingested.log, where the discovery lane's prose puts the run prefix and
+    the 'mark-distill-closed' marker on DIFFERENT lines of the same record
+    (production evidence: 20261003-150446-b-new-business-radar and
+    20261003-150801-d-segment-deep-dive were re-selected as dead letters
+    after full distill closure). The sidecar transition is the
+    deterministic signal.
+    """
+    if not isinstance(sidecar, dict):
+        return False
+    transitions = sidecar.get("transitions")
+    if not isinstance(transitions, list):
+        return False
+    for t in transitions:
+        if not isinstance(t, dict):
+            continue
+        state = str(t.get("state") or "")
+        by = str(t.get("by") or "")
+        if state in ("distilled", "distill_skipped"):
+            return True
+        if "mark-distill-closed" in by:
+            return True
+    return False
+
+
 def build_queue(intel_dir=INTEL_DIR, at=None):
     at = at or now_utc()
     quarantined = _lifecycle.quarantined_briefs()
@@ -209,6 +243,7 @@ def build_queue(intel_dir=INTEL_DIR, at=None):
             sidecar = json.load(open(sidecar_path))
             sc_status = sidecar.get("status")
         except Exception:
+            sidecar = None
             sc_status = None
         run_prefix = "-".join(stem.split("-")[:2])
         item = {"file": name, "brief_id": slug, "run_id": stem,
@@ -226,6 +261,11 @@ def build_queue(intel_dir=INTEL_DIR, at=None):
         elif slug in quarantined:
             item["reason"] = (f"brief {slug} is QUARANTINED; answers are "
                               f"evidence only (fail-closed)")
+        elif sidecar_distill_closed(sidecar):
+            item["reason"] = ("discovery engine already distill-closed "
+                              "(sidecar distill-closure transition); "
+                              "dead-letter closed by the primary ingest "
+                              "path, never re-verify in the sweep")
         elif item["engine_ingested"]:
             item["reason"] = ("outreach engine already ingested (ingested.log); "
                               "dead-letter closed by the engine's primary "
