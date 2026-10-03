@@ -271,6 +271,11 @@ function findOwnerAssertion(
 /**
  * Verify one factual binding against the graph and the recorded owner
  * assertions. Pure and deterministic.
+ *
+ * Emission-gate rule (FYD-010/2): only bindings for visibility ===
+ * "public" objects can bind. A binding for a private/internal object is
+ * UNBOUND with a typed refusal, even when its evidence is impeccable:
+ * private evidence never publishes.
  */
 export function verifyBinding(
   binding: PresentationBinding,
@@ -281,6 +286,21 @@ export function verifyBinding(
   const base = verifyPresentationBinding(binding, graph);
   if (!base.ok) {
     return { status: "UNBOUND", binding, reason: base.reason };
+  }
+  // The publish path binds ONLY public objects. verifyPresentationBinding
+  // (the primitive) stays total for lineage tracing; this gate is where
+  // publication is decided.
+  const target = new Map(graph.objects.map((o) => [o.id, o])).get(
+    binding.objectId,
+  );
+  if (target !== undefined && target.visibility !== "public") {
+    return {
+      status: "UNBOUND",
+      binding,
+      reason:
+        "refused: binding targets a non-public object " +
+        `(visibility=${target.visibility}); private evidence never publishes`,
+    };
   }
   const nowIso = resolveNowIso(opts);
   const value = base.value;
@@ -544,7 +564,7 @@ export function dropUnboundBindings(
  * ------------------------------------------------------------------------- */
 
 /** Version of the verified-render-model envelope. */
-export const VERIFIED_RENDER_MODEL_VERSION = "fyd-verified-render-model@1";
+export const VERIFIED_RENDER_MODEL_VERSION = "fyd-verified-render-model@2";
 
 /**
  * Render-atom classification vocabulary. Exact per the 24-hour builder
