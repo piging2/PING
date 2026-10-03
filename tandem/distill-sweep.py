@@ -21,6 +21,15 @@ Eligibility (derived from authoritative files, never hand lists):
     'ingest'; the engine is the primary ingest path, so re-verifying its
     files here would double-process)
 
+Each queue item also carries ``pipeline_audit_found``: True when the run
+timestamp prefix is cited anywhere in pipeline.md, meaning a sibling
+lane already wrote audit evidence for that run (self-audit 2026-10-03:
+the discovery lane audited 20261003-030416 and wrote a pipeline.md
+section, but the sweep re-selected it and burned 12 re-verification
+searches reaching the same verdict). Informational only; eligibility is
+unchanged (a cited audit may be partial, and absence of a citation never
+proves the file unprocessed).
+
 The sweep never starves fresh research: the caller caps the selection
 (--cap, default 5). Stale-breach overflow is reported, not silently dropped.
 
@@ -30,7 +39,8 @@ Usage:
   python3 distill-sweep.py --mark <file> <status> [note]
       # append distill.jsonl entry; status in
       # distilled|distill_failed|excluded_brief_quarantined|excluded_out_of_scope
-Env overrides (tests): META_INTEL_DIR, TANDEM_QUARANTINE_DIR, DISTILL_NOW.
+Env overrides (tests): META_INTEL_DIR, TANDEM_QUARANTINE_DIR, DISTILL_NOW,
+PIPELINE_MD.
 """
 import fcntl
 import importlib.util
@@ -49,6 +59,12 @@ _spec.loader.exec_module(_lifecycle)
 INTEL_DIR = os.environ.get("META_INTEL_DIR", os.path.expanduser(
     "~/workspace/goals/ping-social-outreach-campaign/hidden_files/meta-ai-intel"))
 DISTILL_LEDGER = os.path.join(INTEL_DIR, "distill.jsonl")
+
+# Shared audit surface: sibling lanes record their distill audits as
+# pipeline.md sections citing the answer file's run_id. Env-overridable
+# for tests (PIPELINE_MD).
+PIPELINE_MD = os.environ.get("PIPELINE_MD",
+                             os.path.expanduser("~/workspace/outreach/pipeline.md"))
 
 # Briefs permanently out of the distill scope (standing rule, not a hand list
 # that drifts: these are the live-clowning marketing-machinery briefs).
@@ -110,6 +126,32 @@ def engine_ingested_prefixes(intel_dir=INTEL_DIR):
     return prefixes
 
 
+def pipeline_audit_run_ids(pipeline_md=PIPELINE_MD):
+    """Run timestamp prefixes (YYYYMMDD-HHMMSS) cited anywhere in
+    pipeline.md.
+
+    Sibling lanes record their distill audits as pipeline.md sections
+    citing the answer file's run_id (e.g. '## Meta AI intel distill sweep
+    (d-segment-deep-dive 20261003-030416, verified 2026-10-03)'). A
+    prefix present here means some lane already wrote audit evidence for
+    that run; the sweep surfaces it as ``pipeline_audit_found`` so the
+    operator can delta-check the cited section instead of blindly
+    re-verifying every business. Heuristic, informational only: it does
+    NOT change eligibility (a cited audit may be partial, and absence of
+    a citation never proves the file unprocessed). Fail-open: a missing
+    or unreadable file returns the empty set.
+    """
+    ids = set()
+    try:
+        with open(pipeline_md, errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return ids
+    for m in RUN_PREFIX_RE.finditer(text):
+        ids.add(m.group(0))
+    return ids
+
+
 def parse_run_id(stem):
     m = RUN_TS.match(stem)
     if not m:
@@ -149,6 +191,7 @@ def build_queue(intel_dir=INTEL_DIR, at=None):
     quarantined = _lifecycle.quarantined_briefs()
     ledger = load_distill_ledger()
     eng_ingested = engine_ingested_prefixes(intel_dir)
+    pipeline_audited = pipeline_audit_run_ids()
     items = []
     for name in sorted(os.listdir(intel_dir)):
         if not name.endswith(".md"):
@@ -171,7 +214,8 @@ def build_queue(intel_dir=INTEL_DIR, at=None):
         item = {"file": name, "brief_id": slug, "run_id": stem,
                 "age_hours": round(age_h, 1), "band": band, "band_rank": rank,
                 "sidecar_status": sc_status, "eligible": False, "reason": None,
-                "engine_ingested": run_prefix in eng_ingested}
+                "engine_ingested": run_prefix in eng_ingested,
+                "pipeline_audit_found": run_prefix in pipeline_audited}
         if name in ledger:
             item["reason"] = f"distill ledger: {ledger[name]['status']}"
         elif sc_status != "answer_captured":
@@ -219,7 +263,9 @@ def build_queue(intel_dir=INTEL_DIR, at=None):
                       "reason": "capture_failed: terminal execution outcome "
                                 "(failed capture, not evidence; never enters "
                                 "extraction)",
-                      "engine_ingested": False})
+                      "engine_ingested": False,
+                      "pipeline_audit_found":
+                          "-".join(stem.split("-")[:2]) in pipeline_audited})
     return items
 
 
