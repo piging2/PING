@@ -26,6 +26,7 @@ Writes are atomic (tmp + rename). Every change is also appended to
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -101,6 +102,24 @@ def main(argv):
 
     print(f"set-hold: {args.surface} held={old_held} -> {new_held} "
           f"(by={args.by}, ref={args.ref})")
+
+    # Enforcement arm (2026-10-02, owner-hold authority repair): after a hold
+    # is recorded, best-effort push the stop to the Pig (flip in-flight
+    # worker sentinels to held:true, kill in-flight worker processes).
+    # Detached, timeout-guarded inside enforce-hold.sh, never fails the hold
+    # write. Skipped for --path overrides (tests must not touch the Pig).
+    if new_held and os.path.abspath(args.path) == os.path.abspath(DEFAULT_PATH):
+        try:
+            hook = os.path.normpath(os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "pig-fb", "enforce-hold.sh"))
+            subprocess.Popen(
+                ["bash", hook, args.surface],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                start_new_session=True)
+        except Exception as e:  # best-effort only
+            print(f"set-hold: enforce-hold hook failed (best-effort): {e}",
+                  file=sys.stderr)
     return 0
 
 

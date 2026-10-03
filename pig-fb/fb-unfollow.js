@@ -283,6 +283,21 @@ async function doUnfollowOnPage(page) {
   if (!jobFile) { console.error('usage: node fb-unfollow.js <job.json>'); process.exit(2); }
   const job = JSON.parse(fs.readFileSync(jobFile, 'utf8'));
   const mode = job.mode || 'enumerate';
+  // Owner-hold sentinel (2026-10-02, owner-hold authority repair): the
+  // dispatcher writes <jobFile>.hold.json = {"held":false,...} at dispatch;
+  // enforce-hold pushes {"held":true} when a hold lands mid-pass. Checked
+  // before EVERY external action; missing/unreadable/invalid fails closed
+  // (the worker never acts blind). Canonical source: pig-fb/engage.js.
+  function ownerHoldState() {
+    try {
+      const s = JSON.parse(fs.readFileSync(jobFile + '.hold.json', 'utf8'));
+      if (s && s.held === false) return { held: false };
+      if (s && s.held === true) return { held: true, reason: String(s.reason || 'owner hold') };
+      return { held: true, reason: 'sentinel invalid (fail closed)' };
+    } catch (e) {
+      return { held: true, reason: 'sentinel unreadable (fail closed)' };
+    }
+  }
   const write = (out) => fs.writeFileSync(jobFile + '.result.json', JSON.stringify(out, null, 2));
   let browser;
   try {
@@ -369,6 +384,10 @@ async function doUnfollowOnPage(page) {
     let done = 0, failed = 0, skipped = 0, stopped = null;
     for (let i = 0; i < queue.length && done < max; i++) {
       const entry = queue[i];
+      // Owner-hold re-check (2026-10-02): a hold landing mid-batch stops the
+      // worker before the next external action. Zero new effects from here.
+      const hs = ownerHoldState();
+      if (hs.held) { stopped = 'owner hold in force: ' + hs.reason; break; }
       if (done > 0) await sleep(rand(minD, maxD));
       let r;
       try {

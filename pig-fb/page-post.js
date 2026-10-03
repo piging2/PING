@@ -218,6 +218,21 @@ async function verifyPost(page, pageUrl, caption) {
   const jobFile = process.argv[2];
   if (!jobFile) { console.error('usage: node page-post.js <job.json>'); process.exit(2); }
   const job = JSON.parse(fs.readFileSync(jobFile, 'utf8'));
+  // Owner-hold sentinel (2026-10-02, owner-hold authority repair): the
+  // dispatcher writes <jobFile>.hold.json = {"held":false,...} at dispatch;
+  // enforce-hold pushes {"held":true} when a hold lands mid-run. Checked
+  // before the post sequence; missing/unreadable/invalid fails closed
+  // (the worker never acts blind). Canonical source: pig-fb/engage.js.
+  function ownerHoldState() {
+    try {
+      const s = JSON.parse(fs.readFileSync(jobFile + '.hold.json', 'utf8'));
+      if (s && s.held === false) return { held: false };
+      if (s && s.held === true) return { held: true, reason: String(s.reason || 'owner hold') };
+      return { held: true, reason: 'sentinel invalid (fail closed)' };
+    } catch (e) {
+      return { held: true, reason: 'sentinel unreadable (fail closed)' };
+    }
+  }
   if (!job.page_url || !job.image_path || !job.caption) {
     const out = { ok: false, error: 'job needs page_url, image_path, caption' };
     fs.writeFileSync(jobFile + '.result.json', JSON.stringify(out, null, 2));
@@ -251,7 +266,12 @@ async function verifyPost(page, pageUrl, caption) {
       ['write caption', () => writeCaption(page, job.caption)],
       ['click Post', () => clickPost(page)],
     ];
-    for (const [name, fn] of steps) {
+    // Owner-hold re-check (2026-10-02): a hold landing before the post
+    // sequence stops the worker with zero new effects.
+    const hs = ownerHoldState();
+    if (hs.held) {
+      out = { ok: false, error: 'owner hold in force; post not attempted: ' + hs.reason };
+    } else for (const [name, fn] of steps) {
       let r;
       try { r = await fn(); } catch (e) { r = { ok: false, note: 'exception: ' + String(e.message || e).slice(0, 200) }; }
       if (!r.ok) {

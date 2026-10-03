@@ -51,6 +51,14 @@ export IG_CANARY_REQUIRED="${IG_CANARY_REQUIRED:-}"
 
 pig_scp "$JOB" "$PIG:$REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_failed"}'; exit 2; }
 
+# Owner-hold sentinel for the worker (2026-10-02): <job>.hold.json starts
+# held:false; the worker re-reads it before every action and fails closed if
+# missing/unreadable/invalid. enforce-hold.sh pushes held:true if a hold lands
+# mid-pass. A failed sentinel scp fails the dispatch.
+printf '{"held":false,"surface":"instagram","ts":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$JOB.hold.json"
+pig_scp "$JOB.hold.json" "$PIG:$REMOTE.hold.json" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"sentinel_scp_failed"}'; rm -f "$JOB.hold.json"; exit 2; }
+rm -f "$JOB.hold.json"
+
 # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
 # authority repair): re-read CURRENT holds.json immediately before dispatch. A
 # hold that landed after the top gate (stale schedule, queued worker, restart,

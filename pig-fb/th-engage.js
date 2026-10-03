@@ -267,6 +267,21 @@ async function doComment(page, a) {
   if (!jobPath) { console.log(JSON.stringify({ ok: false, note: 'usage: th-engage.js <job.json>' })); process.exit(2); }
   const job = JSON.parse(fs.readFileSync(jobPath, 'utf8'));
   const resPath = jobPath + '.result.json';
+  // Owner-hold sentinel (2026-10-02, owner-hold authority repair): the
+  // dispatcher writes <jobPath>.hold.json = {"held":false,...} at dispatch;
+  // enforce-hold pushes {"held":true} when a hold lands mid-pass. Checked
+  // before EVERY external action; missing/unreadable/invalid fails closed
+  // (the worker never acts blind). Canonical source: pig-fb/engage.js.
+  function ownerHoldState() {
+    try {
+      const s = JSON.parse(fs.readFileSync(jobPath + '.hold.json', 'utf8'));
+      if (s && s.held === false) return { held: false };
+      if (s && s.held === true) return { held: true, reason: String(s.reason || 'owner hold') };
+      return { held: true, reason: 'sentinel invalid (fail closed)' };
+    } catch (e) {
+      return { held: true, reason: 'sentinel unreadable (fail closed)' };
+    }
+  }
   const out = { ok: true, pass: 'threads-engage', started: new Date().toISOString(), actions: [] };
   let browser;
   try { browser = await chromium.connectOverCDP(CDP, { timeout: 20000 }); }
@@ -286,6 +301,15 @@ async function doComment(page, a) {
     let i = 0;
     for (const a of job.actions) {
       i++;
+      // Owner-hold re-check (2026-10-02): a hold landing mid-pass stops the
+      // worker before the next external action. Zero new effects from here.
+      const hs = ownerHoldState();
+      if (hs.held) {
+        out.ok = false;
+        out.aborted = 'owner hold in force; stopping pass: ' + hs.reason;
+        out.actions.push({ account: a.account, url: a.url, action: a.type, ok: false, outcome: 'aborted', note: out.aborted });
+        break;
+      }
       let r;
       try {
         r = a.type === 'like' ? await doLike(page, a)

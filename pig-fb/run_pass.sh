@@ -175,6 +175,11 @@ fi
 # echoes pass_id into its result.json and every progress.jsonl line, so the
 # collector can attribute files without local state.
 STAMPED_JOB="$(mktemp /tmp/fb-job-stamped-XXXXXX.json)"
+# Owner-hold sentinel for the worker (2026-10-02): <job>.hold.json starts
+# held:false; the worker re-reads it before every action and fails closed if
+# missing/unreadable/invalid. enforce-hold.sh pushes held:true if a hold lands
+# mid-pass.
+HOLD_SENTINEL="$STAMPED_JOB.hold.json"
 python3 - "$JOB" "$STAMPED_JOB" "$PASS_ID" <<'PYEOF'
 import json, sys
 job = json.load(open(sys.argv[1]))
@@ -192,14 +197,19 @@ record_not_attempted() {
     --reason "$1" --evidence "run_pass.sh pre-flight" >&2 || \
     echo "[run_pass] WARNING: could not record not-attempted outcomes." >&2
 }
-"${FB_ENSURE_CDP:-$(dirname "$0")/ensure-cdp.sh}" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"cdp_down_after_relaunch"}'; record_not_attempted "CDP down after relaunch; job never reached the Pig"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
+"${FB_ENSURE_CDP:-$(dirname "$0")/ensure-cdp.sh}" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"cdp_down_after_relaunch"}'; record_not_attempted "CDP down after relaunch; job never reached the Pig"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"; exit 2; }
 
 # Copy the stamped job AND the current worker code (2026-09-24, orphan
 # model: the dispatched worker version is pinned to this dispatch, never a
 # stale Pig-side copy; run_unfollow.sh already copies its worker per run).
-pig_scp "$STAMPED_JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "scp to Pig failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
-pig_scp "$(dirname "$0")/engage.js" "$PIG:$WORKER_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "worker scp to Pig failed; job never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
-pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:$WAKE_WRAP_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "wake-wrap scp to Pig failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"; exit 2; }
+pig_scp "$STAMPED_JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "scp to Pig failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"; exit 2; }
+# Stage the owner-hold sentinel alongside the job (2026-10-02). The worker
+# re-reads <job>.hold.json before every action; a failed sentinel scp fails
+# the dispatch (the worker would fail closed on a missing sentinel).
+printf '{"held":false,"surface":"facebook","pass_id":"%s","ts":"%s"}' "$PASS_ID" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$HOLD_SENTINEL"
+pig_scp "$HOLD_SENTINEL" "$PIG:$REMOTE_JOB.hold.json" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"sentinel_scp_failed"}'; record_not_attempted "hold sentinel scp failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"; exit 2; }
+pig_scp "$(dirname "$0")/engage.js" "$PIG:$WORKER_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "worker scp to Pig failed; job never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"; exit 2; }
+pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:$WAKE_WRAP_REMOTE" >/dev/null 2>&1 || { echo '{"ok":false,"dispatched":false,"infra":"scp_failed"}'; record_not_attempted "wake-wrap scp to Pig failed; worker never launched"; rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"; exit 2; }
 
 # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
 # authority repair): re-read CURRENT holds.json immediately before dispatch,
@@ -212,7 +222,7 @@ pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:$WAKE_WRAP_REMOTE" >/dev/null 2>&1
   echo "run_pass.sh: owner hold re-check denied at pre-launch boundary; failing closed" >&2
   record_not_attempted "owner hold in force at pre-launch re-check; worker never launched"
   pig_ssh "powershell -NoProfile -EncodedCommand $(printf '%s' "Remove-Item '$REMOTE_JOB' -ErrorAction SilentlyContinue" | iconv -t UTF-16LE | base64 -w0)" >/dev/null 2>&1 || true
-  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"
+  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"
   exit 2
 }
 
@@ -225,7 +235,7 @@ pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:$WAKE_WRAP_REMOTE" >/dev/null 2>&1
 if ! ~/workspace/outreach/action-intent-ledger.py mark-execution \
     --platform facebook --pass-id "$PASS_ID" >&2; then
   echo '{"ok":false,"dispatched":false,"infra":"intent_ledger_failed"}'
-  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"
+  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"
   exit 2
 fi
 
@@ -269,7 +279,7 @@ WORKER_PID=$(pig_ssh "powershell -NoProfile -EncodedCommand $(printf '%s' "$REMO
 if ! printf '%s' "$WORKER_PID" | grep -qE '^[0-9]+$'; then
   echo "{\"ok\":false,\"dispatched\":false,\"infra\":\"worker_launch_failed\",\"note\":\"Detached worker launch returned no PID; intents are in EXECUTION and the next pass will refuse them as UNKNOWN_EXECUTION until reconciled.\"}" >&2
   echo '{"ok":false,"dispatched":false,"infra":"worker_launch_failed"}'
-  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"
+  rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"
   exit 2
 fi
 
@@ -296,6 +306,6 @@ PYEOF
 # Never fails the dispatch.
 "${FB_RETENTION:-$(dirname "$0")/pig-retention.sh}" --apply >/dev/null 2>&1 || true
 
-rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB"
+rm -f "$GUARD_OUT" "$GUARD_REPORT" "$CURATE_OUT" "$ELIG_CHECK" "$INTENT_JOB" "$INTENT_REFUSE" "$STAMPED_JOB" "$HOLD_SENTINEL"
 echo "{\"ok\":true,\"dispatched\":true,\"pass_id\":\"$PASS_ID\",\"job\":\"job-$TS.json\",\"worker_pid\":\"$WORKER_PID\",\"eligible\":$ELIGIBLE_COUNT,\"blocked\":$BLOCKED_COUNT,\"intent_refused\":$REFUSED_COUNT,\"collector\":\"collect_pass.sh (runs every ~15m)\"}"
 exit 0

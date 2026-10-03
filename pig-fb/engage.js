@@ -85,6 +85,21 @@ async function doComment(page, url, text) {
   if (!jobFile) { console.error('usage: node engage.js <job.json>'); process.exit(2); }
   const job = JSON.parse(fs.readFileSync(jobFile, 'utf8'));
   const results = [];
+  // Owner-hold sentinel (2026-10-02, owner-hold authority repair): the
+  // dispatcher writes <jobFile>.hold.json = {"held":false,...} at dispatch;
+  // enforce-hold pushes {"held":true} when a hold lands mid-pass. Checked
+  // before EVERY external action; missing/unreadable/invalid fails closed
+  // (the worker never acts blind). Canonical source: pig-fb/engage.js.
+  function ownerHoldState() {
+    try {
+      const s = JSON.parse(fs.readFileSync(jobFile + '.hold.json', 'utf8'));
+      if (s && s.held === false) return { held: false };
+      if (s && s.held === true) return { held: true, reason: String(s.reason || 'owner hold') };
+      return { held: true, reason: 'sentinel invalid (fail closed)' };
+    } catch (e) {
+      return { held: true, reason: 'sentinel unreadable (fail closed)' };
+    }
+  }
   // Durable per-action observations (2026-09-24, orphan model): one fsync'd
   // JSONL line per completed action, appended to <job>.progress.jsonl
   // immediately after the action finishes. If this worker is killed, the
@@ -139,6 +154,15 @@ async function doComment(page, url, text) {
     const minD = (job.minDelaySec || 60) * 1000, maxD = (job.maxDelaySec || 120) * 1000;
     for (let i = 0; i < job.actions.length; i++) {
       const a = job.actions[i];
+      // Owner-hold re-check (2026-10-02): a hold landing mid-pass stops the
+      // worker before the next external action. Zero new effects from here.
+      const hs = ownerHoldState();
+      if (hs.held) {
+        const abort = { type: 'abort', ok: false, note: 'owner hold in force; stopping pass: ' + hs.reason };
+        results.push(abort);
+        progressLog('abort', null, abort);
+        break;
+      }
       if (i > 0) await sleep(rand(minD, maxD));
       try {
         page = await ensurePage();

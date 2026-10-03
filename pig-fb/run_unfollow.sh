@@ -37,6 +37,15 @@ done
 
 pig_scp "$JOB" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || {
   echo '{"ok":false,"infra":"job_scp_failed"}'; exit 2; }
+
+# Owner-hold sentinel for the worker (2026-10-02): <job>.hold.json starts
+# held:false; the worker re-reads it before every action and fails closed if
+# missing/unreadable/invalid. enforce-hold.sh pushes held:true if a hold lands
+# mid-batch. A failed sentinel scp fails the dispatch.
+printf '{"held":false,"surface":"facebook","ts":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$JOB.hold.json"
+pig_scp "$JOB.hold.json" "$PIG:$REMOTE_JOB.hold.json" >/dev/null 2>&1 || {
+  echo '{"ok":false,"infra":"sentinel_scp_failed"}'; rm -f "$JOB.hold.json"; exit 2; }
+rm -f "$JOB.hold.json"
 pig_scp "$(dirname "$0")/wake-wrap.ps1" "$PIG:C:/Users/nolan/.local/share/pigi/wake-wrap.ps1" >/dev/null 2>&1 || {
   echo '{"ok":false,"infra":"wake_wrap_scp_failed"}'; exit 2; }
 

@@ -43,6 +43,14 @@ PYEOF
 
 pig_scp "$IMG" "$PIG:$REMOTE_IMG" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_failed_image"}'; exit 2; }
 pig_scp "$JOB_TMP" "$PIG:$REMOTE_JOB" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"scp_failed_job"}'; exit 2; }
+
+# Owner-hold sentinel for the worker (2026-10-02): <job>.hold.json starts
+# held:false; the worker re-reads it before the post sequence and fails closed
+# if missing/unreadable/invalid. enforce-hold.sh pushes held:true if a hold
+# lands mid-run. A failed sentinel scp fails the dispatch.
+printf '{"held":false,"surface":"facebook","ts":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$JOB_TMP.hold.json"
+pig_scp "$JOB_TMP.hold.json" "$PIG:$REMOTE_JOB.hold.json" >/dev/null 2>&1 || { echo '{"ok":false,"infra":"sentinel_scp_failed"}'; rm -f "$JOB_TMP.hold.json"; exit 2; }
+rm -f "$JOB_TMP.hold.json"
 rm -f "$JOB_TMP"
 
 # Owner-hold re-check at the last responsible boundary (2026-10-02, owner-hold
