@@ -239,6 +239,24 @@ HELD_NEGATED_RE = re.compile(
     r"|\b(?:is|are|was|were)\s+not\s+on[ -]?hold\b"
     r"|\b(?:not|never)\s+on[ -]?hold\b",
     re.IGNORECASE)
+# A "hold re-check" / "owner-hold re-check" is the gate verifying no hold,
+# never a hold in force (2026-10-03 threads incident: the worker documents
+# 'pre-launch owner-hold re-check' when the gate passes, and the scanner
+# fired on its own documentation, self-reinforcing every pass). Neutralized,
+# never dropped: the compound is substituted out but the rest of the clause
+# is still scanned, so a real hold asserted alongside it ('owner hold
+# placed; re-check scheduled') still fires -- the compound requires
+# adjacency, which a separated assertion does not have.
+HOLD_RECHECK_RE = re.compile(r"\b(?:owner[- ])?hold[- ]re[- ]?check\b",
+                             re.IGNORECASE)
+# "rate-limit backoff" as a compound noun names the recovery-budgets
+# mechanism, not a platform event (2026-10-03 threads incident: 'handled via
+# the recovery-budgets rate-limit backoff' documents routing per the 06:34
+# standing rule, and the scanner fired on it). Kept narrow: only the
+# adjacent compound matches; 'rate limit hit, backoff initiated' (event +
+# separate backoff) keeps firing fail-safe.
+RATE_LIMIT_BACKOFF_MECHANISM_RE = re.compile(
+    r"\brate[- ]limit backoff(?: ladder)?\b", re.IGNORECASE)
 # Explicit held=false assignment: machine-readable NOT-held state
 # (x passes 2026-10-01 11:14/13:14 MDT: pass logs document
 # 'holds.json: x held=false' when recording the gate result; the bare
@@ -406,6 +424,10 @@ def strip_negated_clauses(line, surface=None):
         # the assignment out but keep scanning the rest of the clause: a
         # real hold asserted alongside it must still fire.
         clause = HELD_FALSE_RE.sub(" ", clause)
+        # A "hold re-check" is the gate verifying no hold, never a hold in
+        # force. Neutralized like the assignment above: substitute the
+        # compound out, keep scanning the rest of the clause.
+        clause = HOLD_RECHECK_RE.sub(" ", clause)
         # Explicit prose negation of a hold-state claim ('x not held',
         # 'X is not on hold', "x isn't held") is a claim of NOT held, never
         # a hold. Same neutralization discipline as the machine assignment
@@ -450,6 +472,8 @@ def strip_negated_clauses(line, surface=None):
                     and RATE_LIMIT_RE.search(clause))
                 or (RATE_LIMIT_RE.search(clause)
                     and META_PROSE_RE.search(clause))
+                or (RATE_LIMIT_RE.search(clause)
+                    and RATE_LIMIT_BACKOFF_MECHANISM_RE.search(clause))
                 or (WINDOW_STATUS_RE.search(clause)
                     and NO_NEW_EVENT_RE.search(clause))):
             continue
@@ -563,20 +587,27 @@ def tail_affirmative_markers(log_path, from_line=0, newest_first=False,
             lines = f.read().splitlines()
     except OSError:
         return None  # missing log is not evidence of a restriction
-    # from_line is in file-line coordinates (recorded at reconciliation time);
-    # apply it before dropping the header so existing reconciliations keep
-    # their meaning.
-    lines = lines[from_line:]
-    # Drop standing header/rules boilerplate: only pass sections are
-    # execution history. In every log the header precedes the first pass
-    # section in file coordinates, regardless of chronological order.
-    # If no pass header is found, scan everything.
+    # Drop standing header/rules boilerplate in file coordinates first:
+    # only pass sections are execution history. In every log the header
+    # precedes the first pass section in file coordinates, regardless of
+    # chronological order. If no pass header is found, scan everything.
+    header_len = 0
     for i, ln in enumerate(lines):
         if PASS_SECTION_RE.match(ln):
-            lines = lines[i:]
+            header_len = i
             break
+    lines = lines[header_len:]
     if newest_first:
         lines = lines[::-1]  # chronological: oldest -> newest
+    # from_line is recorded in full-file coordinates (header included) at
+    # reconciliation time; convert to post-header coordinates. The reversal
+    # above puts pre-reconciliation lines first for newest-first logs, so
+    # the same skip keeps only post-reconciliation lines for both orders.
+    # (2026-10-03: the skip previously ran before the reversal, which for
+    # newest-first logs kept the PRE-reconciliation tail -- the exact
+    # inverse of the documented intent -- and the gate self-reinforced on
+    # stale prose, parking threads for consecutive 0-action passes.)
+    lines = lines[max(0, from_line - header_len):]
     recent = lines[-TAIL_LINES:]
     hits = []
     for ln in recent:
