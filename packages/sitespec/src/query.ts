@@ -30,7 +30,42 @@
 
 import type { PingObject } from "./ping-types";
 import type { FYDQuery, FYDSiteSpec, ObjectGraph } from "./types";
-import { ownerRelationshipTarget } from "./schema-roles";
+import { ownerRelationshipTarget, ROLE_PREDICATES } from "./schema-roles";
+
+/**
+ * The relationship vocabulary the query seam understands: every
+ * predicate in ROLE_PREDICATES (schema-roles.ts). A query naming a
+ * predicate outside this vocabulary is a typo or a drifted generator,
+ * never a query that means "nothing".
+ */
+export const KNOWN_PREDICATES: ReadonlySet<string> = new Set(
+  (Object.values(ROLE_PREDICATES) as string[][]).flat(),
+);
+
+/**
+ * Typed refusal for an unknown relationship predicate at the query
+ * seam. Thrown by resolveQuery: an unknown predicate (typo "offres")
+ * fails LOUD here instead of silently resolving to [] and rendering an
+ * empty section nobody can explain.
+ */
+export class UnknownPredicateError extends Error {
+  readonly predicate: string;
+  constructor(predicate: string) {
+    super(
+      `resolveQuery: unknown relationship predicate ${JSON.stringify(predicate)}; ` +
+        `known predicates: ${[...KNOWN_PREDICATES].sort().join(", ")}`,
+    );
+    this.name = "UnknownPredicateError";
+    this.predicate = predicate;
+  }
+}
+
+/** Fail TYPED on the first unknown predicate in the match set. */
+function assertKnownPredicates(predicates: readonly string[]): void {
+  for (const p of predicates) {
+    if (!KNOWN_PREDICATES.has(p)) throw new UnknownPredicateError(p);
+  }
+}
 
 export function resolveQuery(
   query: FYDQuery,
@@ -60,6 +95,9 @@ export function resolveQuery(
       const seen = new Set<string>();
       const out: PingObject[] = [];
       const predicates = query.predicates ?? [query.predicate];
+      // Unknown predicates fail TYPED here: a typo must never silently
+      // resolve to [] and render an empty section.
+      assertKnownPredicates(predicates);
       for (const r of graph.relationships) {
         if (!predicates.includes(r.predicate)) continue;
         const memberId = ownerRelationshipTarget(r, query.from);
