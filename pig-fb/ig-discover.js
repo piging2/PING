@@ -260,6 +260,20 @@ const { chromium } = require('C:/Users/nolan/.local/share/pigi/fb-engage/node_mo
     skip.add('nolanpigi');
     if (out.account) skip.add(out.account.toLowerCase());
 
+    // DIALOG DISMISSAL 2026-10-04: Instagram renders a "Turn on Notifications"
+    // modal on fresh page loads; it overlays the nav and blocks the Search
+    // click, failing every query with search_failed (pass 221 root cause).
+    // Dismiss via "Not Now". Benign; no-ops when the dialog is absent.
+    try {
+      const dismissed = await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const notNow = btns.find(b => /^not now$/i.test((b.innerText || '').trim()));
+        if (notNow) { notNow.click(); return true; }
+        return false;
+      });
+      if (dismissed) await sleep(1500);
+    } catch (e) { /* non-fatal: search may still work */ }
+
     // Phase 1: typeahead collection.
     const found = [];
     for (const q of job.queries || []) {
