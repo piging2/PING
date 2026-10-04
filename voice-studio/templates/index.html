@@ -89,7 +89,9 @@ async function generate() {
   var btn = document.getElementById("go");
   if (!text) { setStatus("Type or paste some text first.", true); return; }
   btn.disabled = true;
-  setStatus("Generating with engine " + engine + "...");
+  var note = "Generating with engine " + engine + "...";
+  if (text.length > 1500) note += " Long text, this may take a minute or two.";
+  setStatus(note);
   document.getElementById("result").style.display = "none";
   try {
     var r = await fetch("/api/generate", {
@@ -101,7 +103,9 @@ async function generate() {
     if (!j.ok) {
       setStatus("Error: " + (j.error || "unknown"), true);
     } else {
-      setStatus("Done. " + j.chars + " chars, engine " + j.engine + ".");
+      var msg = "Done. " + j.chars + " chars, engine " + j.engine + ".";
+      if (j.chunks > 1) msg += " " + j.chunks + " chunks joined.";
+      setStatus(msg);
       var p = document.getElementById("player");
       p.src = j.audio_url;
       p.play().catch(function(){});

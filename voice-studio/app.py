@@ -53,7 +53,9 @@ INSTRUCTIONS = {
     "strong": "Expressive and animated delivery with clear emotional coloring.",
 }
 
-MAX_CHARS = 2000
+MAX_CHARS = 20000
+CHUNK_CHARS = 1500  # per-request size; long texts are split on sentences
+CHUNK_GAP_MS = 150  # silence between chunks so joins breathe
 
 app = Flask(__name__)
 gen_lock = threading.Lock()  # one generation at a time: protects quota and GPU
@@ -104,7 +106,7 @@ def generate():
         return jsonify({"ok": False, "error": "Type or paste some text first."}), 400
     if len(text) > MAX_CHARS:
         return jsonify({"ok": False,
-                        "error": "Text too long. Keep it under 2000 characters."}), 400
+                        "error": "Text too long. Keep it under 20000 characters."}), 400
     if engine in ("A", "B", "C") and not KEY:
         return jsonify({"ok": False,
                         "error": "Alibaba key not available on the server."}), 500
@@ -112,18 +114,16 @@ def generate():
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     fname = "%s_%s.wav" % (ts, engine)
     path = os.path.join(OUT, fname)
-    access_log.info("GEN start engine=%s chars=%d from=%s", engine, len(text),
-                    request.remote_addr)
 
+    chunks = _split_chunks(text)
+    access_log.info("GEN start engine=%s chars=%d chunks=%d from=%s", engine,
+                    len(text), len(chunks), request.remote_addr)
     try:
         with gen_lock:
-            if engine == "A":
-                gen_vc(KEY, text, path)
-            elif engine in ("B", "C"):
-                instr = INSTRUCTIONS["strong" if emotion == "strong" else "restrained"]
-                gen_plus(KEY, text, instr, path)
+            if len(chunks) == 1:
+                _gen_one(engine, emotion, chunks[0], path)
             else:
-                gen_local(text, path)
+                _gen_chunked(engine, emotion, chunks, path)
     except AlibabaError as e:
         return jsonify({"ok": False, "error": scrub(str(e)),
                         "engine": engine}), 502
@@ -135,10 +135,93 @@ def generate():
         access_log.info("GEN fail engine=%s no-audio", engine)
         return jsonify({"ok": False, "error": "Generation produced no audio.",
                         "engine": engine}), 500
-    access_log.info("GEN done engine=%s file=%s bytes=%d", engine, fname,
-                    os.path.getsize(path))
+    access_log.info("GEN done engine=%s file=%s bytes=%d chunks=%d", engine,
+                    fname, os.path.getsize(path), len(chunks))
     return jsonify({"ok": True, "audio_url": "/audio/" + fname,
-                    "file_path": path, "engine": engine, "chars": len(text)})
+                    "file_path": path, "engine": engine, "chars": len(text),
+                    "chunks": len(chunks)})
+
+
+def _split_chunks(text):
+    """Split long text on sentence boundaries into <=CHUNK_CHARS pieces."""
+    import re
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    chunks, cur = [], ""
+    for s in sentences:
+        s = s.strip()
+        if not s:
+            continue
+        if len(cur) + len(s) + 1 <= CHUNK_CHARS:
+            cur = (cur + " " + s).strip()
+        else:
+            if cur:
+                chunks.append(cur)
+            while len(s) > CHUNK_CHARS:  # one monster sentence: hard split
+                chunks.append(s[:CHUNK_CHARS])
+                s = s[CHUNK_CHARS:]
+            cur = s
+    if cur:
+        chunks.append(cur)
+    return chunks or [text]
+
+
+def _gen_one(engine, emotion, text, path):
+    if engine == "A":
+        gen_vc(KEY, text, path)
+    elif engine in ("B", "C"):
+        instr = INSTRUCTIONS["strong" if emotion == "strong" else "restrained"]
+        gen_plus(KEY, text, instr, path)
+    else:
+        gen_local(text, path)
+
+
+def _gen_chunked(engine, emotion, chunks, path):
+    """Synthesize each chunk (carrier+trim applies per chunk, so no
+    onset stumble repeats) and join with a short silence gap."""
+    import struct
+    import numpy as np
+    import tempfile
+    parts = []
+    sr = channels = None
+    try:
+        for i, ch in enumerate(chunks):
+            tmp = tempfile.mktemp(suffix=".wav", prefix="chunk%d_" % i,
+                                  dir=OUT)
+            _gen_one(engine, emotion, ch, tmp)
+            with open(tmp, "rb") as f:
+                data = f.read()
+            di = data.find(b"data")
+            fmt = data[12:36]
+            c = struct.unpack("<H", fmt[10:12])[0]
+            s = struct.unpack("<I", fmt[12:16])[0]
+            b = struct.unpack("<H", fmt[22:24])[0]
+            if b != 16:
+                raise RuntimeError("chunk %d: unexpected bit depth" % i)
+            if sr is None:
+                sr, channels = s, c
+            elif (s, c) != (sr, channels):
+                raise RuntimeError("chunk %d: format drift" % i)
+            parts.append(np.frombuffer(data[di + 8:], dtype=np.int16))
+            os.remove(tmp)
+    finally:
+        for p in os.listdir(OUT):
+            if p.startswith("chunk") and p.endswith(".wav"):
+                try:
+                    os.remove(os.path.join(OUT, p))
+                except OSError:
+                    pass
+    gap = np.zeros(int(sr * CHUNK_GAP_MS / 1000), dtype=np.int16)
+    joined = gap
+    for p in parts:
+        joined = np.concatenate([joined, p, gap])
+    raw = joined.astype(np.int16).tobytes()
+    head = struct.pack("<4sI4s4sIHHIIHH4sI",
+                       b"RIFF", 36 + len(raw), b"WAVE",
+                       b"fmt ", 16, 1, channels, sr,
+                       sr * channels * 2, channels * 2, 16,
+                       b"data", len(raw))
+    with open(path, "wb") as f:
+        f.write(head + raw)
 
 
 @app.route("/audio/<filename>")
