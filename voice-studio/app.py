@@ -9,6 +9,7 @@ import os
 import sys
 import subprocess
 import threading
+import logging
 from datetime import datetime, timezone
 
 from flask import Flask, request, jsonify, send_file, render_template
@@ -16,6 +17,12 @@ from flask import Flask, request, jsonify, send_file, render_template
 BASE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(BASE, "output")
 os.makedirs(OUT, exist_ok=True)
+
+access_log = logging.getLogger("studio.access")
+_access_hdl = logging.FileHandler(os.path.join(BASE, "access.log"))
+_access_hdl.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+access_log.addHandler(_access_hdl)
+access_log.setLevel(logging.INFO)
 
 sys.path.insert(0, BASE)
 from engines.alibaba import gen_vc, gen_plus, AlibabaError
@@ -66,6 +73,19 @@ def index():
     return render_template("index.html")
 
 
+@app.before_request
+def _log_request():
+    access_log.info("REQ %s %s %s", request.remote_addr, request.method,
+                    request.path)
+
+
+@app.after_request
+def _log_response(resp):
+    access_log.info("RESP %s %s %s -> %s", request.remote_addr,
+                    request.method, request.path, resp.status_code)
+    return resp
+
+
 @app.route("/health")
 def health():
     return jsonify({"ok": True, "key_present": bool(KEY)})
@@ -92,6 +112,8 @@ def generate():
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     fname = "%s_%s.wav" % (ts, engine)
     path = os.path.join(OUT, fname)
+    access_log.info("GEN start engine=%s chars=%d from=%s", engine, len(text),
+                    request.remote_addr)
 
     try:
         with gen_lock:
@@ -110,8 +132,11 @@ def generate():
                         "engine": engine}), 500
 
     if not os.path.isfile(path) or os.path.getsize(path) < 1000:
+        access_log.info("GEN fail engine=%s no-audio", engine)
         return jsonify({"ok": False, "error": "Generation produced no audio.",
                         "engine": engine}), 500
+    access_log.info("GEN done engine=%s file=%s bytes=%d", engine, fname,
+                    os.path.getsize(path))
     return jsonify({"ok": True, "audio_url": "/audio/" + fname,
                     "file_path": path, "engine": engine, "chars": len(text)})
 
