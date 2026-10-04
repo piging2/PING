@@ -26,6 +26,79 @@ class AlibabaError(Exception):
     """Honest provider-side failure (quota, auth, bad request, empty audio)."""
 
 
+# The qwen3-tts-vc model fumbles the first ~0.5s of most generations
+# (stretched low-confidence first word). A sacrificial "Okay. " carrier
+# absorbs the stumble; we cut it off in the pause that follows.
+CARRIER = "Okay. "
+
+
+def _trim_carrier(path):
+    """Cut the sacrificial carrier off the front of a generation.
+
+    The carrier ("Okay. ") is always followed by the model's natural
+    end-of-sentence pause. That pause is the LONGEST quiet run in the
+    first 2.5s (inter-word gaps are far shorter), so we find the
+    longest contiguous sub -42dB run between 0.3s and 2.5s, cut 30%
+    into it, and apply a 15ms fade-in to kill clicks. Rewrites the
+    file with a correct WAV header. Fail-safe: if no run of >=150ms
+    is found the file is left untouched.
+    """
+    import numpy as np
+    import struct
+    with open(path, "rb") as f:
+        data = f.read()
+    di = data.find(b"data")
+    if di < 0 or len(data) < 44:
+        return False
+    fmt = data[12:36]
+    channels = struct.unpack("<H", fmt[10:12])[0]
+    sr = struct.unpack("<I", fmt[12:16])[0]
+    bits = struct.unpack("<H", fmt[22:24])[0]
+    if bits != 16:
+        return False
+    pcm = np.frombuffer(data[di + 8:], dtype=np.int16).copy().astype(np.float32)
+    step = int(sr * 0.05)
+    frames = []
+    end = min(int(sr * 2.5), len(pcm) - step)
+    for k in range(int(sr * 0.3), end, step):
+        seg = pcm[k:k + step]
+        frames.append(20 * np.log10(float(np.sqrt((seg ** 2).mean())) / 32768.0 + 1e-9))
+    best = (0, 0, 0)  # start_frame, end_frame, length_frames
+    cur = None
+    for idx, db in enumerate(frames):
+        if db < -42:
+            cur = [idx, idx] if cur is None else [cur[0], idx]
+        elif cur is not None:
+            runlen = cur[1] - cur[0] + 1
+            if runlen > best[2]:
+                best = (cur[0], cur[1], runlen)
+            cur = None
+    if cur is not None:
+        runlen = cur[1] - cur[0] + 1
+        if runlen > best[2]:
+            best = (cur[0], cur[1], runlen)
+    if best[2] < 3:  # need >=150ms of quiet
+        return False
+    cut_frame = best[0] + int(best[2] * 0.3)
+    cut = int(sr * 0.3) + cut_frame * step
+    if cut > len(pcm) - sr:
+        return False
+    out = pcm[cut:].astype(np.float32)
+    nfade = int(sr * 0.015)
+    if len(out) > nfade:
+        out[:nfade] *= np.linspace(0, 1, nfade)
+    raw = np.clip(out, -32768, 32767).astype(np.int16).tobytes()
+    nframes = len(raw) // (channels * 2)
+    head = struct.pack("<4sI4s4sIHHIIHH4sI",
+                       b"RIFF", 36 + len(raw), b"WAVE",
+                       b"fmt ", 16, 1, channels, sr,
+                       sr * channels * 2, channels * 2, 16,
+                       b"data", len(raw))
+    with open(path, "wb") as f:
+        f.write(head + raw)
+    return True
+
+
 def _download(url, path):
     req = urllib.request.Request(url, headers={"User-Agent": "voice-studio/1.0"})
     with urllib.request.urlopen(req, timeout=120) as r:
@@ -37,10 +110,14 @@ def _download(url, path):
 
 
 def gen_vc(key, text, path):
-    """Engine A: qwen3-tts-vc voice clone, plain text, no emotion controls."""
+    """Engine A: qwen3-tts-vc voice clone, plain text, no emotion controls.
+
+    Prepends the CARRIER to absorb the model's onset stumble, then
+    trims it off. The returned file starts cleanly on the real text.
+    """
     dashscope.base_http_api_url = WS_HTTP
     try:
-        resp = VC.call(model=VC_MODEL, text=text, api_key=key,
+        resp = VC.call(model=VC_MODEL, text=CARRIER + text, api_key=key,
                        workspace=WS, voice=VC_VOICE)
     except Exception as e:
         raise AlibabaError("request failed: %s" % str(e)[:200])
@@ -55,6 +132,7 @@ def gen_vc(key, text, path):
     if not aurl:
         raise AlibabaError("no audio URL in provider response")
     _download(aurl, path)  # URLs are signed and expire; fetch immediately
+    _trim_carrier(path)  # fail-safe: no-op when no silence window found
 
 
 def gen_plus(key, text, instruction, path):
@@ -70,7 +148,7 @@ def gen_plus(key, text, instruction, path):
                      format=AudioFormat.WAV_24000HZ_MONO_16BIT,
                      instruction=instruction, language_hints=["en"],
                      workspace=WS, url=WS_WSS)
-        data = synth.call(text, timeout_millis=180000)
+        data = synth.call(CARRIER + text, timeout_millis=180000)
     except Exception as e:
         raise AlibabaError("request failed: %s" % str(e)[:200])
     if isinstance(data, (bytearray, memoryview)):
@@ -79,3 +157,4 @@ def gen_plus(key, text, instruction, path):
         raise AlibabaError("no usable audio returned")
     with open(path, "wb") as f:
         f.write(data)
+    _trim_carrier(path)  # fail-safe: no-op when no silence window found
