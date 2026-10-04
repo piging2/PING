@@ -1,0 +1,47 @@
+# PING LinkedIn engagement worker policy (candidate).
+#
+# This is what the LinkedIn 2-hour engagement pass worker actually needs.
+# It must be CONTAINED in ping-operator-boundary.yaml; the prover checks:
+#   openshell-prover check --boundary ping-operator-boundary.yaml \
+#       ping-linkedin-worker.yaml
+#
+# What the worker does (from the standing pass definition):
+#   - Step 0: authority gate (read-only file checks)
+#   - Login gate: CDP read against Pig :9224 (read-only DOM check)
+#   - Discovery: read-only browsing of LinkedIn company/post pages
+#   - Eligibility: local deterministic filter (no network)
+#   - Dispatch: CDP-driven likes + connection invites via Pig Chrome
+#   - Outcomes: append to local ledger files
+#
+# Least privilege applied:
+#   - Network: linkedin.com ONLY. No facebook/instagram/x/threads rules even
+#     though the boundary allows them; this worker has no business there.
+#   - Filesystem: workdir (outreach tree) read-only except scratch; the
+#     worker appends to ledger files under /sandbox/scratch.
+#   - No credential material anywhere in the sandbox. If the worker ever
+#     needs an API token, it comes via an OpenShell provider attachment,
+#     resolved by the supervisor only at the approved endpoint.
+
+version: 1
+
+filesystem_policy:
+  include_workdir: true
+  read_only: [/bin, /usr, /lib, /proc, /dev/urandom, /app, /etc, /var/log]
+  read_write: [/tmp, /sandbox]
+
+landlock:
+  compatibility: best_effort
+
+process:
+  run_as_user: "1500"
+  run_as_group: "1500"
+
+network_policies:
+  linkedin:
+    name: linkedin-platform
+    endpoints:
+      - host: www.linkedin.com
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }

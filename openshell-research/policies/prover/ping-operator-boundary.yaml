@@ -1,0 +1,102 @@
+# PING operator boundary policy for outreach workers.
+#
+# OPERATOR-OWNED. This is the absolute ceiling: no PING outreach worker
+# sandbox may ever be granted more than this file allows. It is the
+# OpenShell expression of Nolan's standing authority posture:
+#   - deny by default; every destination explicitly listed
+#   - least privilege on filesystem (read-only system, scratch-only writes)
+#   - unprivileged process identity, no escalation paths
+#   - credentials never enter the sandbox (provider-mediated only)
+#
+# The policy prover (openshell-prover check --boundary this file) formally
+# verifies that any candidate worker policy is CONTAINED in this boundary
+# before it is applied. A candidate that adds a destination, a writable
+# path, or a privilege outside this file FAILS closed.
+#
+# Design notes / open questions (honest, not production-final):
+#   - The LinkedIn/FB/IG/X/Threads workers today drive Pig-local Chrome via
+#     CDP (:9223/:9224). Under the Docker runtime the workload container has
+#     no network of its own; CDP reachability from inside the sandbox is a
+#     topology decision for Phase 2 (supervisor-mediated loopback rule vs.
+#     running the worker natively on the Pig with MXC). The boundary below
+#     lists the platform UI/API endpoints as the network ceiling so the
+#     mechanism is demonstrable today.
+#   - Filesystem paths assume the sandbox workdir is mounted at the PING
+#     outreach tree. Phase 2 pins the exact mount.
+
+version: 1
+
+filesystem_policy:
+  read_only: [/bin, /usr, /lib, /proc, /dev/urandom, /app, /etc, /var/log]
+  read_write: [/tmp, /sandbox]
+
+landlock:
+  compatibility: best_effort
+
+process:
+  run_as_user: "1500"
+  run_as_group: "1500"
+
+network_policies:
+  # --- Social platform surfaces (outreach worker class ceiling) ---
+  linkedin:
+    name: linkedin-platform
+    endpoints:
+      - host: www.linkedin.com
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }
+  facebook:
+    name: facebook-platform
+    endpoints:
+      - host: www.facebook.com
+        port: 443
+      - host: graph.facebook.com
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }
+  instagram:
+    name: instagram-platform
+    endpoints:
+      - host: www.instagram.com
+        port: 443
+      - host: graph.instagram.com
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }
+  x_platform:
+    name: x-platform
+    endpoints:
+      - host: x.com
+        port: 443
+      - host: api.x.com
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }
+  threads:
+    name: threads-platform
+    endpoints:
+      - host: www.threads.net
+        port: 443
+      - host: graph.threads.net
+        port: 443
+    binaries:
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/python3 }
+
+  # --- PING control plane (evidence/audit backhaul; read-only posture) ---
+  # Workers report evidence; they never receive credentials here.
+  ping_journal:
+    name: ping-journal-read
+    endpoints:
+      - host: journal.internal
+        port: 8200
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - { path: /usr/bin/python3 }
