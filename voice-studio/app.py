@@ -27,6 +27,7 @@ access_log.setLevel(logging.INFO)
 sys.path.insert(0, BASE)
 from engines.alibaba import gen_vc, gen_plus, AlibabaError
 from engines.local_qwen import gen_local
+from engines.audio_fix import pitch_shift_file
 
 
 def get_key():
@@ -99,6 +100,11 @@ def generate():
     engine = (data.get("engine") or "B").upper()
     text = (data.get("text") or "").strip()
     emotion = (data.get("emotion") or "restrained").lower()
+    try:
+        pitch = float(data.get("pitch", -1.5))
+    except (TypeError, ValueError):
+        pitch = -1.5
+    pitch = max(-4.0, min(2.0, pitch))
 
     if engine not in ("A", "B", "C", "D"):
         return jsonify({"ok": False, "error": "Unknown engine"}), 400
@@ -135,11 +141,14 @@ def generate():
         access_log.info("GEN fail engine=%s no-audio", engine)
         return jsonify({"ok": False, "error": "Generation produced no audio.",
                         "engine": engine}), 500
+    if pitch:
+        pitch_shift_file(path, pitch)
+        access_log.info("GEN pitch engine=%s shift=%.1f st", engine, pitch)
     access_log.info("GEN done engine=%s file=%s bytes=%d chunks=%d", engine,
                     fname, os.path.getsize(path), len(chunks))
     return jsonify({"ok": True, "audio_url": "/audio/" + fname,
                     "file_path": path, "engine": engine, "chars": len(text),
-                    "chunks": len(chunks)})
+                    "chunks": len(chunks), "pitch": pitch})
 
 
 def _split_chunks(text):

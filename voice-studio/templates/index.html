@@ -46,9 +46,9 @@
   <div>
     <label for="engine">Voice engine</label>
     <select id="engine">
-      <option value="B" selected>B: Expressive (Alibaba)</option>
+      <option value="A" selected>A: Voice clone (Alibaba)</option>
+      <option value="B">B: Expressive (Alibaba)</option>
       <option value="C">C: Expressive strong (Alibaba)</option>
-      <option value="A">A: Voice clone (Alibaba)</option>
       <option value="D">D: Local Qwen3-TTS</option>
     </select>
   </div>
@@ -58,6 +58,11 @@
       <option value="restrained" selected>Restrained</option>
       <option value="strong">Strong</option>
     </select>
+  </div>
+  <div>
+    <label for="depth">Depth <span id="depthval">-1.5</span> st</label>
+    <input type="range" id="depth" min="-3" max="0" step="0.5" value="-1.5"
+           oninput="document.getElementById('depthval').textContent = this.value">
   </div>
 </div>
 
@@ -86,6 +91,7 @@ async function generate() {
   var text = document.getElementById("text").value.trim();
   var engine = document.getElementById("engine").value;
   var emotion = document.getElementById("emotion").value;
+  var pitch = parseFloat(document.getElementById("depth").value);
   var btn = document.getElementById("go");
   if (!text) { setStatus("Type or paste some text first.", true); return; }
   btn.disabled = true;
@@ -97,7 +103,8 @@ async function generate() {
     var r = await fetch("/api/generate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({engine: engine, text: text, emotion: emotion})
+      body: JSON.stringify({engine: engine, text: text, emotion: emotion,
+                          pitch: pitch})
     });
     var j = await r.json();
     if (!j.ok) {
