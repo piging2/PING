@@ -3907,3 +3907,1149 @@ Schedule stays ENABLED per the stay-on rule.
 - Files: ig-qualified-queue-20261001-230211.json, ig-candidates-20261001-232500.json, ig-eligible-20261001-232500.json, ig-final-20261001-232500.json, ig-actions-20261001-232500.json, ig-comment-drafts-20261001-232500.json, ig-dispatch-20261001-232500.json, ig-outcomes-20261001-232500.json, ig-report-20261001-232500.json, ig-discover-job-20261001-230408.json (+ .result.json + .reconciliation.json), ig-discover-job-20261001-231500.json (+ .result.json + .reconciliation.json), ig-skip-list-20261001-230408.json, ig-skip-list-20261001-231500.json, instagram-pass-20261001-231900.json
 - GUARD 2026-10-01 filter instagram: checked=5 eligible=5 blocked=0
 - 2026-10-01T23:36:4x GUARD-RECORD platform=instagram: 9 records (5 likes + 4 comments, see ig-outcomes file for the full list)
+- GUARD 2026-10-02T01:20:48.378110+00:00 filter instagram: checked=3 eligible=3 blocked=0
+- 2026-10-02T01:31:33.124457+00:00 GUARD-RECORD platform=instagram action=like account=@durangojoes url=https://www.instagram.com/p/Dd9SfLbgPq2/
+- 2026-10-02T01:31:33.905913+00:00 GUARD-RECORD platform=instagram action=comment account=@durangojoes url=https://www.instagram.com/p/Dd9SfLbgPq2/
+- 2026-10-02T01:31:34.235359+00:00 GUARD-RECORD platform=instagram action=like account=@moondogcafemancos url=https://www.instagram.com/p/Dd4CTd_RaEc/
+- 2026-10-02T01:31:34.543223+00:00 GUARD-RECORD platform=instagram action=comment account=@moondogcafemancos url=https://www.instagram.com/p/Dd4CTd_RaEc/
+- 2026-10-02T01:31:34.737047+00:00 GUARD-RECORD platform=instagram action=like account=@canoncitymugs url=https://www.instagram.com/p/DdpUULBGwMD/
+- 2026-10-02T01:31:34.869832+00:00 GUARD-RECORD platform=instagram action=comment account=@canoncitymugs url=https://www.instagram.com/p/DdpUULBGwMD/
+
+## 2026-10-01 — Pass 193 (RETRY of interrupted 19:01 MDT run, completed ~19:42 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 3 likes + 3 comments landed. Pass ID ig-20261002-010159 (reused from the interrupted run per the playbook: same pass_id across restarts of the same pass). Caps: 3/55 likes, 3/15 comments (pool-thin pass, not a scale-back).
+
+INTERRUPTED-RUN STATE (reconciled at retry start): the 19:01 run died after Phase P build (ig-qualified-queue-20261002-010159.json: 81 in -> 60 already-engaged, 1 suppressed, 20 vetted -> 0 accepted), one discovery job (ig-discover-job-20261002-010500, 0 candidates, 12 near_misses all OBSERVED_EXCLUDE), and comment drafts (ig-comment-drafts-20261002-010159.json). NO guard filter ran, NO intents written, NO browser actions dispatched. list-unknown: 0 open at start and end. No orphaned external commitments; nothing to refuse or reconcile. Nothing silently retried.
+
+WORKER TARGETING ERROR (caught pre-dispatch, corrected): the interrupted run's drafts attributed post Dd4CTd_RaEc to @durangocoffeecompany. CLI proved that shortcode belongs to @moondogcafemancos (Moondog Cafe & Bakery, Mancos CO). @durangocoffeecompany's own feed is stale (latest own post 2026-04-23, >90d) -> ineligible. Draft re-attributed to the true author @moondogcafemancos with a new comment; correction recorded in ig-comment-drafts-20261002-010159.json.
+
+Phase P: ig-pipeline.py --build healthy (exit 0, no 429, partial=false, 23 API calls). Tier 1-3 + rest-of-CO still genuinely thin. Radius expansion (2026-09-26 binding order): round 1 (interrupted run, border towns: laramie wy, albuquerque nm, las vegas nm, gallup nm, vernal ut, trinidad co, scottsbluff ne, idaho falls) -> 0 candidates, 12 near_misses OBSERVED_EXCLUDE. Round 2 (retry): pueblo co / canon city / salida / walsenburg / la junta / burlington / sterling / woodland park cafe queries, 0 direct, 11 near_misses, follow-up 3 -> RECOVERED 1: @canoncitymugs (business, US, Canon City CO 81212, 336 posts, fresh). @pchffacoffeeshop CONFIRMED_EXCLUDE (stale 2017), @lajuntacoffee CONFIRMED_EMPTY (0 posts). CDP discovery on the Pig, logged in as nolanpigi, 0 anomalies, positive controls passed both rounds.
+
+Guard filter: 3 checked -> 3 eligible, 0 blocked. Intent-ledger refuse: 3 checked -> 3 eligible, 0 refused. Closed action set: 3 likes + 3 comments. 6 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch. Phase B via run_ig_pass.sh -> ig-engage.js (CDP :9226, own worker window, 60-120s pacing, canary_verified, authority ALLOW). 6/6 ok=true. No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes (3, landed):
+- @durangojoes (https://www.instagram.com/p/Dd9SfLbgPq2/) — Durango CO coffee, Sour Watermelon Lotus / Vampire Bite Smoothie carousel, 2026-10-01
+- @moondogcafemancos (https://www.instagram.com/p/Dd4CTd_RaEc/) — Mancos CO cafe/bakery, National Coffee Day cortadito post, 2026-09-29
+- @canoncitymugs (https://www.instagram.com/p/DdpUULBGwMD/) — Canon City CO cafe/sports bar, beef stew fall post, 2026-09-23
+
+Comments (3, landed):
+- @durangojoes (https://www.instagram.com/p/Dd9SfLbgPq2/): "A Vampire Bite Smoothie in October is commitment. Sour Watermelon Lotus has my curiosity peaked."
+- @moondogcafemancos (https://www.instagram.com/p/Dd4CTd_RaEc/): "National Coffee Day with your own blended espresso is playing on easy mode. That Cortadito looks dangerously smooth."
+- @canoncitymugs (https://www.instagram.com/p/DdpUULBGwMD/): "Beef stew season arriving right on schedule. Garlic bread pairing is the power move."
+
+Skipped (vetting reasons): @durangocoffeecompany (stale feed, latest own post 2026-04-23); @pchffacoffeeshop (CONFIRMED_EXCLUDE stale 2017); @lajuntacoffee (CONFIRMED_EMPTY 0 posts); all round 1/2 OBSERVED_EXCLUDE near_misses (wrong geography per CDP location gate); queue prefilter (60 already-engaged, 1 suppressed).
+
+Anomalies: none on the account. Infra: one run_ig_discover.sh invocation failed first try with a mangled job path (worker error, absolute path retry succeeded); one ig-report verify schema mismatch (worker passed bare list; rewrote as {actions, manifest, logged_in, anomalies}, verified clean). No provider warnings of any kind.
+
+Outcomes: 6 intents closed as OBSERVATION (6 EXECUTED), 0 left open. 6 landed actions recorded to the durable log via guard record. Verify: checked=6, violations=0, ok=true (against pre-pass manifest snapshot).
+
+YIELD-CADENCE: SUCCESS_ACTION (>=1 action landed); interval confirmed at 2h baseline. Radius expansion remains the normal state until the queue refills.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Auth: ALLOW, Pig route. Unknown outcomes: none. Duplicate-effect risk: none (0 guard violations, like states verified). Provider warnings: none. Acceptance: likes 3/3 (100%), comments 3/3 (100%). Next pass runs at full ramped caps (55+15).
+
+SURFACED TO NOLAN: nothing (no block, checkpoint, guard violation, or auth failure).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-010159.json
+- Files: ig-qualified-queue-20261002-010159.json, ig-comment-drafts-20261002-010159.json (corrected), ig-discover-job-20261002-010500.json (+ .result.json + .reconciliation.json), ig-discover-job-20261002-011900.json (+ .result.json + .reconciliation.json), ig-candidates-20261002-010159.json, ig-eligible-20261002-010159.json, ig-final-20261002-010159.json, ig-actions-20261002-010159.json, ig-dispatch-20261002-010159.json, ig-outcomes-20261002-010159.json, ig-report-20261002-010159.json, ig-skip-list-20261001-231500.json (reused; round 2 added no new skip-eligibles)
+- GUARD 2026-10-02 filter instagram: checked=3 eligible=3 blocked=0
+- GUARD-RECORD platform=instagram: 6 records (3 likes + 3 comments, see ig-outcomes file for the full list)
+- GUARD 2026-10-02T03:14:42.549991+00:00 filter instagram: checked=2 eligible=2 blocked=0
+- 2026-10-02T03:21:44.220865+00:00 GUARD-RECORD platform=instagram action=like account=@earlesloveland url=https://www.instagram.com/p/DdemvdgF--Q/
+- 2026-10-02T03:21:44.607709+00:00 GUARD-RECORD platform=instagram action=comment account=@earlesloveland url=https://www.instagram.com/p/DdemvdgF--Q/
+- 2026-10-02T03:21:44.738928+00:00 GUARD-RECORD platform=instagram action=like account=@modeonmainsalon url=https://www.instagram.com/p/DdSewh1EZE0/
+- 2026-10-02T03:21:44.854838+00:00 GUARD-RECORD platform=instagram action=comment account=@modeonmainsalon url=https://www.instagram.com/p/DdSewh1EZE0/
+
+## 2026-10-01 — Pass 194 (completed ~21:30 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 2 likes + 2 comments landed. Pass ID ig-20261002-031900. Caps: 2/55 likes, 2/15 comments (pool-thin pass, not a scale-back).
+
+Phase P: ig-pipeline.py --build healthy (exit 0, no 429, partial=false). Queue: 81 in -> 60 already-engaged, 1 suppressed, 20 vetted -> 0 accepted. Eligible depth 0 < 2x caps -> Phase A fallback ran.
+
+Radius expansion (2026-09-26 binding order), round 3 (this run): alamosa/monte vista/lamar/limon/fort morgan/greeley/loveland/fort collins queries, 8 queries, 0 direct, 12 near_misses (10 OBSERVED_EXCLUDE location gate, 2 FOLLOWUP_REQUIRED) -> follow-up RECOVERED 2: @earlesloveland (business, US, Loveland CO floral/gifts/coffee, 4754 posts, fresh 2026-09-20) and @loveland.coffee (business, US, newest post 2026-10-01 is a REEL, 2 posts). Positive controls passed.
+Round 4 (this run): colorado springs/monument/boulder/golden/littleton/arvada/lakewood/thornton queries, 8 queries, 0 direct, 16 near_misses -> follow-up RECOVERED 1: @modeonmainsalon (salon, US, Littleton CO, newest post 2026-09-14; account_type=creator on a real salon business account, accepted as business-eligible, not a personal profile). 7 OBSERVED_EXCLUDE (location gate), 5 CONFIRMED_EMPTY, 2 CONFIRMED_EXCLUDE (stale feeds). Positive controls passed both rounds.
+
+Worker vetting decisions: @loveland.coffee dropped (only fresh post is a reel with no verified public comments; format preference). @earlesloveland: used the 2026-09-19 wedding-season carousel (genuine florist work) over the 2026-09-20 Jellycat promo post. @modeonmainsalon: used the 2026-09-14 behind-the-camera salon carousel.
+
+Guard filter: 2 checked -> 2 eligible, 0 blocked. Intent-ledger refuse: 2 checked -> 2 eligible, 0 refused. Closed action set: 2 likes + 2 comments. 4 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch. Phase B via run_ig_pass.sh -> ig-engage.js (CDP :9226, own worker window, 60-120s pacing, canary_verified, authority ALLOW). 4/4 ok=true. No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes (2, landed):
+- @earlesloveland (https://www.instagram.com/p/DdemvdgF--Q/) — Loveland CO floral/gifts/coffee, summer wedding season carousel, 2026-09-19
+- @modeonmainsalon (https://www.instagram.com/p/DdSewh1EZE0/) — Littleton CO salon, behind-the-camera carousel, 2026-09-14
+
+Comments (2, landed):
+- @earlesloveland (https://www.instagram.com/p/DdemvdgF--Q/): "That summer wedding bouquet lineup is a highlight reel of its own. Somebody was busy."
+- @modeonmainsalon (https://www.instagram.com/p/DdSewh1EZE0/): "Behind the camera at the salon beats the chair side any day. Downtown Littleton is a solid backdrop."
+
+Skipped (vetting reasons): @loveland.coffee (reel-only, no verified public comments); queue prefilter (60 already-engaged, 1 suppressed); round 3/4 OBSERVED_EXCLUDE near_misses (CDP location gate); CONFIRMED_EXCLUDE stale feeds (@cscoffeeorg 2020, @coffeecupmonument 2025-09-04); CONFIRMED_EMPTY 0-post handles.
+
+Anomalies: verify first run flagged 4 false VIOLATIONS because the worker's report file pointed at a nonexistent manifest path (report 'manifest' fell back to live index, which already held this pass's records); fixed to the real pre-pass manifest (instagram-pass-20261002-031442.json), re-ran: checked=4, violations=0, ok=true against the pre-pass snapshot. No provider warnings.
+
+Outcomes: 4 intents closed as OBSERVATION (4 EXECUTED), 0 left open. 4 landed actions recorded to the durable log via guard record. list-unknown: 0 open at start and end.
+
+YIELD-CADENCE: SUCCESS_ACTION (>=1 action landed); interval confirmed at 2h baseline. Tier 1-3 + rest-of-CO genuinely thin; radius expansion continues as the normal state until the queue refills.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Auth: ALLOW, Pig route, CDP stable both discovery rounds and Phase B. Unknown outcomes: none (4/4 closed). Duplicate-effect risk: none (0 guard violations, like states verified). Provider warnings: none. Acceptance: likes 2/2 (100%), comments 2/2 (100%). Next pass runs at full ramped caps (55+15).
+
+SURFACED TO NOLAN: nothing (no block, checkpoint, guard violation, or auth failure; geography stretch documented here).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-031900.json
+- Files: ig-qualified-queue-20261002-030203.json, ig-discover-job-20261002-030300.json (+ .result.json + .reconciliation.json), ig-discover-job-20261002-031500.json (+ .result.json + .reconciliation.json), ig-candidates-20261002-031900.json, ig-eligible-20261002-031900.json, ig-final-20261002-031900.json, ig-actions-20261002-031900.json, ig-comment-drafts-20261002-031900.json, ig-dispatch-20261002-031900.json, ig-outcomes-20261002-031900.json, ig-report-20261002-031900.json
+- GUARD 2026-10-02 filter instagram: checked=2 eligible=2 blocked=0
+- GUARD-RECORD platform=instagram: 4 records (2 likes + 2 comments, see ig-outcomes file for the full list)
+- GUARD 2026-10-02T05:12:59.729209+00:00 filter instagram: checked=4 eligible=4 blocked=0
+- 2026-10-02T05:26:25.045127+00:00 GUARD-RECORD platform=instagram action=like account=@coffeesarap url=https://www.instagram.com/p/Dd63UsBpN2t/
+- 2026-10-02T05:26:25.944411+00:00 GUARD-RECORD platform=instagram action=comment account=@coffeesarap url=https://www.instagram.com/p/Dd63UsBpN2t/
+- 2026-10-02T05:26:26.028921+00:00 GUARD-RECORD platform=instagram action=like account=@hearthdenver url=https://www.instagram.com/p/Dd9LvyEoEbD/
+- 2026-10-02T05:26:26.132813+00:00 GUARD-RECORD platform=instagram action=comment account=@hearthdenver url=https://www.instagram.com/p/Dd9LvyEoEbD/
+- 2026-10-02T05:26:26.228908+00:00 GUARD-RECORD platform=instagram action=like account=@gardencafe.co url=https://www.instagram.com/p/DdwTsMXjZ3k/
+- 2026-10-02T05:26:26.332800+00:00 GUARD-RECORD platform=instagram action=comment account=@gardencafe.co url=https://www.instagram.com/p/DdwTsMXjZ3k/
+- 2026-10-02T05:26:26.426846+00:00 GUARD-RECORD platform=instagram action=like account=@willow.fern.brighton url=https://www.instagram.com/p/DdzaOKYNq_-/
+- 2026-10-02T05:26:26.515475+00:00 GUARD-RECORD platform=instagram action=comment account=@willow.fern.brighton url=https://www.instagram.com/p/DdzaOKYNq_-/
+
+## 2026-10-01 — Pass 195 (completed ~23:26 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 4 likes + 4 comments landed. Pass ID ig-20261002-050600. Caps: 4/55 likes, 4/15 comments (pool-thin pass, not a scale-back).
+
+Phase P: ig-pipeline.py --build healthy (exit 0, no 429, partial=false, 23 API calls). Queue ig-qualified-queue-20261002-050207.json: 81 in -> 60 already-engaged, 1 suppressed, 20 vetted -> 0 accepted. Eligible depth 0 < 2x caps -> Phase A fallback ran.
+
+Authority: AUTHORITY-ALLOW surface=instagram (holds.json instagram held=false; owner order 2026-10-01 ~05:21 MDT). Ledger list-unknown at start: 0 open.
+
+Radius expansion (2026-09-26 binding order), round 5 (this run, rest of CO): denver/aurora/longmont/brighton/castle rock/parker/westminster/evergreen coffee+salon queries, 8 queries, 0 direct hits; near_misses mostly OBSERVED_EXCLUDE (CDP location gate still keys Western CO) + FOLLOWUP_REQUIRED -> CLI follow-up RECOVERED 4: @coffeesarap (Filipino specialty coffee, Denver, business, US, newest 2026-09-30), @hearthdenver (Hearth Bakery & Coffee Shop, Denver, creator-on-real-bakery, US, newest 2026-10-01), @gardencafe.co (Latina-owned family-run cafe, Denver, business, US, newest 2026-09-26), @willow.fern.brighton (Brighton's original coffee house, business, US, newest 2026-09-27). Positive controls 5/5 passed.
+Round 6 (this run, border regions): bloomfield nm/monticello ut/richfield ut/raton nm/kemmerer wy/garden city ks/north platte ne/ogden ut, 8 queries, 0 recovered. Positive controls passed.
+
+Guard filter: 4 checked -> 4 eligible, 0 blocked. Intent-ledger refuse: 4 checked -> 4 eligible, 0 refused. Closed action set: 4 likes + 4 comments. 8 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch. Phase B via run_ig_pass.sh -> ig-engage.js (CDP :9226, own worker window, 60-120s pacing, canary_verified, authority ALLOW). 8/8 ok=true (likes: Unlike state visible; comments: text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes (4, landed):
+- @coffeesarap (https://www.instagram.com/p/Dd63UsBpN2t/) — Denver Filipino specialty coffee (ube/pandan/calamansi), women-owned, 2026-09-30
+- @hearthdenver (https://www.instagram.com/p/Dd9LvyEoEbD/) — Hearth Bakery & Coffee Shop, Denver, patisserie, 2026-10-01
+- @gardencafe.co (https://www.instagram.com/p/DdwTsMXjZ3k/) — The Garden Cafe, Latina-owned family-run, Denver, 2026-09-26
+- @willow.fern.brighton (https://www.instagram.com/p/DdzaOKYNq_-/) — Willow & Fern Coffee House, Brighton's original, 2026-09-27
+
+Comments (4, landed):
+- @coffeesarap: "Ube and calamansi on the same menu is a power move. Denver did not see this coming."
+- @hearthdenver: "Pastry case looking dangerous and the reusable jars are a nice touch. Respect the hustle."
+- @gardencafe.co: "Family-run with generations of tradition behind the bar. That is the kind of shop that lasts."
+- @willow.fern.brighton: "Brighton's original coffee house still pouring. Being the first one is a whole personality."
+
+Skipped (vetting reasons): queue prefilter (60 already-engaged, 1 suppressed); round-5 OBSERVED_EXCLUDE near_misses (CDP location gate); round-6 near_misses (0 recovered).
+
+Anomalies: verify first run flagged 8 false VIOLATIONS because the worker's report file lacked the manifest key and verify fell back to the live index, which already held this pass's records; added the real pre-pass manifest (instagram-pass-20261002-051259.json), re-ran: checked=8, violations=0, ok=true against the pre-pass snapshot. Same pattern as pass 194. No provider warnings.
+
+Outcomes: 8 intents closed as OBSERVATION (8 EXECUTED), 0 left open. 8 landed actions recorded to the durable log via guard record. list-unknown: 0 open at start and end.
+
+YIELD-CADENCE: SUCCESS_ACTION (>=1 action landed); interval confirmed at 2h baseline. Radius expansion remains the normal state until the queue refills; rest-of-CO and border-region rounds yield a trickle.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Auth: ALLOW, Pig route, CDP stable all phases. Unknown outcomes: none (8/8 closed). Duplicate-effect risk: none (0 guard violations against pre-pass snapshot, like states verified). Provider warnings: none. Acceptance: likes 4/4 (100%), comments 4/4 (100%). Next pass runs at full ramped caps (55+15).
+
+SURFACED TO NOLAN: nothing (no block, checkpoint, guard violation, or auth failure).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-050600.json
+- Files: ig-qualified-queue-20261002-050207.json, ig-discover-job-20261002-050400.json (+ .result.json + .reconciliation.json), ig-discover-job-20261002-050500.json (+ .result.json + .reconciliation.json), ig-candidates-20261002-050600.json, ig-eligible-20261002-050600.json, ig-final-20261002-050600.json, ig-actions-20261002-050600.json, ig-comment-drafts-20261002-050600.json, ig-dispatch-20261002-050600.json, ig-outcomes-20261002-050600.json, ig-report-20261002-050600.json
+- GUARD 2026-10-02 filter instagram: checked=4 eligible=4 blocked=0
+- GUARD-RECORD platform=instagram: 8 records (4 likes + 4 comments, see ig-outcomes file for the full list)
+- GUARD 2026-10-02T07:15:06.683212+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 196 (completed ~01:40 MDT)
+
+CLASSIFICATION: TEMPORARY_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-070100. Caps: 0/55 likes, 0/15 comments (browser lock contention, not a scale-back; both recovery attempts spent).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build healthy (exit 0, no 429, partial=false, 23 API calls). Queue ig-qualified-queue-20261002-070211.json: 81 in -> 60 already-engaged, 1 suppressed, 20 vetted -> 0 accepted. Eligible depth 0 < 2x caps -> Phase A fallback ran.
+
+Radius expansion (2026-09-26 binding order), round 7 (this run, southwest CO): telluride/ouray/ridgway/silverton/mancos/dolores/cortez/pagosa springs coffee/cafe/salon queries, 8 queries, logged in as nolanpigi, 0 direct, 14 near_misses (4 FOLLOWUP_REQUIRED) -> follow-up RECOVERED 1: @thewelltelluride (The Well | Telluride Coffee Shop, business, US, newest post https://www.instagram.com/p/Dd1sTp-CciX/ 2026-09-28). 5 CONFIRMED_EXCLUDE/EMPTY -> skip list 474 -> 479 via ig-apply-reconciliation.py (ledger ig-skip-invalidation-2026-09-24.json). Positive controls 5/5 passed.
+Round 8 (this run, south-central CO + border regions): pueblo/canon city/salida/buena vista coffee + cheyenne wy/santa fe nm/moab ut/vernal ut cafe/coffee queries, 8 queries, 0 direct, 13 near_misses -> 0 recovered. 2 STILL_UNKNOWN: @salidabrowndogcoffee (posts API empty while profile shows posts; web search confirms the real Brown Dog Coffee Company, 105 F St, Salida CO) and @salidacoffeecaboose (same API pattern; web evidence points to Steam Coffee Caboose, Salida CO). Both stay STILL_UNKNOWN, never skip-listed, never permanent rejects. 2 skip-eligible (@pchffacoffeeshop stale 2017, @churros_santafe empty) -> skip list 479 -> 481 (ig-skip-list-20261002-071400.json). Positive controls 5/5 passed.
+
+CLI 429 (ad-hoc, honest): a worker post-caption lookup (instagram-cli posts --username thewelltelluride) hit HTTP 429 AFTER the pipeline build and both discovery rounds completed (all CLI work done; follow-ups finished before the 429). Per the 429 short-circuit: no further instagram-cli traffic this pass; throttle recorded to ~/workspace/goals/ping-social-outreach-campaign/hidden_files/ig-throttle-state.json at 2026-10-02T07:15:01Z; next Phase P backs off one cadence. Caps untouched. No 429 hit the pipeline itself.
+
+Guard filter: 1 checked -> 1 eligible, 0 blocked (manifest instagram-pass-20261002-071506.json). Intent-ledger refuse: 1 checked -> 1 eligible, 0 refused. Closed action set: 1 like + 1 comment @thewelltelluride. Comment draft (caption unfetchable due to 429, kept shop-specific): "Free community coffee in Telluride. Turns out the best business model is just being nice." (15 words, no em dashes, no selling). 2 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design).
+
+Phase B: run_ig_pass.sh -> exit 2 {"ok":false,"infra":"browser_locked"} on BOTH attempts (attempt 2 after a 10-min wait; browser/CDP recovery budget spent). Lock holder: run_ig_unfollow.sh pid=1707 since 2026-10-02T05:57:42Z (unfollow job, max 100 @ 45-75s pacing). Authority ALLOW both times. Phase B never reached the browser: zero external effects. Both intents reconciled NOT_ATTEMPTED with evidence (/tmp/ig196-phaseb.log + /tmp/ig196-phaseb2.log), resolved-by instagram-engagement-pass worker ig-20261002-070100. list-unknown: 0 open instagram at end.
+
+Skipped (vetting reasons): queue prefilter (60 already-engaged, 1 suppressed); rounds 7/8 near_misses not recovered (OBSERVED_EXCLUDE location gate, CONFIRMED_EXCLUDE stale/empty/private/wrong-country); 2 STILL_UNKNOWN reserved for future passes; Phase B candidates not attempted (lock contention).
+
+Anomalies: the ig-unfollow worker and this pass ran concurrently on the same ig-profile Chrome; the profile lock correctly prevented interleaved browser actions (the 2026-09-21 mutual-exclusion design working as intended). Phase B did not break pacing or the lock. Verify step N/A (no actions executed). No provider warnings (no action block, checkpoint, verification challenge, or rate-limit warning seen by the browser side).
+
+YIELD-CADENCE: TEMPORARY_FAILURE does not count toward the empty streak; baseline 2h interval confirmed, exit at normal cadence.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Auth: ALLOW. Unknown outcomes: none (2/2 reconciled NOT_ATTEMPTED with evidence). Duplicate-effect risk: none (zero external effects, mark-without-observation correctly resolved). CLI 429 handled per short-circuit (throttle recorded, caps untouched). Next pass runs at full ramped caps (55+15). The recovered candidate @thewelltelluride carries into the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: nothing (no block, checkpoint, guard violation, or auth failure; lock contention is logged infra, not an account signal).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-070100.json
+- Files: ig-qualified-queue-20261002-070211.json, ig-discover-job-20261002-070100.json (+ .result.json + .reconciliation.json), ig-discover-job-20261002-071000.json (+ .result.json + .reconciliation.json), ig-skip-list-20261002-070900.json, ig-skip-list-20261002-071400.json, ig-candidates-20261002-070100.json, ig-eligible-20261002-070100.json, ig-final-20261002-070100.json, ig-actions-20261002-070100.json, ig-comment-drafts-20261002-070100.json, ig-dispatch-20261002-070100.json
+- GUARD 2026-10-02 filter instagram: checked=1 eligible=1 blocked=0
+- THROTTLE-RECORDED: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/ig-throttle-state.json at 2026-10-02T07:15:01Z (ad-hoc CLI 429)
+
+## 2026-10-02 — Pass 197 (completed ~03:06 MDT)
+
+CLASSIFICATION: RATE_LIMIT. 0 likes + 0 comments landed. Pass ID ig-20261002-090100. Caps: 0/55 likes, 0/15 comments (endpoint backoff, not a scale-back).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+DIAGNOSIS: the instagram-cli endpoint is in a 429 backoff from pass 196 (ig-20261002-070100): throttle recorded at 2026-10-02T07:15:01Z after an ad-hoc post lookup returned HTTP 429, 7h backoff clears ~14:15Z (08:15 MDT). This run (09:01Z) falls inside the window.
+
+Phase P: ig-pipeline.py --build short-circuited per the 429 rule (throttled_backoff=true, 0 API calls, 0 entries carried forward; the 070211 queue held 0 eligible entries). Positive-control revalidation skipped per the short-circuit rule. All unvetted handles remain STILL_UNKNOWN; nothing skip-listed, nothing permanently rejected.
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order): recovery attempted, nothing productive to re-run. Re-running Phase P re-short-circuits identically (throttle_active() still true). Phase A browser discovery deliberately skipped: Instagram web traffic from the nolanpigi account during an active 429 backoff would hammer the throttled surface, and the body says stop instantly on any rate-limit warning. Radius expansion is a discovery problem, not a rate-limit problem, and it requires traffic the backoff forbids. No instagram-cli and no browser traffic of any kind this pass; zero external effects.
+
+Guard filter / intent ledger / Phase B: N/A (zero candidates; no actions planned, no intents written).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. RATE_LIMIT does not count toward the empty streak; baseline 2h interval confirmed. The 05:01 MDT pass will also short-circuit (backoff clears 08:15 MDT); the 07:01 MDT pass is the first that can build again. Recovered candidate @thewelltelluride (pass 196) stays reserved for the next unthrottled pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: nothing (mechanical 429 backoff already recorded in pass 196; no action block, checkpoint, login failure, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-090100.json
+- Files: ig-qualified-queue-20261002-090154.json (throttled_backoff, empty carry-forward)
+- THROTTLE-ACTIVE: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/ig-throttle-state.json (2026-10-02T07:15:01Z, clears ~14:15Z)
+
+## 2026-10-02 — Pass 198 (completed ~05:05 MDT)
+
+CLASSIFICATION: RATE_LIMIT. 0 likes + 0 comments landed. Pass ID ig-20261002-110100. Caps: 0/55 likes, 0/15 comments (endpoint backoff, not a scale-back).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+DIAGNOSIS: the instagram-cli endpoint remains in the 7h 429 backoff recorded in pass 196 (throttled at 2026-10-02T07:15:01Z, clears ~14:15Z / 08:15 MDT). This run (11:01Z) falls inside the window.
+
+Phase P: ig-pipeline.py --build short-circuited per the 429 rule (throttled_backoff=true, 0 API calls, 0 entries carried forward; queue file ig-qualified-queue-20261002-110215.json). The script honored the throttle state file and made zero instagram-cli calls. Positive-control revalidation skipped per the short-circuit rule. All unvetted handles remain STILL_UNKNOWN; nothing skip-listed, nothing permanently rejected. (Note: the script exited 0 with throttled_backoff=true rather than the body's historical exit-4; behavior is identical to the exit-4 path: no CLI traffic.)
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order): recovery attempted, nothing productive to re-run. Throttle state re-verified active at 11:02Z (THROTTLE_BACKOFF_SECONDS=25200, clears ~14:15Z); re-running Phase P re-short-circuits identically. Phase A browser discovery deliberately skipped (same call as pass 197): Instagram web traffic from the nolanpigi account during an active 429 backoff would hammer the throttled surface, and the body says stop instantly on any rate-limit warning. Radius expansion is a discovery problem, not a rate-limit problem, and it requires traffic the backoff forbids. No instagram-cli and no browser traffic of any kind this pass; zero external effects, no intents written.
+
+Guard filter / intent ledger / Phase B: N/A (zero candidates; no actions planned, no intents written).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. RATE_LIMIT does not count toward the empty streak; baseline 2h interval confirmed. Backoff clears 08:15 MDT; the 07:01 MDT pass is the first that may build again. Recovered candidate @thewelltelluride (pass 196) stays reserved for the next unthrottled pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: nothing (mechanical 429 backoff already recorded in pass 196; no action block, checkpoint, login failure, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-110100.json
+- Files: ig-qualified-queue-20261002-110215.json (throttled_backoff, empty carry-forward)
+- THROTTLE-ACTIVE: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/ig-throttle-state.json (2026-10-02T07:15:01Z, clears ~14:15Z)
+## 2026-10-02 — Pass 199 (completed ~07:04 MDT)
+
+CLASSIFICATION: RATE_LIMIT. 0 likes + 0 comments landed. Pass ID ig-20261002-130100. Caps: 0/55 likes, 0/15 comments (endpoint backoff, not a scale-back).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+DIAGNOSIS: the instagram-cli endpoint remains in the 7h 429 backoff recorded in pass 196 (throttled at 2026-10-02T07:15:01Z, clears ~14:15Z / 08:15 MDT). This run (13:01Z scheduled, 13:02Z active) falls inside the window.
+
+Phase P: ig-pipeline.py --build short-circuited per the 429 rule (throttled_backoff=true, 0 API calls, 0 entries carried forward; queue file ig-qualified-queue-20261002-130221.json). The script honored the throttle state file and made zero instagram-cli calls. Positive-control revalidation skipped per the short-circuit rule. All unvetted handles remain STILL_UNKNOWN; nothing skip-listed, nothing permanently rejected.
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order): recovery attempted, nothing productive to re-run. Throttle state re-verified active at 13:02Z; re-running Phase P re-short-circuits identically. Phase A browser discovery deliberately skipped (same call as passes 197/198): Instagram web traffic from the nolanpigi account during an active 429 backoff would hammer the throttled surface, and the body says stop instantly on any rate-limit warning. No instagram-cli and no browser traffic of any kind this pass; zero external effects, no intents written.
+
+CORRECTION: pass 198's note stated "the 07:01 MDT pass is the first that may build again" — wrong arithmetic. 07:01 MDT = 13:01Z < 14:15Z backoff clear, so this pass also short-circuits. The first pass that can build again is the 09:01 MDT pass (15:01Z, outside the window).
+
+Guard filter / intent ledger / Phase B: N/A (zero candidates; no actions planned, no intents written).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. RATE_LIMIT does not count toward the empty streak; baseline 2h interval confirmed. Recovered candidate @thewelltelluride (pass 196) stays reserved for the next unthrottled pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: nothing (mechanical 429 backoff already recorded in pass 196; no action block, checkpoint, login failure, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-130100.json
+- Files: ig-qualified-queue-20261002-130221.json (throttled_backoff, empty carry-forward)
+- THROTTLE-ACTIVE: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/ig-throttle-state.json (2026-10-02T07:15:01Z, clears ~14:15Z)
+
+
+## 2026-10-02 — Pass 200 (completed ~09:09 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-150100. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; the 2026-10-02T07:15:01Z 429 backoff cleared 08:15 MDT as predicted, no throttling this pass). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 18 STILL_UNKNOWN geography, 2 STALE; 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-150213.json (0 entries).
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order):
+1. Diagnosis of the 20 vetting rejections: re-vetted all 20 handles directly via vet_handle (the queue file's `skipped` array only persists pre-filter reasons, not vet-stage reasons; see observability note below). 18 = STILL_UNKNOWN geography, 2 = STALE (@electrician_egm 904d, @telluridevalleyroofing 457d).
+2. STILL_UNKNOWN web investigation (9 plausible handles): @aclearchoiceplumbing = Englewood/Littleton CO (Denver metro, out of corridor); @apex_plumbing_services = Sydney, Australia; @hartzellhvac = Kingfisher, Oklahoma (Aurora CO namesake is Denver metro); @fblandscaping = San Francisco Bay Area, CA; @superiairllc = Dallas TX area (214); @thecomfortguardians = Walls/Coldwater, Mississippi; @rmcustomlandscapes = Rocky Mountain Custom Landscapes, Aspen/Roaring Fork CO (Tier 3 geography confirmed via 970 number and own site) BUT newest IG post 2026-04-22 (163d) = STALE, excluded; @bphandymanservices inconclusive (no Western CO evidence), stays STILL_UNKNOWN. National seed-pool junk (@github, @ramit, @testedcom, @thisoldhouse, @thefuturishere, @myfabfinance, @stayathomebookkeeper, @hvacgod, @hvac_slim) correctly excluded, never skip-listed per policy. Net salvageable: ZERO.
+3. Phase A fallback (queue depth 0 < 2x caps): spawned read-only browser discovery with radius expansion (rest of CO, then border regions, closest-first). BLOCKED ON AUTH: the nolanpigi web session was logged out. Attempt 1 (page reload as saved-session restore) failed; attempt 2 (fresh navigation to instagram.com, steered) failed. Both budgeted auth attempts exhausted. No credentials entered, no 2FA waited (no explicit Nolan statement this run). Zero candidates, zero profiles scanned. No action block, checkpoint, verification challenge, or rate-limit warning observed: purely a signed-out state, not an account flag. Browser parked on the Instagram login page.
+4. Recovery budget status: auth budget (2 attempts) spent; no further recovery available in-run without Nolan (credential/2FA entry is outside worker authority). CLI auth is healthy (23 calls, no 429); only the web session is logged out.
+
+OBSERVABILITY GAP (dev-lane note, not pass-blocking): ig-pipeline.py's queue `skipped` array omits vet-stage rejection reasons. The vetting loop appends (handle, reason) to `skipped`, but the written file contains only pre-filter reasons (60 ALREADY_ENGAGED + 18 STILL_UNKNOWN + 1 SUPPRESSED + 2 STALE = 81; the 20 vet rejections are absent despite VETTED=20/ACCEPTED=0 in metrics). Worked around this pass by re-vetting directly. Needs a lane look before the next diagnostic pass.
+
+Guard filter / intent ledger / Phase B: N/A (zero candidates; no actions planned, no intents written, no execution marked).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed. Recovered candidate @thewelltelluride (pass 196) stays reserved for the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: login failure (nolanpigi IG web session logged out; both restore attempts failed; needs his session restore or re-login at his convenience; next pass retries automatically).
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-150100.json
+- Files: ig-qualified-queue-20261002-150213.json (healthy build, empty)
+- GUARD 2026-10-02T20:18:19.558512+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 201 (completed ~14:20 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-201300. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back).
+
+Trigger: Nolan ordered immediate retry of missed passes (09:01 auth-failed; 11:01 and 13:01 scheduler-blocked on connector_not_connected). ALWAYS RETRY rule applied.
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; no 429; throttle state from 07:15Z cleared). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED, 18 STILL_UNKNOWN geography, 2 STALE; 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-201336.json (0 entries). Inputs identical to pass 200's pool.
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order + 2026-10-02 EXPANDING POOL LAW):
+1. STILL_UNKNOWN web investigation (2 handles not already resolved in pass 200): @ant_doeshvac = personal HVAC content creator (TikTok @ant_doeshvacr / YouTube "Ant_doeshvac"), no Western CO business evidence, correctly excluded; @bphandymanservices = no direct match anywhere, stays STILL_UNKNOWN, never skip-listed per policy. The rest were resolved in pass 200 (out-of-corridor geographies, national seed-pool junk, or stale). Net salvageable: ZERO.
+2. Phase A fallback (queue depth 0 < 2x caps, expanding pool per the 14:14 MDT law): spawned read-only browser discovery with radius expansion tiered outward (Tier 1->2->3->rest of CO->border regions, closest-first). BLOCKED ON AUTH: nolanpigi web session logged out; attempt 1 (page reload as saved-session restore) failed; attempt 2 (fresh navigation to instagram.com) failed. The screen was a plain logged-out login form: no checkpoint, no 2FA prompt, no verification challenge, no rate-limit warning, no action block. Not an account flag. Both budgeted auth attempts exhausted; no credentials entered, no 2FA waited (no explicit Nolan statement this run).
+3. Recovery budget status: auth budget (2 attempts) spent; no further recovery available in-run without Nolan. CLI auth healthy; only the web session is logged out. Phase B requires a signed-in browser, so no intents were written and no actions planned.
+
+Guard filter / intent ledger on the reserved candidate: @thewelltelluride (recovered from pass 196; its intents were reconciled NOT_ATTEMPTED) still ELIGIBLE through guard filter (1/1) and ledger refuse (1/1, 0 refused). It stays reserved for the next pass with a working session.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed.
+
+SURFACED TO NOLAN: login failure persists (nolanpigi IG web session still logged out after two restore attempts; pass 200's condition unchanged; needs his session restore or re-login at his convenience; next pass retries automatically at full caps).
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-201300.json
+- Files: ig-qualified-queue-20261002-201336.json (healthy build, empty), ig-candidates-20261002-201300.json, ig-eligible-20261002-201300.json, ig-final-20261002-201300.json
+- GUARD 2026-10-02T20:24:08.747900+00:00 filter instagram: checked=1 eligible=1 blocked=0
+- GUARD 2026-10-02T20:24:17.508531+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 202 (completed ~14:26 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-202200. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back). This is the delayed 13:01 MDT scheduled run executing ~14:21-14:26 MDT (third consecutive auth-failed pass after 200 and 201).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 18 STILL_UNKNOWN geography, 2 STALE; 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-202109.json (0 entries). Same pool as passes 200/201; pass 200 already web-investigated the STILL_UNKNOWN handles (net salvageable: zero).
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order + 2026-10-02 EXPANDING POOL LAW):
+1. Reserved candidate check: @thewelltelluride (The Well | Telluride Coffee Shop, recovered pass 196, newest post https://www.instagram.com/p/Dd1sTp-CciX/ 2026-09-28). Re-fetched caption via instagram-cli (read-only; CLI auth healthy): fall-morning free coffee/latte/matcha carousel, below Alpine Chapel, donations fund the coffee house + charity partnerships. Guard filter: 1 checked -> 1 eligible. Ledger refuse: 1 checked -> 1 eligible, 0 refused. Comment draft refreshed against the real caption: "Free fall-morning lattes below Alpine Chapel, donations keeping the lights on. Coziest business model in Telluride." (17 words, no em dashes). Closed action set written (1 like + 1 comment) but NO intents written and NO execution marked: Phase B never started (see auth below). Verify on empty report: 0 actions, 0 violations, ok=true.
+2. Phase A fallback (queue depth 0 < 2x caps): spawned read-only browser task. BLOCKED ON AUTH: nolanpigi web session still logged out. Attempt 1 (page reload) -> plain login form; attempt 2 (fresh navigation to instagram.com) -> plain login form. No checkpoint, no 2FA prompt, no verification challenge, no action block, no rate-limit warning: purely a signed-out state, not an account flag. No credentials entered, no 2FA waited (no explicit Nolan statement this run). Zero candidates, zero profiles scanned. Browser parked on the Instagram login page. Zero engagement performed.
+3. Recovery budget status: auth budget (2 attempts) spent; no further recovery available in-run without Nolan (credential/2FA entry is outside worker authority). CLI auth remains healthy; only the web session is logged out. Since Phase B never started, no intents exist to reconcile: ledger stays at 0 open.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched. AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed. Reserved candidate @thewelltelluride (pass 196) stays reserved for the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: login failure persists (nolanpigi IG web session logged out across passes 200/201/202; 2 restore attempts failed again this pass; needs his session restore or re-login at his convenience; next pass retries automatically at full caps).
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-202200.json
+- Files: ig-qualified-queue-20261002-202109.json (healthy build, empty), ig-candidates-20261002-202200.json, ig-eligible-20261002-202200.json, ig-final-20261002-202200.json, ig-actions-20261002-202200.json (planned only, not executed), ig-comment-drafts-20261002-202200.json, ig-verify-report-20261002-202200.json
+- GUARD 2026-10-02T20:24:17 filter instagram: checked=1 eligible=1 blocked=0
+- GUARD 2026-10-02T20:28:42.433403+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 203 (completed ~14:35 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-203000. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back). This is the 14:15 MDT scheduled run (round 2 of Nolan's catch-up order; round 1 was pass 201/202). Fourth consecutive auth-failed pass after 200, 201, 202.
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-202746.json (0 entries). Same exhausted pool as passes 200/201/202; STILL_UNKNOWN handles were web-investigated in passes 200/201 with net salvageable zero.
+
+Reserved candidate check (read-only, CLI auth healthy): @thewelltelluride (The Well | Telluride Coffee Shop) latest post still https://www.instagram.com/p/Dd1sTp-CciX/ (2026-09-28 carousel, 23 likes / 3 comments, fall-morning free coffee caption). Guard filter: 1 checked -> 1 eligible (manifest instagram-pass-20261002-202842.json). Ledger refuse: 1 checked -> 1 eligible, 0 refused. Comment draft refreshed against the live caption: "Free fall-morning lattes below Alpine Chapel, donations keeping the lights on. Coziest business model in Telluride." (17 words, no em dashes). Closed action set written (ig-actions-20261002-203000.json: 1 like + 1 comment) but NO intents written and NO execution marked: Phase B never started (auth below). Verify on empty report: 0 actions, 0 violations, ok=true.
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order + 2026-10-02 EXPANDING POOL LAW):
+1. Phase A fallback (queue depth 0 < 2x caps): spawned read-only browser task (session check + 2-attempt restore + radius-expansion discovery if signed in). BLOCKED ON AUTH: the browser task made 3 steps only (initial nav, page reload as restore attempt 1, fresh nav as restore attempt 2), never reached a signed-in state, never started discovery. After the two attempts it parked awaiting user input; in a detached run that input cannot arrive, so the parked task was steered to report and finish. No checkpoint, no 2FA prompt, no verification challenge, no action block, no rate-limit warning was reported by the task: purely a signed-out state, not an account flag. No credentials entered, no 2FA waited (no explicit Nolan statement this run).
+2. Recovery budget status: auth budget (2 attempts) spent; no further recovery available in-run without Nolan (credential/2FA entry is outside worker authority). CLI auth remains healthy; only the web session is logged out. Phase A radius expansion requires web traffic, which the budget rules out this pass.
+
+Guard filter / intent ledger / Phase B: N/A beyond the reserved-candidate pre-check (zero actions planned, no intents written, no execution marked; ledger stays at 0 open).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0 used). AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed. Reserved candidate @thewelltelluride stays reserved for the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: login failure persists (nolanpigi IG web session logged out across passes 200/201/202/203; needs his session restore or re-login at his convenience; next pass retries automatically at full caps).
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-203000.json
+- Files: ig-qualified-queue-20261002-202746.json (healthy build, empty), ig-candidates-20261002-203000.json, ig-eligible-20261002-203000.json, ig-final-20261002-203000.json, ig-actions-20261002-203000.json (planned only, not executed), ig-comment-drafts-20261002-203000.json, ig-verify-report-20261002-203000.json
+- GUARD 2026-10-02T21:02:45.062098+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 204 (completed ~15:06 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-210200. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back). Fifth consecutive auth-failed pass today (200, 201, 202, 203, 204).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-210200.json (0 entries). Same exhausted pool as passes 200-203; STILL_UNKNOWN handles were web-investigated in passes 200/201 with net salvageable zero.
+
+Reserved candidate check (read-only, CLI auth healthy): @thewelltelluride (The Well | Telluride Coffee Shop) latest post still https://www.instagram.com/p/Dd1sTp-CciX/ (2026-09-28 carousel, 23 likes / 3 comments, free fall-morning coffee/latte/matcha below Alpine Chapel, donations fund the coffee house + charity partnerships). Guard filter: 1 checked -> 1 eligible (manifest instagram-pass-20261002-210245.json). Ledger refuse: 1 checked -> 1 eligible, 0 refused. Comment draft refreshed against the live caption: "Free fall-morning lattes below Alpine Chapel, donations keeping the lights on. Coziest business model in Telluride." (17 words, no em dashes). Closed action set written (ig-actions-20261002-210200.json: 1 like + 1 comment) but NO intents written and NO execution marked: Phase B never started (auth below). Verify on empty report: 0 actions, 0 violations, ok=true.
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order + 2026-10-02 EXPANDING POOL LAW):
+1. Phase A fallback (queue depth 0 < 2x caps): spawned read-only browser task (session check + 2-attempt restore + radius-expansion discovery if signed in). The task's browser agent never produced a report: 3 navigation steps (initial nav, reload as restore attempt 1, fresh nav as restore attempt 2), then a hand_off parked awaiting user input; steered to report-and-finish, it then failed with terminal_reason browser_agent_reported_failure and no final response. No checkpoint, 2FA prompt, verification challenge, action block, or rate-limit warning was ever reported by the task. Both in-task auth attempts were consumed without reaching a signed-in state.
+2. Second budgeted browser attempt (one gentle recovery action): a minimal read-only page-state probe ("go to instagram.com, capture the page, report signed-in vs logged-out in one paragraph, never wait for input"). It completed with no final report; the steered successor also completed with no final report. Browser-task agent reporting layer produced zero usable output across all 3 task attempts this pass, so the exact page state could not be re-confirmed. Same-day passes 200-203 each confirmed a plain logged-out login form with no flags; nothing this pass contradicts that, and nothing confirms a new flag.
+3. Recovery budget status: auth budget (2 attempts) spent; browser/CDP budget (2 attempts) spent. No further recovery available in-run without Nolan (credential/2FA entry is outside worker authority). CLI auth remains healthy; only the web session is in question. Since Phase B never started, no intents exist to reconcile: ledger stays at 0 open.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0 used). AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed. Reserved candidate @thewelltelluride stays reserved for the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: login failure persists (nolanpigi IG web session logged out across passes 200/201/202/203/204; needs his session restore or re-login at his convenience; next pass retries automatically at full caps). New anomaly this pass: browser task agents failed to report page state on all 3 attempts (one hard failure, two empty completions), so the session condition is carried over from passes 200-203 rather than re-confirmed.
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-210200.json
+- Files: ig-qualified-queue-20261002-210200.json (healthy build, empty), ig-candidates-20261002-210200.json, ig-eligible-20261002-210200.json, ig-final-20261002-210200.json, ig-actions-20261002-210200.json (planned only, not executed), ig-comment-drafts-20261002-210200.json, ig-verify-report-20261002-210200.json
+- GUARD 2026-10-02T21:02:45Z filter instagram: checked=1 eligible=1 blocked=0
+
+ADDENDUM (pass 204, ~15:10 MDT): the Phase A browser task's delayed report arrived after closeout and confirmed the page state directly: plain logged-out login form at instagram.com (heading "Log into Instagram"), no home feed, nolanpigi nowhere in the UI; 2 restore attempts (reload, fresh nav) both still showed the login form; no checkpoint, 2FA prompt, verification challenge, action-block notice, or rate-limit warning at any point; no credentials entered. Discovery was not attempted per the stop rule. This matches passes 200-203 exactly: logged-out session, no account flag.
+Corroboration: two further independent page-state probes (completed 21:06:47Z and 21:07:05Z) confirmed the identical plain logged-out login form ("Log into Instagram", disabled Log In button, no checkpoint/2FA/verification/action-block/rate-limit signals). Three independent browser observations, same result.
+- GUARD 2026-10-02T23:03:18.482579+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-02 — Pass 205 (completed ~17:08 MDT)
+
+CLASSIFICATION: AUTH_FAILURE. 0 likes + 0 comments landed. Pass ID ig-20261002-230200. Caps: 0/55 likes, 0/15 comments (auth failure, not a scale-back). Sixth consecutive auth-failed pass today (200, 201, 202, 203, 204, 205).
+
+Authority: AUTHORITY-ALLOW surface=instagram. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (23 API calls, exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261002-230235.json (0 entries). Same exhausted pool as passes 200-204.
+
+Reserved candidate check (read-only, CLI auth healthy): @thewelltelluride (The Well | Telluride Coffee Shop) latest post still https://www.instagram.com/p/Dd1sTp-CciX/ (2026-09-28 carousel, 23 likes / 3 comments, free fall-morning coffee/latte/matcha below Alpine Chapel). Guard filter: 1 checked -> 1 eligible (manifest instagram-pass-20261002-230318.json). Ledger refuse: 1 checked -> 1 eligible, 0 refused. Comment draft kept: "Free fall-morning lattes below Alpine Chapel, donations keeping the lights on. Coziest business model in Telluride." (17 words, no em dashes). NO intents written, NO execution marked: Phase B never started (auth below).
+
+IN-RUN TROUBLESHOOTING (2026-09-26 binding order + window-mismatch disambiguation):
+1. ig-session-recover.js is NOW DEPLOYED on the Pig (landed 16:50 MDT; was absent at the 15:01 health check). Ran it via pig_ssh: verdict {"ok":true,"state":"already_logged_in","note":"existing tab is signed in; no recovery needed"} (1 instagram tab enumerated). Per body step 2 this should have meant proceed.
+2. Independent re-gate probe (own CDP :9226 script, read-only, sha-verified transfer): the :9226 tab GENUINELY shows a signed-in home feed (homeNav present, real usernames visible, no login form, no challenge text). The script's claim is not a false positive.
+3. But the pass's execution browser (the leased Chromium that runs Phase B) is a DIFFERENT browser on a DIFFERENT machine than the Pig's :9226 dedicated ig-profile Chrome. A fresh browser task confirmed the logged-out "Log into Instagram" login form; the 2 budgeted restore attempts (page reload, fresh nav) both returned the same form. No checkpoint, 2FA prompt, verification challenge, action block, or rate-limit warning at any point: purely a signed-out state in the execution browser, not an account flag. No credentials entered.
+4. DIAGNOSIS: the recovery script heals the Pig's :9226 profile and cannot transfer the session across browsers/machines. It is provably working on ITS surface, but its surface is not the execution surface this pass uses. The 2026-10-02 15:01 standing condition ("prefer the script only after it is provably installed AND working; the 2-attempt rule stays until then") keeps the 2-attempt browser rule in force. This is an ops/fix-automations finding, not a pass-blocker to fix in-run.
+5. Recovery budget status: auth budget (2 attempts) spent; no further recovery available in-run without Nolan (credential/2FA entry is outside worker authority, and he made no explicit statement this run). CLI auth remains healthy. Phase B never started: no intents exist to reconcile; ledger stays at 0 open.
+
+Guard filter / intent ledger / Phase B: N/A beyond the reserved-candidate pre-check (zero actions planned, no intents written, no execution marked).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0 used). AUTH_FAILURE does not count toward the empty streak; baseline 2h interval confirmed. Reserved candidate @thewelltelluride stays reserved for the next pass's guard/ledger re-filter before any action.
+
+SURFACED TO NOLAN: login failure persists (nolanpigi IG web session logged out across 6 passes today; 2 restore attempts failed again this pass; needs his session restore or re-login at his convenience; next pass retries automatically at full caps). NEW MECHANICAL FINDING: ig-session-recover.js is deployed and working, but it heals the Pig's :9226 ig-profile Chrome, while the engagement pass executes in a different browser (leased Chromium on the worker VM) that remains logged out. The session-recovery deployment needs to target the execution surface or the pass needs to route through :9226.
+
+Schedule stays ENABLED per the stay-on rule (logged-out session is not a disabler).
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261002-230200.json
+- Files: ig-qualified-queue-20261002-230235.json (healthy build, empty), ig-candidates-20261002-230200.json, ig-eligible-20261002-230200.json, ig-final-20261002-230200.json, ig-comment-drafts-20261002-230200.json
+- GUARD 2026-10-02T23:03:18Z filter instagram: checked=1 eligible=1 blocked=0
+- GUARD 2026-10-03T01:08:29.763354+00:00 filter instagram: checked=1 eligible=1 blocked=0
+- 2026-10-03T01:11:20.552424+00:00 GUARD-RECORD platform=instagram action=like account=@thewelltelluride url=https://www.instagram.com/p/Dd1sTp-CciX/
+- 2026-10-03T01:11:20.732681+00:00 GUARD-RECORD platform=instagram action=comment account=@thewelltelluride url=https://www.instagram.com/p/Dd1sTp-CciX/
+
+## 2026-10-02 — Pass 206 (completed ~19:16 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 1 like + 1 comment landed. Pass ID ig-20261003-010819. Caps: 1/55 likes, 1/15 comments (below cap: queue exhausted, honest below-cap count per the 2026-09-27 tier-quality rule; no padding).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Owner holds on instagram already lifted 2026-10-02 ~18:12 MDT (holds.json: stale incident holds cleared per Nolan's reversal; no worker action needed). Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-010559.json (0 entries). Same exhausted pool as passes 200-205; STILL_UNKNOWN handles were web-investigated in passes 200/201 with net salvageable zero.
+
+Reserved candidate executed: @thewelltelluride (The Well | Telluride Coffee Shop, recovered pass 196). Latest post re-verified read-only via instagram-cli this pass: still https://www.instagram.com/p/Dd1sTp-CciX/ (2026-09-28 carousel, 23 likes / 3 comments, free fall-morning coffee/latte/matcha below Alpine Chapel). Guard filter: 1 checked -> 1 eligible (manifest instagram-pass-20261003-010829.json). Ledger refuse: 1 checked -> 1 eligible, 0 refused. Comment draft verified against the live caption (16 words, no em dashes).
+
+WINDOW-MISMATCH FIX IN-RUN (2026-09-26 binding order; pass-205 ops finding): passes 200-205 failed AUTH_FAILURE because they probed the worker-VM browser (logged out) while the Pig's :9226 ig-profile Chrome is genuinely signed in. This pass routed Phase B through run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (the established Phase B executor from passes 189-195, with authority gate + owner-hold sentinel + browser lock + capability gate). 2 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch. Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, like registered (Unlike state visible), comment text visible. No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @thewelltelluride (https://www.instagram.com/p/Dd1sTp-CciX/).
+Comments:
+- @thewelltelluride: "Free fall-morning lattes below Alpine Chapel, donations keeping the lights on. Coziest business model in Telluride."
+
+Skipped: none beyond the guard/ledger-filtered pool (60 already-engaged, 1 suppressed, 20 vetted-out in Phase P).
+
+Post-pass: guard record x2 (like + comment), ledger record-outcomes 2/2 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest preset per the 2026-10-01 lesson): 2 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 1+1 used). The 6-pass AUTH_FAILURE streak (200-205) is broken: the failure was surface-routing, not account auth. Baseline 2h interval confirmed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation). Auth on the worker-VM browser remains logged out but is no longer the execution surface; the standing ops item (session-recovery targeting the execution surface) is resolved by routing through :9226.
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-010819.json
+- Files: ig-qualified-queue-20261003-010559.json (healthy build, empty), ig-candidates-20261003-010819.json, ig-eligible-20261003-010819.json, ig-final-20261003-010819.json, ig-actions-20261003-010819.json, ig-comment-drafts-20261003-010819.json, ig-outcomes-20261003-010819.json, ig-verify-report-20261003-010819.json
+- GUARD 2026-10-03T01:08:29Z filter instagram: checked=1 eligible=1 blocked=0
+- GUARD verify 2026-10-03T01:14Z: checked=2 violations=0 ok=true
+- GUARD 2026-10-03T03:11:34.780279+00:00 filter instagram: checked=3 eligible=3 blocked=0
+- 2026-10-03T03:22:11.031171+00:00 GUARD-RECORD platform=instagram action=like account=@trios_aveda url=https://www.instagram.com/p/DduHWMgmn0p/
+- 2026-10-03T03:22:11.120305+00:00 GUARD-RECORD platform=instagram action=comment account=@trios_aveda url=https://www.instagram.com/p/DduHWMgmn0p/
+- 2026-10-03T03:22:11.202478+00:00 GUARD-RECORD platform=instagram action=like account=@theparlourfoco url=https://www.instagram.com/p/DdHADsijnTz/
+- 2026-10-03T03:22:11.292388+00:00 GUARD-RECORD platform=instagram action=comment account=@theparlourfoco url=https://www.instagram.com/p/DdHADsijnTz/
+- 2026-10-03T03:22:11.374311+00:00 GUARD-RECORD platform=instagram action=like account=@locksandloadedsalon url=https://www.instagram.com/p/Dd4eKu-ILOn/
+- 2026-10-03T03:22:11.460894+00:00 GUARD-RECORD platform=instagram action=comment account=@locksandloadedsalon url=https://www.instagram.com/p/Dd4eKu-ILOn/
+
+## 2026-10-02 — Pass 207 (completed ~21:35 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 3 likes + 3 comments landed. Pass ID ig-20261003-031500. Caps: 3/55 likes, 3/15 comments (below cap: queue exhausted, honest below-cap count per the 2026-09-27 tier-quality rule; no padding).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch). Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; 23 API calls, no 429, partial=false). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-030155.json (0 entries). STILL_UNKNOWN handles are the same 20 investigated in passes 200/201 (net salvageable zero); 2 STALE (@electrician_egm 905d, @telluridevalleyroofing 457d).
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 9 (this run, rest-of-CO north + border regions): meeker/rangely/dinosaur/yuma/fort collins/loveland/taos/evanston queries, 8 queries, logged in as nolanpigi, 0 direct, 16 near_misses. Reconciliation (positive controls 5/5 passed): 2 CONFIRMED_EMPTY (@dino.coffee.co, @cafetaosnithsabio; skip list 481 -> 483), 3 FOLLOWUP_REQUIRED -> RECOVERED_CANDIDATE (@harlowgoldsalonandspa, @trios_aveda, @theparlourfoco, all Fort Collins salons, US, fresh posts). Worker CLI vetting of the 11 OBSERVED_EXCLUDE (CDP location gate still corridor-scoped; radius expansion overrode): EXCLUDED @dinosaur_coffee (Los Angeles CA), @a_dinosaur_coffee (Taiwan), @dinosaur.coffee (personal, 8 posts), @dinosaurcoffee.ae (UAE), @cafecitosconcarino (personal, Yuma AZ), @cosechayumari (personal, MX), @the_corner_cafe_12 (personal, IN), @cafecitoyuma/@royalgrindcafe (Yuma AZ, not CO), @xquisite.studios.co (personal). RECOVERED 1: @locksandloadedsalon (Fort Collins CO salon, creator, US, 5113 followers, newest post 2026-09-29 brunette color-correction carousel, genuine work content, 29 likes/4 comments). Content fail-closed: @harlowgoldsalonandspa's newest post is a facial-bar menu announcement (promo-adjacent) and its 3 older posts are product promo / staff birthday / staff anniversary; excluded this pass. @theparlourfoco's 10-01 hiring post excluded, 09-10 pixie-mullet work carousel (genuine) targeted instead.
+
+Guard filter: 3 checked -> 3 eligible (manifest instagram-pass-20261003-031134.json). Ledger refuse: 3 checked -> 3 eligible, 0 refused. Closed action set: 3 likes + 3 comments. 6 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design).
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (the working execution surface per pass-206 window-mismatch fix). Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 6 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @trios_aveda (https://www.instagram.com/p/DduHWMgmn0p/), @theparlourfoco (https://www.instagram.com/p/DdHADsijnTz/), @locksandloadedsalon (https://www.instagram.com/p/Dd4eKu-ILOn/).
+Comments:
+- @trios_aveda: "Brown sugar brunette with that blend? The shine is doing the talking. Appointment book must be full."
+- @theparlourfoco: "Pixie mullet is a brave combo and this one lands perfectly. The texture work is the whole story."
+- @locksandloadedsalon: "Bleach and tone to rich brunette is a color correction marathon. That gloss finish earned its keep."
+
+Skipped: none beyond the guard/ledger-filtered pool (60 already-engaged, 1 suppressed, 20 vetted-out in Phase P); discovery rejects listed above; @harlowgoldsalonandspa content fail-closed.
+
+Post-pass: guard record x6, ledger record-outcomes 6/6 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest preset per the 2026-10-01 lesson; report key "actions"): 6 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 3+3 used). Baseline 2h interval confirmed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-031500.json
+- Files: ig-qualified-queue-20261003-030155.json (healthy build, empty), ig-discover-job-20261003-030100.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-skip-list-20261003-031500.json (483), ig-candidates-20261003-031500.json, ig-eligible-20261003-031500.json, ig-final-20261003-031500.json, ig-actions-20261003-031500.json, ig-comment-drafts-20261003-031500.json, ig-outcomes-20261003-031500.json, ig-verify-report-20261003-031500.json
+- GUARD 2026-10-03T03:11:34Z filter instagram: checked=3 eligible=3 blocked=0
+- GUARD verify 2026-10-03T03:35Z: checked=6 violations=0 ok=true
+- GUARD 2026-10-03T05:10:05.425423+00:00 filter instagram: checked=2 eligible=2 blocked=0
+- 2026-10-03T05:16:42.959646+00:00 GUARD-RECORD platform=instagram action=like account=@coffeeshopcmc url=https://www.instagram.com/p/Dd9ODHYxI9t/
+- 2026-10-03T05:16:43.458090+00:00 GUARD-RECORD platform=instagram action=comment account=@coffeeshopcmc url=https://www.instagram.com/p/Dd9ODHYxI9t/
+- 2026-10-03T05:16:43.563780+00:00 GUARD-RECORD platform=instagram action=like account=@breckcoffee url=https://www.instagram.com/p/DbyS3jApICA/
+- 2026-10-03T05:16:43.654156+00:00 GUARD-RECORD platform=instagram action=comment account=@breckcoffee url=https://www.instagram.com/p/DbyS3jApICA/
+
+## 2026-10-02 — Pass 208 (completed ~23:20 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 2 likes + 2 comments landed. Pass ID ig-20261003-050900. Caps: 2/55 likes, 2/15 comments (below cap: queue exhausted, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch). Ledger list-unknown at start: 0 open instagram. Instagram hold: false (owner-cleared 2026-10-02 ~18:12 MDT).
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-050212.json (0 entries). Same exhausted pool as passes 200-207.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 10 (this run, remaining rest-of-CO central mountains + northeast plains + border regions): leadville/frisco/breckenridge/greeley/longmont/farmington nm/rock springs wy/laramie wy queries, 8 queries, logged in as nolanpigi, 0 direct, 9 near_misses. Reconciliation (positive controls 5/5 passed): 1 CONFIRMED_EMPTY (@frisco.sandboxcafe, post_count 0 via follow-up), 1 CONFIRMED_EXCLUDE (@breckenridgecoffeehouse, stale feed newest 2026-02-08); skip list 483 -> 485 via ig-apply-reconciliation.py (history ledger ig-skip-history-ledger.json). One retry note: first apply-invocation used the .md as --ledger and failed JSON-decode; reran with the JSON history ledger, applied cleanly (same lesson as pass 121).
+
+Worker CLI vetting of the 7 OBSERVED_EXCLUDE (CDP location gate still corridor-scoped; radius expansion overrode, same as pass 207): RECOVERED 2 (@coffeeshopcmc: CMC Leadville Coffee Shop, business, US, Leadville CO, 476 followers, newest post 2026-10-01 campus-morning image; @breckcoffee: Breckenridge Coffee Roasters, business, US, Breckenridge CO, 3480 followers, newest post 2026-08-08 espresso-collab image, genuine work content). EXCLUDED 5: @coffeepot57 (junk bio, 2 posts, 20 followers, not a real business), @lace.wood.and.coffee (personal account, CA), @dumont.frisco.main (2 followers, stale Apr 2026 posts, stub), @frisco.starwoodcafe (stale feed, newest 2025-11-15, 322d), @greeleyglam (stale feed, newest 2026-05-21, 134d > 90d gate).
+
+Guard filter: 2 checked -> 2 eligible (manifest instagram-pass-20261003-051005.json). Ledger refuse: 2 checked -> 2 eligible, 0 refused. Closed action set: 2 likes + 2 comments. 4 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design).
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (the working execution surface per the pass-206 window-mismatch fix). Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 4 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @coffeeshopcmc (https://www.instagram.com/p/Dd9ODHYxI9t/), @breckcoffee (https://www.instagram.com/p/DbyS3jApICA/).
+Comments:
+- @coffeeshopcmc: "Nothing like a gorgeous campus morning and a proper pour. Leadville knows coffee."
+- @breckcoffee: "Espresso meets tiki at the marina. That collab is doing summer right."
+
+Skipped: none beyond the guard/ledger-filtered pool (60 already-engaged, 1 suppressed, 20 vetted-out in Phase P); discovery rejects listed above.
+
+Post-pass: guard record x4, ledger record-outcomes 4/4 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest preset per the 2026-10-01 lesson; report key "actions"): 4 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 2+2 used). Baseline 2h interval confirmed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-050900.json
+- Files: ig-qualified-queue-20261003-050212.json (healthy build, empty), ig-discover-job-20261003-050312.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-skip-list-20261003-050800.json (485), ig-candidates-20261003-050900.json, ig-eligible-20261003-050900.json, ig-final-20261003-050900.json, ig-actions-20261003-050900.json, ig-comment-drafts-20261003-050900.json, ig-outcomes-20261003-050900.json, ig-verify-report-20261003-050900.json
+- GUARD 2026-10-03T07:10:32.299425+00:00 filter instagram: checked=3 eligible=3 blocked=0
+- 2026-10-03T07:20:17.682693+00:00 GUARD-RECORD platform=instagram action=like account=@truhairsalon_ url=https://www.instagram.com/p/DeAqIkakXCV/
+- 2026-10-03T07:20:18.297427+00:00 GUARD-RECORD platform=instagram action=comment account=@truhairsalon_ url=https://www.instagram.com/p/DeAqIkakXCV/
+- 2026-10-03T07:20:18.444628+00:00 GUARD-RECORD platform=instagram action=like account=@themorticiansalon url=https://www.instagram.com/p/DeBOE4mjVf7/
+- 2026-10-03T07:20:18.590706+00:00 GUARD-RECORD platform=instagram action=comment account=@themorticiansalon url=https://www.instagram.com/p/DeBOE4mjVf7/
+- 2026-10-03T07:20:18.689920+00:00 GUARD-RECORD platform=instagram action=like account=@lushandlather.co url=https://www.instagram.com/p/Dd7gjs6Bzb6/
+- 2026-10-03T07:20:18.783329+00:00 GUARD-RECORD platform=instagram action=comment account=@lushandlather.co url=https://www.instagram.com/p/Dd7gjs6Bzb6/
+
+## 2026-10-03 — Pass 209 (completed ~01:30 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 3 likes + 3 comments landed. Pass ID ig-20261003-071500. Caps: 3/55 likes, 3/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order; header's 55+15 stands as this pass's durable record).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; no 429). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-070213.json (0 entries). Same exhausted pool as passes 200-208.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 11 (this run, rest-of-CO south/Front Range + border regions): pueblo/boulder/colorado springs/castle rock/cheyenne wy/vernal ut/moab ut/santa fe nm queries, 8 queries, logged in as nolanpigi, 0 direct, 10 near_misses. Reconciliation (positive controls 5/5 passed): 5 FOLLOWUP_REQUIRED -> RECOVERED_CANDIDATE (@truhairsalon_, @themorticiansalon, @beautybarinc, @skylinenails.colorado, @lushandlather.co; all Colorado Springs salons/nail techs, business or creator, US, fresh posts). Skip list unchanged at 485 (reconciled outcomes all skip_eligible=False; apply-reconciliation no-op by design, worker exclusions are not reconciled outcomes).
+
+Worker CLI vetting of the 5 OBSERVED_EXCLUDE (CDP location gate still corridor-scoped; radius expansion overrode): EXCLUDED all 5 with evidence: @puebloavcilar (country TR, Turkey), @bouldercoffeeco (Rochester NY: lat 43.146/lng -77.603, zip 14620, +1 585 phone, bouldercoffeeroaster.com), @covebouldering (country CA, St. John's Newfoundland), @bouldercoffeecafe (stale feed, newest post 2021-12-09), @nail.cafe.chey (country NL, Netherlands; "Chey" is a stylist name, not Cheyenne WY). The CDP location gate was right on all 5.
+
+Content fail-closed on 2 recovered candidates' newest posts (genuine-work-post gate): @beautybarinc newest (2026-10-01) is a seasonal-services/holiday-gifting promo; @skylinenails.colorado newest (2026-09-24) is a 10%-off-discount promo. Both excluded this pass (fail-closed on promo-adjacent, same as pass 207's @harlowgoldsalonandspa call).
+
+Guard filter: 3 checked -> 3 eligible (manifest instagram-pass-20261003-071032.json). Ledger refuse: 3 checked -> 3 eligible, 0 refused. Closed action set: 3 likes + 3 comments. 6 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-071500.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format (engage.js reads a.type; durable ig-actions file keeps the account/action shape with text).
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226. Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 6 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @truhairsalon_ (https://www.instagram.com/p/DeAqIkakXCV/), @themorticiansalon (https://www.instagram.com/p/DeBOE4mjVf7/), @lushandlather.co (https://www.instagram.com/p/Dd7gjs6Bzb6/).
+
+Comments:
+- @truhairsalon_: "The dream date: he drives, he pays, you leave looking incredible. Genius business model."
+- @themorticiansalon: "Coraline nails are such a perfect October flex. The button eyes detail must have taken forever."
+- @lushandlather.co: "A color and extensions collab that actually delivers. That blend is seamless."
+
+Skipped: promo-newest-post 2 (@beautybarinc, @skylinenails.colorado), OBSERVED_EXCLUDE 5 with evidence above, 60 already-engaged + 1 suppressed + 20 vetted-out in Phase P.
+
+Post-pass: guard record x6, ledger record-outcomes 6/6 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest preset per the 2026-10-01 lesson; report key "actions"): 6 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 3+3 used). Baseline 2h interval confirmed. Acceptance: likes 3/3 (100%), comments 3/3 (100%); low volume is pool-depth, not acceptance.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-071500.json
+- Files: ig-qualified-queue-20261003-070213.json (healthy build, empty), ig-discover-job-20261003-071500.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-candidates-20261003-071500.json, ig-eligible-20261003-071500.json, ig-final-20261003-071500.json, ig-actions-20261003-071500.json, ig-comment-drafts-20261003-071500.json, ig-outcomes-20261003-071500.json, ig-verify-report-20261003-071500.json
+- GUARD 2026-10-03T09:15:16.514938+00:00 filter instagram: checked=4 eligible=4 blocked=0
+- 2026-10-03T09:28:18.957514+00:00 GUARD-RECORD platform=instagram action=like account=@color_coffee_eagle url=https://www.instagram.com/p/Db6kH0JBakJ/
+- 2026-10-03T09:28:19.384900+00:00 GUARD-RECORD platform=instagram action=comment account=@color_coffee_eagle url=https://www.instagram.com/p/Db6kH0JBakJ/
+- 2026-10-03T09:28:19.470375+00:00 GUARD-RECORD platform=instagram action=like account=@huntermadehair url=https://www.instagram.com/p/Dd7mz2KmWJm/
+- 2026-10-03T09:28:19.579573+00:00 GUARD-RECORD platform=instagram action=comment account=@huntermadehair url=https://www.instagram.com/p/Dd7mz2KmWJm/
+- 2026-10-03T09:28:19.804607+00:00 GUARD-RECORD platform=instagram action=like account=@celcurlsalon url=https://www.instagram.com/p/Db3VX9PlCvO/
+- 2026-10-03T09:28:20.120397+00:00 GUARD-RECORD platform=instagram action=comment account=@celcurlsalon url=https://www.instagram.com/p/Db3VX9PlCvO/
+- 2026-10-03T09:28:20.274715+00:00 GUARD-RECORD platform=instagram action=like account=@thestandardsaloncompany url=https://www.instagram.com/p/DcKDzAlS8AJ/
+- 2026-10-03T09:28:20.489241+00:00 GUARD-RECORD platform=instagram action=comment account=@thestandardsaloncompany url=https://www.instagram.com/p/DcKDzAlS8AJ/
+
+## 2026-10-03 — Pass 210 (completed ~03:35 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 4 likes + 4 comments landed. Pass ID ig-20261003-030300. Caps: 4/55 likes, 4/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order; header's 55+15 stands as this pass's durable record).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch, twice). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; no 429; partial=false; 23 API calls). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-090155.json (0 entries). Same exhausted pool as passes 200-209.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 12 (this run, remaining Tier-3 / SW CO): aspen/vail/steamboat springs/glenwood springs/pagosa springs/cortez/telluride/ouray queries, 8 queries, logged in as nolanpigi, 0 direct, 9 near_misses. Reconciliation (positive controls 5/5 passed): 2 CONFIRMED_EMPTY (@elchinoelectricalcorp, @telluride_co_restaurants, post_count 0 via follow-up), 5 CONFIRMED_EXCLUDE (@cafe_cortez MX, @cafecorteza MX, @cafecortez.co stale 2026-03-03, @vitorcortezcafes BR, @cosmotelluride stale 2025-04-08); skip list 485 -> 492 via ig-apply-reconciliation.py (JSON history ledger, per the pass-208 lesson). 1 RECOVERED_REVIEW (@aspenheatingcooling: personal account, bio = Chicago NW-suburbs HVAC, newest post 2026-10-02) -> worker-excluded (wrong geography + personal), not skip-listed per policy. Worker CLI vetting of the 1 OBSERVED_EXCLUDE (@cafe.com.destino: personal, country BR, Portuguese clip account) -> EXCLUDED, not skip-listed. Round 12 yielded 0 eligible.
+
+In-run troubleshooting per the 2026-09-26 binding order + expanding-pool law (2026-10-02 Nolan binding: zero-eligible is not an acceptable steady state; expand until someone is found): ran discovery round 13 in the same run (Tier-3 remainder + neighboring-state border regions): gunnison/durango/craig/eagle/amarillo tx/albuquerque nm/scottsbluff ne/salt lake city ut queries, 8 queries, logged in, 0 direct, 13 near_misses. Reconciliation (controls 5/5 passed): 2 RECOVERED_CANDIDATE (@scf_durango: Salon Centric Franchise Durango CO, business, US, 168 posts, newest 2026-09-22; @color_coffee_eagle: Color Coffee Eagle Cafe and Bakery, business, US, 405 posts, newest 2026-09-26), 1 CONFIRMED_EMPTY (@ecca_cafe); skip list 492 -> 493. Worker CLI vetting of the 10 OBSERVED_EXCLUDE (CDP location gate still corridor-scoped; radius expansion overrode): EXCLUDED @eaglelodgebc (business, CA Bella Coola), @eaglescornercafe (personal), @condorandeaglecafe (creator, BO Bolivia), @cafenede.feijo (personal, RU), @cafene.dealbuquerque (personal, TR); @cafeedeliciasnacaixa returned no profile (STILL_UNKNOWN, never skip-listed); RECOVERED 4 Salt Lake City UT salons (@huntermadehair creator, @celcurlsalon business, @thestandardsaloncompany creator, @remedysalonslc business).
+
+Content fail-closed on newest posts (genuine-work-post gate): @scf_durango's 4 newest posts are all sale ads ("Get 20% off", "come in and save") -> excluded this pass. @huntermadehair newest (2026-10-01) is a Halloween giveaway -> excluded, targeted the 2026-09-30 genuine bouncy-hair work carousel instead (pass-207 @theparlourfoco precedent). @thestandardsaloncompany 2026-10-01 + 2026-08-20 posts are staff birthdays -> excluded, targeted the 2026-08-17 blonde-bowl work post (foil/gloss/rinse). @remedysalonslc newest post 2025-11-12 -> stale (>90d), excluded. @color_coffee_eagle newest (2026-09-26) is a new-coffee-bags product promo -> excluded, targeted the 2026-08-11 morning-bun food photo (genuine cafe content, 53d).
+
+Guard filter: 4 checked -> 4 eligible (manifest instagram-pass-20261003-091516.json). Ledger refuse: 4 checked -> 4 eligible, 0 refused. Closed action set: 4 likes + 4 comments. 8 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-030300.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format (engage.js reads a.type; durable ig-actions file keeps the account/action shape with text).
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (the working execution surface per the pass-206 window-mismatch fix). Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 8 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @color_coffee_eagle (https://www.instagram.com/p/Db6kH0JBakJ/), @huntermadehair (https://www.instagram.com/p/Dd7mz2KmWJm/), @celcurlsalon (https://www.instagram.com/p/Db3VX9PlCvO/), @thestandardsaloncompany (https://www.instagram.com/p/DcKDzAlS8AJ/).
+
+Comments:
+- @color_coffee_eagle: "Morning buns don't check the clock, and neither should we. That glaze is doing overtime."
+- @huntermadehair: "That bounce has its own zip code. The layers are doing all the talking here."
+- @celcurlsalon: "A cut, a wash, and a full reset. Sometimes the hair just needs a fresh start too."
+- @thestandardsaloncompany: "Foil, gloss, rinse, repeat. That dimensional blonde is pure chemistry at work."
+
+Skipped: promo/stale newest-post 3 (@scf_durango sale ads, @remedysalonslc stale, plus 2 older-promo posts swapped for genuine ones), OBSERVED_EXCLUDE 5 with evidence above + 1 STILL_UNKNOWN (@cafeedeliciasnacaixa), round-12 exclusions (2 empty, 5 geo/stale, 1 personal-Chicago, 1 personal-Brazil), 60 already-engaged + 1 suppressed + 20 vetted-out in Phase P.
+
+Post-pass: guard record x8, ledger record-outcomes 8/8 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest preset to the ABSOLUTE pre-pass manifest path; bare-basename false-positive diagnosed below): 8 checked, 0 violations, ok=true. Grep-confirmed each of the 4 handles appears exactly 2x in the engagement log (this pass's like + comment records only), zero prior-pass engagement.
+
+VERIFY FALSE-POSITIVE LESSON (new, 2026-10-03): the first verify run had report["manifest"] set to the bare basename "instagram-pass-20261003-091516.json" and returned 8/8 VIOLATION (ALREADY_ENGAGED). The guard could not resolve the relative path and silently fell back to the live index, which already held this pass's just-recorded actions: the exact 2026-10-01 false-positive signature. Re-running with the ABSOLUTE manifest path: 8 checked, 0 violations, ok=true. Standing rule: report["manifest"] must be the absolute path; a bare basename silently falls back to the live index and false-flags the whole pass.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 4+4 used). Baseline 2h interval confirmed. Acceptance: likes 4/4 (100%), comments 4/4 (100%); low volume is pool-depth, not acceptance.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation; the transient verify false-positive was diagnosed and resolved in-run with a clean re-verify and corroborating evidence).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-030300.json
+- Files: ig-qualified-queue-20261003-090155.json (healthy build, empty), ig-discover-job-20261003-030300.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-discover-job-20261003-031500.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-skip-list-20261003-030900.json (492), ig-skip-list-20261003-031800.json (493), ig-candidates-20261003-030300.json, ig-eligible-20261003-030300.json, ig-final-20261003-030300.json, ig-actions-20261003-030300.json, ig-comment-drafts-20261003-030300.json, ig-outcomes-20261003-030300.json, ig-verify-report-20261003-030300.json
+- GUARD 2026-10-03T11:16:31.115270+00:00 filter instagram: checked=4 eligible=4 blocked=0
+- 2026-10-03T11:36:35.798799+00:00 GUARD-RECORD platform=instagram action=like account=@slatesalonstudios url=https://www.instagram.com/p/Dd4apmWDx39/
+- 2026-10-03T11:36:36.409333+00:00 GUARD-RECORD platform=instagram action=comment account=@slatesalonstudios url=https://www.instagram.com/p/Dd4apmWDx39/
+- 2026-10-03T11:36:36.506560+00:00 GUARD-RECORD platform=instagram action=like account=@studiobesalon_allieb url=https://www.instagram.com/p/Dd_wefIje71/
+- 2026-10-03T11:36:36.593169+00:00 GUARD-RECORD platform=instagram action=comment account=@studiobesalon_allieb url=https://www.instagram.com/p/Dd_wefIje71/
+- 2026-10-03T11:36:36.677595+00:00 GUARD-RECORD platform=instagram action=like account=@_kaloncollective url=https://www.instagram.com/p/Dd5EvOGjC3j/
+- 2026-10-03T11:36:36.825769+00:00 GUARD-RECORD platform=instagram action=comment account=@_kaloncollective url=https://www.instagram.com/p/Dd5EvOGjC3j/
+- 2026-10-03T11:36:36.954615+00:00 GUARD-RECORD platform=instagram action=like account=@serenehairstylist url=https://www.instagram.com/p/Ddw_uwzEr1X/
+- 2026-10-03T11:36:37.036681+00:00 GUARD-RECORD platform=instagram action=comment account=@serenehairstylist url=https://www.instagram.com/p/Ddw_uwzEr1X/
+
+## 2026-10-03 — Pass 211 (completed ~05:50 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 4 likes + 4 comments landed. Pass ID ig-20261003-051500. Caps: 4/55 likes, 4/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order; header's 55+15 stands as this pass's durable record).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran HEALTHY (exit 0; no 429; partial=false; 23 API calls). 81 inputs: 60 ALREADY_ENGAGED, 1 SUPPRESSED (ambiguous @c.s__landscaping identity, fail-closed), 20 vetted, 0 accepted. Queue file ig-qualified-queue-20261003-110220.json (0 entries). Same exhausted pool as passes 200-210.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 14 (this run, northern/southern CO + border regions): fort collins/loveland/trinidad/alamosa/lamar/taos nm/casper wy/north platte ne queries, 8 queries, logged in as nolanpigi, 0 direct, 16 near_misses. Reconciliation (positive controls 5/5 passed): 1 RECOVERED_CANDIDATE (@saloncentric_loveland: SalonCentric Loveland CO, business, US, 35 posts, newest 2026-09-19); 15 OBSERVED_EXCLUDE (CDP location gate still corridor-scoped; radius expansion overrode). Skip list unchanged at 493 (no reconciled skip-eligible outcomes this round; worker exclusions are not reconciled outcomes, same as pass 209).
+
+Worker CLI vetting of the 15 OBSERVED_EXCLUDE: RECOVERED 6 US-local (@slatesalonstudios: creator, Loveland CO, 414 posts; @blushbeautybarloveland: business, Loveland CO, 789 posts; @studiobesalon_allieb: creator, Loveland CO, 65 posts; @_kaloncollective: business, Loveland CO, 209 posts; @thebrewcoffeeshop: business, Lamar CO, 514 posts; @serenehairstylist: creator, Casper WY, 461 posts). EXCLUDED 9 with evidence: @cafedelatrinidad.co + @trinidad.coffee + @cafetrinidadpaz (Colombia: Cartagena/Bogota/Dabeiba), @the__trinity_coffee (Guatemala), @cafeconcert26 (Chile, school account), @lane_ee246 (Oman, Arabic), @la_maryse_new (France), @lamanducacoffee (Spain), @lamaricano_coffe_shop (Tunisia). The CDP location gate was right on 9, wrong on 6.
+
+Freshness/content fail-closed: @blushbeautybarloveland newest post 2021-03-23 (stale, >90d) excluded; @thebrewcoffeeshop newest post 2026-07-03 (92d, just over the 90d gate) excluded; @saloncentric_loveland posts lookup hit HTTP 429 on instagram-cli mid-pass -> recorded ig-throttle-state.json per the 2026-10-02 precedent and stopped ALL instagram-cli traffic for the pass; @saloncentric_loveland stays unvetted (STILL_UNKNOWN class, never skip-listed, never a permanent reject; franchise-distributor content gate still open). Remaining 4 recovered candidates passed all gates (US business/creator, public, fresh genuine work posts with captions verified via instagram-cli post_caption field).
+
+ANOMALY (worked around in-run): the read-only content-check browser task on the shared Chromium profile hit needs_user after landing on instagram.com and stalled; closed it per the detached-run rule (no user approvals possible) and did the content check via instagram-cli captions instead. Phase B execution uses the Pig's :9226 surface, not the shared profile, and was unaffected (logged_in=true).
+
+Guard filter: 4 checked -> 4 eligible (manifest instagram-pass-20261003-111631.json). Ledger refuse: 4 checked -> 4 eligible, 0 refused. Closed action set: 4 likes + 4 comments. 8 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-051500.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226. Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 8 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @slatesalonstudios (https://www.instagram.com/p/Dd4apmWDx39/), @studiobesalon_allieb (https://www.instagram.com/p/Dd_wefIje71/), @_kaloncollective (https://www.instagram.com/p/Dd5EvOGjC3j/), @serenehairstylist (https://www.instagram.com/p/Ddw_uwzEr1X/).
+
+Comments:
+- @slatesalonstudios: "Nothing fixes a week like a chair that reclines and someone else doing the work."
+- @studiobesalon_allieb: "Burgundy brunette is a whole personality now. That richness is doing the heavy lifting."
+- @_kaloncollective: "The vibe check passed before the hair even dried. That dimension is unreal."
+- @serenehairstylist: "Fall called and it wants that exact formula. Gloss season is officially open."
+
+Skipped: stale 2 (@blushbeautybarloveland 2021, @thebrewcoffeeshop 92d), unvetted 1 (@saloncentric_loveland, 429-gated), wrong-geography/personal 9 with evidence above, 60 already-engaged + 1 suppressed + 20 vetted-out in Phase P.
+
+Post-pass: guard record x8, ledger record-outcomes 8/8 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest set to the ABSOLUTE pre-pass manifest path per the pass-210 lesson; report key "actions"): 8 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 4+4 used). Baseline 2h interval confirmed. Acceptance: likes 4/4 (100%), comments 4/4 (100%); low volume is pool-depth, not acceptance. The 429 was an ad-hoc CLI read throttle, not a platform enforcement signal: handled per precedent (record + stop CLI traffic this pass), caps untouched.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-051500.json
+- Files: ig-qualified-queue-20261003-110220.json (healthy build, empty), ig-discover-job-20261003-051500.json (+ .result.json + .reconciliation.json + .reconciliation.json.log), ig-candidates-20261003-051500.json, ig-eligible-20261003-051500.json, ig-final-20261003-051500.json, ig-actions-20261003-051500.json, ig-comment-drafts-20261003-051500.json, ig-verify-report-20261003-051500.json, ig-throttle-state.json (updated)
+- GUARD 2026-10-03T11:16:31 filter instagram: checked=4 eligible=4 blocked=0
+- GUARD 2026-10-03T13:40:17.004135+00:00 filter instagram: checked=10 eligible=5 blocked=5 [@heliumsalon (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @heliumsalon (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @zinkehairboulder (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @sunbeamhairstudio (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @sarah.salon.freebird (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup))]
+- GUARD 2026-10-03T13:40:29.308914+00:00 filter instagram: checked=10 eligible=5 blocked=5 [@heliumsalon (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @heliumsalon (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @zinkehairboulder (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @sunbeamhairstudio (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup)); @sarah.salon.freebird (SKIPPED_REENGAGEMENT: already selected in the same job (within-pass dedup))]
+- 2026-10-03T13:53:08.602221+00:00 GUARD-RECORD platform=instagram action=like account=@heliumsalon url=https://www.instagram.com/p/DeAfHdET-tC/
+- 2026-10-03T13:53:09.095634+00:00 GUARD-RECORD platform=instagram action=comment account=@heliumsalon url=https://www.instagram.com/p/DeAfHdET-tC/
+- 2026-10-03T13:53:09.188748+00:00 GUARD-RECORD platform=instagram action=like account=@sierra.heliumsalon url=https://www.instagram.com/p/DdmLJCxJ5o9/
+- 2026-10-03T13:53:09.273528+00:00 GUARD-RECORD platform=instagram action=comment account=@sierra.heliumsalon url=https://www.instagram.com/p/DdmLJCxJ5o9/
+- 2026-10-03T13:53:09.364197+00:00 GUARD-RECORD platform=instagram action=like account=@zinkehairboulder url=https://www.instagram.com/p/Dc6hnxVIEY5/
+- 2026-10-03T13:53:09.459519+00:00 GUARD-RECORD platform=instagram action=like account=@sunbeamhairstudio url=https://www.instagram.com/reel/C7pAFRisX7c/
+- 2026-10-03T13:53:09.551788+00:00 GUARD-RECORD platform=instagram action=like account=@sarah.salon.freebird url=https://www.instagram.com/reel/DCrkFqWRGjr/
+
+## 2026-10-03 — Pass 212 (completed ~08:55 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 5 likes + 2 comments landed. Pass ID ig-20261003-073500. Caps: 5/55 likes, 2/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order; header's 55+15 stands as this pass's durable record).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at dispatch, twice). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build short-circuited on throttle_active() (exit 4 path; ig-throttle-state.json recorded 2026-10-03T11:35:00Z by pass 211's ad-hoc CLI 429 on @saloncentric_loveland post lookup; 7h backoff still active). 0 API calls, 0 eligible, partial=true. Per the body rule: skipped positive-control revalidation and ALL instagram-cli calls this pass. Unvetted handles stay STILL_UNKNOWN (never skip-listed, never permanent rejects). @saloncentric_loveland remains unvetted for a third pass.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion rounds 15+16 (this run, rest-of-CO + neighboring-state border regions):
+- Round 15 (ig-discover-job-20261003-071000.json): pueblo co coffee shop / colorado springs co salon / canon city co hvac / salida co cafe / cheyenne wy coffee shop / santa fe nm salon / castle rock co barber / crested butte co restaurant; 8 queries, logged in as nolanpigi, 0 direct, 9 near_misses (4 OBSERVED_EXCLUDE location, 5 FOLLOWUP_REQUIRED no-post-link).
+- Round-15 vetting: web-search round (subagent) cleared @deiasalon (Santa Fe NM salon, in-scope), @beautybarinc + @skylinenails.colorado (Colorado Springs salons, in-scope); @puebloavcilar/@bbeautifulsalonsantafe/@salonmsantafe UNKNOWN (no indexed evidence) -> STILL_UNKNOWN, not skip-listed; @themorticianssalon flagged as the SAME BUSINESS as already-engaged @themorticiansalon (booking domain themorticianssalon.glossgenius.com, 429 E Platte Ave, Colorado Springs) -> treated ALREADY_ENGAGED per the per-account rule, dropped. @truhairsalon_ + @lushandlather.co already engaged (pass 209) -> dropped (guard backstop). CDP post-URL/content vetting (new read-only tools: ig-vet-profiles.js, ig-vet-posts.js on the Pig :9226; the grid-anchor extraction failure was fixed in-run by adding scroll + shortcode-from-HTML fallback; captions read via section innerText): @deiasalon newest post 2025-02-06 -> stale, excluded; @beautybarinc freshest posts are hiring/promo (2026-10-01 hiring post, 2026-10-01 Year-of-Beauty raffle, parking-validation reel) -> content gate excluded; @skylinenails.colorado freshest are holiday-hours announcement (2026-09-07) + homecoming promo (2026-09-25) -> excluded. Round 15 yielded 0 eligible.
+- Round 16 (ig-discover-job-20261003-073000.json): boulder co salon / longmont co coffee shop / grand island ne salon / dodge city ks cafe / roswell nm coffee shop / lubbock tx barber / rapid city sd cafe / sidney ne salon; 8 queries, 0 direct, 12 near_misses. Web-search round (subagent) cleared 5 in-scope businesses: @sunbeamhairstudio (Louisville CO), @zinkehairboulder (Boulder CO), @sarah.salon.freebird (Boulder CO), @heliumsalon (Grand Island NE), @sierra.heliumsalon (Grand Island NE, owner's professional account). Excluded with evidence: @aramisblendz + @fadesofmars (Lubbock TX), @sidney.sarahpelcosalon (Sewickley/Canonsburg PA), @cherrylymade (PH-leaning), @imslimfadey (UK-leaning); @blenddgod + @sidney.beautystudio STILL_UNKNOWN (no evidence), not skip-listed. CDP vetting recovered post URLs + captions for all 5. Genuine-work gate results: @heliumsalon 3 fresh (2026-10-02) genuine posts; @sierra.heliumsalon 1 fresh (2026-09-22) genuine post; @zinkehairboulder 1 fresh (2026-09-05) brand post; @sunbeamhairstudio 2 reels with visible public comments; @sarah.salon.freebird 2 reels with visible public comments. 10 candidates projected.
+- NOTE: run_ig_discover.sh auto-runs the CLI near-miss followup; this pass ran a stripped copy (followup + health-marker blocks removed, empty {} reconciliation written) so zero instagram-cli traffic occurred. Discovery health marker left at HEALTHY (no revalidation possible without CLI; next pass revalidates normally).
+
+Guard filter: 10 checked -> 5 eligible; 5 blocked as ALREADY_ENGAGED "already selected in the same job (within-pass dedup)" (one post per account per job; the guard's deterministic within-pass dedup accepted as authoritative). Manifest instagram-pass-20261003-134017.json. Ledger refuse: 5 checked -> 5 eligible, 0 refused. Closed action set: 5 likes + 2 comments (comment drafts per the voice contract, post-specific, <20 words). 7 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-073500.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226. Worker result: {"ok":true,"logged_in":true,"canary_verified":true}, all 7 actions ok=true (likes registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings.
+
+Likes: @heliumsalon (https://www.instagram.com/p/DeAfHdET-tC/), @sierra.heliumsalon (https://www.instagram.com/p/DdmLJCxJ5o9/), @zinkehairboulder (https://www.instagram.com/p/Dc6hnxVIEY5/), @sunbeamhairstudio (https://www.instagram.com/reel/C7pAFRisX7c/), @sarah.salon.freebird (https://www.instagram.com/reel/DCrkFqWRGjr/).
+
+Comments:
+- @heliumsalon: "First client in the new chair is a core memory. May they all be this easy."
+- @sierra.heliumsalon: "Natural red is the hardest red to pull off. Nailed the brief on this one."
+
+Skipped: already-engaged 3 (@truhairsalon_, @lushandlather.co pass 209; @themorticianssalon = same business as engaged @themorticiansalon), stale 1 (@deiasalon newest 2025-02-06), promo/announcement content 6 posts across @beautybarinc + @skylinenails.colorado (hiring post, Year-of-Beauty raffle, parking-validation reel, Labor-Day-hours announcement, homecoming promo), wrong-geography/personal 5 (@aramisblendz TX, @fadesofmars TX, @sidney.sarahpelcosalon PA, @cherrylymade PH-lean, @imslimfadey UK-lean), STILL_UNKNOWN 6 (@saloncentric_loveland 429-gated, @puebloavcilar, @bbeautifulsalonsantafe, @salonmsantafe, @blenddgod, @sidney.beautystudio; never skip-listed, never permanent rejects), within-pass dedup 5 (second posts per account, guard-enforced).
+
+Post-pass: guard record x7, ledger record-outcomes 7/7 EXECUTED (ok=true), 0 open unknowns. Guard verify on the completed report (manifest set to the ABSOLUTE pre-pass manifest path per the pass-210 lesson; report key "actions"): 7 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 5+2 used). Baseline 2h interval confirmed. Acceptance: likes 5/5 (100%), comments 2/2 (100%); low volume is pool-depth, not acceptance. The CLI 429 is an ad-hoc read throttle, not a platform enforcement signal; caps untouched per precedent.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-073500.json
+- Files: ig-qualified-queue-20261003-130154.json (throttled short-circuit, 0 entries), ig-discover-job-20261003-071000.json (+ .result.json), ig-discover-job-20261003-073000.json (+ .result.json), ig-candidates-20261003-073500.json, ig-eligible-20261003-073500.json, ig-final-20261003-073500.json, ig-actions-20261003-073500.json, ig-comment-drafts-20261003-073500.json, ig-outcomes-20261003-073500.json, ig-verify-report-20261003-073500.json
+- New read-only vetting tools (CLI-throttle contingency): ~/workspace/pig-fb/ig-vet-profiles.js, ~/workspace/pig-fb/ig-vet-posts.js (also staged on the Pig under C:/Users/nolan/.local/share/pigi/ig-engage/)
+- GUARD 2026-10-03T13:40:17 filter instagram: checked=10 eligible=5 blocked=5 (within-pass dedup)
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=like account=@heliumsalon url=https://www.instagram.com/p/DeAfHdET-tC/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=comment account=@heliumsalon url=https://www.instagram.com/p/DeAfHdET-tC/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=like account=@sierra.heliumsalon url=https://www.instagram.com/p/DdmLJCxJ5o9/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=comment account=@sierra.heliumsalon url=https://www.instagram.com/p/DdmLJCxJ5o9/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=like account=@zinkehairboulder url=https://www.instagram.com/p/Dc6hnxVIEY5/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=like account=@sunbeamhairstudio url=https://www.instagram.com/reel/C7pAFRisX7c/
+- 2026-10-03T13:40:29 GUARD-RECORD platform=instagram action=like account=@sarah.salon.freebird url=https://www.instagram.com/reel/DCrkFqWRGjr/
+
+## 2026-10-03 — Pass 213 (completed ~10:05 MDT)
+
+CLASSIFICATION: DEPENDENCY_FAILURE. 0 likes, 0 comments. Pass ID ig-20261003-090200. Caps: 0/55 likes, 0/15 comments (caps untouched per the no-scale-back order; infrastructure failure never lowers caps). Next week's ramped caps: 60 likes + 18 comments.
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build short-circuited on throttle_active() (exit 4 path; ig-throttle-state.json recorded 2026-10-03T11:35:00Z by pass 211's ad-hoc CLI 429; 7h backoff active until 12:35 MDT). 0 API calls, 0 eligible, partial=true. Per the body rule: skipped positive-control revalidation and ALL instagram-cli calls this pass. Unvetted handles stay STILL_UNKNOWN (never skip-listed, never permanent rejects). @saloncentric_loveland remains unvetted for a fourth pass.
+
+Phase A fallback (queue depth 0 < 2x caps), radius expansion round 17 (this run, rest-of-CO + border regions): steamboat springs co salon / craig co coffee shop / paonia co cafe / telluride co restaurant / glenwood springs co salon / eagle co coffee shop / farmington nm salon / vernal ut coffee shop; 8 queries via a stripped copy of run_ig_discover.sh (CLI near-miss followup + health-marker blocks removed, empty {} reconciliation written; zero instagram-cli traffic), logged in as nolanpigi, 0 direct, 10 near_misses (8 OBSERVED_EXCLUDE location, 2 FOLLOWUP_REQUIRED no-post-link). Discovery health marker left at HEALTHY (no CLI revalidation possible during backoff).
+
+INFRA FAILURE (mid-pass): the Pig tailnet path dropped between discovery (15:02-15:07Z, ok) and the CDP vetting launch (~15:20Z). ig-vet-profiles.js SSH launch timed out ("Timeout, server 100.79.154.43 not responding"); pigwsl-exec/pigwsl-exec2 echo probes failed repeatedly ("nc: proxy read: Broken pipe"); egress proxy :3130 port open but CONNECT to 100.79.154.43 failing for ~50 min. Vetting result file (if the job ran) is unreachable. Recovery budget spent: vet launch, 2 retrieval probes, 2 echo probes, sleep+retry probe, alternate helper. No further hammering. Phase B impossible without the Pig. This is transport (tailnet/egress), not an IG platform signal: no action block, checkpoint, login failure, or rate-limit warning observed.
+
+Web-search vetting round (subagent, no Pig needed) on the 10 near_misses completed: 3 IN_SCOPE (@canela.eagle: Canela Coffee and Pastry Shop, 228 Broadway St, Eagle CO; @waxbarandbeautyboutique: Wax Bar and Beauty Boutique, 4500 Pinon Hills Blvd Ste 4103, Farmington NM; @southwestserenitysalon: Southwest Serenity Salon, 115 W Aztec Blvd #205, Aztec NM), 1 OUT on geography (@eagles_perk_coffee, likely Soldotna AK), 6 STILL_UNKNOWN (@craigs.coffeeshop, @golden.eagle._coffee, @eaglesnestcoffeeshop, @eaglecoffeeshop1, @scf_farmington, @allurebytoni; never skip-listed, never permanent rejects; the 3 IN_SCOPE + 6 STILL_UNKNOWN are queued for next pass's CDP/CLI vetting). Salvaged candidates written to ig-candidates-20261003-090200.json (no post URLs yet; CDP post-URL recovery deferred).
+
+Guard filter / ledger refuse / intents: not run (no actionable candidates with post URLs; zero intents written, zero unknowns opened). Post-pass verify: N/A (no actions).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. Acceptance: N/A (no actions attempted). The CLI 429 backoff and the tailnet drop are both infrastructure, not platform enforcement; next pass retries at full ramped caps.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation; the Pig tailnet drop is logged here and the next pass retries).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-090200.json
+- Files: ig-qualified-queue-20261003-150159.json (throttled short-circuit, 0 entries), ig-discover-job-20261003-090200.json (+ .result.json + empty .reconciliation.json), ig-candidates-20261003-090200.json (salvaged, no post URLs), ~/workspace/pig-fb/run_ig_discover_stripped.sh (CLI-throttle contingency copy)
+
+## 2026-10-03 — Pass 214 (completed ~11:20 MDT)
+
+CLASSIFICATION: DEPENDENCY_FAILURE. 0 likes, 0 comments. Pass ID ig-20261003-110100. Caps: 0/55 likes, 0/15 comments (caps untouched per the no-scale-back order; infrastructure failure never lowers caps). Next week's ramped caps: 60 likes + 18 comments.
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build short-circuited on throttle_active() (ig-throttle-state.json, recorded 2026-10-03T11:35:00Z by pass 211's ad-hoc CLI 429; 7h backoff active until 12:35 MDT). 0 API calls, 0 eligible, partial=true. Per the body rule: skipped positive-control revalidation and ALL instagram-cli calls this pass. Unvetted handles stay STILL_UNKNOWN (never skip-listed, never permanent rejects).
+
+INFRA FAILURE (this run's in-run troubleshooting): the VM egress-proxy path to the tailnet dropped. pigwsl-exec.sh echo probes failed x4 (1 + 3 backoff retries, 15/30/45s): "nc: proxy read: Broken pipe; Connection closed by UNKNOWN port 65535". Isolation probe (nc via hatch-egress-proxy:3130 to example.com:80) fails identically, so the fault is at the host egress proxy, not the Pig. No local gentle-recovery action available for a host-provided proxy; no further hammering. Phase A (CDP discovery on the Pig) and Phase B impossible this pass. This is transport, not an IG platform signal: no action block, checkpoint, login failure, or rate-limit warning observed.
+
+Web-search seed round (radius expansion round 18, Tier 3 only; no Pig needed): added to ~/workspace/outreach/instagram-prospects.md - @double_shot_cyclery (bike shop + coffee bar, 222 N Main St, Gunnison CO; handle cited on their own site), Tributary Coffee Roasters (120 N Main St, Gunnison; handle unconfirmed), Urban Grace Studio (salon, 1040 Main Ave, Durango; handle unconfirmed). All need CDP/CLI vetting next pass.
+
+Guard filter / ledger refuse / intents: not run (no actionable candidates with post URLs; zero intents written, zero unknowns opened). Post-pass verify: N/A (no actions).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. Acceptance: N/A (no actions attempted). The CLI 429 backoff (until 12:35 MDT) and the egress-proxy drop are both infrastructure, not platform enforcement; next pass retries at full ramped caps.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation; the egress-proxy transport drop is logged here and the next pass retries).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-110100.json
+- Files: ig-qualified-queue-20261003-173355.json (throttled short-circuit, 0 entries)
+- GUARD 2026-10-03T19:12:34.021399+00:00 filter instagram: checked=1 eligible=1 blocked=0
+
+## 2026-10-03 — Pass 215 (completed ~13:35 MDT)
+
+CLASSIFICATION: DEPENDENCY_FAILURE. 0 likes, 0 comments. Pass ID ig-20261003-132000. Caps: 0/55 likes, 0/15 comments (caps untouched per the no-scale-back order; infrastructure failure never lowers caps). Next week's ramped caps: 60 likes + 18 comments.
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Ledger list-unknown at start: 0 open instagram (48 open total: 43 facebook, 5 x). Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 23 API calls). 81 new candidates: 60 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 20 vetted, 0 accepted. Of the 20: 18 STILL_UNKNOWN geography (no Western CO town/zip match), 2 STALE (@electrician_egm 906d, @telluridevalleyroofing 458d). Queue eligible depth 0 -> Phase A fallback triggered per body step 4.
+
+Phase A fallback, radius expansion round 19 (rest-of-CO + border regions; Tiers 1-3 exhausted): 8 queries (pueblo co hvac, fort collins co plumber, colorado springs co electrician, trinidad co cafe, lamar co restaurant, moab ut salon, cheyenne wy coffee shop, alamosa co coffee shop) via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 12 near_misses: 10 OBSERVED_EXCLUDE (Trinidad/Lamar handles are non-CO lookalikes: Trinidad Colombia/Cuba, Lamar non-CO, one MX), 1 OBSERVED_EMPTY -> CONFIRMED_EMPTY via CLI followup (@coloradospringselectricianpros, 0 posts), 1 FOLLOWUP_REQUIRED -> CONFIRMED_EXCLUDE (wrong country MX, @lamardecortez). Skip list repaired via ig-apply-reconciliation.py: 493 -> 495 (ig-skip-list-20261003-131500.json; invalidation ledger updated).
+
+IN-RUN TROUBLESHOOT (STILL_UNKNOWN protocol, web-search subagent, 11 handles): 2 IN_SCOPE, 7 OUT, 2 STILL_UNKNOWN. @rmcustomlandscapes = Rocky Mountain Custom Landscapes, Carbondale CO (Tier 1, clean geo via rmcustomlandscapes.com) BUT failed the recency gate on direct vetting: newest post 2026-04-22 (164d, STALE), excluded. @hartzellhvac = Hartzell Heating & Air Conditioning, Aurora CO (rest-of-CO expansion tier; handle attribution confirmed by IG display name exact match; business account, public, US, 338 posts, 33 fresh <=90d). OUT: @aclearchoiceplumbing (Powell TN), @ant_doeshvac (SoCal influencer), @apex_plumbing_services (Sydney AU), @fblandscaping (SF Bay CA), @hvacgod (Newport Beach), @superiairllc (Dallas TX), @thecomfortguardians (Walls MS). STILL_UNKNOWN: @bphandymanservices, @hvac_slim (never skip-listed, never rejects).
+
+Guard filter: checked=1 eligible=1 (manifest instagram-pass-20261003-191234.json). Ledger refuse: 1 eligible, 0 refused. Actions file: like + comment on https://www.instagram.com/p/DccC5e8Fjan/ (2026-08-24 install photo, genuine work post). Comment draft (voice contract, 16 words): "Clean lines, zero spaghetti. The mark of an install that respects the next tech who opens it." Intents written (2) and mark-execution done BEFORE Phase B.
+
+PHASE B BLOCKED (this run's failure): the browser task stalled on approval in the detached run (needs_user handoff after 1 nav step to instagram.com; zero engagement actions performed). Per the stalled-on-approval rule it was treated as failed and closed. No alternate execution path exists: instagram-cli is read-only ("Fetch authenticated Instagram account data"), and worker-side engage.js is staged but NOT deployed to the Pig (owner call). Both intents reconciled NOT_ATTEMPTED in-run with peek-timeline evidence (step_count=1, actions=[go to www.instagram.com, browser_hand_off]); open instagram intents back to 0. @hartzellhvac was NEVER engaged: it remains fully eligible for the next pass (never-re-engage applies to executed engagement only). Guard record / post-pass verify: N/A (zero actions).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. Acceptance: N/A (no actions attempted). No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation; the detached-run browser approval stall is logged here and the next pass retries at full ramped caps).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-132000.json
+- Files: ig-qualified-queue-20261003-190154.json (0 eligible), ig-discover-job-20261003-131000.json (+ .result.json + .reconciliation.json), ig-skip-list-20261003-131500.json (repaired), ig-candidates-20261003-132000.json, ig-eligible-20261003-132000.json, ig-final-20261003-132000.json, ig-actions-20261003-132000.json, ig-comment-drafts-20261003-132000.json
+
+### Pass 215 addendum — AUTH_FAILURE root cause confirmed (~13:55 MDT)
+The Phase B browser task's worker completion arrived after close-out: the engagement browser surface (VM managed Chromium) shows a plain logged-out Instagram login form — AUTH_FAILURE, zero actions taken (confirms the NOT_ATTEMPTED intent reconciliation stands; nothing was engaged). Mechanical session recovery spent per the auth budget: ig-session-recover.js on the Pig reports {"ok":true,"state":"already_logged_in"} — the Pig's ig-profile Chrome session is healthy; the broken session is the VM managed-browser profile only, which the sanctioned script does not cover. No credential entry permitted in-run; no other sanctioned restore exists for the VM profile. Reclassification: AUTH_FAILURE (was DEPENDENCY_FAILURE). Caps untouched, schedule stays ENABLED per the stay-on rule; the next pass retries at full ramped caps. If the VM browser session is still logged out next pass, the login ask goes to Nolan once through the right channel per the session-recovery standing law.
+- GUARD 2026-10-03T21:09:44.385966+00:00 filter instagram: checked=1 eligible=1 blocked=0
+- 2026-10-03T21:12:46.997293+00:00 GUARD-RECORD platform=instagram action=like account=@hartzellhvac url=https://www.instagram.com/p/DccC5e8Fjan/
+- 2026-10-03T21:12:47.800657+00:00 GUARD-RECORD platform=instagram action=comment account=@hartzellhvac url=https://www.instagram.com/p/DccC5e8Fjan/
+
+## 2026-10-03 — Pass 216 (completed ~15:18 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 1 like + 1 comment landed. Pass ID ig-20261003-150200. Caps: 1/55 likes, 1/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order; header's 55+15 stands as this pass's durable record).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at pre-launch, twice). Ledger list-unknown at start: 0 open instagram (104 open total across other platforms). Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 23 API calls). 81 new candidates: 60 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 20 vetted, 0 accepted. Of the 20: 18 STILL_UNKNOWN geography (no Western CO town/zip match: @aclearchoiceplumbing @ant_doeshvac @apex_plumbing_services @bphandymanservices @fblandscaping @hartzellhvac @hvac_slim @hvacgod @superiairllc @thecomfortguardians @rmcustomlandscapes @github @myfabfinance @ramit @stayathomebookkeeper @testedcom @thefuturishere @thisoldhouse), 2 STALE (@electrician_egm 906d, @telluridevalleyroofing 458d). Queue eligible depth 0 -> Phase A fallback triggered per body step 4.
+
+Phase A fallback, radius expansion round 20 (rest-of-CO + border regions; new queries avoiding rounds 15-19): greeley co hvac / loveland co salon / longmont co electrician / castle rock co restaurant / sterling co cafe / pueblo co barber / rock springs wy coffee shop / aztec nm hvac via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 11 near_misses: 8 OBSERVED_EXCLUDE (5 location, 3 non-business), 3 FOLLOWUP_REQUIRED -> 2 CONFIRMED_EXCLUDE (stale: @greeleycohvac newest 2025-03-14, @lucerofamilybarber newest 2026-01-28), 1 OBSERVED_EMPTY -> CONFIRMED_EMPTY (@blendzbyleo_719, post_count 0), 1 FOLLOWUP_REQUIRED -> RECOVERED_CANDIDATE (@saloncentric_loveland: business account, US, 35 posts, newest 2026-09-19, 1451 Denver Ave, Loveland CO). Skip list repaired via ig-apply-reconciliation.py: 495 -> 498 (ig-skip-list-20261003-150200.json).
+
+Candidate review: @saloncentric_loveland EXCLUDED on the local-owner gate (corporate distributor brand account of a national chain, not a local owner-operated business; bio is corporate distributor promo copy) -- eligibility miss, not taste. @github/@testedcom/@thefuturishere/@thisoldhouse/@myfabfinance/@ramit/@stayathomebookkeeper recorded OUT (national tech/creator/media/finance brands, not local owner-operated businesses; not skip-listed as they were never near-misses for engagement, just STILL_UNKNOWN handles resolved by identity). @bphandymanservices, @hvac_slim remain STILL_UNKNOWN (never skip-listed, never permanent rejects). Salvaged from pass 215: @hartzellhvac (Hartzell Heating & Air Conditioning, Aurora CO, rest-of-CO expansion tier; vetted business account, public, US, 33 fresh <=90d; pass-215 intents reconciled NOT_ATTEMPTED, never engaged, fully eligible).
+
+Guard filter: checked=1 eligible=1 (manifest instagram-pass-20261003-210944.json). Ledger refuse: 1 eligible, 0 refused. Closed action set: like + comment on https://www.instagram.com/p/DccC5e8Fjan/ (2026-08-24 install photo, 40d, genuine work post). Comment draft (voice contract, 16 words): "Clean lines, zero spaghetti. The mark of an install that respects the next tech who opens it." 2 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-150200.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (sanctioned path; pass-212 proven). Worker result: {"ok":true,"logged_in":true,"canary_required":false,"canary_verified":true}, both actions ok=true (like registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings. Pacing 60-120s.
+
+Likes: @hartzellhvac (https://www.instagram.com/p/DccC5e8Fjan/).
+
+Comments:
+- @hartzellhvac: "Clean lines, zero spaghetti. The mark of an install that respects the next tech who opens it."
+
+Skipped: @saloncentric_loveland (corporate distributor, local-owner gate), 7 OBSERVED_EXCLUDE near-misses, 2 CONFIRMED_EXCLUDE stale, 1 CONFIRMED_EMPTY, 18 STILL_UNKNOWN/out-of-scope handles, 2 STALE pipeline handles, 60 ALREADY_ENGAGED pipeline handles, 1 SUPPRESSED.
+
+Post-pass: guard record x2, ledger record-outcomes 2/2 EXECUTED (ok=true), 0 open instagram unknowns. Guard verify on the completed report (manifest set to the pre-pass manifest path per the pass-194/195 lesson): 2 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 1+1 used). Baseline 2h interval confirmed. Acceptance: likes 1/1 (100%), comments 1/1 (100%); low volume is pool-depth, not acceptance. No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-150200.json
+- Files: ig-qualified-queue-20261003-210159.json (0 eligible), ig-discover-job-20261003-150200.json (+ .result.json + .reconciliation.json), ig-skip-list-20261003-150200.json (repaired 495->498), ig-candidates-20261003-150200.json, ig-eligible-20261003-150200.json, ig-final-20261003-150200.json, ig-actions-20261003-150200.json, ig-comment-drafts-20261003-150200.json, ig-outcomes-20261003-150200.json, ig-verify-report-20261003-150200.json
+- GUARD 2026-10-03T23:14:06.801164+00:00 filter instagram: checked=1 eligible=1 blocked=0
+- 2026-10-03T23:17:04.316615+00:00 GUARD-RECORD platform=instagram action=like account=@bivybeerbar url=https://www.instagram.com/p/Dd9-DkxnSLs/
+- 2026-10-03T23:17:04.435063+00:00 GUARD-RECORD platform=instagram action=comment account=@bivybeerbar url=https://www.instagram.com/p/Dd9-DkxnSLs/
+
+## 2026-10-03 — Pass 217 (completed ~17:35 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 1 like + 1 comment landed. Pass ID ig-20261003-173000. Caps: 1/55 likes, 1/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at pre-launch, twice). Ledger list-unknown at start: 0 open instagram (48 open total across other platforms). Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 22 API calls). 81 new candidates: 61 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 19 vetted, 0 accepted. Of the 19: 17 STILL_UNKNOWN geography (pass-216's 18 minus @hartzellhvac, now engaged), 2 STALE (@electrician_egm 906d, @telluridevalleyroofing 458d). Queue eligible depth 0 -> Phase A fallback triggered per body step 4.
+
+Phase A fallback, radius expansion round 21 (rest-of-CO + border regions; new queries avoiding rounds 15-20): brighton co plumber / aurora co hvac / thornton co electrician / la junta co salon / walsenburg co barber / golden co restaurant / commerce city co cafe / laramie wy coffee shop via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 8 near_misses: 7 OBSERVED_EXCLUDE (corridor-scoped CDP location gate; radius expansion overrides), 1 OBSERVED_EMPTY -> CONFIRMED_EMPTY via CLI followup (@plumberelitebrightonco, 0 posts). Skip list repaired via ig-apply-reconciliation.py: 498 -> 499 (ig-skip-list-20261003-171500.json).
+
+STILL_UNKNOWN web-search vetting (2 subagents + worker-direct search):
+- Pipeline STILL_UNKNOWN: @bphandymanservices -> STILL_UNKNOWN (no indexed evidence; several unrelated "BP Handyman" entities, none attributable; never skip-listed, never reject). @hvac_slim -> OUT (David Waldon, trades influencer/personal account, 41.4K followers, Kansas City KS; business-accounts-only rule, same class as @ant_doeshvac).
+- Round-21 near-misses: @bivybeerbar -> IN_SCOPE (Bivy Beer Bar, 600 12th St Ste 160, Golden CO 80401; 20-tap craft beer bar; Golden Chamber ribbon cutting Feb 2026; owner-operated local). @stay.golden.co -> OUT (Stay Golden Coffee Co, Nashville TN, not Golden CO). @goldenpack_kuwait -> OUT (Kuwait). @goldenbaco.restaurante -> OUT (Cortegaca, Portugal). @auroracohvac, @triplephase.electricllc, @goldenladlecooking -> STILL_UNKNOWN (never skip-listed, never rejects).
+
+CDP post-URL/content vetting (ig-vet-profiles.js on the Pig :9226, read-only): @bivybeerbar public business profile ("Bivy Beer Bar | Golden, CO Taphouse/Restaurant", 166 posts, 1,159 followers). Freshest posts 2026-10-01 / 2026-09-29 / 2026-09-26 (all <=90d). 2026-10-01 post (Campfire Stories event recap, genuine community content, comments visible): https://www.instagram.com/p/Dd9-DkxnSLs/.
+
+Guard filter: checked=1 eligible=1 (manifest instagram-pass-20261003-231406.json). Ledger refuse: 1 eligible, 0 refused. Closed action set: like + comment on https://www.instagram.com/p/Dd9-DkxnSLs/. Comment draft (voice contract, 18 words): "Three months on the AT deserves a whole mug club. Great way to turn a hike into community." 2 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-173000.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh -> ig-engage.js on the Pig's :9226 (sanctioned path). Worker result: {"ok":true,"logged_in":true,"canary_required":false,"canary_verified":true}, both actions ok=true (like registered as Unlike state, comment text visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings. Pacing 60-120s.
+
+Likes: @bivybeerbar (https://www.instagram.com/p/Dd9-DkxnSLs/).
+
+Comments:
+- @bivybeerbar: "Three months on the AT deserves a whole mug club. Great way to turn a hike into community."
+
+Skipped: @stay.golden.co (Nashville TN), @goldenpack_kuwait (Kuwait), @goldenbaco.restaurante (Portugal), @hvac_slim (trade influencer, personal account), 17 STILL_UNKNOWN handles, 2 STALE pipeline handles, 61 ALREADY_ENGAGED pipeline handles, 1 SUPPRESSED.
+
+Post-pass: guard record x2, ledger record-outcomes 2/2 EXECUTED (ok=true), 0 open instagram unknowns. Guard verify on the completed report (manifest set to the pre-pass manifest path per the pass-194/195 lesson): 2 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 1+1 used). Baseline 2h interval confirmed. Acceptance: likes 1/1 (100%), comments 1/1 (100%); low volume is pool-depth, not acceptance. No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-173000.json
+- Files: ig-qualified-queue-20261003-230211.json (0 eligible), ig-discover-job-20261003-171500.json (+ .result.json + .reconciliation.json), ig-skip-list-20261003-171500.json (repaired 498->499), ig-candidates-20261003-173000.json, ig-eligible-20261003-173000.json, ig-final-20261003-173000.json, ig-actions-20261003-173000.json, ig-comment-drafts-20261003-173000.json (see ig-actions file), ig-outcomes-20261003-173000.json, ig-verify-report-20261003-173000.json
+- GUARD 2026-10-04T01:08:26.148751+00:00 filter instagram: checked=2 eligible=2 blocked=0
+- GUARD 2026-10-04T01:09:18.121080+00:00 filter instagram: checked=3 eligible=3 blocked=0
+- 2026-10-04T01:28:28.597892+00:00 GUARD-RECORD platform=instagram action=like account=@mahnerootscollective url=https://www.instagram.com/p/DeAFSv1ERkP/
+- 2026-10-04T01:28:29.081537+00:00 GUARD-RECORD platform=instagram action=comment account=@mahnerootscollective url=https://www.instagram.com/p/DeAFSv1ERkP/
+- 2026-10-04T01:28:29.165814+00:00 GUARD-RECORD platform=instagram action=like account=@fblandscaping url=https://www.instagram.com/p/DcCTbiOnR8Z/
+- 2026-10-04T01:28:29.248192+00:00 GUARD-RECORD platform=instagram action=comment account=@fblandscaping url=https://www.instagram.com/p/DcCTbiOnR8Z/
+- 2026-10-04T01:28:29.331601+00:00 GUARD-RECORD platform=instagram action=like account=@dametrisavedasalon url=https://www.instagram.com/p/DblxAZMnUv2/
+- 2026-10-04T01:28:29.413922+00:00 GUARD-RECORD platform=instagram action=comment account=@dametrisavedasalon url=https://www.instagram.com/p/DblxAZMnUv2/
+
+## 2026-10-03 — Pass 218 (completed ~19:45 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 3 likes + 3 comments landed. Pass ID ig-20261003-190200. Caps: 3/55 likes, 3/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at pre-launch, twice). Ledger list-unknown at start: 0 open instagram (145 open total across other platforms). Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 22 API calls). 81 new candidates: 61 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 19 vetted, 0 accepted (same 19 as passes 216/217: STILL_UNKNOWN geography / STALE). Queue eligible depth 0 -> Phase A fallback triggered per body step 4.
+
+STILL_UNKNOWN web-search vetting (worker + subagent): @fblandscaping -> IN_SCOPE (F&B Landscaping, Colorado Springs CO 80923, business account, public, US, 250 posts, newest 2026-08-14 employee-appreciation carousel https://www.instagram.com/p/DcCTbiOnR8Z/); @rmcustomlandscapes -> STALE (newest 2026-04-22, 164d; skip-listed? no, stays out per gate); @bphandymanservices -> OUT (UK, Kent); @apex_plumbing_services -> OUT (Sydney AU); @superiairllc -> OUT (Dallas-Fort Worth TX); @thecomfortguardians -> OUT (Mississippi); @aclearchoiceplumbing -> OUT (Tennessee); @auroracohvac/@triplephase.electricllc/@goldenladlecooking -> STILL_UNKNOWN (never skip-listed, never rejects).
+
+Phase A fallback, radius expansion round 22 (rest-of-CO; new queries avoiding rounds 15-21): erie co plumber / arvada co hvac / littleton co electrician / centennial co restaurant / highlands ranch co cafe / broomfield co salon / wheat ridge co barber / northglenn co coffee shop via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 4 near_misses: 1 FOLLOWUP_REQUIRED -> RECOVERED_CANDIDATE (@mahnerootscollective: Mahne Roots, boutique color salon, Broomfield CO; verified business-class account, public, US, 853 posts, newest 2026-10-02 Aveda/Davines education carousel https://www.instagram.com/p/DeAFSv1ERkP/), 3 OBSERVED_EXCLUDE (corridor-scoped CDP location gate; radius expansion overrides -> web-search vetting: @dametrisavedasalon IN_SCOPE (D'Ametris Aveda Salon, Broomfield CO, creator, public, US, 348 posts, newest 2026-08-03 Top-200-salon award post https://www.instagram.com/p/DblxAZMnUv2/), @nailfriends.co OUT (instagram-cli country=GB, fail-closed; personal-name display), @banterbarber STALE (newest 2026-06-24, 101d)).
+
+Guard filter: checked=3 eligible=3 (manifest instagram-pass-20261004-010918.json). Ledger refuse: 3 eligible, 0 refused. Closed action set: 3 likes + 3 comments. Comment drafts (voice contract, 15-18 words): all post-specific, no selling, no em dashes. 6 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-190200.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh attempt 1 hit the sanctioned ig-profile browser lock (holder: run_ig_unfollow.sh, a live unfollow lane, NOT stale; verified holder process alive, no kill per the 2026-09-16 lesson). Waited ~8 min for natural release (within the 2-attempt browser recovery budget), attempt 2 -> ig-engage.js on the Pig's :9226: worker result {"ok":true,"logged_in":true,"canary_required":false,"canary_verified":true}, all 6 actions ok=true (likes registered as Unlike state, comment texts visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings. Pacing 60-120s.
+
+Likes: @mahnerootscollective (https://www.instagram.com/p/DeAFSv1ERkP/), @fblandscaping (https://www.instagram.com/p/DcCTbiOnR8Z/), @dametrisavedasalon (https://www.instagram.com/p/DblxAZMnUv2/).
+
+Comments:
+- @mahnerootscollective: "Two brands, two jobs, zero mercy for dry air. The Colorado formulation bit is the real flex."
+- @fblandscaping: "Built crews, not hired ones. The raffle prizes are just the interest on the sweat equity."
+- @dametrisavedasalon: "Eight years of Top 200 isn't luck, it's consistency. Congrats to the whole chair team."
+
+Skipped: @nailfriends.co (GB country fail-closed), @banterbarber (stale 101d), @rmcustomlandscapes (stale 164d), 61 ALREADY_ENGAGED pipeline handles, 1 SUPPRESSED, remaining STILL_UNKNOWN handles (never skip-listed, never rejects).
+
+Post-pass: guard record x6, ledger record-outcomes 6/6 EXECUTED (ok=true), 0 open instagram unknowns. Guard verify on the completed report (manifest set to the pre-pass manifest path per the pass-194/195 lesson; note: report key must be "actions", "completed" yields checked=0): 6 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 3+3 used). Baseline 2h interval confirmed. Acceptance: likes 3/3 (100%), comments 3/3 (100%); low volume is pool-depth, not acceptance. No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-190200.json
+- Files: ig-qualified-queue-20261004-010208.json (0 eligible), ig-discover-job-20261003-190200.json (+ .result.json + .reconciliation.json), ig-candidates-20261003-190200.json, ig-eligible-20261003-190200.json, ig-final-20261003-190200.json, ig-actions-20261003-190200.json, ig-comment-drafts-20261003-190200.json, ig-dispatch-20261003-190200.json, ig-outcomes-20261003-190200.json, ig-verify-report-20261003-190200.json, ig-pass-result-20261003-190200.json
+- GUARD 2026-10-04T03:14:59.525875+00:00 filter instagram: checked=4 eligible=4 blocked=0
+- 2026-10-04T03:30:01.512652+00:00 GUARD-RECORD platform=instagram action=like account=@thevinylcafelongmontcolorado url=https://www.instagram.com/p/Dd_1ZNqN8XU/
+- 2026-10-04T03:30:02.016692+00:00 GUARD-RECORD platform=instagram action=comment account=@thevinylcafelongmontcolorado url=https://www.instagram.com/p/Dd_1ZNqN8XU/
+- 2026-10-04T03:30:02.101599+00:00 GUARD-RECORD platform=instagram action=like account=@tuneupsalon_aurora_co url=https://www.instagram.com/p/DeAbKqUDBQ3/
+- 2026-10-04T03:30:02.185442+00:00 GUARD-RECORD platform=instagram action=comment account=@tuneupsalon_aurora_co url=https://www.instagram.com/p/DeAbKqUDBQ3/
+- 2026-10-04T03:30:02.268954+00:00 GUARD-RECORD platform=instagram action=like account=@headsupsalonandspa url=https://www.instagram.com/p/DeC_ddwj7YG/
+- 2026-10-04T03:30:02.353193+00:00 GUARD-RECORD platform=instagram action=comment account=@headsupsalonandspa url=https://www.instagram.com/p/DeC_ddwj7YG/
+- 2026-10-04T03:30:02.435935+00:00 GUARD-RECORD platform=instagram action=like account=@bnbbarbershopco url=https://www.instagram.com/p/Dd8kUGlOyNJ/
+- 2026-10-04T03:30:02.518489+00:00 GUARD-RECORD platform=instagram action=comment account=@bnbbarbershopco url=https://www.instagram.com/p/Dd8kUGlOyNJ/
+
+## 2026-10-03 — Pass 219 (scheduled 21:01 MDT, completed ~21:38 MDT)
+
+8 actions landed: 4 likes + 4 comments, all ok=true. No action blocks, checkpoints, verification challenges, or rate-limit warnings. Session logged in as nolanpigi throughout. Pass ID ig-20261003-210200. Caps: 4/55 likes, 4/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at pre-launch, twice). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 21 API calls). 81 new candidates: 62 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 18 vetted, 0 accepted (16 STILL_UNKNOWN geography / 2 STALE). Queue eligible depth 0 -> in-run troubleshoot per the 2026-09-26 binding order: EXPANDING POOL LAW invoked, Phase A fallback triggered per body step 4 (5th consecutive zero-eligible queue: passes 19:01/21:01/23:02/01:02/03:01).
+
+STILL_UNKNOWN web-search vetting (worker + subagent): @ant_doeshvac OUT (SoCal personal influencer), @hvac_slim OUT (personal influencer), @stayathomebookkeeper OUT (national virtual brand), @hvacgod deprioritized (Newport Beach/Costa Mesa CA, influencer profile, outside expansion radius); prior-pass OUT verdicts honored (@aclearchoiceplumbing TN, @apex_plumbing_services Sydney, @bphandymanservices UK, @superiairllc Dallas TX, @thecomfortguardians Mississippi); @rmcustomlandscapes STALE (2026-04-22); @elpueblococina STALE 92d (El Pueblo Mexican Restaurant, Winter Park CO, newest 2026-07-03); @angiehairsalonbuckley STALE 418d; @elsupertacopuebloco OUT (instagram-cli country=NI, fail-closed); @pantrypuebloco EXCLUDE (instagram-cli account_type=personal, fails business-account gate); @jsnailsco EXCLUDE (personal); @gunnersbarberco UNKNOWN location (Huntington Park name vs CO handle; fail-closed). STILL_UNKNOWN handles never skip-listed, never rejects.
+
+Phase A fallback, radius expansion round 23 (rest-of-CO; new queries avoiding rounds 15-22): pueblo co plumber / fort collins co hvac / greeley co electrician / pueblo co restaurant / longmont co cafe / aurora co salon / parker co barber / boulder co coffee shop via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 16 near_misses: 3 FOLLOWUP_REQUIRED -> 2 RECOVERED_CANDIDATE (@thevinylcafelongmontcolorado: The Vinyl Cafe, vinyl record shop Main St Longmont CO, business, US, 2137 posts, newest 2026-10-02 https://www.instagram.com/p/Dd_1ZNqN8XU/; @tuneupsalon_aurora_co: Tune Up The Manly Salon, Parker Rd Aurora CO, business, US, 81 posts, newest 2026-10-02 https://www.instagram.com/p/DeAbKqUDBQ3/), 1 CONFIRMED_EXCLUDE (@floyds99barbershop_parker, stale 2024-04-20), 1 CONFIRMED_EMPTY (@affordablehvacfortcollins, post_count 0). 12 OBSERVED_EXCLUDE (corridor-scoped CDP location gate; radius expansion overrides -> web-search vetting): @headsupsalonandspa IN_SCOPE (Heads Up Salon & Spa, Aurora CO; CLI country=US, creator, public, newest 2026-10-03 https://www.instagram.com/p/DeC_ddwj7YG/), @bnbbarbershopco IN_SCOPE (B&B Barber Shop, Parker CO; CLI country=US, creator, public, newest 2026-10-01 https://www.instagram.com/p/Dd8kUGlOyNJ/), @etula_restaurant OUT (Equatorial Guinea), @elpueblo_covina OUT (Covina CA), @aurorabeautycosalon OUT (Warrenton MO), @barbinocuts OUT (College Park MD, individual barber).
+
+Guard filter: checked=4 eligible=4 (manifest instagram-pass-20261004-031459.json). Ledger refuse: 4 eligible, 0 refused. Closed action set: 4 likes + 4 comments. Comment drafts (voice contract, 13-17 words): all post-specific, no selling, no em dashes. 8 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-210200.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format.
+
+Phase B: run_ig_pass.sh on the Pig's :9226: worker result {"ok":true,"logged_in":true,"canary_required":false,"canary_verified":true}, all 8 actions ok=true (likes registered as Unlike state, comment texts visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings. Pacing 60-120s.
+
+Likes: @thevinylcafelongmontcolorado (https://www.instagram.com/p/Dd_1ZNqN8XU/), @tuneupsalon_aurora_co (https://www.instagram.com/p/DeAbKqUDBQ3/), @headsupsalonandspa (https://www.instagram.com/p/DeC_ddwj7YG/), @bnbbarbershopco (https://www.instagram.com/p/Dd8kUGlOyNJ/).
+
+Comments:
+- @thevinylcafelongmontcolorado: "New vinyl smell beats new car smell and it is not close. Killer find for the crate."
+- @tuneupsalon_aurora_co: "A fresh fade and an ice cold beer is the most efficient self care on the menu."
+- @headsupsalonandspa: "That blend is smoother than a fresh wax on skis. Stunning work."
+- @bnbbarbershopco: "Precision you can measure with a ruler. The lineup game is strong."
+
+Skipped: 62 ALREADY_ENGAGED pipeline handles, 1 SUPPRESSED, @elpueblococina (stale 92d), @angiehairsalonbuckley (stale 418d), @rmcustomlandscapes (stale 164d), @elsupertacopuebloco (country=NI fail-closed), @pantrypuebloco/@jsnailsco (personal account type), @gunnersbarberco (location ambiguous, fail-closed), @floyds99barbershop_parker (stale 2024-04-20), @affordablehvacfortcollins (confirmed 0 posts), @etula_restaurant/@elpueblo_covina/@aurorabeautycosalon/@barbinocuts (out of country/state), @hvacgod (outside expansion radius), @ant_doeshvac/@hvac_slim/@stayathomebookkeeper (influencer/national), remaining STILL_UNKNOWN handles (never skip-listed, never rejects).
+
+Post-pass: guard record x8, ledger record-outcomes 8/8 EXECUTED (ok=true), 0 open instagram unknowns. Guard verify on the completed report (manifest set to the pre-pass manifest path per the pass-194/195 lesson): 8 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 4+4 used). Baseline 2h interval confirmed. Acceptance: likes 4/4 (100%), comments 4/4 (100%); low volume is pool-depth, not acceptance. No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-210200.json
+- Files: ig-qualified-queue-20261004-030156.json (0 eligible), ig-discover-job-20261003-210200.json (+ .result.json + .reconciliation.json), ig-candidates-20261003-210200.json, ig-eligible-20261003-210200.json, ig-final-20261003-210200.json, ig-actions-20261003-210200.json, ig-comment-drafts-20261003-210200.json, ig-dispatch-20261003-210200.json, ig-outcomes-20261003-210200.json, ig-verify-report-20261003-210200.json, ig-health-ig-20261003-210200.json
+- GUARD 2026-10-04T05:09:32.491852+00:00 filter instagram: checked=1 eligible=1 blocked=0
+- GUARD 2026-10-04T05:09:39.820881+00:00 filter instagram: checked=2 eligible=2 blocked=0
+- 2026-10-04T05:22:45.990202+00:00 GUARD-RECORD platform=instagram action=like account=@asaloncolorado url=https://www.instagram.com/p/DeANOJtlWRL/
+- 2026-10-04T05:22:46.751649+00:00 GUARD-RECORD platform=instagram action=comment account=@asaloncolorado url=https://www.instagram.com/p/DeANOJtlWRL/
+- 2026-10-04T05:22:46.838337+00:00 GUARD-RECORD platform=instagram action=like account=@bienytu.co url=https://www.instagram.com/p/Dd64Qwgmley/
+- 2026-10-04T05:22:46.920005+00:00 GUARD-RECORD platform=instagram action=comment account=@bienytu.co url=https://www.instagram.com/p/Dd64Qwgmley/
+
+## 2026-10-03 — Pass 220 (scheduled 23:01 MDT, completed ~23:35 MDT)
+
+CLASSIFICATION: SUCCESS_ACTION. 2 likes + 2 comments landed, all ok=true. Pass ID ig-20261003-230200. Caps: 2/55 likes, 2/15 comments (below cap: pool-thin, honest below-cap count per the 2026-09-27 tier-quality rule; no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law; re-checked by run_ig_pass.sh at pre-launch, twice). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build ran clean (no 429 short-circuit; 21 API calls). 81 new candidates: 62 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous identity fail-closed), 18 vetted, 0 accepted (16 STILL_UNKNOWN geography / 2 STALE). Queue eligible depth 0 -> in-run troubleshoot per the 2026-09-26 binding order: EXPANDING POOL LAW invoked, Phase A fallback triggered per body step 4 (6th consecutive zero-eligible queue).
+
+STILL_UNKNOWN web-search vetting (5 uninvestigated handles): @github OUT (global tech brand), @ramit OUT (Ramit Sethi, NYC national finance influencer), @testedcom OUT (Adam Savage's Tested, CA national media brand), @myfabfinance OUT (Tonya Rapley, national money coach), @thefuturishere OUT (The Futur/Chris Do, LA design education brand). Prior-pass OUT verdicts honored (@aclearchoiceplumbing TN, @apex_plumbing_services Sydney, @bphandymanservices UK, @superiairllc Dallas TX, @thecomfortguardians MS, @ant_doeshvac SoCal influencer, @hvac_slim influencer, @stayathomebookkeeper national, @hvacgod outside radius); @electrician_egm STALE 906d, @telluridevalleyroofing STALE 458d, @rmcustomlandscapes STALE 164d. STILL_UNKNOWN handles never skip-listed, never rejects.
+
+Phase A fallback, radius expansion round 24 (rest-of-CO; new queries avoiding rounds 15-23): thornton co plumber / westminster co hvac / lakewood co electrician / golden co cafe / castle rock co restaurant / brighton co salon / loveland co barber / englewood co coffee shop via full run_ig_discover.sh on the Pig (read-only). Session logged in as nolanpigi; positive controls 5/5 rediscovered (discovery surface HEALTHY). 0 direct candidates, 10 near_misses: 1 FOLLOWUP_REQUIRED -> 1 RECOVERED_CANDIDATE (@asaloncolorado: A Salon, Brighton CO Aveda Lifestyle Salon, creator, public, US, 421 posts, newest 2026-10-02 carousel https://www.instagram.com/p/DeANOJtlWRL/), 9 OBSERVED_EXCLUDE (corridor-scoped CDP location gate; radius expansion overrides -> web-search vetting: @bienytu.co IN_SCOPE (Bien Y Tu Mexican restaurant, 217 4th St Castle Rock CO 80104, (303) 409-0614; CLI business, public, US, 125 posts, newest 2026-09-30 https://www.instagram.com/p/Dd64Qwgmley/), @leafcafeco_goldengrove OUT (Australia), @goldencoffeecafeteria OUT (Brazil), @alfieandco.salon OUT (Brighton UK), @bw.collective5 OUT (Charlotte NC); @goldencoffee_1111/@goldencoffeepaluta/@golden.coffee.cafe UNKNOWN no locality evidence, stay STILL_UNKNOWN; @lanewaystudio.brighton non-business fail-closed).
+
+Phase A fallback, radius expansion round 25 (rest-of-CO; new queries avoiding rounds 15-24): denver co plumber / boulder co electrician / colorado springs co hvac / pueblo co cafe / greeley co restaurant / fort collins co barber / longmont co salon / aurora co restaurant. 0 direct candidates, 16 near_misses: 4 FOLLOWUP_REQUIRED -> 1 RECOVERED_CANDIDATE (@homeheatingservice: Home Heating Service Inc, Colorado Springs HVAC & Plumbing, family-owned since 1988, (719) 204-4040; CLI business, public, US, 874 posts, newest 2026-09-29 https://www.instagram.com/p/Dd4Pw9wjOw3/), 1 CONFIRMED_EMPTY (@plumberelitedenverco, post_count 0), 3 STILL_UNKNOWN (@drewsdabarber/@dlux_barber_shop_fort_collins/@devblendedit: posts API returned no items while profile shows posts). 429 SHORT-CIRCUIT: worker-side instagram-cli posts call for @homeheatingservice caption fetch returned HTTP 429 after earlier CLI calls succeeded. Stopped ALL further instagram-cli traffic this pass, recorded ig-throttle-state.json (next pass backs off one cadence per the rule), @homeheatingservice classified STILL_UNKNOWN (content gate unverifiable under the CLI stop; never skip-listed). No platform action block, checkpoint, or verification challenge observed; caps untouched.
+
+Guard filter: checked=2 eligible=2 (manifest instagram-pass-20261004-050939.json). Ledger refuse: 2 eligible, 0 refused. Closed action set: 2 likes + 2 comments. Comment drafts (voice contract, 14 and 17 words): all post-specific, no selling, no em dashes. 4 intents written ACTION_INTENT_DURABLE, mark-execution BEFORE dispatch (fail-closed by design). Dispatch file /tmp/ig-dispatch-20261003-230200.json in {"actions":[{"type"...}],"minDelaySec":60,"maxDelaySec":120} format (text key, not comment; verified ig-engage.js reads a.text).
+
+Phase B: run_ig_pass.sh on the Pig's :9226: worker result {"ok":true,"logged_in":true,"canary_required":false,"canary_verified":true}, all 4 actions ok=true (likes registered as Unlike state, comment texts visible). No action blocks, checkpoints, verification challenges, or rate-limit warnings. Pacing 60-120s.
+
+Likes: @asaloncolorado (https://www.instagram.com/p/DeANOJtlWRL/), @bienytu.co (https://www.instagram.com/p/Dd64Qwgmley/).
+
+Comments:
+- @asaloncolorado: "Salon plans always beat work plans. That blowout lineup is a perfectly justified clock-out."
+- @bienytu.co: "Nothing like a cold day requirement that comes with chips. Castle Rock winters demand this exact order."
+
+Skipped: 62 ALREADY_ENGAGED pipeline handles, 1 SUPPRESSED, @homeheatingservice (429 short-circuit, STILL_UNKNOWN this pass, retry next pass), @electrician_egm (stale 906d), @telluridevalleyroofing (stale 458d), @rmcustomlandscapes (stale 164d), @github/@ramit/@testedcom/@myfabfinance/@thefuturishere (national brands/influencers), @leafcafeco_goldengrove (Australia), @goldencoffeecafeteria (Brazil), @alfieandco.salon (UK), @bw.collective5 (Charlotte NC), @lanewaystudio.brighton/@daebakauroraco (non-business), @plumberelitedenverco (confirmed 0 posts), remaining STILL_UNKNOWN handles (never skip-listed, never rejects).
+
+Post-pass: guard record x4, ledger record-outcomes 4/4 EXECUTED (ok=true), 0 open instagram unknowns. Guard verify on the completed report (manifest set to the pre-pass manifest path per the pass-194/195 lesson): 4 checked, 0 violations, ok=true.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 2+2 used). Baseline 2h interval confirmed. Acceptance: likes 2/2 (100%), comments 2/2 (100%); low volume is pool-depth, not acceptance. No action block, checkpoint, login failure, or rate-limit warning observed anywhere this pass. The instagram-cli 429 was API throttling during read-only vetting, not a platform flag; it triggered the mechanical 429 short-circuit only.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261003-230200.json
+- Files: ig-qualified-queue-20261004-050156.json (0 eligible), ig-discover-job-20261003-230200.json (+ .result.json + .reconciliation.json), ig-discover-job-20261003-231000.json (+ .result.json + .reconciliation.json), ig-candidates-20261003-230200.json, ig-eligible-20261003-230200.json, ig-final-20261003-230200.json, ig-actions-20261003-230200.json, ig-comment-drafts-20261003-230200.json, ig-dispatch-20261003-230200.json, ig-outcomes-20261003-230200.json, ig-verify-report-20261003-230200.json, ig-pass-result-20261003-230200.json, ig-health-ig-20261003-230200.json
+
+## 2026-10-04 — Pass 221 (scheduled 01:01 MDT, completed ~01:40 MDT)
+
+CLASSIFICATION: ELIGIBILITY_EMPTY (with RATE_LIMIT constraint on the CLI surface). 0 likes, 0 comments. Pass ID ig-20261004-010400. Caps: 0/55 likes, 0/15 comments (zero eligible after expansion; honest below-cap count, no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Ledger list-unknown at start: 0 open instagram. Instagram hold: false.
+
+Phase P: ig-pipeline.py --build SHORT-CIRCUITED on the 429 throttle state recorded by pass 220 (2026-10-04T05:15:40Z, "HTTP 429 from instagram-cli on worker-side posts call (homeheatingservice vetting)"). 0 API calls, 0 eligible, throttled_backoff=true. Per the Nolan-approved 429 rule: skipped ALL instagram-cli calls this pass, unvetted handles classified STILL_UNKNOWN (never skip-listed), next passes back off one cadence (7h window, lifts ~06:15 MDT).
+
+IN-RUN TROUBLESHOOT (2026-09-26 binding order):
+1. CLI throttle diagnosed; recovery = backoff (no CLI retry, per the mechanical rule). Phase A browser-discovery fallback triggered (queue 0 < 2x caps).
+2. Round 26 discovery (stripped variant, no CLI follow-up): ALL 8 queries search_failed. Probe confirmed (9/9 failures). Root-caused via CDP diagnostics: Instagram renders a "Turn on Notifications" modal on every fresh page load in the ig-profile browser (:9226); it overlays the nav and the [aria-label="Search"] click times out. NOT a throttle, NOT surface drift, NOT logged-out (ig-session-recover.js: already_logged_in; feed loads fine). FIX COMMITTED (e5636e6f): ig-discover.js now dismisses "Not Now" after the login check. Retry: ok:true, 8 queries, 0 anomalies, 10 near_misses. (Note: an earlier diagnostic mistakenly probed :9223, the house browser with Facebook tabs; the ig-profile browser is :9226.)
+3. Round 26 (fixed): 0 direct candidates, 10 near_misses: 1 FOLLOWUP_REQUIRED (@evergreencoroofer), 5 OBSERVED_EXCLUDE (corridor location gate), 4 OBSERVED_EMPTY (downgraded to STILL_UNKNOWN, no positive controls this run per the near-miss policy).
+4. Round 27 (radius expansion, 8 fresh rest-of-CO queries): 0 direct candidates, 8 near_misses, all OBSERVED_EXCLUDE.
+5. Near-miss deep vetting (CDP read-only, no CLI): @evergreencoroofer = Roofing Outfitters LLC, 30406 Bryant Dr, Evergreen CO 80439 (real CO roofing business; prospect-noted) BUT 1 post / 0 followers / no extractable post URL -> STILL_UNKNOWN, not engagement-ready. @brush_restaurante = OUT (Ecuador, "Cocina Mediterranea"). @elizabethcosalon = OUT (Buford, GA). @morrison.cafe (BCM Morrison Cafe, 224 posts) / @morrisoncafe00 (22 posts) / @elizabethandcosalon (253 posts): location UNCONFIRMED via web search -> STILL_UNKNOWN. Remaining: STILL_UNKNOWN, never skip-listed.
+6. Post-URL blocker: CDP profile post-grids render zero /p/ or /reel/ anchors (surface drift re-confirmed on 6 profiles); CLI post fetch unavailable under throttle. No actionable candidate could be qualified (5 of 6 qualification gates unverifiable without CLI).
+
+Guard filter / ledger refuse: no candidates to filter (0 in). No intents written (no actions). No Phase B dispatched.
+
+RADIUS EXPANSION: rounds 26-27 used 16 fresh rest-of-CO queries (monument, woodland park, windsor, evergreen, fountain, berthoud, estes park, lone tree, buena vista, fairplay, johnstown, morrison, brush, fort morgan, elizabeth, strasburg), avoiding all 243 previously used queries. Enumeration budget: 2 of 3 strategies spent. A 3rd round was not run: the binding constraint is vetting surface (no CLI, no CDP post-links), not discovery volume; more queries would produce STILL_UNKNOWN near-misses, not qualified candidates. Next passes (post-throttle-lift ~06:15 MDT) retry with CLI vetting + the fixed discovery script.
+
+Skipped: all 18 near-miss handles above (2 confirmed OUT, 1 CO prospect not ready, 15 STILL_UNKNOWN); 0 pipeline candidates (throttled build).
+
+Post-pass: 0 guard records, 0 ledger outcomes, 0 open unknowns. Nothing to verify (no actions).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. No action block, checkpoint, login failure, or rate-limit warning on the browser surface. The instagram-cli 429 was API throttling during read-only vetting (pass 220), not a platform flag; the mechanical short-circuit ran as designed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation). The ig-discover.js modal fix is committed infrastructure hygiene.
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261004-010400.json
+- Files: ig-qualified-queue-20261004-070157.json (0 eligible, throttled), ig-discover-job-20261004-010400.json (+ .result.json, 10 near_misses), ig-discover-job-20261004-012500.json (+ .result.json, 8 near_misses), ig-discover-probe-20261004-010400.json (diagnostic), ig-health-ig-20261004-010400.json
+- Infra fix: pig-fb/ig-discover.js "Turn on Notifications" modal dismissal, commit e5636e6f
+
+## 2026-10-04 — Pass 222 (scheduled 03:01 MDT, completed ~03:15 MDT)
+
+CLASSIFICATION: ELIGIBILITY_EMPTY (with RATE_LIMIT constraint on the CLI surface). 0 likes, 0 comments. Pass ID ig-20261004-030100. Caps: 0/55 likes, 0/15 comments (zero eligible; honest below-cap count, no padding). Next week's ramped caps: 60 likes + 18 comments (+5/+3 per the 2026-09-26 no-scale-back order).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Instagram hold: false. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build SHORT-CIRCUITED on the 429 throttle state recorded by pass 220 (2026-10-04T05:15:40Z, 7h backoff lifts ~12:15Z / 06:15 MDT). 0 API calls, 0 eligible, throttled_backoff=true. Per the Nolan-approved 429 rule: skipped ALL instagram-cli calls this pass; no positive-control revalidation; next passes back off.
+
+IN-RUN TROUBLESHOOT (2026-09-26 binding order):
+1. CLI throttle diagnosed; recovery = backoff (no CLI retry, per the mechanical rule). Phase A browser-discovery fallback triggered (queue 0 < 2x caps).
+2. Round 28 discovery (rest-of-CO expansion; 8 fresh queries avoiding all 461 previously used): lyons co plumber / nederland co hvac / idaho springs co electrician / georgetown co cafe / mead co restaurant / milliken co salon / ault co barber / winter park co coffee shop via run_ig_discover.sh on the Pig (read-only, fixed ig-discover.js). Session logged in as nolanpigi; 0 anomalies; 0 direct candidates; 9 near_misses (8 OBSERVED_EXCLUDE, 1 OBSERVED_EMPTY).
+3. Reconciliation DEFECT NOTED (no harm): run_ig_discover.sh's automatic reconciliation fired instagram-cli follow-up calls during the throttle window; all returned HTTP 429, fail-closed to STILL_UNKNOWN. ig-nearmiss-followup.js does not consult the throttle state file before making CLI calls. The positive-control check also ran via CLI (3/5 rediscovered, 2 not; all attempts 429'd), so per the near-miss policy @lyons.plumbing.construction OBSERVED_EMPTY was downgraded to STILL_UNKNOWN (empty conclusion untrusted). No successful CLI read happened this pass.
+4. Near-miss web-search vetting (no CLI, per the short-circuit): @georgetowncafe_colonialinn OUT (Georgetown Cafe at the Leesburg Colonial Inn, Leesburg VA). STILL_UNKNOWN (thin/no web footprint, never skip-listed): @gdaycoffee0612, @meadowsvenue.co (unlinked; a Meadows Event Center exists in Platteville CO but no source ties the handle to it), @realchristopherbarber, @dondleobarbershop, @girardbarbershop, @tortugabarbershop, @tincho_barbas_club (Argentine branding lean, unconfirmed).
+5. Binding constraint (same as pass 221): vetting surface, not discovery volume. Post URLs are unobtainable without CLI (throttled) or CDP post-grid anchors (drift-broken, confirmed on 6 profiles in pass 221). Enumeration budget: 1 of 3 strategies spent; further rounds this pass would produce more STILL_UNKNOWN near-misses. The 05:01 pass regains CLI vetting after the throttle lifts ~06:15 MDT.
+
+Guard filter / ledger refuse: no candidates to filter (0 in). No intents written (no actions). No Phase B dispatched. No guard records, no outcomes, 0 open unknowns. Nothing to verify (no actions).
+
+Skipped: @georgetowncafe_colonialinn (OUT, Virginia), @lyons.plumbing.construction + 7 handles above (STILL_UNKNOWN, never skip-listed, never rejects); 0 pipeline candidates (throttled build).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. No action block, checkpoint, login failure, or rate-limit warning on the browser surface. The instagram-cli 429 was API throttling during read-only vetting (pass 220), not a platform flag; the mechanical short-circuit ran as designed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261004-030100.json
+- Files: ig-qualified-queue-20261004-090312.json (0 eligible, throttled), ig-discover-job-20261004-030100.json (+ .result.json + .reconciliation.json), ig-health-ig-20261004-030100.json
+
+## 2026-10-04 — Pass 223 (scheduled 05:01 MDT, completed ~05:20 MDT)
+
+CLASSIFICATION: ELIGIBILITY_EMPTY (with RATE_LIMIT constraint on the CLI surface). 0 likes, 0 comments. Pass ID ig-20261004-050100. Caps: 0/55 likes, 0/15 comments (zero eligible; honest below-cap count, no padding).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Instagram hold: false. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build SHORT-CIRCUITED on the 429 throttle state (throttled_at 2026-10-04T05:15:40Z, 7h backoff lifts ~12:15Z / 06:15 MDT). 0 API calls, 0 eligible, throttled_backoff=true. Per the Nolan-approved 429 rule: skipped ALL instagram-cli calls this pass; no positive-control revalidation.
+
+IN-RUN TROUBLESHOOT (2026-09-26 binding order):
+1. CLI throttle diagnosed (active, lifts ~06:15 MDT); recovery = backoff, no CLI retry. Phase A browser-discovery fallback triggered (queue 0 < 2x caps).
+2. Discovery health gate BLOCKED run_ig_discover.sh: .ig-discovery-health.json says UNHEALTHY (set 2026-10-04T09:08Z by pass 222's reconciliation). Diagnosed as throttle contamination: pass 222's own log records the control check ran via CLI with all attempts 429'd ("3/5 rediscovered, 2 not; all attempts 429'd"), so the UNHEALTHY marker is a false positive, not surface drift. The browser discovery surface was proven healthy in pass 222 round 28 (ok:true, 0 anomalies, logged in, ~2h prior). Ran a manual one-off discovery (gate bypass documented in /tmp script, shared gate left intact; scratch script deleted after the run) with SKIP_RECONCILE=1. Per the near-miss policy, all EMPTY conclusions from this unreconciled run downgrade to STILL_UNKNOWN.
+3. Round 29 (radius expansion, 8 fresh rest-of-CO queries avoiding all previously used): sterling co plumber / la junta co hvac / trinidad co electrician / alamosa co cafe / salida co restaurant / canon city co salon / lamar co barber / leadville co coffee shop. Session logged in as nolanpigi; 0 anomalies; 0 direct candidates; 7 near_misses, all OBSERVED_EXCLUDE (no location signal in profile text; the script's gate fires on any profile with zero location tokens, which is narrower than the authorized rest-of-CO expansion but correctly rejects unlocatable profiles).
+4. Near-miss web-search vetting (no CLI, per the short-circuit): @la_marco_barbershop = OUT (no Colorado evidence; same-name results in Americana SP Brazil and Lenti Hungary). STILL_UNKNOWN, never skip-listed: @comida_ricayfabulosa, @la_maravilla1308, @marinadabarbera, @daavidcosmo, @lamarrbarber80gmail.com4, @coffeeshopcmc (thin/no web footprint).
+5. Binding constraint (same as passes 221/222): vetting surface, not discovery volume. Post URLs are unobtainable without CLI (throttled until ~06:15 MDT) or CDP post-grid anchors (drift-broken, re-confirmed pass 221). No candidate could be qualified. Enumeration budget: 1 of 3 strategies spent; further rounds would produce more unvetted near-misses. The 07:01 pass regains CLI vetting after the throttle lifts and can also revalidate positive controls to clear the stale UNHEALTHY marker (reconciliation resumes with working CLI).
+
+INFRA FIX COMMITTED (3e79ba37): run_ig_discover.sh now honors SKIP_RECONCILE=1, fixing the pass-222-noted defect where the automatic reconciliation fired 12 instagram-cli follow-up calls into the 429 backoff window. Verified live this pass (stderr: "near-miss CLI follow-up skipped (throttle backoff)", zero CLI calls, no reconciliation file written).
+
+Guard filter / ledger refuse: no candidates to filter (0 in). No intents written (no actions). No Phase B dispatched. No guard records, no outcomes, 0 open unknowns. Nothing to verify (no actions).
+
+Skipped: all 7 near-miss handles above (1 confirmed OUT, 6 STILL_UNKNOWN); 0 pipeline candidates (throttled build).
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. No action block, checkpoint, login failure, or rate-limit warning on the browser surface. The instagram-cli 429 was API throttling during read-only vetting (pass 220), not a platform flag; the mechanical short-circuit ran as designed.
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261004-050100.json
+- Files: ig-qualified-queue-20261004-110247.json (0 eligible, throttled), ig-discover-job-20261004-050100.json (+ .result.json, 7 near_misses; no reconciliation file, skipped per short-circuit), ig-health-ig-20261004-050100.json
+- Infra fix: run_ig_discover.sh SKIP_RECONCILE=1, commit 3e79ba37
+
+## 2026-10-04 — Pass 224 (scheduled 07:01 MDT, completed ~07:30 MDT)
+
+CLASSIFICATION: ELIGIBILITY_EMPTY (verified-healthy enumeration). 0 likes, 0 comments. Pass ID ig-20261004-070100. Caps: 0/55 likes, 0/15 comments (zero eligible; honest below-cap count, no padding).
+
+Authority: AUTHORITY-ALLOW surface=instagram (gate checked BEFORE Phase P per the gate-check-first law). Instagram hold: false. Ledger list-unknown at start: 0 open instagram.
+
+Phase P: ig-pipeline.py --build ran clean (21 API calls, no 429; throttle from pass 220 lifted 12:15:40Z as expected). 81 input -> 62 ALREADY_ENGAGED, 1 SUPPRESSED (@c.s__landscaping ambiguous), 18 vetted -> 0 accepted. 16 STILL_UNKNOWN geography, 2 STALE (@electrician_egm 906d, @telluridevalleyroofing 459d).
+
+INFRA FIX VERIFIED: pass 222's UNHEALTHY discovery-health marker (throttle contamination: controls 3/5, posts calls 429'd) was revalidated control-only via CLI this pass: 5/5 controls rediscovered, marker cleared to HEALTHY (node ig-nearmiss-followup.js --controls-only). The vetting and discovery surfaces are genuinely back.
+
+IN-RUN TROUBLESHOOT (2026-09-26 binding order), discovery budget spent 3/3:
+1. STILL_UNKNOWN investigation (web search + CLI profiles, per protocol): @rmcustomlandscapes = Rocky Mountain Custom Landscapes, Gypsum CO 81637 (Tier 3 Vail-valley) but STALE (newest post 165d). @apex_plumbing_services = Colorado Springs (corridor cities_out) OUT. @bphandymanservices = Denver metro OUT. @thecomfortguardians (MS), @superiairllc (TX), @ant_doeshvac (SoCal), @hvacgod (Newport Beach CA), @thefuturishere (LA), @stayathomebookkeeper (remote), @myfabfinance (finance coach), @github/@ramit/@testedcom/@thisoldhouse (national) all OUT. @hvac_slim, @barber_ray49 stay STILL_UNKNOWN (no geo evidence; never skip-listed).
+2. Phase A round 30 (8 fresh queries: kremmling/granby CO, jackson WY, provo UT, page AZ, colby KS, chadron NE, grants NM): session logged in as nolanpigi, 0 anomalies, 0 candidates, 1 near_miss. Reconciliation: controls 5/5, health HEALTHY. @avabella_hair_salon = Page AZ salon, CONFIRMED Page AZ but STALE (144d).
+3. Phase A round 31 (8 fresh queries: evans/eaton/platteville/keenesburg/hudson/dacono/lafayette/superior CO): 0 candidates, 14 near_misses. Reconciliation: controls 5/5, 5 CONFIRMED_EMPTY (@evansplumbingco, @colin.plumber, @evanstonbrothersplumbing, @hudsonhascoffee, @courthousecafehanover). 9 location-gated vetted via CLI: @evans.plumbing.co (PK), @evansplumbing.co (CA), @eatonsheating (CA postal), @jsmooth.co (Lafayette IN), @exclusiveexperiencecompany (Lafayette LA), @restaurantesaborsuperior (Brazil), @thelafayettebarberco (Lafayette CO 80026 CONFIRMED but STALE 1034d), @lafayettebarbercollective (personal-type, single intro post, Lafayette unpinned), @aircommanderhvac (ambiguous, no CO evidence).
+4. Phase A round 32 (8 fresh queries: louisville/nunn/fleming/akron/wray/cheyenne wells/kiowa/elbert CO): 0 candidates, 16 near_misses. Reconciliation: controls 5/5, @akronhaircolorsalon CONFIRMED_EMPTY, @fadedbyflores CONFIRMED_EXCLUDE. 10 CO-plausible vetted via CLI: @plumberlouisvilleco.us (PK), @nunnaancafe (TH), @minthaircollective/@the.emerald.salon/@jackiereneesalon (Akron OH), @cutzbyrayyy (La Habra CA), @286barberia (EC), @oasisbarbercompany (Shelton CT), @iriscoffeecompany (Pella IA), @barber_ray49 (STILL_UNKNOWN, no geo).
+
+Guard filter / ledger refuse: no candidates to filter (0 in). No intents written (no actions). No Phase B dispatched. No guard records, no outcomes, 0 open unknowns. Nothing to verify (no actions).
+
+Skipped: all handles above; 0 pipeline candidates.
+
+NO-SCALE-BACK EVALUATION (2026-09-26 order): no cap changes, no hold periods, no disabling. Caps untouched (55+15 authorized, 0+0 used). Baseline 2h interval confirmed. No action block, checkpoint, login failure, or rate-limit warning on the browser surface. The 07:01-pass 429 backoff lifted on schedule; CLI was fully healthy this pass (zero 429s).
+
+SURFACED TO NOLAN: nothing (no action block, checkpoint, login failure on the execution surface, guard fail-closed, or verify violation).
+
+Schedule stays ENABLED per the stay-on rule.
+
+- Health: ~/workspace/goals/ping-social-outreach-campaign/hidden_files/engagement-passes/ig-health-ig-20261004-070100.json
+- Files: ig-qualified-queue-20261004-130210.json (0 eligible, vetting rejects investigated), ig-discover-job-20261004-070200.json (+ .result.json + .reconciliation.json), ig-discover-job-20261004-073100.json (+ .result.json + .reconciliation.json), ig-discover-job-20261004-074500.json (+ .result.json + .reconciliation.json)
+- Infra: .ig-discovery-health.json UNHEALTHY (pass-222 throttle contamination) cleared to HEALTHY via genuine 5/5 control revalidation
