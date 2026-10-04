@@ -1,0 +1,71 @@
+{
+  "baseline_id": "D-2026-10-04-freeze",
+  "frozen_at": "2026-10-04T07:30:00-06:00",
+  "frozen_by": "worker B (parameter sweeps), Voice Optimization Program",
+  "reference": {
+    "pig_path": "/home/nolan/voice-studio/refs/nolan-ref-15s.wav",
+    "workspace_copy": "voice-studio/refs/nolan-ref-15s.wav",
+    "sha256": "b392a350544e9e993a13412d5da453068e48b0d8340ead15865e292c51c7fabf",
+    "format": "mono, 16-bit PCM, 24000 Hz, 15.0 s",
+    "provenance": "0-15s of the same longer recording used for the 18s/39s trials; ends on a complete sentence (\"...interconnect more APIs.\")",
+    "ref_text": "Using these will explore how these pieces fit together, where they overlap, where they conflict and how they can be organized into a constitutional architecture built around replay truth. The goal is to interconnect more APIs."
+  },
+  "alignment": {
+    "method": "faster-whisper forced alignment (word timestamps), carrier-word end detection",
+    "implementation": "voice-studio/engines/audio_fix.py :: cut_carrier_aligned(path, carrier_word='okay')",
+    "faster_whisper_version": "1.2.1",
+    "whisper_model": "base.en",
+    "whisper_device": "cpu",
+    "whisper_compute_type": "int8",
+    "whisper_decode": "beam_size=5, language='en', word_timestamps=True"
+  },
+  "trim_logic": {
+    "primary": "cut_carrier_aligned: resample generation to 16k mono, whisper word timestamps, find leading word matching 'okay' (punctuation-stripped, case-insensitive); cut at word_end + 30ms; apply 15ms linear fade-in; rewrite WAV with correct header. Carrier word must end between 0.1s and 3.0s or the primary path is skipped.",
+    "fallback": "trim_carrier: longest contiguous sub -42dB run between 0.3s and 2.5s (50ms frames); cut 30% into that run; 15ms fade-in. Fail-safe no-op when no >=150ms quiet run found.",
+    "fail_safe": "if neither path applies, file is left untouched (never a destructive guess)"
+  },
+  "depth_pitch": {
+    "studio_default_semitones": -1.5,
+    "where_set": "voice-studio/app.py line 104 (data.get('pitch', -1.5)), clamped to [-4.0, 2.0]; applied post-generation via pitch_shift_file (phase-vocoder time stretch + resample)",
+    "note": "the gen_local() engine path (voice-studio/engines/local_qwen.py) does NOT apply pitch shift; the Studio app applies it after generation. Parameter sweep generations use the engine path: carrier + /clone + alignment trim, NO pitch shift."
+  },
+  "model": {
+    "model_id": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "hf_snapshot_revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+    "cache_path_in_container": "/app/models/models--Qwen--Qwen3-TTS-12Hz-1.7B-Base/snapshots/fd4b254389122332181a7c3db7f27e918eec64e3"
+  },
+  "service": {
+    "container": "qwen3-tts-service",
+    "image": "qwen3-tts-qwen-qwen3-tts",
+    "image_config_digest": "sha256:2e3108af87a2a7fc62ac150e96cd16324ace3758f5f4acf396daca0696dd3900",
+    "app_py": "/app/app.py (1567 lines, no git repo inside container)",
+    "qwen_tts_pip_package": "0.1.1",
+    "endpoint": "POST /clone (multipart: reference_audio wav file, form fields text / ref_text / language)",
+    "clone_mode": "x_vector_only_mode=False (ICL mode, ref_text required)"
+  },
+  "generation_parameters_in_effect": {
+    "source": "model snapshot generation_config.json (/app/models/.../snapshots/fd4b254389122332181a7c3db7f27e918eec64e3/generation_config.json); the /clone endpoint passes NO sampling kwargs, so qwen_tts Qwen3TTSModel._merge_generate_kwargs resolves user(None) -> generate_config.json -> hard defaults. generate_config.json is present, so its values win.",
+    "do_sample": true,
+    "top_k": 50,
+    "top_p": 1.0,
+    "temperature": 0.9,
+    "repetition_penalty": 1.05,
+    "subtalker_dosample": true,
+    "subtalker_top_k": 50,
+    "subtalker_top_p": 1.0,
+    "subtalker_temperature": 0.9,
+    "max_new_tokens": 8192,
+    "language": "English",
+    "x_vector_only_mode": false
+  },
+  "official_qwen_defaults": {
+    "do_sample": true,
+    "top_k": 50,
+    "top_p": 1.0,
+    "temperature": 0.9,
+    "repetition_penalty": 1.05
+  },
+  "mismatch_vs_official_defaults": "NONE. Effective production parameters equal the official Qwen defaults exactly (confirmed at three layers: hard defaults in qwen_tts_model.py _merge_generate_kwargs, model generation_config.json, and the /clone call path which forwards no overrides).",
+  "sweep_note": "The /clone endpoint accepts no sampling parameters, so sweeps cannot run through production /clone without changing production code (not permitted). Sweep generations run inside the qwen3-tts-service container against the same loaded model weights via Qwen3TTSModel.generate_voice_clone with explicit sampling kwargs, keeping the request shape identical (carrier-prefixed text, same ref audio, same ref_text, ICL mode, language=English). CPU device is used to avoid GPU contention with the running production service; the ONLY deliberate difference from production is device (cpu vs cuda) plus the single swept parameter."
+  }
+}
