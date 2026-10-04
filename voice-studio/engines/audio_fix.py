@@ -92,48 +92,49 @@ def _get_whisper():
 
 
 def cut_carrier_aligned(path, carrier_word="okay"):
-    """Remove the sacrificial carrier via whisper forced alignment.
+    """Remove the sacrificial carrier via pause-start acoustic cut.
 
-    Finds the end timestamp of the leading carrier word, cuts there with a
-    15ms fade-in, and rewrites the file. Unlike trim_carrier (which needs a
-    >=150ms pause after the carrier), this works when the model runs the
-    carrier straight into the real text. Falls back to trim_carrier when
-    alignment fails; fail-safe no-op when neither applies. Returns True
-    when a cut was applied.
+    Design (2026-10-04 onset stress suite, 50 cases):
+    Whisper's word timestamps are coarse (+/-200ms) and tile contiguously, so
+    they locate the carrier only roughly (S_w often equals E). The carrier's
+    vowel decay + breath tail (-28 to -35dB, 100-400ms) survives a fixed +30ms
+    margin and is audible as a ~80-150ms onset fragment whenever a pause
+    follows the carrier. The cut is placed at the PAUSE START, found
+    acoustically and bounded by the word's true onset:
+
+      1. Transcribe at 16k with word timestamps. Scan ALL words for the
+         carrier word; take the LAST occurrence starting before 2.0s (handles
+         a hallucinated leading word and a stuttered double carrier). Its end
+         is E.
+      2. Find W_on, the first content word's true loud onset: the first 60ms
+         run averaging above -30dB scanning forward from E+0.05. (Words peak
+         at -20 to -28dB; the tail rarely sustains above -30dB.) This bounds
+         the pause scan so a later inter-word pause can never be mistaken for
+         the post-carrier pause, even when whisper tiles S_w == E.
+      3. Scan 20ms RMS bins forward from E+0.03 to min(E+0.6, W_on) for the
+         first 3 consecutive bins below -34dB: the tail's end / pause's start.
+         Cut at the first of the three. Fall back to E+0.03 when no
+         sustained-quiet run is found (carrier abuts the word; the tail is
+         masked). If W_on < E+0.1 (word immediate), cut minimally at E+0.01.
+      4. 15ms fade-in at the cut; rewrite the file.
+    No-carrier fallback: trim <400ms of leading sub -28dB mumble/noise at the
+    first >=200ms sub -38dB run. Then fail-safe no-op.
+    Returns True when audio was removed.
     """
     import numpy as np
     import struct
     import wave
-    try:
-        w = wave.open(path)
-        sr, n = w.getframerate(), w.getnframes()
-        pcm = np.frombuffer(w.readframes(n), dtype=np.int16).astype(np.float32)
-        # resample to 16k for whisper (bypass av via numpy input)
-        idx = np.linspace(0, len(pcm) - 1, int(len(pcm) * 16000 / sr))
-        pcm16 = np.interp(idx, np.arange(len(pcm)),
-                          pcm).astype(np.float32) / 32768.0
-        model = _get_whisper()
-        segs, _ = model.transcribe(pcm16, language="en", beam_size=5,
-                                   word_timestamps=True)
-        first_end = None
-        for s in segs:
-            for wd in (s.words or []):
-                if wd.word.strip(" ,.!?").lower() == carrier_word:
-                    first_end = wd.end
-                break
-            break
-        if first_end is None or first_end < 0.1 or first_end > 3.0:
-            return trim_carrier(path)
-        cut = int((first_end + 0.03) * sr)  # 30ms margin past word end
-        if cut >= len(pcm) - sr:
-            return trim_carrier(path)
+
+    def _rms_db(x):
+        return float(20 * np.log10(np.sqrt((x ** 2).mean()) / 32768.0 + 1e-9))
+
+    def _rewrite(pcm, sr, cut):
+        ch = 1 if pcm.ndim == 1 else pcm.shape[1]
         out = pcm[cut:].astype(np.float32)
         nfade = int(sr * 0.015)
         if len(out) > nfade:
             out[:nfade] *= np.linspace(0, 1, nfade)
         raw = np.clip(out, -32768, 32767).astype(np.int16).tobytes()
-        with wave.open(path, "rb") as wf:
-            ch, sw = wf.getnchannels(), wf.getsampwidth()
         head = struct.pack("<4sI4s4sIHHIIHH4sI",
                            b"RIFF", 36 + len(raw), b"WAVE",
                            b"fmt ", 16, 1, ch, sr,
@@ -141,6 +142,115 @@ def cut_carrier_aligned(path, carrier_word="okay"):
                            b"data", len(raw))
         with open(path, "wb") as f:
             f.write(head + raw)
+
+    try:
+        w = wave.open(path)
+        sr, n = w.getframerate(), w.getnframes()
+        ch = w.getnchannels()
+        pcm = np.frombuffer(w.readframes(n), dtype=np.int16).astype(np.float32)
+        if ch > 1:
+            pcm = pcm.reshape(-1, ch).mean(axis=1)
+        dur = len(pcm) / sr
+        w.close()
+
+        idx = np.linspace(0, len(pcm) - 1, int(len(pcm) * 16000 / sr))
+        pcm16 = np.interp(idx, np.arange(len(pcm)),
+                          pcm).astype(np.float32) / 32768.0
+        model = _get_whisper()
+        segs, _ = model.transcribe(pcm16, language="en", beam_size=5,
+                                   word_timestamps=True)
+        allwords = []
+        for s in segs:
+            for wd in (s.words or []):
+                allwords.append(wd)
+        hits = [(wd.start, wd.end) for wd in allwords
+                if wd.word.strip(" ,.!?").lower() == carrier_word
+                and wd.start < 2.0 and wd.end < 3.0]
+        cut = None
+        # If whisper missed the carrier on the full audio (segmentation
+        # inconsistency), re-transcribe just the first 1.5s: whisper finds a
+        # leading "okay" far more reliably on a short segment.
+        if not hits:
+            try:
+                seg_n = min(len(pcm16), int(1.5 * 16000))
+                segs2, _ = model.transcribe(pcm16[:seg_n], language="en",
+                                            beam_size=5, word_timestamps=True)
+                for s in segs2:
+                    for wd in (s.words or []):
+                        if (wd.word.strip(" ,.!?").lower() == carrier_word
+                                and wd.start < 2.0 and wd.end < 3.0):
+                            hits.append((wd.start, wd.end))
+                            break
+                    if hits:
+                        break
+            except Exception:
+                pass
+        if hits:
+            _, E = hits[-1]  # last occurrence
+            # 20ms bins from E+0.03 to E+1.0 (for W_on + pause scan)
+            wlen = int(sr * 0.02)
+            t0 = E + 0.03
+            a = int(t0 * sr)
+            b = min(len(pcm), int(min(dur, E + 1.0) * sr))
+            db = [_rms_db(pcm[k:k + wlen])
+                  for k in range(a, b - wlen, wlen)]
+            # W_on: first 100ms run averaging > -28dB, from E+0.05.
+            # (Strict: a loud carrier tail can sustain -30dB for 60ms; words
+            # sustain > -28dB for 100ms.)
+            won = None
+            start_i = 1  # bin at E+0.05
+            for i in range(start_i, len(db) - 4):
+                if sum(db[i:i + 5]) / 5.0 > -28.0:
+                    won = i
+                    break
+            if won is not None and won < 5:
+                # word immediate: minimal cut, do not scan
+                cut_t = E + 0.01
+            else:
+                scan_end_i = len(db)
+                if won is not None:
+                    # bound by word onset (but never past E+0.6)
+                    max_i = int(0.57 / 0.02)
+                    scan_end_i = min(won + 1, max_i, len(db))
+                else:
+                    # no loud word found: conservative short scan
+                    scan_end_i = min(int(0.37 / 0.02), len(db))
+                cut_t = E + 0.03  # fallback
+                for i in range(min(scan_end_i, len(db) - 2)):
+                    if (db[i] < -34.0 and db[i + 1] < -34.0
+                            and db[i + 2] < -34.0):
+                        cut_t = t0 + i * 0.02
+                        break
+            cut_t = max(E + 0.01, min(cut_t, E + 0.6))
+            cut = int(cut_t * sr)
+        else:
+            # --- no carrier word: trim leading mumble/noise only ---
+            wlen = int(sr * 0.02)
+            a = 0
+            b = min(len(pcm), int(min(dur, 1.5) * sr))
+            db = [_rms_db(pcm[k:k + wlen])
+                  for k in range(a, b - wlen, wlen)]
+            r0 = None
+            run = None
+            for i, d in enumerate(db):
+                if d < -38.0:
+                    if run is None:
+                        run = i
+                    if i - run + 1 >= 10:
+                        r0 = run * 0.02
+                        break
+                else:
+                    run = None
+            if r0 is not None and r0 < 0.4:
+                peak = max(db[i] for i in range(int(r0 / 0.02)))
+                if peak < -28.0:
+                    cut = int(r0 * sr)
+            if cut is None:
+                return False  # fail-safe no-op
+
+        if cut >= len(pcm) - int(0.25 * sr):  # short-clip guard
+            return False
+        _rewrite(pcm, sr, cut)
         return True
     except Exception:
         try:
