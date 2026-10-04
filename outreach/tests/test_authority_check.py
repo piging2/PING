@@ -463,6 +463,35 @@ class GateTest(unittest.TestCase):
         self.assertEqual(r.returncode, 2, r.stdout)
         self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
 
+    def test_session_held_prose_allows(self):
+        # 2026-10-03 linkedin incident (5th prose false positive): "session
+        # simply held since the 18:26 pass" fired the bare \bheld\b trigger.
+        # "held" now counts only when governed as a hold state (surface /
+        # engagement / account / channel noun, or held=true). Bare narrative
+        # "held" (session held, login held, held quiet, dispatch held N min)
+        # is prose, not a restriction.
+        self.write_authority({"linkedin": "ACTIVE"})
+        self.write_file("linkedin-engagement.md",
+                        "## 2026-10-03 - Pass li-5\n"
+                        "- Login-state CHANGE: none (still logged in; no "
+                        "re-login event by Nolan observed, session simply "
+                        "held since the 18:26 pass). Login held throughout. "
+                        "Held quiet per night mode.\n")
+        r = self.run_gate("linkedin")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("AUTHORITY-ALLOW", r.stdout)
+        self.assertEqual(self.conflict_reports(), [])
+
+    def test_governed_held_forms_still_deny(self):
+        # Narrowing guard: governed hold-state forms keep firing.
+        for line in ("Facebook HELD per owner order",
+                     "all engagement HELD until the flag clears",
+                     "Account held by owner order",
+                     "linkedin held=true per holds.json"):
+            r = self.gate_verdict_for_log_line("linkedin", line)
+            self.assertEqual(r.returncode, 2, f"{line}: {r.stdout}")
+            self.assertIn("AUTHORITY-DENY-CONFLICT", r.stdout)
+
     def test_restriction_window_status_prose_allows(self):
         # 2026-10-03 linkedin incident: a pass section documenting the
         # 7-day restriction-window count and asserting no new event

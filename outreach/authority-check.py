@@ -369,7 +369,41 @@ def on_hold_deliberated(clause):
     return bool(ON_HOLD_PLACEMENT_VERB_RE.match(m.group(0)))
 
 
-def _gate_meta_only(clause):
+def _surface_held_re(surface):
+    """'held' predicated of the checked surface within a tight window.
+
+    2026-10-03 linkedin incident (5th prose false positive): bare "held"
+    fired on narrative prose ("session simply held", "Login held
+    throughout"). "held" now counts only when governed as a hold state:
+    predicated of the checked surface, or the static governances in
+    HELD_GOVERNED_RE (held=true, engagement/account/channel held).
+    This keeps the 2026-10-01 fail-closed posture for surface-predicated
+    holds (including ambiguous "whether x is held") while narrative
+    "held" no longer fires.
+    """
+    if not surface:
+        return None
+    return re.compile(r"\b" + re.escape(surface) + r"\b[^.;\n]{0,30}?\bheld\b",
+                      re.I)
+
+
+def _held_match(clause, surface):
+    """Return the matched held-state text, or None.
+
+    Checks the static governed forms plus the surface-relative form.
+    """
+    m = HELD_GOVERNED_RE.search(clause)
+    if m:
+        return m.group(0)
+    rx = _surface_held_re(surface)
+    if rx:
+        m = rx.search(clause)
+        if m:
+            return m.group(0)
+    return None
+
+
+def _gate_meta_only(clause, surface=None):
     """True when the clause only discusses the gate's own prior verdicts or
     classifications and asserts no other restriction.
 
@@ -388,6 +422,8 @@ def _gate_meta_only(clause):
     rest = _QUOTED_HELD_RE.sub(" ", rest)
     rest = HELD_NEGATED_RE.sub(" ", rest)
     rest = HELD_FALSE_RE.sub(" ", rest)
+    if _held_match(rest, surface):
+        return False
     return not any(rx.search(rest) for rx in AFFIRMATIVE_RES)
 
 
@@ -438,7 +474,7 @@ def strip_negated_clauses(line, surface=None):
         # not a restriction. Drop the clause only when it discusses the gate
         # and asserts nothing else; anything still affirmative after removing
         # the gate vocabulary and discussed token keeps the clause.
-        if _gate_meta_only(clause):
+        if _gate_meta_only(clause, surface):
             continue
         # Lock-mechanics 'held' ('the driver held the X Chrome lock', 'gate
         # held clean') is not an account hold. This branch does not require a
@@ -486,8 +522,9 @@ def strip_negated_clauses(line, surface=None):
         # scoped to a different surface is not a hold on the checked
         # surface. Strip only when the clause names another surface and does
         # not name the checked surface; anything ambiguous still fires.
-        if surface in SURFACE_TOKENS and any(
-                rx.search(clause) for rx in AFFIRMATIVE_RES):
+        if surface in SURFACE_TOKENS and (
+                any(rx.search(clause) for rx in AFFIRMATIVE_RES)
+                or _held_match(clause, surface)):
             self_hit = any(rx.search(clause)
                            for rx in SURFACE_TOKENS[surface])
             other_hit = any(rx.search(clause)
@@ -502,11 +539,26 @@ def strip_negated_clauses(line, surface=None):
 # is platform enforcement (Nolan 2026-10-03 standing rule: the enforcement
 # class is restriction banner, checkpoint, action block, tripwire hold);
 # bare "banner" alone (SSH banner, comment-banner prose) never matches.
+# Bare \bheld\b fired on narrative prose ("session simply held", "Login
+# held throughout", "Held quiet per night mode", "dispatch held 26 min")
+# and accreted an ever-growing pile of carve-outs without ever becoming
+# safe. "held" now counts only when governed as a hold STATE: by a
+# surface/engagement noun, or an explicit true assignment. Owner-hold and
+# on-hold-state keep their own patterns above. An ungoverned "held" is
+# prose, not a restriction -- the other affirmative patterns still catch
+# real platform enforcement (BLOCKED, checkpoint, CAPTCHA, action-block,
+# restriction-banner, unusual-activity class terms).
+HELD_GOVERNED_RE = re.compile(
+    r"\bheld\s*[:=]\s*true\b"                                     # held=true
+    r"|\bengagement\s+held\b"                                      # engagement HELD
+    r"|\b(?:account|channel)\s+held\b"                             # account/channel held
+    r"|\b(?:tiktok|instagram|facebook|threads|linkedin)\s+held\b",  # <surface> HELD
+    re.I)
 AFFIRMATIVE_RES = [
     re.compile(r"temporarily blocked", re.I),
     re.compile(r"\bstand-?down\b", re.I),
     re.compile(r"\bowner[- ]hold\b", re.I),
-    re.compile(r"\bheld\b", re.I),
+    HELD_GOVERNED_RE,
     ON_HOLD_STATE_RE,
     re.compile(r"restriction signal", re.I),
     re.compile(r"\brestriction[- ]banner\b", re.I),
@@ -608,11 +660,16 @@ def tail_affirmative_markers(log_path, from_line=0, newest_first=False,
     hits = []
     for ln in recent:
         stripped = strip_negated_clauses(ln, surface)
+        hit = None
         for rx in AFFIRMATIVE_RES:
             m = rx.search(stripped)
             if m:
-                hits.append(f"{m.group(0)} :: {ln.strip()[:160]}")
+                hit = m.group(0)
                 break
+        if hit is None:
+            hit = _held_match(stripped, surface)
+        if hit:
+            hits.append(f"{hit} :: {ln.strip()[:160]}")
     return hits
 
 
