@@ -14,6 +14,17 @@
 // Exit codes: 0 ok, 2 usage, 3 CDP unavailable, 4 logged out (login gate),
 //             5 worker error, 6 aborted (block/challenge/rate-limit seen).
 //
+// Challenge resilience (2026-10-03 ~17:38, Nolan binding): page text is
+// classified HARD (checkpoint, verify identity, action blocked, captcha,
+// rate limit exceeded, ...) -> abort the pass, vs SOFT (something went
+// wrong, try again later, liking too fast, slow down) -> skip that post and
+// continue. Action outcomes add 'softskip' (post skipped, pass continues)
+// and 'quarantined' (URL in th-post-quarantine.json, skipped without
+// loading). 3+ distinct-post soft-skips in one pass escalate to abort.
+// A URL soft-skipped 3 times (cumulative across passes) is quarantined 24h.
+// Deployed per-pass by run_th_pass.sh scp; the quarantine file lives
+// Pig-side next to this script and survives the scp.
+//
 // Selector grounding (live-verified 2026-09-20 against current Threads web):
 // - Like control: div[role="button"] containing svg>title "Like" (unliked) or
 //   "Unlike" (already liked by the signed-in account). No aria-pressed.
@@ -28,12 +39,96 @@
 //   post; the driver reports 'already' and never clicks (a click would toggle
 //   the like OFF).
 const fs = require('fs');
+const path = require('path');
 const { chromium } = require('C:/Users/nolan/.local/share/pigi/fb-engage/node_modules/playwright-core');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = (a, b) => a + Math.random() * (b - a);
 const CDP = 'http://localhost:9226';
-const BAD = /checkpoint|verify your identity|action blocked|temporarily blocked|we suspect automated|suspicious activity|try again later|something went wrong|you'?re liking too fast|slow down|captcha|confirm you'?re a person|unusual activity|rate limit exceeded/i;
+
+// (2026-10-03 ~17:38 MDT, Nolan binding; re-applied 2026-10-03 after the
+// stale local copy overwrote the Pig implementation via run_th_pass.sh's
+// per-pass scp): challenge-text classifier. HARD patterns are account-level
+// signals -> abort the whole pass. SOFT patterns are post-level/transient
+// signals -> skip that post, continue the pass. pageChallengeMatch records
+// WHICH pattern fired (level + name + matched text), not just a boolean.
+const HARD_PATTERNS = [
+  [/checkpoint/i, 'checkpoint'],
+  [/verify your identity/i, 'verify-identity'],
+  [/action blocked/i, 'action-blocked'],
+  [/temporarily blocked/i, 'temporarily-blocked'],
+  [/we suspect automated/i, 'suspect-automated'],
+  [/suspicious activity/i, 'suspicious-activity'],
+  [/captcha/i, 'captcha'],
+  [/confirm you'?re a person/i, 'confirm-person'],
+  [/unusual activity/i, 'unusual-activity'],
+  [/rate limit exceeded/i, 'rate-limit-exceeded'],
+];
+const SOFT_PATTERNS = [
+  [/try again later/i, 'try-again-later'],
+  [/something went wrong/i, 'something-went-wrong'],
+  [/you'?re liking too fast/i, 'liking-too-fast'],
+  [/slow down/i, 'slow-down'],
+];
+
+// Post quarantine (2026-10-03 ~17:38): a URL soft-skipped 3 times (cumulative
+// across passes) is quarantined 24h so it stops burning the first action of
+// every pass. Pig-side file next to the worker: it survives the per-pass scp
+// (run_th_pass.sh only overwrites th-engage.js itself) and pig-retention.sh
+// (which only sweeps fb-engage/ transfer buffers, never ig-engage/).
+const QUARANTINE_PATH = path.join(__dirname, 'th-post-quarantine.json');
+const QUARANTINE_SKIPS = 3;
+const QUARANTINE_MS = 24 * 3600 * 1000;
+
+function loadQuarantine() {
+  try {
+    const q = JSON.parse(fs.readFileSync(QUARANTINE_PATH, 'utf8'));
+    return (q && typeof q === 'object') ? q : {};
+  } catch (_) { return {}; }
+}
+function saveQuarantine(q) {
+  try { fs.writeFileSync(QUARANTINE_PATH, JSON.stringify(q, null, 1)); }
+  catch (_) { /* best-effort; never break a pass over quarantine I/O */ }
+}
+// Returns { quarantined: bool, until?: string }. Expired quarantines reset
+// the skip counter so the URL gets fresh chances.
+function quarantineCheck(url) {
+  if (!url) return { quarantined: false };
+  const q = loadQuarantine();
+  const e = q[url];
+  if (!e || !e.quarantinedUntil) return { quarantined: false };
+  if (Date.now() < Date.parse(e.quarantinedUntil)) return { quarantined: true, until: e.quarantinedUntil };
+  e.skips = 0; delete e.quarantinedUntil; saveQuarantine(q);
+  return { quarantined: false };
+}
+// Record one soft-skip sighting; quarantine for 24h on the 3rd.
+function quarantineNoteSoftSkip(url, pattern) {
+  if (!url) return;
+  const q = loadQuarantine();
+  const e = q[url] || { skips: 0 };
+  e.skips = (e.skips || 0) + 1;
+  e.lastSkip = new Date().toISOString();
+  e.lastPattern = pattern || '';
+  if (e.skips >= QUARANTINE_SKIPS && !e.quarantinedUntil)
+    e.quarantinedUntil = new Date(Date.now() + QUARANTINE_MS).toISOString();
+  q[url] = e;
+  saveQuarantine(q);
+}
+
+// Returns null when the page is clean, else { level: 'hard'|'soft',
+// pattern: <pattern name>, text: <matched snippet> }.
+async function pageChallengeMatch(page) {
+  const bodyText = await page.evaluate(() => document.body.innerText || '').catch(() => '');
+  for (const [re, name] of HARD_PATTERNS) {
+    const m = bodyText.match(re);
+    if (m) return { level: 'hard', pattern: name, text: String(m[0]).slice(0, 120) };
+  }
+  for (const [re, name] of SOFT_PATTERNS) {
+    const m = bodyText.match(re);
+    if (m) return { level: 'soft', pattern: name, text: String(m[0]).slice(0, 120) };
+  }
+  return null;
+}
 
 // (2026-09-23, Nolan: Threads and Instagram each get their OWN separate browser
 // window, not tabs in Nolan's window. Verified by live probe the same day:
@@ -92,9 +187,8 @@ async function threadsLoggedIn(page) {
   return st.loginPrompt === 0 && (st.profileLinks > 0 || st.createBtn || st.feedChrome);
 }
 
-function pageHasBad(page) {
-  return page.evaluate((reSrc) => reSrc && new RegExp(reSrc, 'i').test(document.body.innerText || ''), BAD.source).catch(() => false);
-}
+// (pageHasBad removed 2026-10-03: superseded by pageChallengeMatch above,
+// which records WHICH pattern fired per the 17:38 directive.)
 
 // Mark the Like/Unlike/Reply button of the target post with data-th-ctl.
 // v3 targeting: find the a[href*="/post/<CODE>"] permalink anchor, climb to the
@@ -180,7 +274,12 @@ async function markedSvgHtml(page) {
 async function doLike(page, a) {
   await page.goto(a.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await sleep(rand(6000, 9000)); // view the post fully before engaging
-  if (await pageHasBad(page)) return { outcome: 'abort', note: 'challenge/rate-limit text seen' };
+  const preLike = await pageChallengeMatch(page);
+  if (preLike) {
+    if (preLike.level === 'hard')
+      return { outcome: 'abort', note: 'HARD challenge pre-action [' + preLike.pattern + ']: "' + preLike.text + '"', challenge: preLike };
+    return { outcome: 'softskip', note: 'SOFT challenge pre-action [' + preLike.pattern + ']: "' + preLike.text + '" — post skipped, pass continues', challenge: preLike, pattern: preLike.pattern };
+  }
   const likeState = await markControl(page, a, 'like');
   if (!likeState)
     return { outcome: 'failed', note: 'like control for target post not found (code-anchor + marker fallback)' };
@@ -198,7 +297,8 @@ async function doLike(page, a) {
   }
   await sleep(4000);
   const after = await markedSvgHtml(page);
-  if (await pageHasBad(page)) return { outcome: 'abort', note: 'challenge text appeared after like click' };
+  const postLike = await pageChallengeMatch(page);
+  if (postLike) return { outcome: 'abort', note: 'challenge post-action (level=' + postLike.level + ') [' + postLike.pattern + ']: "' + postLike.text + '"', challenge: postLike };
   const changed = after.svg !== before.svg;
   const countChanged = after.count !== before.count;
   return {
@@ -212,7 +312,12 @@ async function doLike(page, a) {
 async function doComment(page, a) {
   await page.goto(a.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await sleep(rand(6000, 9000)); // view the post fully before engaging
-  if (await pageHasBad(page)) return { outcome: 'abort', note: 'challenge/rate-limit text seen' };
+  const preComment = await pageChallengeMatch(page);
+  if (preComment) {
+    if (preComment.level === 'hard')
+      return { outcome: 'abort', note: 'HARD challenge pre-action [' + preComment.pattern + ']: "' + preComment.text + '"', challenge: preComment };
+    return { outcome: 'softskip', note: 'SOFT challenge pre-action [' + preComment.pattern + ']: "' + preComment.text + '" — post skipped, pass continues', challenge: preComment, pattern: preComment.pattern };
+  }
   if (!await markControl(page, a, 'reply'))
     return { outcome: 'failed', note: 'reply control for target post not found' };
   try {
@@ -266,7 +371,8 @@ async function doComment(page, a) {
     return { outcome: 'failed', note: 'Post button not clickable; composer closed, nothing published' };
   }
   await sleep(5000);
-  if (await pageHasBad(page)) return { outcome: 'abort', note: 'challenge text appeared after comment post' };
+  const postComment = await pageChallengeMatch(page);
+  if (postComment) return { outcome: 'abort', note: 'challenge post-action (level=' + postComment.level + ') [' + postComment.pattern + ']: "' + postComment.text + '"', challenge: postComment };
   const visible = await page.evaluate((t) => (document.body.innerText || '').includes(t.slice(0, 30)), a.text).catch(() => false);
   return { outcome: visible ? 'ok' : 'sent',
            note: visible ? 'comment posted and visible on page' : 'Post clicked, no challenge; comment not confirmed visible' };
@@ -308,6 +414,9 @@ async function doComment(page, a) {
       console.log(JSON.stringify(out)); process.exit(4);
     }
     const minD = (job.minDelaySec || 60), maxD = (job.maxDelaySec || 120);
+    // Distinct post URLs soft-skipped this pass (2026-10-03 ~17:38): 3+
+    // distinct soft-skips escalate to abort, treated as account-wide.
+    const softSkippedUrls = new Set();
     let i = 0;
     for (const a of job.actions) {
       i++;
@@ -320,6 +429,17 @@ async function doComment(page, a) {
         out.actions.push({ account: a.account, url: a.url, action: a.type, ok: false, outcome: 'aborted', note: out.aborted });
         break;
       }
+      // Post quarantine (2026-10-03 ~17:38): a URL soft-skipped 3 times is
+      // quarantined 24h — skip it without loading the page so it never burns
+      // an action slot (or aborts the pass) again until the quarantine lapses.
+      const qc = quarantineCheck(a.url);
+      if (qc.quarantined) {
+        out.actions.push({ account: a.account, url: a.url, action: a.type, ok: false,
+                           outcome: 'quarantined',
+                           note: 'URL quarantined until ' + qc.until + '; skipped without loading' });
+        if (i < job.actions.length) await sleep(rand(minD, maxD) * 1000);
+        continue;
+      }
       let r;
       try {
         r = a.type === 'like' ? await doLike(page, a)
@@ -328,8 +448,20 @@ async function doComment(page, a) {
       } catch (e) { r = { outcome: 'failed', note: 'exception: ' + String(e.message || e).slice(0, 160) }; }
       out.actions.push({ account: a.account, url: a.url, action: a.type,
                          ok: r.outcome === 'ok' || r.outcome === 'already',
-                         outcome: r.outcome, note: r.note });
-      if (r.outcome === 'abort') { out.ok = false; out.aborted = 'challenge/rate-limit; remaining actions skipped'; break; }
+                         outcome: r.outcome, note: r.note,
+                         challenge: r.challenge || null, pattern: r.pattern || null });
+      if (r.outcome === 'abort') { out.ok = false; out.aborted = r.note + '; remaining actions skipped'; break; }
+      if (r.outcome === 'softskip') {
+        if (a.url) softSkippedUrls.add(a.url);
+        quarantineNoteSoftSkip(a.url, r.pattern);
+        if (softSkippedUrls.size >= 3) {
+          out.ok = false;
+          out.aborted = 'account-wide soft challenge: ' + softSkippedUrls.size +
+            ' distinct posts soft-skipped this pass (' + [...softSkippedUrls].join(', ') +
+            '); remaining actions skipped';
+          break;
+        }
+      }
       if (i < job.actions.length) await sleep(rand(minD, maxD) * 1000);
     }
   } catch (e) {
