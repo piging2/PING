@@ -60,6 +60,26 @@ ENTITY_SUFFIXES = {'inc', 'llc', 'co', 'corp', 'ltd', 'pllc', 'pa', 'lp',
 # bare token "and"+"construction").
 STOPWORDS = {'and', 'the', 'of', 'for', 'a', 'an', 'or'}
 
+# Generic trade-descriptor tokens: half the directory shares them, so a
+# subset relation on descriptors alone must never auto-classify RE-SERVED
+# (2026-10-04: "B & B Plumbing & Heating" ~ "Sanders & Johnson Heating,
+# Cooling & Plumbing", "ASAP Sewer & Septic Services" ~ "B & R Septic
+# Services, Inc.", and "Midnight Plumbing & Heating" ~ "S & R Plumbing &
+# Heating" all false-matched on {plumbing, heating} / {septic, service}).
+# Singular forms; norm_tokens already singularizes.
+TRADE_DESCRIPTORS = frozenset({
+    'plumbing', 'plumber', 'heating', 'hvac', 'septic', 'sewer', 'drain',
+    'electric', 'electrical', 'electrician', 'roofing', 'roofer', 'roof',
+    'landscape', 'landscaping', 'lawn', 'concrete', 'fence', 'fencing',
+    'appliance', 'repair', 'service', 'clean', 'cleaning', 'construction',
+    'contractor', 'mechanical', 'air', 'conditioning', 'cooling', 'pump',
+    'drill', 'drilling', 'excavate', 'excavation', 'paint', 'painting',
+    'painter', 'garage', 'door', 'pest', 'control', 'solar', 'chimney',
+    'sweep', 'carpet', 'tree', 'move', 'moving', 'haul', 'hauling', 'junk',
+    'removal', 'remodel', 'remodeling', 'handyman', 'inspect', 'inspection',
+    'rooter',
+})
+
 
 def norm_tokens(name):
     """Variant-tolerant ordered token list. Mirrors the collision guard's
@@ -95,7 +115,10 @@ def names_match(a, b):
     has >= 2 tokens fully contained in the larger side (catches
     "Coven's Plumbing" vs "Covens Plumbing and Heating", "Shelton Drilling
     Corporation" vs "Shelton Drilling Corp."). Never matches on a single
-    shared token.
+    shared token. The subset branch additionally requires at least one
+    distinctive (non-trade-descriptor) token in the shared set: a subset
+    relation on generic descriptors alone ("plumbing heating", "septic
+    service") is not evidence of identity (2026-10-04 self-audit).
     """
     ta, tb = norm_tokens(a), norm_tokens(b)
     if not ta or not tb:
@@ -104,7 +127,8 @@ def names_match(a, b):
         return True
     sa, sb = set(ta), set(tb)
     small, big = (sa, sb) if len(sa) <= len(sb) else (sb, sa)
-    return len(small) >= 2 and small <= big
+    return (len(small) >= 2 and small <= big
+            and bool(small - TRADE_DESCRIPTORS))
 
 
 def _split_finding(line):
@@ -266,6 +290,25 @@ def self_test():
     check('distinct-3', not names_match('All Temp Heating & Air',
                                         'All Temp Services Inc.'))
     check('single-token', not names_match('Pump Co', 'Valley Pump Co'))
+    # 2026-10-04 production misattributions: subset relations on generic
+    # trade descriptors alone must not match (all three were proven
+    # distinct entities by independent verification).
+    check('descriptor-subset-1',
+          not names_match('B & B Plumbing & Heating',
+                          'Sanders & Johnson Heating, Cooling & Plumbing'))
+    check('descriptor-subset-2',
+          not names_match('ASAP Sewer & Septic Services',
+                          'B & R Septic Services, Inc.'))
+    check('descriptor-subset-3',
+          not names_match('Midnight Plumbing & Heating',
+                          'S & R Plumbing & Heating'))
+    # Positive controls: distinctive-token subset matches must keep working.
+    check('distinctive-subset-1',
+          names_match('Down Valley Septic and Drain',
+                      'Down Valley Septic & Drain Inc.'))
+    check('distinctive-subset-2',
+          names_match('Goodwin Septic Tank Services',
+                      'Goodwin Septic Tank Service, Inc.'))
 
     # Production evidence: this pass's two answers.
     a = check_file(os.path.join(INTEL_DIR,
