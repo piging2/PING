@@ -401,6 +401,23 @@ def main(argv):
         return 0
     if "--select" in argv:
         chosen, deferred, stale_deferred = select(queue, cap)
+        # Answer-adherence gate (2026-10-04): each selected file's findings
+        # are classified RE-SERVED/NOVEL against the full tracked universe
+        # BEFORE any independent-search verification is spent. Re-served
+        # names are never re-verified; only novel names enter the queue.
+        # Fail-open on the annotation: a checker error never breaks selection.
+        try:
+            import check_answer_negatives as _aan
+            for item in chosen:
+                fpath = os.path.join(INTEL_DIR, item["file"])
+                try:
+                    item["adherence"] = _aan.check_file(
+                        fpath, item.get("brief_id") or "")
+                except Exception as e:  # noqa: BLE001
+                    item["adherence"] = {"error": str(e)}
+        except Exception as e:  # noqa: BLE001
+            for item in chosen:
+                item["adherence"] = {"error": "checker import failed: %s" % e}
         print(json.dumps({"cap": cap, "selected": chosen,
                           "deferred_count": len(deferred),
                           "stale_breach_deferred": stale_deferred,
