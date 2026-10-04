@@ -66,6 +66,13 @@ pig_scp "$PIG:$REMOTE_RES" "$LOCAL_RES" >/dev/null 2>&1 || { echo '{"ok":false,"
 # path. Every result now gets bounded CLI follow-up + reconciliation before any
 # skip-list decision. Bounded (12 handles / 600s default): extras DEFER to the
 # next pass, never skip. Failures print a warning and leave the result intact.
+# SKIP_RECONCILE=1 (2026-10-04, pass 223): honored during the instagram-cli 429
+# backoff window. The 2026-09-26 short-circuit rule requires zero CLI calls
+# while throttled; the reconciliation's bounded CLI follow-up would fire 12
+# more 429s into the backoff. Skipping it this pass is safe: unvetted handles
+# stay STILL_UNKNOWN (never skip-listed), and no skip-list decision is made
+# off an unreconciled result.
+if [ "${SKIP_RECONCILE:-}" != "1" ]; then
 RECON="${LOCAL_RES%.result.json}.reconciliation.json"
 node "$(dirname "$0")/ig-nearmiss-followup.js" "$LOCAL_RES" "$RECON" >/dev/null 2>"$RECON.log" \
   || echo "WARNING: near-miss follow-up failed; see $RECON.log" >&2
@@ -75,5 +82,8 @@ node "$(dirname "$0")/ig-nearmiss-followup.js" "$LOCAL_RES" "$RECON" >/dev/null 
 if [ -f "$RECON" ]; then
   node "$(dirname "$0")/ig-nearmiss-followup.js" --mark-from-recon "$RECON" "$HEALTH_FILE" >/dev/null 2>&1 \
     || echo "WARNING: could not update discovery health marker $HEALTH_FILE" >&2
+fi
+else
+  echo "SKIP_RECONCILE=1: near-miss CLI follow-up skipped (throttle backoff)" >&2
 fi
 cat "$LOCAL_RES"
