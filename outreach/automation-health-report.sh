@@ -369,9 +369,27 @@ if [ -f "$ledger" ]; then
   # Open intents are attributed to in-flight vs stale passes by consulting the
   # current pass headings in the engagement logs: intents belonging to a pass
   # that is still IN FLIGHT are expected to be open; the rest are stale.
-  python3 - "$ledger" "$OUT" <<'EOF'
-import json,sys,re,os,glob
+  # 2026-10-04: headings changed format in October ("## FB Pass <ts> MDT —
+  # DISPATCHED (pass-NNN; ...)" carries no full pass_id; the Status line below
+  # it does). A pass DISPATCHED within the last 4h with open intents is still
+  # mid-flight (80 actions x 120s pacing = 2.7h max); an older DISPATCHED pass
+  # with opens is a worker-death suspect, not in-flight.
+  # Stale intents with a documented disposition (deliberate UNKNOWN reviews,
+  # worker-death boundary UNKNOWNs) are broken out so the residual
+  # "unclassified stale" line is the real action item. The annotations below
+  # are projection labels only; the ledger stays canonical.
+  python3 - "$ledger" "$OUT" "$NOW_EPOCH" <<'EOF'
+import json,sys,re,os,glob,time
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 ledger, out = sys.argv[1], sys.argv[2]
+now_epoch = int(sys.argv[3]) if len(sys.argv)>3 else int(time.time())
+KNOWN_DOCUMENTED_UNKNOWN = {
+ 'fb-20260924-175129': 'deliberate UNKNOWN, Stream E review 2026-09-26 (per-post like unprovable; never retry)',
+ 'fb-20261003-014112': 'worker-death boundary UNKNOWN seq 14 (orphan-sweep 2026-10-03)',
+ 'fb-20261003-192742': 'worker-death boundary UNKNOWN seq 6 (orphan-sweep 2026-10-04)',
+ 'fb-20261003-232714': 'worker-death boundary UNKNOWN seq 28 (orphan-sweep 2026-10-04)',
+}
 intents={}
 try:
     for line in open(ledger):
@@ -387,20 +405,58 @@ try:
 except Exception as e:
     print('⚠ ledger unparseable: '+str(e)[:80]); sys.exit(0)
 inflight_heads={}
+inflight_note={}
 for log in glob.glob(os.path.join(out,'*-engagement.md')):
     try:
-        for ln in open(log,errors='ignore'):
-            if re.match(r'^#{1,4} .*Pass ',ln) and 'IN FLIGHT' in ln:
-                m=re.search(r'[a-z]{2,3}-\d{8}-\d{6}',ln)
-                if m: inflight_heads[m.group(0)]=ln.strip()[:90]
+        lines=open(log,errors='ignore').read().splitlines()
     except Exception:
-        pass
-inflight=sum(1 for v in intents.values() if v[0] in inflight_heads)
-stale=len(intents)-inflight
-if stale==0:
-    print('✓ open intents: %d (all belong to in-flight pass(es))' % len(intents))
-else:
-    print('⚠ open intents: %d stale (pass no longer in flight), %d in-flight' % (stale,inflight))
+        continue
+    for idx,ln in enumerate(lines):
+        if not re.match(r'^#{1,4} .*Pass ',ln):
+            continue
+        if 'IN FLIGHT' in ln:
+            m=re.search(r'[a-z]{2,3}-\d{8}-\d{6}',ln)
+            if m:
+                inflight_heads[m.group(0)]=ln.strip()[:90]
+                inflight_note[m.group(0)]='IN FLIGHT heading'
+        elif 'DISPATCHED' in ln:
+            tm=re.search(r'(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) (MDT|MST)',ln)
+            if not tm:
+                continue
+            off=-6 if tm.group(3)=='MDT' else -7
+            try:
+                dep=datetime.strptime(tm.group(1)+' '+tm.group(2),'%Y-%m-%d %H:%M').replace(tzinfo=timezone(timedelta(hours=off))).timestamp()
+            except Exception:
+                continue
+            if not (0 <= now_epoch-dep <= 4*3600):
+                continue
+            pid=None
+            for fl in lines[idx+1:idx+16]:
+                if 'pass_id' not in fl:
+                    continue
+                m2=re.search(r'pass_id\s+([a-z]{2,3}-\d{8}-\d{6})',fl)
+                if m2:
+                    pid=m2.group(1); break
+            if pid and pid not in inflight_heads:
+                inflight_heads[pid]=ln.strip()[:90]
+                inflight_note[pid]='DISPATCHED %s %s %s (worker mid-pass)' % (tm.group(1),tm.group(2),tm.group(3))
+by_pass=Counter(v[0] for v in intents.values())
+inflight_c=Counter({p: by_pass[p] for p in by_pass if p in inflight_heads})
+stale_c=Counter({p: by_pass[p] for p in by_pass if p not in inflight_heads})
+n_inflight=sum(inflight_c.values()); n_stale=sum(stale_c.values())
+doc_c=Counter({p: stale_c[p] for p in stale_c if p in KNOWN_DOCUMENTED_UNKNOWN})
+unclass_c=Counter({p: stale_c[p] for p in stale_c if p not in KNOWN_DOCUMENTED_UNKNOWN})
+n_doc=sum(doc_c.values()); n_unclass=sum(unclass_c.values())
+sym='✓' if n_unclass==0 else '⚠'
+print('%s open intents: %d total = %d in-flight + %d documented-UNKNOWN + %d unclassified stale' % (sym,len(intents),n_inflight,n_doc,n_unclass))
+for p,n in inflight_c.most_common():
+    print('  in-flight: %s x%d (%s)' % (p,n,inflight_note.get(p,'')))
+if doc_c:
+    det='; '.join('%s x%d (%s)' % (p,doc_c[p],KNOWN_DOCUMENTED_UNKNOWN[p]) for p in sorted(doc_c))
+    print('  documented UNKNOWN: %s' % det[:400])
+if unclass_c:
+    det='; '.join('%s x%d' % (p,unclass_c[p]) for p in sorted(unclass_c))
+    print('  ⛔ unclassified stale (needs reconciliation): %s' % det[:300])
 EOF
 else
   echo "⚠ action-intent-ledger.jsonl not found"
