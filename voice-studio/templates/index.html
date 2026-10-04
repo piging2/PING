@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nolan Voice Studio</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px;
+         margin: 0 auto; padding: 20px; background: #111; color: #eee; }
+  h1 { font-size: 1.4em; margin-bottom: 4px; }
+  .sub { color: #999; font-size: 0.9em; margin-bottom: 16px; }
+  textarea { width: 100%; min-height: 120px; font-size: 1em; padding: 10px;
+             border-radius: 8px; border: 1px solid #444; background: #1c1c1c;
+             color: #eee; box-sizing: border-box; }
+  .row { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+  label { font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px; }
+  select { font-size: 1em; padding: 8px; border-radius: 8px; background: #1c1c1c;
+           color: #eee; border: 1px solid #444; }
+  button { width: 100%; font-size: 1.2em; padding: 14px; border: none;
+           border-radius: 10px; background: #2f7cf6; color: #fff;
+           font-weight: 600; margin: 8px 0; }
+  button:disabled { background: #444; color: #999; }
+  #status { min-height: 1.4em; color: #ffb84d; margin: 8px 0; font-size: 0.95em; }
+  #result { display: none; background: #1c1c1c; border: 1px solid #333;
+            border-radius: 10px; padding: 14px; margin-top: 12px; }
+  #result audio { width: 100%; margin: 8px 0; }
+  .filepath { font-family: monospace; font-size: 0.8em; color: #9fd6a4;
+              word-break: break-all; }
+  .dl { display: inline-block; margin-top: 8px; color: #7fb3ff; }
+  #history { margin-top: 20px; }
+  #history h2 { font-size: 1.05em; color: #ccc; }
+  .hitem { background: #1a1a1a; border: 1px solid #2c2c2c; border-radius: 8px;
+           padding: 8px 10px; margin: 6px 0; font-size: 0.85em; }
+  .hitem .meta { color: #888; }
+  .hitem a { color: #7fb3ff; }
+  .err { color: #ff7b7b; }
+</style>
+</head>
+<body>
+<h1>Nolan Voice Studio</h1>
+<div class="sub">Paste text, hit Generate, listen. File path shows below.</div>
+
+<textarea id="text" placeholder="Paste or type the text to speak..."></textarea>
+
+<div class="row">
+  <div>
+    <label for="engine">Voice engine</label>
+    <select id="engine">
+      <option value="B" selected>B: Expressive (Alibaba)</option>
+      <option value="C">C: Expressive strong (Alibaba)</option>
+      <option value="A">A: Voice clone (Alibaba)</option>
+      <option value="D">D: Local Qwen3-TTS</option>
+    </select>
+  </div>
+  <div>
+    <label for="emotion">Emotion (B and C)</label>
+    <select id="emotion">
+      <option value="restrained" selected>Restrained</option>
+      <option value="strong">Strong</option>
+    </select>
+  </div>
+</div>
+
+<button id="go" onclick="generate()">Generate</button>
+<div id="status"></div>
+
+<div id="result">
+  <audio id="player" controls autoplay></audio>
+  <div class="filepath" id="filepath"></div>
+  <a class="dl" id="dllink" href="#" download>Download wav</a>
+</div>
+
+<div id="history">
+  <h2>This session</h2>
+  <div id="hlist"><div class="meta" style="color:#666">Nothing generated yet.</div></div>
+</div>
+
+<script>
+var histCount = 0;
+function setStatus(msg, isErr) {
+  var s = document.getElementById("status");
+  s.textContent = msg;
+  s.className = isErr ? "err" : "";
+}
+async function generate() {
+  var text = document.getElementById("text").value.trim();
+  var engine = document.getElementById("engine").value;
+  var emotion = document.getElementById("emotion").value;
+  var btn = document.getElementById("go");
+  if (!text) { setStatus("Type or paste some text first.", true); return; }
+  btn.disabled = true;
+  setStatus("Generating with engine " + engine + "...");
+  document.getElementById("result").style.display = "none";
+  try {
+    var r = await fetch("/api/generate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({engine: engine, text: text, emotion: emotion})
+    });
+    var j = await r.json();
+    if (!j.ok) {
+      setStatus("Error: " + (j.error || "unknown"), true);
+    } else {
+      setStatus("Done. " + j.chars + " chars, engine " + j.engine + ".");
+      var p = document.getElementById("player");
+      p.src = j.audio_url;
+      p.play().catch(function(){});
+      document.getElementById("filepath").textContent = j.file_path;
+      var dl = document.getElementById("dllink");
+      dl.href = j.audio_url;
+      dl.setAttribute("download", j.audio_url.split("/").pop());
+      document.getElementById("result").style.display = "block";
+      addHistory(j);
+    }
+  } catch (e) {
+    setStatus("Error: could not reach the studio server.", true);
+  }
+  btn.disabled = false;
+}
+function addHistory(j) {
+  histCount++;
+  if (histCount === 1) document.getElementById("hlist").innerHTML = "";
+  var d = document.createElement("div");
+  d.className = "hitem";
+  var t = new Date().toLocaleTimeString();
+  d.innerHTML = '<div class="meta">' + t + " | engine " + j.engine +
+    " | " + j.chars + ' chars</div>' +
+    '<div class="filepath">' + j.file_path + '</div>' +
+    '<a href="' + j.audio_url + '">Play again</a>';
+  var list = document.getElementById("hlist");
+  list.insertBefore(d, list.firstChild);
+}
+</script>
+</body>
+</html>
