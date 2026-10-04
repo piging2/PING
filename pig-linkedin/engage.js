@@ -48,19 +48,22 @@ async function doLike(page, url) {
   await sleep(rand(5000, 9000)); // slower than FB: LinkedIn watches velocity harder
   const pre = await page.evaluate(() => document.body.innerText.slice(0, 3000));
   if (BLOCK_RE.test(pre)) return { ok: false, blocked: true, note: 'restriction/checkpoint language on page' };
-  // Already liked? aria-pressed=true on the like trigger, or label flips toward Unlike.
-  // (Detail pages label it "React Like"; feed cards use "Like".)
+  // Already liked? Classic "Like"/"React Like" label, or the newer
+  // "Reaction button state: ..." label (LinkedIn 2026 restyle). The
+  // "Open reactions menu" button is the picker, NOT the like trigger.
   const already = await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll('button[aria-label]'))
-      .filter(b => /\blike\b/i.test(b.getAttribute('aria-label') || ''));
-    return btns.some(b => b.getAttribute('aria-pressed') === 'true');
+      .filter(b => /\blike\b|reaction button/i.test(b.getAttribute('aria-label') || ''));
+    return btns.some(b => b.getAttribute('aria-pressed') === 'true' ||
+      /reaction button state:\s*like/i.test(b.getAttribute('aria-label') || ''));
   });
   if (already) return { ok: true, note: 'already liked' };
   const clicked = await page.evaluate(() => {
     const vis = Array.from(document.querySelectorAll('button[aria-label]'))
       .filter(b => {
         const l = b.getAttribute('aria-label') || '';
-        if (!/\blike\b/i.test(l) || /unlike/i.test(l)) return false;
+        if (!/\blike\b|reaction button/i.test(l)) return false;
+        if (/unlike|open reactions menu/i.test(l)) return false;
         const r = b.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
       })
@@ -75,7 +78,8 @@ async function doLike(page, url) {
     const vis = Array.from(document.querySelectorAll('button[aria-label]'))
       .filter(b => {
         const l = b.getAttribute('aria-label') || '';
-        if (!/\blike\b/i.test(l) || /unlike/i.test(l)) return false;
+        if (!/\blike\b|reaction button/i.test(l)) return false;
+        if (/unlike|open reactions menu/i.test(l)) return false;
         const r = b.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
       })
@@ -88,10 +92,11 @@ async function doLike(page, url) {
   await sleep(5000);
   const verified = await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll('button[aria-label]'))
-      .filter(b => /\blike\b/i.test(b.getAttribute('aria-label') || ''));
-    return btns.some(b => b.getAttribute('aria-pressed') === 'true');
+      .filter(b => /\blike\b|reaction button/i.test(b.getAttribute('aria-label') || ''));
+    return btns.some(b => b.getAttribute('aria-pressed') === 'true' ||
+      /reaction button state:\s*like/i.test(b.getAttribute('aria-label') || ''));
   });
-  return { ok: verified, note: verified ? 'like registered (aria-pressed=true)' : 'click sent, no state change observed' };
+  return { ok: verified, note: verified ? 'like registered' : 'click sent, no state change observed' };
 }
 
 async function doComment(page, url, text) {
@@ -167,22 +172,70 @@ async function doConnect(page, url, noteText) {
   });
   if (state.kind === 'pending') return { ok: true, note: 'invitation already pending' };
   if (state.kind === 'connected') return { ok: true, note: 'already connected (1st-degree)' };
-  if (state.kind !== 'connect') return { ok: false, note: 'connect button not found; not clicking blindly' };
-  const clicked = await page.evaluate(() => {
-    const btns = Array.from(document.querySelectorAll('button'));
-    const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-    const t = btns.find(b => vis(b) && /invite .* to connect/i.test(b.getAttribute('aria-label') || ''))
-           || btns.find(b => vis(b) && /^connect$/i.test((b.innerText || '').trim()));
-    if (!t) return false;
-    t.scrollIntoView({ block: 'center' });
-    t.click();
-    return true;
-  });
-  if (!clicked) return { ok: false, note: 'connect button vanished before click' };
+  if (state.kind === 'connect') {
+    var clickedDirect = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      const t = btns.find(b => vis(b) && /invite .* to connect/i.test(b.getAttribute('aria-label') || ''))
+             || btns.find(b => vis(b) && /^connect$/i.test((b.innerText || '').trim()));
+      if (!t) return false;
+      t.scrollIntoView({ block: 'center' });
+      t.click();
+      return true;
+    });
+    if (!clickedDirect) return { ok: false, note: 'connect button vanished before click' };
+  } else {
+    // LinkedIn 2026 profile layout: primary action is often "Follow" with
+    // Connect hidden under the "More" menu. Open it and look for Connect.
+    var viaMore = await page.evaluate(() => {
+      const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      const more = Array.from(document.querySelectorAll('button'))
+        .find(b => vis(b) && /^more$/i.test((b.getAttribute('aria-label') || '').trim()));
+      if (!more) return { opened: false };
+      more.scrollIntoView({ block: 'center' });
+      more.click();
+      return { opened: true };
+    });
+    if (!viaMore.opened) return { ok: false, note: 'connect button not found; not clicking blindly' };
+    await sleep(rand(1500, 2500));
+    var menuHit = await page.evaluate(() => {
+      const vis = b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      // Menu items may be buttons, divs with role, or plain spans.
+      // Scope to the open menu first: a page-wide search can match a
+      // "connect" control outside the menu (e.g. search suggestions) and
+      // click the wrong thing (2026-10-04 diag). Fall back to page-wide
+      // only when no role=menu is present.
+      const menu = document.querySelector('[role="menu"]');
+      const scope = menu || document;
+      const els = Array.from(scope.querySelectorAll('button, [role="menuitem"], [role="menuitemradio"], div, span'));
+      const item = els.find(e => {
+        if (!vis(e)) return false;
+        const t = ((e.getAttribute('aria-label') || '') + ' ' + (e.innerText || '')).trim();
+        if (!/^connect$/i.test(t) && !/invite .* to connect/i.test(t)) return false;
+        if (/disconnect/i.test(t)) return false;
+        return true;
+      });
+      if (!item) return { found: false };
+      item.scrollIntoView({ block: 'center' });
+      item.click();
+      return { found: true };
+    });
+    if (!menuHit.found) {
+      // Close the menu to leave the page clean.
+      await page.keyboard.press('Escape').catch(() => {});
+      return { ok: false, note: 'connect not in More menu; not clicking blindly' };
+    }
+  }
+  // Invitation modal next (or immediate send): give the UI a beat.
   await sleep(rand(2500, 4000));
   // Invitation modal: either send directly or add a note first.
+  // findInviteModal prefers the dialog that looks like an invite modal;
+  // a page-wide first-div[role="dialog"] can be a search popover or other
+  // overlay (2026-10-04 diag: popover-floating shadowed the modal).
   const modal = await page.evaluate((withNote) => {
-    const dlg = document.querySelector('div[role="dialog"]');
+    const dlgs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+    const dlg = dlgs.find(d => /invitation|send an invitation|invite to connect/i.test(d.innerText || ''))
+             || dlgs[0];
     if (!dlg) return { open: false };
     const btns = Array.from(dlg.querySelectorAll('button'));
     const byText = t => btns.find(b => new RegExp('^' + t + '$', 'i').test((b.innerText || '').trim()));
@@ -212,12 +265,29 @@ async function doConnect(page, url, noteText) {
     await sleep(rand(1500, 2500));
   }
   const sent = await page.evaluate(() => {
-    const dlg = document.querySelector('div[role="dialog"]');
+    const dlgs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+    const dlg = dlgs.find(d => /invitation|send an invitation|invite to connect/i.test(d.innerText || ''))
+             || dlgs[0];
     if (!dlg) return { sent: false, note: 'modal closed before send' };
     const btns = Array.from(dlg.querySelectorAll('button'));
+    const label = b => ((b.getAttribute('aria-label') || '') + ' ' + (b.innerText || ''));
+    const notDismiss = b => !/dismiss|cancel|close|back|never mind/i.test(label(b));
+    // Robust Send finder (2026-10-04): LinkedIn's invite-modal Send button
+    // drifted (exact-text "Send" + aria "send invitation" matched nothing on
+    // 2026-10-03). Try in order: exact Send, aria send-invitation, any
+    // send-containing enabled text, any send-containing aria-label, then the
+    // lone non-dismiss action as a last resort. Never clicks blindly: every
+    // candidate must look like a send action.
     const send = btns.find(b => /^send$/i.test((b.innerText || '').trim()) && !b.disabled)
-              || btns.find(b => /send invitation/i.test(b.getAttribute('aria-label') || '') && !b.disabled);
-    if (!send) return { sent: false, note: 'send button not clickable in modal' };
+              || btns.find(b => /send invitation/i.test(b.getAttribute('aria-label') || '') && !b.disabled)
+              || btns.find(b => /send/i.test((b.innerText || '')) && !b.disabled && notDismiss(b))
+              || btns.find(b => /send/i.test(b.getAttribute('aria-label') || '') && !b.disabled && notDismiss(b))
+              || (() => { const c = btns.filter(b => !b.disabled && notDismiss(b) && (b.innerText || '').trim());
+                          return c.length === 1 && /send|invit/i.test(label(c[0])) ? c[0] : null; })();
+    if (!send) {
+      const seen = btns.slice(0, 8).map(b => JSON.stringify({ t: (b.innerText || '').trim().slice(0, 30), a: (b.getAttribute('aria-label') || '').slice(0, 40), d: !!b.disabled })).join(';');
+      return { sent: false, note: 'send button not clickable in modal; buttons=[' + seen + ']; dlgtext=' + (dlg.innerText || '').trim().slice(0, 120) };
+    }
     send.click();
     return { sent: true };
   });
