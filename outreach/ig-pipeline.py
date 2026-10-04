@@ -159,10 +159,14 @@ def parse_sources():
         for m in re.finditer(r"^-\s*(@[A-Za-z0-9_.]+)", open(p).read(), re.M):
             add(m.group(1), "seed-pool")
 
-    # prospects: lines like "### 1. @handle — ..."
+    # prospects: lines like "### 1. @handle — ..." (numbered) or
+    # "- @handle — ..." (bullets; 2026-10-03+ sections use bullets)
     p = os.path.join(OUTREACH, "instagram-prospects.md")
     if os.path.exists(p):
-        for m in re.finditer(r"###\s*\d+\.\s*(@[A-Za-z0-9_.]+)", open(p).read()):
+        txt = open(p).read()
+        for m in re.finditer(r"###\s*\d+\.\s*(@[A-Za-z0-9_.]+)", txt):
+            add(m.group(1), "prospects")
+        for m in re.finditer(r"^-\s*(@[A-Za-z0-9_.]+)", txt, re.M):
             add(m.group(1), "prospects")
 
     # second-chance eligibles: lines like "1. `@handle` — ..."
@@ -174,18 +178,26 @@ def parse_sources():
         for m in re.finditer(r"`(@[A-Za-z0-9_.]+)`", section):
             add(m.group(1), "second-chance")
 
-    # reconciliation RECOVERED_CANDIDATE entries in engagement passes
+    # reconciliation RECOVERED_CANDIDATE entries in engagement passes.
+    # 2026-10-04 fix: actual files are ig-discover-job-<ts>.reconciliation.json
+    # (plus older ig*-discover-probe-*.reconciliation.json) with schema
+    # {"reconciled": [{"account": "@h", "disposition": "RECOVERED_CANDIDATE", ...}]}.
+    # The old ig-reconciliation-*.json glob and items/status schema matched nothing.
     if os.path.isdir(PASSES):
         for fn in sorted(os.listdir(PASSES)):
-            if fn.startswith("ig-reconciliation-") and fn.endswith(".json"):
-                try:
-                    d = json.load(open(os.path.join(PASSES, fn)))
-                except Exception:
+            if not fn.endswith(".reconciliation.json"):
+                continue
+            try:
+                d = json.load(open(os.path.join(PASSES, fn)))
+            except Exception:
+                continue
+            items = d.get("reconciled") or d.get("items") or d.get("recovered") or []
+            for it in items:
+                if not isinstance(it, dict):
                     continue
-                items = d.get("items") or d.get("recovered") or []
-                for it in items:
-                    if isinstance(it, dict) and it.get("status") == "RECOVERED_CANDIDATE":
-                        add(it.get("handle", ""), "reconciliation")
+                disp = it.get("disposition") or it.get("status")
+                if disp == "RECOVERED_CANDIDATE":
+                    add(it.get("account") or it.get("handle", ""), "reconciliation")
     return found
 
 
