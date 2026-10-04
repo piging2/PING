@@ -78,6 +78,77 @@ def trim_carrier(path):
     return True
 
 
+_WHISPER_MODEL = None
+
+
+def _get_whisper():
+    """Lazily load faster-whisper (cached after first use)."""
+    global _WHISPER_MODEL
+    if _WHISPER_MODEL is None:
+        from faster_whisper import WhisperModel
+        _WHISPER_MODEL = WhisperModel("base.en", device="cpu",
+                                      compute_type="int8")
+    return _WHISPER_MODEL
+
+
+def cut_carrier_aligned(path, carrier_word="okay"):
+    """Remove the sacrificial carrier via whisper forced alignment.
+
+    Finds the end timestamp of the leading carrier word, cuts there with a
+    15ms fade-in, and rewrites the file. Unlike trim_carrier (which needs a
+    >=150ms pause after the carrier), this works when the model runs the
+    carrier straight into the real text. Falls back to trim_carrier when
+    alignment fails; fail-safe no-op when neither applies. Returns True
+    when a cut was applied.
+    """
+    import numpy as np
+    import struct
+    import wave
+    try:
+        w = wave.open(path)
+        sr, n = w.getframerate(), w.getnframes()
+        pcm = np.frombuffer(w.readframes(n), dtype=np.int16).astype(np.float32)
+        # resample to 16k for whisper (bypass av via numpy input)
+        idx = np.linspace(0, len(pcm) - 1, int(len(pcm) * 16000 / sr))
+        pcm16 = np.interp(idx, np.arange(len(pcm)),
+                          pcm).astype(np.float32) / 32768.0
+        model = _get_whisper()
+        segs, _ = model.transcribe(pcm16, language="en", beam_size=5,
+                                   word_timestamps=True)
+        first_end = None
+        for s in segs:
+            for wd in (s.words or []):
+                if wd.word.strip(" ,.!?").lower() == carrier_word:
+                    first_end = wd.end
+                break
+            break
+        if first_end is None or first_end < 0.1 or first_end > 3.0:
+            return trim_carrier(path)
+        cut = int((first_end + 0.03) * sr)  # 30ms margin past word end
+        if cut >= len(pcm) - sr:
+            return trim_carrier(path)
+        out = pcm[cut:].astype(np.float32)
+        nfade = int(sr * 0.015)
+        if len(out) > nfade:
+            out[:nfade] *= np.linspace(0, 1, nfade)
+        raw = np.clip(out, -32768, 32767).astype(np.int16).tobytes()
+        with wave.open(path, "rb") as wf:
+            ch, sw = wf.getnchannels(), wf.getsampwidth()
+        head = struct.pack("<4sI4s4sIHHIIHH4sI",
+                           b"RIFF", 36 + len(raw), b"WAVE",
+                           b"fmt ", 16, 1, ch, sr,
+                           sr * ch * 2, ch * 2, 16,
+                           b"data", len(raw))
+        with open(path, "wb") as f:
+            f.write(head + raw)
+        return True
+    except Exception:
+        try:
+            return trim_carrier(path)
+        except Exception:
+            return False
+
+
 def pitch_shift_file(path, n_semitones):
     """Shift pitch by n_semitones (negative = deeper) without changing
     tempo, via a phase-vocoder time stretch + resample. Small shifts
