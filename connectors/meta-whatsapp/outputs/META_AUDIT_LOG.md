@@ -1,0 +1,2135 @@
+# Meta UI audit log — October 4, 2026
+
+Read-only observations; configuration is pending approval.
+
+## 1. Pages
+
+```text
+:
+  - generic: Collapse
+- heading "Pages" [level=1]
+- generic: Search
+- textbox "Search" [active]:
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- grid "Business assets":
+  - rowgroup:
+    - row "Name Full access Partial access Partners":
+      - columnheader "Name":
+        - button "Name":
+          - heading "Name" [level=4]
+      - columnheader "Full access":
+        - heading "Full access" [level=4]
+      - columnheader "Partial access":
+        - heading "Partial access" [level=4]
+      - columnheader "Partners":
+        - heading "Partners" [level=4]
+      - columnheader
+  - rowgroup:
+    - row "Facebook How To Be Popular 1 person 1 person 0 partners Details":
+      - gridcell "Facebook How To Be Popular":
+        - button "Facebook How To Be Popular" [pressed]:
+          - img "Facebook"
+          - heading "How To Be Popular" [level=4]
+      - gridcell "1 person":
+        - button "1 person" [pressed]:
+          - generic: 1 person
+      - gridcell "1 person":
+        - button "1 person" [pressed]:
+          - generic: 1 person
+      - gridcell "0 partners":
+        - button "0 partners" [pressed]:
+          - generic: 0 partners
+      - gridcell "Details":
+        - button "Details" [pressed]:
+          - link "Details":
+            - /url: "#"
+- img "Facebook"
+- heading "How To Be Popular" [level=4]
+- text: "ID:"
+- link "342501052618187":
+  - /url: "#"
+- generic: "Owned by: Nolan Geske"
+- button "View on Facebook":
+  - generic: View on Facebook
+- button "Remove":
+  - generic: Remove
+- button "Close":
+  - generic: Close
+- button "Assign people":
+  - generic: Assign people
+- button "Assign partner":
+  - generic: Assign partner
+- button "Connect assets":
+  - generic: Connect assets
+- tablist:
+  - tab "People" [selected]:
+    - generic: People
+  - tab "Partners":
+    - generic: Partners
+  - tab "Connected assets":
+    - generic: Connected assets
+- separator
+- heading "2 people are assigned to this Facebook Page" [level=2]
+- text: You can assign people to the
+- strong: How To Be Popular
+- text: Facebook Page, manage assignments and remove them.
+- generic: Search by name, ID, or email
+- textbox "Search by name, ID, or email"
+- heading "People with full access" [level=3]
+- list:
+  - img "Facebook"
+  - generic: Nolan Geske (You)
+  - generic: Full access
+  - link "View asset":
+    - /url: /latest/settings/business_users/?nav_ref=bizweb_settings_asset_linkout&selected_user_id=61564529476404&business_id=1014469657064951
+    - generic: View asset
+  - button "Remove access":
+    - generic: Remove access
+  - button "Manage":
+    - generic: Manage
+- heading "People with partial access" [level=3]
+- list:
+  - img "Instagram"
+  - generic: IG Nolan Geske
+  - generic: Partial access (Content, Community activity, Messages and calls, Ads, Insights, Creator content and Creator management)
+  - link "View asset":
+    - /url: /latest/settings/business_users/?nav_ref=bizweb_settings_asset_linkout&selected_user_id=61564764430541&business_id=1014469657064951
+    - generic: View asset
+  - button "Remove access" [disabled]:
+    - generic: Remove access
+  - button "Manage":
+    - generic: Manage
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 2. Ad accounts
+
+```text
+:
+  - generic: Collapse
+- heading "Ad accounts" [level=1]
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- heading "No ad accounts added" [level=3]
+- generic: Add Ad Accounts to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 3. Instagram
+
+```text
+:
+  - generic: Collapse
+- heading "Instagram accounts" [level=1]
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- grid "Business assets":
+  - rowgroup:
+    - row "Name Full access Partial access Partners":
+      - columnheader "Name":
+        - button "Name":
+          - heading "Name" [level=4]
+      - columnheader "Full access":
+        - heading "Full access" [level=4]
+      - columnheader "Partial access":
+        - heading "Partial access" [level=4]
+      - columnheader "Partners":
+        - heading "Partners" [level=4]
+      - columnheader
+  - rowgroup:
+    - row "Instagram @nolanpigi Login needed 1 person 1 person 0 partners Details":
+      - gridcell "Instagram @nolanpigi Login needed":
+        - button "Instagram @nolanpigi Login needed" [pressed]:
+          - img "Instagram"
+          - heading "@nolanpigi" [level=4]
+          - generic: Login needed
+          - status: Login needed
+      - gridcell "1 person":
+        - button "1 person" [pressed]:
+          - generic: 1 person
+      - gridcell "1 person":
+        - button "1 person" [pressed]:
+          - generic: 1 person
+      - gridcell "0 partners":
+        - button "0 partners" [pressed]:
+          - generic: 0 partners
+      - gridcell "Details":
+        - button "Details" [pressed]:
+          - link "Details":
+            - /url: "#"
+- img "Instagram"
+- heading "@nolanpigi" [level=4]
+- text: "ID:"
+- link "17841400771094478":
+  - /url: "#"
+- generic: "Owned by: Nolan Geske"
+- link "View on Instagram":
+  - /url: https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.instagram.com%2Fnolanpigi%3Ffbclid%3DIwZXh0bgNhZW0CMTAAcGRvZgNicmlkETFOQ2lSa0oxRE5XQzZJWGJJc3J0YwZhcHBfaWQPNTE0NzcxNTY5MjI4MDYxAAEetJkJan1OTrdoSQ9ckSPOl4zuP3LW1WDMqtItW0tmqzIMSCqQQJ-04mWfKbg_aem_ldklt5rn8TMJAHTBs_QvJg&h=AUCeDx59nRFmU9yJdJ4fPtNG7fqNLL_QA7dgOfcwvgyXNNmfPgUL7ckpHH9oJKZAOCQ7PY0w4MQSXToLz1XE4tap2gtu2lc0td-icEY1SUnR7TTojw1k652HG-lERUSIfo_FGg
+  - generic: View on Instagram
+- button "Remove":
+  - generic: Remove
+- button "Close":
+  - generic: Close
+- heading "Log into Instagram for additional settings" [level=4]
+- generic: Log in for settings that let you give people, partners and apps access to manage the @nolanpigi Instagram profile
+- button "Log in":
+  - generic: Log in
+- button "Assign people" [disabled]:
+  - generic: Assign people
+- button "Assign partner" [disabled]:
+  - generic: Assign partner
+- button "Connect assets":
+  - generic: Connect assets
+- tablist:
+  - tab "People" [selected]:
+    - generic: People
+  - tab "Partners":
+    - generic: Partners
+  - tab "Connected assets":
+    - generic: Connected assets
+- separator
+- heading "2 people are assigned to this Instagram account" [level=2]
+- text: You can assign people to the
+- strong: nolanpigi
+- text: Instagram account, manage assignments and remove them.
+- generic: Search by name, ID, or email
+- textbox "Search by name, ID, or email"
+- heading "People with full access" [level=3]
+- list:
+  - img "Instagram"
+  - generic: IG Nolan Geske
+  - generic: Full access
+  - link "View asset":
+    - /url: /latest/settings/business_users/?nav_ref=bizweb_settings_asset_linkout&selected_user_id=61564764430541&business_id=1014469657064951
+    - generic: View asset
+  - button "Remove access" [disabled]:
+    - generic: Remove access
+  - button "View" [disabled]:
+    - generic: View
+- heading "People with partial access" [level=3]
+- list:
+  - img "Facebook"
+  - generic: Nolan Geske (You)
+  - generic: Partial access (Content, Messages, Community activity, Ads and Insights)
+  - link "View asset":
+    - /url: /latest/settings/business_users/?nav_ref=bizweb_settings_asset_linkout&selected_user_id=61564529476404&business_id=1014469657064951
+    - generic: View asset
+  - button "Remove access" [disabled]:
+    - generic: Remove access
+  - button "Manage":
+    - generic: Manage
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 4. Catalogs verified
+
+```text
+:
+  - generic: Collapse
+- heading "Catalogs" [level=1]
+- generic: Search
+- textbox "Search" [active]:
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- heading "No catalogs added" [level=3]
+- generic: Add Catalogs to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 5. Pixels
+
+```text
+:
+  - generic: Collapse
+- heading "Datasets & pixels" [level=1]
+- generic: Datasets can include event data from web, app and other sources.
+- generic: Search
+- textbox "Search" [active]:
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- heading "No Datasets Added" [level=3]
+- generic: Add Datasets to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 6. WhatsApp
+
+```text
+:
+  - generic: Collapse
+- heading "WhatsApp accounts" [level=1]
+- generic: Search
+- textbox "Search" [active]:
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- heading "No WhatsApp accounts added" [level=3]
+- generic: Add WhatsApp Accounts to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 7. Messenger
+
+```text
+- iframe
+- iframe
+- iframe
+- iframe
+- link "Meta logo":
+  - /url: /?no_redirect=true
+  - img "Meta logo"
+- tablist:
+  - link "My Apps":
+    - /url: /apps/
+    - generic: My Apps
+  - link "Required actions":
+    - /url: /required-actions/
+    - generic: Required actions
+  - tab "Docs":
+    - generic: Docs
+  - tab "Tools":
+    - generic: Tools
+  - tab "Support":
+    - generic: Support
+- generic: Search input
+- textbox "Search input":
+  - /placeholder: Search...
+- link:
+  - /url: "#"
+- link "Facebook":
+  - /url: "#"
+  - img "Facebook"
+- generic: Searchable selector for all apps
+- combobox "Searchable selector for all apps GB":
+  - generic: GB
+- generic: "App ID:"
+- button "1641669927306725":
+  - generic: "1641669927306725"
+- strong: "App Mode:"
+- text: Development
+- switch
+- generic: Live
+- generic: "App type:"
+- generic: Business
+- button "Help":
+  - generic: Help
+- navigation:
+  - list:
+    - button "Dashboard"
+    - generic: Dashboard
+    - button "Required actions"
+    - generic: Required actions
+    - button "App settings"
+    - generic: App settings
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Basic"
+      - generic: Basic
+      - button "Advanced"
+      - generic: Advanced
+    - button "App roles"
+    - generic: App roles
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Roles"
+      - generic: Roles
+      - button "Test users"
+      - generic: Test users
+    - button "Alerts"
+    - generic: Alerts
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Inbox"
+      - generic: Inbox
+      - button "Archived"
+      - generic: Archived
+    - button "App Review"
+    - generic: App Review
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Requests"
+      - generic: Requests
+      - button "Permissions and Features"
+      - generic: Permissions and Features
+- navigation "Products":
+  - generic: Products
+  - link "Add Product":
+    - /url: "#"
+  - list:
+    - button "Marketing API"
+    - generic: Marketing API
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Quickstart"
+      - generic: Quickstart
+      - button "Tools"
+      - generic: Tools
+      - button "Settings"
+      - generic: Settings
+    - button "Messenger" [expanded]
+    - generic: Messenger
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - button "Messenger API Settings"
+      - generic: Messenger API Settings
+      - button "API integration helper"
+      - generic: API integration helper
+      - button "Instagram settings"
+      - generic: Instagram settings
+- navigation "Activity log":
+  - generic: Activity log
+  - list:
+    - button "Activity log"
+    - generic: Activity log
+- heading "Messenger API Setup" [level=1]
+- generic: Follow the steps to set up your API. Once finished, your Facebook Business Page can start sending and receiving messages.
+- heading "Messenger Platform" [level=4]
+- button "Close":
+  - generic: Close
+- generic: Welcome to the Messenger Platform!
+- generic: The Messenger Platform offers a rich set of APIs, web plug-ins, and a complete webview that give you everything you need to build awesome experiences. Reach people across every device and platform they use, support multiple communication channels, create hybrid experiences that incorporate automated and live chat, and more, all in Messenger.
+- generic: To ensure quality and prevent abuse of the platform, all Messenger apps must be submitted for review before they can interact with everyone on Messenger. During development you will be able to send messages to anyone that has been granted either the administrator, developer or tester role for your app.
+- text: To get started, please read the
+- link "developer documentation":
+  - /url: /docs/messenger-platform/
+- text: for complete details. Your access to and use of the platform are subject to
+- link "Platform Policies":
+  - /url: /terms/dfc_platform_terms/
+- text: and
+- link "Developer Policies":
+  - /url: /devpolicy/
+- text: ", together with all other applicable terms and policies."
+- heading "1. Configure webhooks" [level=3]
+- text: Configure a custom webhook URL or use services that help you set up an endpoint.
+- link "Learn more":
+  - /url: https://developers.facebook.com/docs/messenger-platform/webhooks
+- text: .
+- button "Close" [expanded]:
+  - generic: Close
+- generic "1. Configure webhooks":
+  - text: Callback URL
+  - textbox "Callback URL"
+  - text: Verify token
+  - textbox "Verify token"
+  - switch "Attach a client certificate to Webhook requests. ." [disabled]
+  - text: Attach a client certificate to Webhook requests.
+  - link "Learn more":
+    - /url: https://developers.facebook.com/docs/graph-api/webhooks/getting-started/#mtls-for-webhooks
+  - text: .
+  - button "Remove subscription" [disabled]:
+    - generic: Remove subscription
+  - button "Verify and save" [disabled]:
+    - generic: Verify and save
+  - button "Show Recent Errors":
+    - generic: Show Recent Errors
+- heading "2. Generate access tokens" [level=3]
+- generic: Connect Facebook pages to generate access tokens and set up webhook subscriptions.
+- button "Close" [expanded]:
+  - generic: Close
+- generic "2. Generate access tokens":
+  - heading "No FB pages yet." [level=2]
+  - generic: Connect to your FB pages.
+  - button "Connect":
+    - generic: Connect
+- heading "3. Complete App Review" [level=3]
+- generic: This permission or feature requires successful completion of the App Review process before your app can access live data.
+- button "Close" [expanded]:
+  - generic: Close
+- generic "3. Complete App Review":
+  - generic: You should create a prototype and submit for app review. This helps us review your overall app experience.
+  - link "Learn more":
+    - /url: /docs/messenger-platform/app-review/
+    - generic: Learn more
+  - text: To send and receive messages, request pages_messaging permission. To access more messaging features, please review our documentation.
+  - link "Learn more":
+    - /url: /docs/permissions/
+  - button "Request permission":
+    - generic: Request permission
+- heading "Advanced∙Optional" [level=3]:
+  - text: Advanced
+  - heading "∙" [level=3]
+  - heading "Optional" [level=3]
+- generic: Optional Advanced Settings
+- button "See more":
+  - generic: See more
+```
+
+## 8. Domains
+
+```text
+:
+  - generic: Collapse
+- heading "Domains" [level=2]
+- button "Add":
+  - generic: Add
+- heading "No domains added" [level=3]
+- generic: Add Domains to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 9. Business info
+
+```text
+:
+  - generic: Collapse
+- heading "Nolan Geske" [level=2]
+- generic: "Business portfolio ID: 1014469657064951"
+- button "Edit":
+  - generic: Edit
+- link "Business settings":
+  - /url: https://business.facebook.com/settings/info/?business_id=1014469657064951
+  - generic: Business settings
+- heading "Nolan Geske" [level=2]
+- generic: "Business portfolio ID: 1014469657064951"
+- button "Edit":
+  - generic: Edit
+- link "Business settings":
+  - /url: https://business.facebook.com/settings/info/?business_id=1014469657064951
+  - generic: Business settings
+- button "Permanently delete business":
+  - generic: Permanently delete business
+- heading "Nolan Geske" [level=2]
+- generic: "Business portfolio ID: 1014469657064951"
+- generic: "Primary Page: None"
+- button "Edit":
+  - generic: Edit
+- heading "Business details" [level=3]
+- button "Edit":
+  - generic: Edit
+- heading "Legal business name" [level=4]
+- generic: No name
+- heading "Address" [level=4]
+- generic: No address
+- heading "Business phone" [level=4]
+- generic: No phone
+- heading "Website" [level=4]
+- generic: No website
+- heading "Business verification status" [level=3]
+- heading "Unverified" [level=4]
+- generic: Your business must be verified to access certain Meta products.
+- link "View details":
+  - /url: /latest/settings/security_center?business_id=1014469657064951
+  - generic: View details
+- heading "Business history" [level=3]
+- button "Export":
+  - generic: Export
+- heading "Management actions taken by people in this business portfolio" [level=4]
+- generic: Last updated by Nolan Geske on Oct 4, 2026.
+- generic: Created by IG Nolan Geske on Aug 27, 2024.
+- heading "Ad account creation limit" [level=3]
+- generic: "1"
+- heading "Primary business location" [level=4]
+- generic: No primary business location
+- button "Edit" [disabled]:
+  - generic: Edit
+- heading "Business options" [level=3]
+- heading "Two-factor authentication" [level=4]
+- generic: Require a login code to access this business portfolio from unknown browsers.
+- combobox "No one":
+  - generic: No one
+- heading "Pages and notifications" [level=4]
+- generic: When this setting is turned on, people in this business portfolio can see notifications about its Pages on Facebook as well as on business tools, like Meta Business Suite. If this setting is off, then they can only see these notifications on business tools.
+- switch [checked]
+- heading "Access recommendations" [level=4]
+- generic: Turning on this setting helps people who manage permissions by recommending additional assets to assign to people in the portfolio who manage ads, so they have the access they need.
+- switch [checked]
+- heading "Meta One" [level=4]
+- generic: Allow people in this business portfolio to buy and manage Meta One, including choosing a plan, adding a payment method, and submitting business details to get a verified badge. They can also change or cancel the subscription.
+- switch "Meta One" [checked]
+- heading "Profile contact info" [level=3]
+- text: We will notify you for important messages about this business portfolio. Configure the types of notifications that you wish to receive in
+- link "Notification Settings":
+  - /url: /latest/settings/notifications/?business_id=1014469657064951&nav_ref=bizweb_business_info_my_info
+- text: .
+- button "Leave Nolan Geske":
+  - generic: Leave Nolan Geske
+- heading "Name" [level=3]
+- generic: Nolan Geske
+- button "Edit":
+  - generic: Edit
+- heading "Email" [level=3]
+- generic: nolan.geske@yahoo.com
+- generic: Pending confirmation
+- status: Pending confirmation pill
+- button "Dropdown to update email":
+  - generic: Dropdown to update email
+- heading "WhatsApp" [level=3]
+- generic: None
+- button "Add WhatsApp number":
+  - generic: Add WhatsApp number
+- heading "Business notifications on Facebook" [level=4]
+- generic: When this setting is turned on, you can see notifications about Pages in this business portfolio on Facebook as well as on business tools, like Meta Business Suite. If this setting is off, you can only see these notifications on business tools.
+- switch [checked]
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 10. Billing app portfolio
+
+```text
+- heading "Billing & payments" [level=1]
+- toolbar:
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Accounts":
+      - /url: https://business.facebook.com/latest/billing_hub/accounts?business_id=1014469657064951
+    - generic: Accounts
+    - link "Payment methods":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_methods?business_id=1014469657064951
+    - generic: Payment methods
+    - link "Payment activity":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_activity?business_id=1014469657064951
+    - generic: Payment activity
+    - link "Credit lines":
+      - /url: https://business.facebook.com/latest/billing_hub/credit_lines?business_id=1014469657064951
+    - generic: Credit lines
+- button "Collapse":
+  - generic: Collapse
+- heading "Accounts" [level=1]
+- button "Close":
+  - generic: Close
+- heading "See how to manage billing for multiple accounts" [level=2]
+- generic: View billing for all of the accounts connected to your business.
+- button "Watch the video":
+  - generic: Watch the video
+- button "Take tour":
+  - generic: Take tour
+- button "Open tour card":
+  - generic: Open tour card
+- tablist:
+  - tab "Ad accounts" [selected]:
+    - generic: Ad accounts
+  - tab "WhatsApp Business accounts":
+    - generic: WhatsApp Business accounts
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name...
+- button "Advanced filters":
+  - generic: Advanced filters
+- heading "No ad accounts" [level=2]
+- generic: All your ad accounts will appear here.
+- button "Add account":
+  - generic: Add account
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 11. Second portfolio ads
+
+```text
+- heading "Settings" [level=1]
+- toolbar:
+  - heading "Nolan;Geske" [level=4]
+  - generic: Business portfolio
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Business info":
+      - /url: https://business.facebook.com/latest/settings/business_info?business_id=1300523497380358
+    - generic: Business info
+- navigation "Users":
+  - list:
+    - button "Users" [expanded]
+    - generic: Users
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "People":
+        - /url: https://business.facebook.com/latest/settings/business_users?business_id=1300523497380358
+      - generic: People
+      - link "Partners":
+        - /url: https://business.facebook.com/latest/settings/partners?business_id=1300523497380358
+      - generic: Partners
+      - link "System users":
+        - /url: https://business.facebook.com/latest/settings/system_users?business_id=1300523497380358
+      - generic: System users
+- navigation "Accounts":
+  - list:
+    - button "Accounts" [expanded]
+    - generic: Accounts
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Pages":
+        - /url: https://business.facebook.com/latest/settings/pages?business_id=1300523497380358
+      - generic: Pages
+      - link "Ad accounts":
+        - /url: https://business.facebook.com/latest/settings/ad_accounts?business_id=1300523497380358
+      - generic: Ad accounts
+      - link "Business asset groups":
+        - /url: https://business.facebook.com/latest/settings/business_asset_groups?business_id=1300523497380358
+      - generic: Business asset groups
+      - link "Apps":
+        - /url: https://business.facebook.com/latest/settings/apps?business_id=1300523497380358
+      - generic: Apps
+      - link "Instagram accounts":
+        - /url: https://business.facebook.com/latest/settings/instagram_account?business_id=1300523497380358
+      - generic: Instagram accounts
+      - link "WhatsApp accounts":
+        - /url: https://business.facebook.com/latest/settings/whatsapp_account?business_id=1300523497380358
+      - generic: WhatsApp accounts
+      - link "Threads accounts":
+        - /url: https://business.facebook.com/latest/settings/threads_account?business_id=1300523497380358
+      - generic: Threads accounts
+- navigation "Data Sources":
+  - list:
+    - button "Data Sources"
+    - generic: Data Sources
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Catalogs":
+        - /url: https://business.facebook.com/latest/settings/product_catalogs?business_id=1300523497380358
+      - generic: Catalogs
+      - link "Datasets & pixels":
+        - /url: https://business.facebook.com/latest/settings/events_dataset_and_pixel?business_id=1300523497380358
+      - generic: Datasets & pixels
+      - link "Offline event sets":
+        - /url: https://business.facebook.com/latest/settings/offline_event_sets?business_id=1300523497380358
+      - generic: Offline event sets
+      - link "Custom conversions":
+        - /url: https://business.facebook.com/latest/settings/custom_conversions?business_id=1300523497380358
+      - generic: Custom conversions
+      - link "Shared audiences":
+        - /url: https://business.facebook.com/latest/settings/shared_audiences?business_id=1300523497380358
+      - generic: Shared audiences
+      - link "Business creative folders":
+        - /url: https://business.facebook.com/latest/settings/business_creative_folders?business_id=1300523497380358
+      - generic: Business creative folders
+- navigation:
+  - list:
+    - link "Requests":
+      - /url: https://business.facebook.com/latest/settings/requests?business_id=1300523497380358
+    - generic: Requests
+- navigation "Brand safety and suitability":
+  - list:
+    - button "Brand safety and suitability"
+    - generic: Brand safety and suitability
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Domains":
+        - /url: https://business.facebook.com/latest/settings/domains?business_id=1300523497380358
+      - generic: Domains
+      - link "Publisher block lists":
+        - /url: https://business.facebook.com/latest/settings/block_lists?business_id=1300523497380358
+      - generic: Publisher block lists
+- navigation "Integrations":
+  - list:
+    - button "Integrations"
+    - generic: Integrations
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Connected apps":
+        - /url: https://business.facebook.com/latest/settings/connected_apps?business_id=1300523497380358
+      - generic: Connected apps
+      - link "Leads Access":
+        - /url: https://business.facebook.com/latest/settings/leads_access?business_id=1300523497380358
+      - generic: Leads Access
+      - link "Conversation Routing":
+        - /url: https://business.facebook.com/latest/settings/conversation_routing?business_id=1300523497380358
+      - generic: Conversation Routing
+      - link "Ads MCP server":
+        - /url: https://business.facebook.com/latest/settings/ads_mcp_server?business_id=1300523497380358
+      - generic: Ads MCP server
+- navigation:
+  - list:
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/latest/billing_hub?business_id=1300523497380358
+    - generic: Billing & payments
+- navigation:
+  - list:
+    - link "Meta One":
+      - /url: https://business.facebook.com/latest/settings/meta_one?business_id=1300523497380358
+    - generic: Meta One
+    - link "News Pages":
+      - /url: https://business.facebook.com/latest/settings/news_pages?business_id=1300523497380358
+    - generic: News Pages
+    - link "Partnership Ads Hub":
+      - /url: https://business.facebook.com/latest/settings/business_ad_partnerships?business_id=1300523497380358
+    - generic: Partnership Ads Hub
+    - link "Security Center":
+      - /url: https://business.facebook.com/latest/settings/security_center?business_id=1300523497380358
+    - generic: Security Center
+    - link "Notifications":
+      - /url: https://business.facebook.com/latest/settings/notifications?business_id=1300523497380358
+    - generic: Notifications
+    - link "Setup guide":
+      - /url: https://business.facebook.com/latest/settings/setup_guide?business_id=1300523497380358
+    - generic: Setup guide
+    - link "Business assets":
+      - /url: https://business.facebook.com/latest/settings/business_assets?business_id=1300523497380358
+    - generic: Business assets
+    - link "Authorizations and verifications":
+      - /url: https://business.facebook.com/latest/settings/authorizations_verifications?business_id=1300523497380358
+    - generic: Authorizations and verifications
+    - link "Ad account settings":
+      - /url: https://business.facebook.com/ads/manager/account_settings/?business_id=1300523497380358&nav_source=business_manager
+    - generic: Ad account settings
+    - link "Language settings":
+      - /url: https://www.facebook.com/settings/?tab=language
+    - generic: Language settings
+- button "Collapse":
+  - generic: Collapse
+- heading "Ad accounts" [level=1]
+- generic: Search
+- textbox "Search" [active]:
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- heading "No ad accounts added" [level=3]
+- generic: Add Ad Accounts to this business portfolio so you can manage all your business assets in one place.
+- button "Add":
+  - generic: Add
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1300523497380358
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1300523497380358&global_scope_id=1300523497380358&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1300523497380358&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1300523497380358
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 12. Personal catalog verified
+
+```text
+- heading "Settings" [level=1]
+- toolbar:
+  - heading "Nolan;Geske" [level=4]
+  - generic: Business portfolio
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Business info":
+      - /url: https://business.facebook.com/latest/settings/business_info?business_id=1300523497380358
+    - generic: Business info
+- navigation "Users":
+  - list:
+    - button "Users" [expanded]
+    - generic: Users
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "People":
+        - /url: https://business.facebook.com/latest/settings/business_users?business_id=1300523497380358
+      - generic: People
+      - link "Partners":
+        - /url: https://business.facebook.com/latest/settings/partners?business_id=1300523497380358
+      - generic: Partners
+      - link "System users":
+        - /url: https://business.facebook.com/latest/settings/system_users?business_id=1300523497380358
+      - generic: System users
+- navigation "Accounts":
+  - list:
+    - button "Accounts" [expanded]
+    - generic: Accounts
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Pages":
+        - /url: https://business.facebook.com/latest/settings/pages?business_id=1300523497380358
+      - generic: Pages
+      - link "Ad accounts":
+        - /url: https://business.facebook.com/latest/settings/ad_accounts?business_id=1300523497380358
+      - generic: Ad accounts
+      - link "Business asset groups":
+        - /url: https://business.facebook.com/latest/settings/business_asset_groups?business_id=1300523497380358
+      - generic: Business asset groups
+      - link "Apps":
+        - /url: https://business.facebook.com/latest/settings/apps?business_id=1300523497380358
+      - generic: Apps
+      - link "Instagram accounts":
+        - /url: https://business.facebook.com/latest/settings/instagram_account?business_id=1300523497380358
+      - generic: Instagram accounts
+      - link "WhatsApp accounts":
+        - /url: https://business.facebook.com/latest/settings/whatsapp_account?business_id=1300523497380358
+      - generic: WhatsApp accounts
+      - link "Threads accounts":
+        - /url: https://business.facebook.com/latest/settings/threads_account?business_id=1300523497380358
+      - generic: Threads accounts
+- navigation "Data Sources":
+  - list:
+    - button "Data Sources" [expanded]
+    - generic: Data Sources
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Catalogs":
+        - /url: https://business.facebook.com/latest/settings/product_catalogs?business_id=1300523497380358
+      - generic: Catalogs
+      - link "Datasets & pixels":
+        - /url: https://business.facebook.com/latest/settings/events_dataset_and_pixel?business_id=1300523497380358
+      - generic: Datasets & pixels
+      - link "Offline event sets":
+        - /url: https://business.facebook.com/latest/settings/offline_event_sets?business_id=1300523497380358
+      - generic: Offline event sets
+      - link "Custom conversions":
+        - /url: https://business.facebook.com/latest/settings/custom_conversions?business_id=1300523497380358
+      - generic: Custom conversions
+      - link "Shared audiences":
+        - /url: https://business.facebook.com/latest/settings/shared_audiences?business_id=1300523497380358
+      - generic: Shared audiences
+      - link "Business creative folders":
+        - /url: https://business.facebook.com/latest/settings/business_creative_folders?business_id=1300523497380358
+      - generic: Business creative folders
+- navigation:
+  - list:
+    - link "Requests":
+      - /url: https://business.facebook.com/latest/settings/requests?business_id=1300523497380358
+    - generic: Requests
+- navigation "Brand safety and suitability":
+  - list:
+    - button "Brand safety and suitability"
+    - generic: Brand safety and suitability
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Domains":
+        - /url: https://business.facebook.com/latest/settings/domains?business_id=1300523497380358
+      - generic: Domains
+      - link "Publisher block lists":
+        - /url: https://business.facebook.com/latest/settings/block_lists?business_id=1300523497380358
+      - generic: Publisher block lists
+- navigation "Integrations":
+  - list:
+    - button "Integrations"
+    - generic: Integrations
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Connected apps":
+        - /url: https://business.facebook.com/latest/settings/connected_apps?business_id=1300523497380358
+      - generic: Connected apps
+      - link "Leads Access":
+        - /url: https://business.facebook.com/latest/settings/leads_access?business_id=1300523497380358
+      - generic: Leads Access
+      - link "Conversation Routing":
+        - /url: https://business.facebook.com/latest/settings/conversation_routing?business_id=1300523497380358
+      - generic: Conversation Routing
+      - link "Ads MCP server":
+        - /url: https://business.facebook.com/latest/settings/ads_mcp_server?business_id=1300523497380358
+      - generic: Ads MCP server
+- navigation:
+  - list:
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/latest/billing_hub?business_id=1300523497380358
+    - generic: Billing & payments
+- navigation:
+  - list:
+    - link "Meta One":
+      - /url: https://business.facebook.com/latest/settings/meta_one?business_id=1300523497380358
+    - generic: Meta One
+    - link "News Pages":
+      - /url: https://business.facebook.com/latest/settings/news_pages?business_id=1300523497380358
+    - generic: News Pages
+    - link "Partnership Ads Hub":
+      - /url: https://business.facebook.com/latest/settings/business_ad_partnerships?business_id=1300523497380358
+    - generic: Partnership Ads Hub
+    - link "Security Center":
+      - /url: https://business.facebook.com/latest/settings/security_center?business_id=1300523497380358
+    - generic: Security Center
+    - link "Notifications":
+      - /url: https://business.facebook.com/latest/settings/notifications?business_id=1300523497380358
+    - generic: Notifications
+    - link "Setup guide":
+      - /url: https://business.facebook.com/latest/settings/setup_guide?business_id=1300523497380358
+    - generic: Setup guide
+    - link "Business assets":
+      - /url: https://business.facebook.com/latest/settings/business_assets?business_id=1300523497380358
+    - generic: Business assets
+    - link "Authorizations and verifications":
+      - /url: https://business.facebook.com/latest/settings/authorizations_verifications?business_id=1300523497380358
+    - generic: Authorizations and verifications
+    - link "Ad account settings":
+      - /url: https://business.facebook.com/ads/manager/account_settings/?business_id=1300523497380358&nav_source=business_manager
+    - generic: Ad account settings
+    - link "Language settings":
+      - /url: https://www.facebook.com/settings/?tab=language
+    - generic: Language settings
+- button "Collapse":
+  - generic: Collapse
+- heading "Catalogs" [level=1]
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- grid "Business assets":
+  - rowgroup:
+    - row "Name Full access Partial access Partners":
+      - columnheader "Name":
+        - button "Name":
+          - heading "Name" [level=4]
+      - columnheader "Full access":
+        - heading "Full access" [level=4]
+      - columnheader "Partial access":
+        - heading "Partial access" [level=4]
+      - columnheader "Partners":
+        - heading "Partners" [level=4]
+      - columnheader
+  - rowgroup:
+    - row "Products for Nolan personal catalog 1 person 0 people 0 partners Details":
+      - gridcell "Products for Nolan personal catalog":
+        - button "Products for Nolan personal catalog" [active] [pressed]:
+          - heading "Products for Nolan personal catalog" [level=4]
+      - gridcell "1 person":
+        - button "1 person" [pressed]:
+          - generic: 1 person
+      - gridcell "0 people":
+        - button "0 people" [pressed]:
+          - generic: 0 people
+      - gridcell "0 partners":
+        - button "0 partners" [pressed]:
+          - generic: 0 partners
+      - gridcell "Details":
+        - button "Details" [pressed]:
+          - link "Details":
+            - /url: "#"
+- heading "Products for Nolan personal catalog" [level=4]
+- text: "ID:"
+- link "5477376785683835":
+  - /url: "#"
+- generic: "Owned by: Nolan;Geske"
+- button "Remove":
+  - generic: Remove
+- link "Open in Commerce Manager":
+  - /url: https://business.facebook.com/commerce/catalogs/5477376785683835/products?business_id=1300523497380358
+  - generic: Open in Commerce Manager
+- button "Close":
+  - generic: Close
+- button "Assign people":
+  - generic: Assign people
+- button "Assign partner":
+  - generic: Assign partner
+- link "Add Products":
+  - /url: /commerce/catalogs/5477376785683835/products/?business_id=1300523497380358&nav_source=facebook_business_suite
+  - generic: Add Products
+- link "Associate sources":
+  - /url: /events_manager2/?business_id=1300523497380358
+  - generic: Associate sources
+- tablist:
+  - tab "Overview" [selected]:
+    - generic: Overview
+  - tab "People":
+    - generic: People
+  - tab "Partners":
+    - generic: Partners
+- separator
+- heading "Overview" [level=2]
+- heading "Finish your catalog setup" [level=2]
+- generic: You're only a few steps away from being ready to promote your products or services.
+- heading "Settings" [level=4]
+- generic: Connect data from your website or app. This helps us show your products or services to the right people.
+- button "Connect data":
+  - generic: Connect data
+- heading "Permissions" [level=4]
+- generic: Make sure people who need access to this catalog have the necessary permissions.
+- link "Review permissions":
+  - /url: /latest/settings/product_catalogs/?business_id=1300523497380358&detail_view_tab=ASSET_ACCESS&nav_ref=commerce_manager_onboarding_card_issues_permissions_step&selected_asset_id=5477376785683835&selected_asset_type=product-catalog
+- heading "Products" [level=4]
+- generic: Your products or services are saved to your catalog.
+- link "Review products":
+  - /url: /commerce/catalogs/5477376785683835/products/
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1300523497380358
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1300523497380358&global_scope_id=1300523497380358&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1300523497380358&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1300523497380358
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 13. Second portfolio billing
+
+```text
+- heading "Billing & payments" [level=1]
+- toolbar:
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Accounts":
+      - /url: https://business.facebook.com/latest/billing_hub/accounts?business_id=1300523497380358
+    - generic: Accounts
+    - link "Payment methods":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_methods?business_id=1300523497380358
+    - generic: Payment methods
+    - link "Payment activity":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_activity?business_id=1300523497380358
+    - generic: Payment activity
+    - link "Credit lines":
+      - /url: https://business.facebook.com/latest/billing_hub/credit_lines?business_id=1300523497380358
+    - generic: Credit lines
+- button "Collapse":
+  - generic: Collapse
+- heading "Accounts" [level=1]
+- button "Close":
+  - generic: Close
+- heading "See how to manage billing for multiple accounts" [level=2]
+- generic: View billing for all of the accounts connected to your business.
+- button "Watch the video":
+  - generic: Watch the video
+- button "Take tour":
+  - generic: Take tour
+- button "Open tour card":
+  - generic: Open tour card
+- tablist:
+  - tab "Ad accounts" [selected]:
+    - generic: Ad accounts
+  - tab "WhatsApp Business accounts":
+    - generic: WhatsApp Business accounts
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name...
+- button "Advanced filters":
+  - generic: Advanced filters
+- heading "No ad accounts" [level=2]
+- generic: All your ad accounts will appear here.
+- button "Add account":
+  - generic: Add account
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1300523497380358
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1300523497380358&global_scope_id=1300523497380358&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1300523497380358&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1300523497380358
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 14. Ad account now visible
+
+```text
+- heading "Settings" [level=1]
+- toolbar:
+  - heading "Nolan Geske" [level=4]
+  - generic: Business portfolio
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Business info":
+      - /url: https://business.facebook.com/latest/settings/business_info?business_id=1014469657064951
+    - generic: Business info
+- navigation "Users":
+  - list:
+    - button "Users" [expanded]
+    - generic: Users
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "People":
+        - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: People
+      - link "Partners":
+        - /url: https://business.facebook.com/latest/settings/partners?business_id=1014469657064951
+      - generic: Partners
+      - link "System users":
+        - /url: https://business.facebook.com/latest/settings/system_users?business_id=1014469657064951
+      - generic: System users
+- navigation "Accounts":
+  - list:
+    - button "Accounts" [expanded]
+    - generic: Accounts
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Pages":
+        - /url: https://business.facebook.com/latest/settings/pages?business_id=1014469657064951
+      - generic: Pages
+      - link "Ad accounts":
+        - /url: https://business.facebook.com/latest/settings/ad_accounts?business_id=1014469657064951
+      - generic: Ad accounts
+      - link "Business asset groups":
+        - /url: https://business.facebook.com/latest/settings/business_asset_groups?business_id=1014469657064951
+      - generic: Business asset groups
+      - link "Apps":
+        - /url: https://business.facebook.com/latest/settings/apps?business_id=1014469657064951
+      - generic: Apps
+      - link "Instagram accounts":
+        - /url: https://business.facebook.com/latest/settings/instagram_account?business_id=1014469657064951
+      - generic: Instagram accounts
+      - link "WhatsApp accounts":
+        - /url: https://business.facebook.com/latest/settings/whatsapp_account?business_id=1014469657064951
+      - generic: WhatsApp accounts
+      - link "Threads accounts":
+        - /url: https://business.facebook.com/latest/settings/threads_account?business_id=1014469657064951
+      - generic: Threads accounts
+- navigation "Data Sources":
+  - list:
+    - button "Data Sources"
+    - generic: Data Sources
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Catalogs":
+        - /url: https://business.facebook.com/latest/settings/product_catalogs?business_id=1014469657064951
+      - generic: Catalogs
+      - link "Datasets & pixels":
+        - /url: https://business.facebook.com/latest/settings/events_dataset_and_pixel?business_id=1014469657064951
+      - generic: Datasets & pixels
+      - link "Offline event sets":
+        - /url: https://business.facebook.com/latest/settings/offline_event_sets?business_id=1014469657064951
+      - generic: Offline event sets
+      - link "Custom conversions":
+        - /url: https://business.facebook.com/latest/settings/custom_conversions?business_id=1014469657064951
+      - generic: Custom conversions
+      - link "Shared audiences":
+        - /url: https://business.facebook.com/latest/settings/shared_audiences?business_id=1014469657064951
+      - generic: Shared audiences
+      - link "Business creative folders":
+        - /url: https://business.facebook.com/latest/settings/business_creative_folders?business_id=1014469657064951
+      - generic: Business creative folders
+- navigation:
+  - list:
+    - link "Requests":
+      - /url: https://business.facebook.com/latest/settings/requests?business_id=1014469657064951
+    - generic: Requests
+- navigation "Brand safety and suitability":
+  - list:
+    - button "Brand safety and suitability"
+    - generic: Brand safety and suitability
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Domains":
+        - /url: https://business.facebook.com/latest/settings/domains?business_id=1014469657064951
+      - generic: Domains
+      - link "Publisher block lists":
+        - /url: https://business.facebook.com/latest/settings/block_lists?business_id=1014469657064951
+      - generic: Publisher block lists
+- navigation "Integrations":
+  - list:
+    - button "Integrations"
+    - generic: Integrations
+    - button "Toggle group":
+      - generic: Toggle group
+    - list:
+      - link "Connected apps":
+        - /url: https://business.facebook.com/latest/settings/connected_apps?business_id=1014469657064951
+      - generic: Connected apps
+      - link "Leads Access":
+        - /url: https://business.facebook.com/latest/settings/leads_access?business_id=1014469657064951
+      - generic: Leads Access
+      - link "Conversation Routing":
+        - /url: https://business.facebook.com/latest/settings/conversation_routing?business_id=1014469657064951
+      - generic: Conversation Routing
+      - link "Ads MCP server":
+        - /url: https://business.facebook.com/latest/settings/ads_mcp_server?business_id=1014469657064951
+      - generic: Ads MCP server
+- navigation:
+  - list:
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/latest/billing_hub?business_id=1014469657064951
+    - generic: Billing & payments
+- navigation:
+  - list:
+    - link "Meta One":
+      - /url: https://business.facebook.com/latest/settings/meta_one?business_id=1014469657064951
+    - generic: Meta One
+    - link "News Pages":
+      - /url: https://business.facebook.com/latest/settings/news_pages?business_id=1014469657064951
+    - generic: News Pages
+    - link "Partnership Ads Hub":
+      - /url: https://business.facebook.com/latest/settings/business_ad_partnerships?business_id=1014469657064951
+    - generic: Partnership Ads Hub
+    - link "Security Center":
+      - /url: https://business.facebook.com/latest/settings/security_center?business_id=1014469657064951
+    - generic: Security Center
+    - link "Notifications":
+      - /url: https://business.facebook.com/latest/settings/notifications?business_id=1014469657064951
+    - generic: Notifications
+    - link "Setup guide":
+      - /url: https://business.facebook.com/latest/settings/setup_guide?business_id=1014469657064951
+    - generic: Setup guide
+    - link "Business assets":
+      - /url: https://business.facebook.com/latest/settings/business_assets?business_id=1014469657064951
+    - generic: Business assets
+    - link "Authorizations and verifications":
+      - /url: https://business.facebook.com/latest/settings/authorizations_verifications?business_id=1014469657064951
+    - generic: Authorizations and verifications
+    - link "Ad account settings":
+      - /url: https://business.facebook.com/ads/manager/account_settings/?business_id=1014469657064951&nav_source=business_manager
+    - generic: Ad account settings
+    - link "Language settings":
+      - /url: https://www.facebook.com/settings/?tab=language
+    - generic: Language settings
+- button "Collapse":
+  - generic: Collapse
+- heading "Ad accounts" [level=1]
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name or ID
+- button "Filters":
+  - generic: Filters
+- button "Add":
+  - generic: Add
+- grid "Business assets":
+  - rowgroup:
+    - row "Name Full access Partial access Partners":
+      - columnheader "Name":
+        - button "Name":
+          - heading "Name" [level=4]
+      - columnheader "Full access":
+        - heading "Full access" [level=4]
+      - columnheader "Partial access":
+        - heading "Partial access" [level=4]
+      - columnheader "Partners":
+        - heading "Partners" [level=4]
+      - columnheader
+  - rowgroup:
+    - row "f Opportunity Score Progress Ring 0 people 0 people 0 partners Details":
+      - gridcell "f Opportunity Score Progress Ring":
+        - button "f Opportunity Score Progress Ring" [pressed]:
+          - heading "f" [level=4]
+          - img "Opportunity Score Progress Ring":
+            - generic: "100"
+      - gridcell "0 people":
+        - button "0 people" [pressed]:
+          - generic: 0 people
+      - gridcell "0 people":
+        - button "0 people" [pressed]:
+          - generic: 0 people
+      - gridcell "0 partners":
+        - button "0 partners" [pressed]:
+          - generic: 0 partners
+      - gridcell "Details":
+        - button "Details" [pressed]:
+          - link "Details":
+            - /url: "#"
+- heading "f" [level=4]
+- text: "ID:"
+- link "2150184975883343":
+  - /url: "#"
+- generic: "Owned by: Nolan Geske"
+- button "Open in Ads Manager":
+  - generic: Open in Ads Manager
+- button "Deactivate":
+  - generic: Deactivate
+- button "More":
+  - generic: More
+- button "Close":
+  - generic: Close
+- button "Assign people":
+  - generic: Assign people
+- button "Assign partner":
+  - generic: Assign partner
+- button "Opportunity score Opportunity Score Progress Ring":
+  - button "Opportunity score":
+    - generic: Opportunity score
+  - img "Opportunity Score Progress Ring":
+    - generic: "100"
+- tablist:
+  - tab "People":
+    - generic: People
+  - tab "Partners":
+    - generic: Partners
+  - tab "Connected assets":
+    - generic: Connected assets
+  - tab "Payment methods":
+    - generic: Payment methods
+  - tab "Recommendations" [selected]:
+    - generic: Recommendations
+- separator
+- heading "Recommendations for f" [level=3]
+- generic: Suggested actions to help you get more from this ad account.
+- img "Opportunity score value is 100 points"
+- heading "100" [level=3]
+- heading "Opportunity score" [level=2]
+- button "Set up auto-apply":
+  - generic: Set up auto-apply
+- heading "Results from your top campaigns" [level=2]
+- generic: "Last 7 days · Total spend: $0.00"
+- generic: Result type filter
+- combobox "Result type filter":
+  - generic: All
+- button "Create":
+  - generic: Create
+- generic: Illustration of beakers on a surface with a line chart above them.
+- heading "No campaign trends to show" [level=2]
+- generic: None of your campaigns are currently running. When a campaign starts running, you’ll see performance trends here.
+- link "Learn about creating campaigns":
+  - /url: https://www.facebook.com/business/help/169249477193317
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 15. Billing updated
+
+```text
+- heading "Billing & payments" [level=1]
+- toolbar:
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Accounts":
+      - /url: https://business.facebook.com/latest/billing_hub/accounts?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Accounts
+    - link "Payment methods":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_methods?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Payment methods
+    - link "Payment activity":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_activity?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Payment activity
+    - link "Credit lines":
+      - /url: https://business.facebook.com/latest/billing_hub/credit_lines?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Credit lines
+- button "Collapse":
+  - generic: Collapse
+- heading "Accounts" [level=1]
+- button "Close":
+  - generic: Close
+- heading "See how to manage billing for multiple accounts" [level=2]
+- generic: View billing for all of the accounts connected to your business.
+- button "Watch the video":
+  - generic: Watch the video
+- button "Take tour":
+  - generic: Take tour
+- button "Open tour card":
+  - generic: Open tour card
+- tablist:
+  - tab "Ad accounts" [selected]:
+    - generic: Ad accounts
+  - tab "WhatsApp Business accounts":
+    - generic: WhatsApp Business accounts
+- generic: Search
+- textbox "Search":
+  - /placeholder: Search by name...
+- button "Advanced filters":
+  - generic: Advanced filters
+- separator
+- grid "Ad accounts":
+  - rowgroup:
+    - row "Account Status How you'll pay Current balance":
+      - columnheader "Account":
+        - heading "Account" [level=4]
+      - columnheader "Status":
+        - heading "Status" [level=4]
+      - columnheader "How you'll pay":
+        - heading "How you'll pay" [level=4]
+      - columnheader "Current balance":
+        - heading "Current balance" [level=4]
+      - columnheader
+  - rowgroup:
+    - 'row "f ID: 2150184975883343 Active No payment method $0.00"':
+      - 'gridcell "f ID: 2150184975883343"':
+        - 'button "f ID: 2150184975883343"':
+          - 'button "f ID: 2150184975883343"':
+            - generic: f
+            - generic: "ID: 2150184975883343"
+      - gridcell "Active":
+        - generic: Active
+      - gridcell "No payment method":
+        - generic: No payment method
+      - gridcell "$0.00":
+        - heading "$0.00" [level=4]
+      - gridcell:
+        - button "Add payment method":
+          - generic: Add payment method
+        - button "More items":
+          - generic: More items
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Audiences":
+      - /url: https://business.facebook.com/adsmanager/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_entry_point=bm_global_nav_shortcut&nav_source=business_manager&tool=AUDIENCES
+      - generic: Audiences
+    - generic: Audiences
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951&act=2150184975883343
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Ad account settings":
+      - /url: https://business.facebook.com/adsmanager/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_entry_point=bm_global_nav_shortcut&nav_source=business_manager&tool=AD_ACCOUNT_SETTINGS
+      - generic: Ad account settings
+    - generic: Ad account settings
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951&asset_id=2150184975883343
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## 16. Payment methods
+
+```text
+- heading "Billing & payments" [level=1]
+- toolbar:
+  - button "Facebook":
+    - img "Facebook"
+- navigation:
+  - list:
+    - link "Accounts":
+      - /url: https://business.facebook.com/latest/billing_hub/accounts?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Accounts
+    - link "Payment methods":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_methods?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Payment methods
+    - link "Payment activity":
+      - /url: https://business.facebook.com/latest/billing_hub/payment_activity?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Payment activity
+    - link "Credit lines":
+      - /url: https://business.facebook.com/latest/billing_hub/credit_lines?business_id=1014469657064951&asset_id=2150184975883343&payment_account_id=2150184975883343
+    - generic: Credit lines
+- button "Collapse":
+  - generic: Collapse
+- heading "Payment methods" [level=1]
+- toolbar
+- button "Close":
+  - generic: Close
+- heading "Learn how to manage all the ways you pay" [level=2]
+- generic: Manage all of the payment methods that are connected to your accounts.
+- button "Watch the video":
+  - generic: Watch the video
+- button "Take tour":
+  - generic: Take tour
+- button "Open tour card":
+  - generic: Open tour card
+- heading "Nolan Geske" [level=3]
+- generic: Business portfolio
+- status: Business portfolio
+- text: These are connected to your business portfolio and can be used by accounts in this portfolio.
+- link "About payment method availability":
+  - /url: /business/help/1083035221329859
+- heading "Manage who can make changes to payment information" [level=4]
+- text: To modify billing or payments information for your business account, you need to designate who is allowed to manage financial information.
+- link:
+  - /url: /business/content_ref/?callsite=BILLING_HUB&name=BUSINESS_PERMISSIONS
+  - text: Learn more
+- button:
+  - generic: Manage access
+- button "See more":
+  - generic: See more
+- heading "Add business payment method" [level=4]
+- generic: Payment methods added to your business portfolio are available to be used by accounts in your portfolio.
+- button "Add":
+  - generic: Add
+- tablist:
+  - tab "Ad accounts" [selected]:
+    - generic: Ad accounts
+  - tab "WhatsApp Business accounts":
+    - generic: WhatsApp Business accounts
+- combobox "f (2150184975883343)":
+  - generic: f (2150184975883343)
+- heading "f" [level=3]
+- generic: These are connected to this ad account.
+- heading "No payment methods added" [level=2]
+- generic: Add a payment method to start advertising with this ad account.
+- button "Add payment method":
+  - generic: Add payment method
+- button "Meta AI business assistant"
+- button "Meta logo":
+  - generic: Meta Business Suite
+- button "All Tools menu":
+- button "Pressable"
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Ads Manager":
+      - generic: Ads Manager
+    - generic: Ads Manager
+    - link "Audiences":
+      - /url: https://business.facebook.com/adsmanager/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_entry_point=bm_global_nav_shortcut&nav_source=business_manager&tool=AUDIENCES
+      - generic: Audiences
+    - generic: Audiences
+    - link "Ads Reporting":
+      - /url: https://www.facebook.com/adsmanager/reporting?nav_entry_point=lep_231&business_id=1014469657064951&act=2150184975883343
+      - generic: Ads Reporting
+    - generic: Ads Reporting
+    - link "Ad account settings":
+      - /url: https://business.facebook.com/adsmanager/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_entry_point=bm_global_nav_shortcut&nav_source=business_manager&tool=AD_ACCOUNT_SETTINGS
+      - generic: Ad account settings
+    - generic: Ad account settings
+    - link "Events Manager":
+      - /url: https://business.facebook.com/events_manager2/?act=2150184975883343&business_id=1014469657064951&global_scope_id=1014469657064951&nav_source=biz_nav
+      - generic: Events Manager
+    - generic: Events Manager
+    - link "Billing & payments":
+      - /url: https://business.facebook.com/billing_hub/?business_id=1014469657064951&placement=mbs_all_tools_menu
+      - generic: Billing & payments
+    - generic: Billing & payments
+- link "Search":
+  - generic: Search
+- generic: Search
+- navigation "Links":
+  - generic: Links
+  - list:
+    - link "Settings":
+      - /url: https://business.facebook.com/latest/settings/business_users?business_id=1014469657064951&asset_id=2150184975883343
+      - generic: Settings
+    - generic: Settings
+    - link "Notifications":
+      - generic: Notifications
+    - generic: Notifications
+- link "Help":
+  - generic: Help
+- generic: Help
+```
+
+## Continuation — supersedes initial blocked audit
+
+- {"step": "System user creation", "result": "Policy accepted; claude-muse-admin and Claude Muse Admin rejected by Meta name validation. Muse created with Admin role, ID 61595067782723."}
+- {"step": "Main assignments", "result": "Meta success dialog: 4 assets assigned (Page Everything; ad account Manage ad accounts; GB and Dev Manage app). Instagram disabled."}
+- {"step": "Token", "result": "Created for GB with Never expiration and all 43 offered scopes; saved C:/tmp/muse_admin_token.txt"}
+- {"step": "Catalog shared", "result": "Partner assigned success; business 1014469657064951 granted Manage everything on catalog 5477376785683835."}
+- {"action": "Assign shared catalog to Muse", "result": "Full Access saved; products and assigned_product_catalogs GET 200"}
+- {"action": "Retrieve GB App Secret", "result": "Normal password confirmation; saved privately"}
+- {"action": "Accept WhatsApp Business and Hosting terms", "result": "User specifically approved; test WABA 1118784990598434 and phone 1328215300384258 provisioned"}
+- {"action": "Assign WABA to Muse", "result": "Full Access saved; assigned_users MANAGE verified"}
+- {"action": "Deploy HTTPS callback", "result": "Official cloudflared Quick Tunnel to local Python server; callback challenge 200"}
+- {"action": "Connect FB Pages via business login", "result": "All 3 current Pages selected and GB access saved"}
+- {"action": "Generate additional Page tokens", "result": "PING Social and Go Save The Ocean credentials saved privately; valid PAGE debug results"}
+- {"action": "Subscribe all Page and app webhook fields", "result": "Page, Instagram, WhatsApp app subscriptions active; 3 Pages and WABA POST success true"}
+- {"action": "Meta dashboard sample delivery", "result": "Attempted twice; receipt not observed; no delivery success claim"}
+- {"action": "Synthetic signed webhook test", "result": "200 valid signature and 403 invalid signature; event logged"}
+- {"action": "Instagram assignment/login recovery", "result": "Everything switch disabled; remembered Instagram login stalled; user login requested"}
+- {"action": "Additional Page Full Access sharing", "result": "PING Social prepared at Confirm; new terms/disclosure approval requested; not submitted"}
+- {"action": "Ads and pixel reads", "result": "One owned account, no client accounts/pixels; campaigns and ads empty"}
+- {"action": "Save report and credentials", "result": "Shareable outputs/MUSE_SETUP.md and private C:/tmp/MUSE_SETUP.md; credentials ACL limited to current user and SYSTEM"}
