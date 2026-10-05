@@ -1,0 +1,29 @@
+{
+  "id": "D12",
+  "title": "Why 'Unknown' Is a Production State",
+  "group": "l6-credibility",
+  "source_ref": "~/workspace/directives/2026-10-03-ping-technical-marketing-l6-credibility.md",
+  "status": "DRAFT_NEEDS_APPROVAL",
+  "claim_class": "VERIFIED",
+  "hook": "UNKNOWN is a first-class state. Treating it as an error is the bug.",
+  "thesis": "Reducing every outcome to SUCCESS or FAILURE is how systems lie to themselves. PING treats UNKNOWN as a production state with defined semantics: the mutation may or may not have occurred, no retry is authorized until reconciliation reads the real outcome, and uncertainty never becomes permission. The episode makes this the signature concept: PROPOSED, AUTHORIZED, CLAIMED, DISPATCHED, UNKNOWN, VERIFIED, RECONCILED, FAILED. It closes on the invariant: uncertainty does not become permission; read may continue where safe, new external mutations stop.",
+  "claim_bounds": {
+    "proven": [
+      "The directive establishes UNKNOWN as a signature concept with the full state vocabulary (section 7).",
+      "The directive states the invariant: uncertainty does not become permission; on lost authority or verification, new external mutations stop (section 8)."
+    ],
+    "partial": [
+      "The exact code paths where UNKNOWN currently gates mutation."
+    ],
+    "unknown": [
+      "Public examples of UNKNOWN correctly preventing a duplicate mutation."
+    ]
+  },
+  "evidence_pointers": [
+    "~/workspace/directives/2026-10-03-ping-technical-marketing-l6-credibility.md",
+    "~/workspace/marketing-os/SYSTEMS.md"
+  ],
+  "format": "article",
+  "depth": "L2",
+  "approval_gate": "Nolan approves every exact post. Silence is not approval."
+}
