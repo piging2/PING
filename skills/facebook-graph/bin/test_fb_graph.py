@@ -67,6 +67,10 @@ class TestPagePathsScopeGated(unittest.TestCase):
         self._assert_honest("page_posts", lambda: client.page_posts(pid))
 
     def test_page_insights(self):
+        if has_scope("pages_read_engagement") and not has_scope("pages_show_list"):
+            self.skipTest(
+                "pages_read_engagement granted but pages_show_list missing: "
+                "no page id discoverable without fabricating one")
         pages = []
         if has_scope("pages_show_list"):
             pages = client.pages()
