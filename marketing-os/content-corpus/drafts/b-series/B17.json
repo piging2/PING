@@ -1,0 +1,26 @@
+{
+  "id": "B17",
+  "title": "We have two engines and only one of them works, and we admit it.",
+  "group": "content-angles",
+  "source_ref": "~/workspace/marketing-os/SYSTEMS.md",
+  "status": "DRAFT_NEEDS_APPROVAL",
+  "system": "Orca",
+  "claim_class": "VERIFIED",
+  "hook": "We have two execution engines. One works. The other is a museum piece. Here is the honest tour.",
+  "thesis": "The idealized ORCA ExecutionEngine (fourteen modules) is initialized at gateway boot but orphaned by explicit decision: its only worker port has a null executor, dispatch never calls execute, and it emits events on a private queue nothing consumes. The live business path is the PING event spine. Admitting this publicly is trust-building content: building in public means naming the parts that are not finished yet. This post walks the difference between the two, in the falsifiable format.",
+  "claim_bounds": {
+    "verified": [
+      "The idealized engine is initialized but orphaned by explicit decision: null executor, dispatch never calls execute, private queue with no consumer (orca-omniroute-audit 2026-09-13 sections 2, 7, 8, via SYSTEMS.md section 4).",
+      "The live path is the PING spine: Postgres-backed event spine feeds an event-to-mission bridge (28 event types), MissionRuntime, scheduler, WorkerRuntime dispatch by exact event-type match (audit sections 2, 5, 6)."
+    ],
+    "inferred": [],
+    "unknown": []
+  },
+  "evidence_pointers": [
+    "~/workspace/marketing-os/SYSTEMS.md",
+    "~/workspace/marketing-os/EXPERIMENT-PLAN.md"
+  ],
+  "format": "article",
+  "depth": "L3",
+  "approval_gate": "Nolan approves every exact post. Silence is not approval."
+}
