@@ -11,7 +11,12 @@ Use Vercel with the user-connected `custom.vercel` credential.
 ## Tooling
 `bin/vercel-api.py` — generic REST CLI over `https://api.vercel.com`:
 `vercel-api.py GET <path>` / `POST <path> <json>` / `DELETE <path>`.
-Add service-specific CLIs under `~/workspace/skills/vercel/bin/` as needed.
+`bin/vercel_deploy.py` — typed Python connector (import `VercelClient`):
+identity, project listing, and deployment status (`latest_deployment`,
+`deployment_status`, `list_deployments`) with typed errors
+(VercelAuthError / VercelForbiddenError / VercelNotFoundError /
+VercelRateLimitError). Add further service-specific CLIs under
+`~/workspace/skills/vercel/bin/` as needed.
 
 Python CLIs must import `/opt/hatch/skills/skill-creator/bin/dynamic_credentials.py` and call `add_surrogate_to_request(...)`, `url_with_surrogate_query_param(...)`, or `url_with_surrogate_path_segment(...)` before authenticated requests, matching where the provider reads the key. If they use `urllib`, read JSON responses with `read_json_response(resp)` from the same helper instead of calling `resp.read()` directly. They must send only `hsurr:*` values, and only to the hosts below.
 
